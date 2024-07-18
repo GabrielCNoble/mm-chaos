@@ -8,8 +8,8 @@
 
 #define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_20)
 
-#define THIS ((EnFall2*)thisx)
-
+#define THIS ((EnFall2*)thisx) 
+ 
 void EnFall2_Init(Actor* thisx, PlayState* play);
 void EnFall2_Destroy(Actor* thisx, PlayState* play);
 void EnFall2_Update(Actor* thisx, PlayState* play);
@@ -18,7 +18,7 @@ void EnFall2_Draw(Actor* thisx, PlayState* play);
 void EnFall2_DoNothing(EnFall2* this, PlayState* play);
 void EnFall2_HandleCutscene(EnFall2* this, PlayState* play);
 
-ActorInit En_Fall2_InitVars = {
+ActorInit En_Fall2_InitVars = {  
     /**/ ACTOR_EN_FALL2,
     /**/ ACTORCAT_ITEMACTION,
     /**/ FLAGS,

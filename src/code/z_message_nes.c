@@ -383,9 +383,13 @@ void Message_DrawTextNES(PlayState* play, Gfx** gfxP, u16 textDrawPos) {
     Gfx* gfx = *gfxP;
     u16 character;
     s16 sp130;
-    s16 sp12E;
-    s16 sp12C;
-    s16 sp12A;
+    // s16 sp12E;
+    s16 prevTextR;
+    // s16 sp12C;
+    s16 prevTextG;
+    // s16 sp12A;    
+    s16 prevTextB;
+    
 
     msgCtx->textPosX = msgCtx->unk11F1A[0] + msgCtx->unk11FF8;
     msgCtx->textPosY = msgCtx->unk11FFA;
@@ -404,6 +408,9 @@ void Message_DrawTextNES(PlayState* play, Gfx** gfxP, u16 textDrawPos) {
     msgCtx->textColorR = msgCtx->unk120C8;
     msgCtx->textColorG = msgCtx->unk120CA;
     msgCtx->textColorB = msgCtx->unk120CC;
+    // msgCtx->textColorR = msgCtx->textR;
+    // msgCtx->textColorG = msgCtx->textG;
+    // msgCtx->textColorB = msgCtx->textB;
 
     charTexIndex = 0;
 
@@ -846,16 +853,16 @@ void Message_DrawTextNES(PlayState* play, Gfx** gfxP, u16 textDrawPos) {
                     Audio_PlaySfx(NA_SE_NONE);
                 }
                 if ((character >= 0xB0) && (character <= 0xBB)) {
-                    sp12E = msgCtx->textColorR;
-                    sp12C = msgCtx->textColorG;
-                    sp12A = msgCtx->textColorB;
+                    prevTextR = msgCtx->textColorR;
+                    prevTextG = msgCtx->textColorG;
+                    prevTextB = msgCtx->textColorB;
                     msgCtx->textColorR = D_801D083C[(s16)D_801D08CC[character - 0xB0]].r;
                     msgCtx->textColorG = D_801D083C[(s16)D_801D08CC[character - 0xB0]].g;
                     msgCtx->textColorB = D_801D083C[(s16)D_801D08CC[character - 0xB0]].b;
                     Message_DrawTextChar(play, &font->charBuf[font->unk_11D88][charTexIndex], &gfx);
-                    msgCtx->textColorR = sp12E;
-                    msgCtx->textColorG = sp12C;
-                    msgCtx->textColorB = sp12A;
+                    msgCtx->textColorR = prevTextR;
+                    msgCtx->textColorG = prevTextG;
+                    msgCtx->textColorB = prevTextB;
                 } else if (msgCtx->msgMode >= MSGMODE_OWL_SAVE_0) {
                     if ((i < (msgCtx->decodedTextLen - 6)) || (i >= (msgCtx->decodedTextLen - 4))) {
                         Message_DrawTextChar(play, &font->charBuf[font->unk_11D88][charTexIndex], &gfx);
@@ -953,7 +960,7 @@ u8 sMaskCodeTextLengthENG[] = {
     sizeof(YELLOW_STR) - 1,
     sizeof(GREEN_STR) - 1,
 };
-
+#define NON_MATCHING 
 #ifdef NON_MATCHING
 // https://decomp.me/scratch/w2ckG
 void Message_DecodeNES(PlayState* play) {
@@ -1790,9 +1797,7 @@ void Message_DecodeNES(PlayState* play) {
             }
 
             for (i = 0; i < playerNameLen; i++) {
-                ptr = &font->fontBuf[((void)0, gSaveContext.save.saveInfo.inventory
-                                                   .dekuPlaygroundPlayerName[(s16)(curChar - 0xFD)][i]) *
-                                     FONT_CHAR_TEX_SIZE];
+                ptr = &font->fontBuf[((void)0, gSaveContext.save.saveInfo.inventory.dekuPlaygroundPlayerName[(s16)(curChar - 0xFD)][i]) * FONT_CHAR_TEX_SIZE];
                 msgCtx->decodedBuffer.schar[decodedBufPos + i] = 0xFD;
 
                 for (var_v1_3 = 0; var_v1_3 < FONT_CHAR_TEX_SIZE; var_v1_3 += 4) {

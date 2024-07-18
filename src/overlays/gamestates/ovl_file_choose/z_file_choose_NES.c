@@ -1670,10 +1670,13 @@ void FileSelect_DrawWindowContents(GameState* thisx) {
     s16 temp;
     s16 i;
     s16 quadVtxIndex;
+    // GfxPrint gfx_print;
 
     if (1) {}
 
     OPEN_DISPS(this->state.gfxCtx);
+
+    // GfxPrint_Open(&gfx_print, POLY_OPA_DISP);
 
     // draw title label
     gDPPipeSync(POLY_OPA_DISP++);
@@ -1699,6 +1702,10 @@ void FileSelect_DrawWindowContents(GameState* thisx) {
     temp = 4;
 
     gDPPipeSync(POLY_OPA_DISP++);
+
+    // GfxPrint_SetPosPx(&gfx_print, 10, 10);
+    // GfxPrint_SetColor(&gfx_print, 0xff, 0xff, 0xff, 0xff);
+    // GfxPrint_PrintString(&gfx_print, "SHIT");
 
     // draw file info box (large box when a file is selected)
     for (fileIndex = 0; fileIndex < 3; fileIndex++, temp += 28) {

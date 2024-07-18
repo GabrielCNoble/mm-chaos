@@ -10,6 +10,7 @@
 #include "z64quake.h"
 #include "z64rumble.h"
 #include "z64shrink_window.h"
+#include "chaos_fuckery.h"
 
 #include "overlays/actors/ovl_Arms_Hook/z_arms_hook.h"
 #include "overlays/actors/ovl_Door_Spiral/z_door_spiral.h"
@@ -131,6 +132,7 @@ void Player_Action_17(Player* this, PlayState* play);
 void Player_Action_18(Player* this, PlayState* play);
 void Player_Action_19(Player* this, PlayState* play);
 void Player_Action_20(Player* this, PlayState* play);
+/* PLAYER_ACTION_THROW_HIT */
 void Player_Action_21(Player* this, PlayState* play);
 void Player_Action_22(Player* this, PlayState* play);
 void Player_Action_23(Player* this, PlayState* play);
@@ -171,6 +173,7 @@ void Player_Action_57(Player* this, PlayState* play);
 void Player_Action_58(Player* this, PlayState* play);
 void Player_Action_59(Player* this, PlayState* play);
 void Player_Action_60(Player* this, PlayState* play);
+/* PLAYER_ACTION_SWIM_HIT */
 void Player_Action_61(Player* this, PlayState* play);
 void Player_Action_62(Player* this, PlayState* play);
 void Player_Action_63(Player* this, PlayState* play);
@@ -192,7 +195,9 @@ void Player_Action_78(Player* this, PlayState* play);
 void Player_Action_79(Player* this, PlayState* play);
 void Player_Action_80(Player* this, PlayState* play);
 void Player_Action_81(Player* this, PlayState* play);
+/* PLAYER_ACTION_ICE_TRAPPED */
 void Player_Action_82(Player* this, PlayState* play);
+/* PLAYER_ACTION_SHOCKED */
 void Player_Action_83(Player* this, PlayState* play);
 void Player_Action_84(Player* this, PlayState* play);
 void Player_Action_85(Player* this, PlayState* play);
@@ -501,6 +506,18 @@ typedef struct struct_8085D200 {
     /* 0x8 */ u8 unk_8;
     /* 0x9 */ u8 unk_9;
 } struct_8085D200; // size = 0xC
+
+typedef enum
+{
+    /* player flinches */
+    HIT_TYPE_MELEE              = 0,
+    /* player gets tossed away from hitter with configurable horizontal/vertical velocities */
+    HIT_TYPE_MELEE_TOSS         = 1,
+    /* player gets shoved away from hitter */
+    HIT_TYPE_MELEE_SHOVE        = 2,
+    HIT_TYPE_ICE_TRAP           = 3,
+    HIT_TYPE_SHOCK              = 4
+}HitType;
 
 f32 sPlayerControlStickMagnitude;
 s16 sPlayerControlStickAngle;
@@ -5440,6 +5457,9 @@ PlayerAnimationHeader* D_8085D0D4[] = {
     &gPlayerAnim_link_anchor_back_hitR,
 };
 
+/* Player_HitResponse */
+/* arg2 = hit type? */
+/* arg5 = hit direction angle? */
 void func_80833B18(PlayState* play, Player* this, s32 arg2, f32 speed, f32 velocityY, s16 arg5,
                    s32 invincibilityTimer) {
     PlayerAnimationHeader* anim = NULL;
@@ -5467,6 +5487,7 @@ void func_80833B18(PlayState* play, Player* this, s32 arg2, f32 speed, f32 veloc
         return;
     }
 
+    /* ice trap? */
     if (arg2 == 3) {
         Player_SetAction(play, this, Player_Action_82, 0);
         anim = &gPlayerAnim_link_normal_ice_down;
@@ -5477,7 +5498,9 @@ void func_80833B18(PlayState* play, Player* this, s32 arg2, f32 speed, f32 veloc
 
         Player_PlaySfx(this, NA_SE_PL_FREEZE_S);
         Player_AnimSfx_PlayVoice(this, NA_SE_VO_LI_FREEZE);
-    } else if (arg2 == 4) {
+    } 
+    /* shocked? */
+    else if (arg2 == 4) {
         Player_SetAction(play, this, Player_Action_83, 0);
         func_8082DB60(play, this, &gPlayerAnim_link_normal_electric_shock);
         func_8082DAD4(this);
@@ -5486,10 +5509,16 @@ void func_80833B18(PlayState* play, Player* this, s32 arg2, f32 speed, f32 veloc
         this->actor.velocity.y = 0.0f;
 
         Player_RequestRumble(play, this, 255, 80, 150, SQ(0));
-    } else {
+    }
+
+    else {
+        /* melee hit */
+
+        /* relative hit angle to player */
         arg5 -= this->actor.shape.rot.y;
 
         if (this->stateFlags1 & PLAYER_STATE1_8000000) {
+            /* player hit while swimming */
             Player_SetAction(play, this, Player_Action_61, 0);
             Player_RequestRumble(play, this, 180, 20, 50, SQ(0));
 
@@ -5504,8 +5533,8 @@ void func_80833B18(PlayState* play, Player* this, s32 arg2, f32 speed, f32 veloc
             Player_AnimSfx_PlayVoice(this, NA_SE_VO_LI_DAMAGE_S);
             anim = &gPlayerAnim_link_swimer_swim_hit;
         } else if ((arg2 == 1) || (arg2 == 2) || !(this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) ||
-                   (this->stateFlags1 &
-                    (PLAYER_STATE1_4 | PLAYER_STATE1_2000 | PLAYER_STATE1_4000 | PLAYER_STATE1_200000))) {
+                   (this->stateFlags1 & (PLAYER_STATE1_4 | PLAYER_STATE1_2000 | PLAYER_STATE1_4000 | PLAYER_STATE1_200000))) {
+            /* player hit while not swimming */
             Player_SetAction(play, this, Player_Action_21, 0);
 
             this->stateFlags3 |= PLAYER_STATE3_2;
@@ -5514,6 +5543,7 @@ void func_80833B18(PlayState* play, Player* this, s32 arg2, f32 speed, f32 veloc
             func_8082DAD4(this);
 
             if (arg2 == 2) {
+                /* shove player */
                 this->av2.actionVar2 = 4;
 
                 this->actor.speed = 3.0f;
@@ -5523,13 +5553,16 @@ void func_80833B18(PlayState* play, Player* this, s32 arg2, f32 speed, f32 veloc
                 func_8082E5A8(play, this, D_8085BE84[PLAYER_ANIMGROUP_3][this->modelAnimType]);
                 Player_AnimSfx_PlayVoice(this, NA_SE_VO_LI_DAMAGE_S);
             } else {
+                /* toss player */
                 this->actor.speed = speed;
                 this->linearVelocity = speed;
                 this->actor.velocity.y = velocityY;
 
                 if (ABS_ALT(arg5) > 0x4000) {
+                    /* something hit the player from behind, so fall forwards */
                     anim = &gPlayerAnim_link_normal_front_downA;
                 } else {
+                    /* something hit the player from the front, so fall backwards */
                     anim = &gPlayerAnim_link_normal_back_downA;
                 }
                 Player_AnimSfx_PlayVoice(this, NA_SE_VO_LI_FALL_L);
@@ -5797,6 +5830,7 @@ s32 func_80834600(Player* this, PlayState* play) {
         return false;
     } else if (this->cylinder.base.acFlags & AC_HIT) {
         Actor* sp60 = this->cylinder.base.ac;
+        /* hitEffect */
         s32 var_a2_2;
 
         if (sp60->flags & ACTOR_FLAG_1000000) {
@@ -9628,8 +9662,7 @@ void Player_ChooseIdleAnim(PlayState* play, Player* this) {
     s16 endFrame;
 
     if (((this->actor.id != ACTOR_PLAYER) && !(healthIsCritical = (this->actor.colChkInfo.health < 0x64))) ||
-        ((this->actor.id == ACTOR_PLAYER) &&
-         (((this->lockOnActor != NULL) ||
+        ((this->actor.id == ACTOR_PLAYER) && (((this->lockOnActor != NULL) ||
            ((this->transformation != PLAYER_FORM_FIERCE_DEITY) && (this->transformation != PLAYER_FORM_HUMAN)) ||
            (this->currentMask == PLAYER_MASK_SCENTS)) ||
           (!(healthIsCritical = LifeMeter_IsCritical()) && (this->unk_AA4 = ((this->unk_AA4 + 1) & 1)))))) {
@@ -10575,6 +10608,8 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
 
         ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawFeet, this->ageProperties->shadowScale);
     }
+
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_DEKU] = ITEM_MASK_DEKU;
 
     this->subCamId = CAM_ID_NONE;
     Collider_InitAndSetCylinder(play, &this->cylinder, &this->actor, &D_8085C2EC);
@@ -11915,11 +11950,68 @@ f32 sFloorConveyorSpeeds[CONVEYOR_SPEED_MAX - 1] = {
     0.5f, // CONVEYOR_SPEED_SLOW
     1.0f, // CONVEYOR_SPEED_MEDIUM
     3.0f, // CONVEYOR_SPEED_FAST
-};
-
+};  
+ 
 void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     f32 temp_fv0;
     f32 temp_fv1;
+    struct ChaosCode *code = NULL;
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_POKE))
+    {
+        func_80833B18(play, this, HIT_TYPE_MELEE, 0, 0, 0, 0);
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_ICE_TRAP))
+    {
+        func_80833B18(play, this, HIT_TYPE_ICE_TRAP, 0, 0, 0, 0);
+    } 
+
+    code = Chaos_GetCode(CHAOS_CODE_RANDOM_KNOCKBACK);
+
+    if(code != NULL)
+    {
+        code->data--;
+
+        if(code->data == 0)
+        {
+            f32 horizontal_speed = Rand_ZeroOne() * 20.0f;
+            f32 vertical_speed = Rand_ZeroOne() * 20.0f;
+            s16 hit_angle = Rand_Next() % 0xffff;
+            func_80833B18(play, this, HIT_TYPE_MELEE_TOSS, horizontal_speed, vertical_speed, hit_angle, 0);
+            Player_PlaySfx(this, NA_SE_SY_OCARINA_ERROR);
+            code->data = 2 + Rand_Next() % 253;
+        }
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_CHANGE_HEALTH))
+    {
+        s16 max_health = gSaveContext.save.saveInfo.playerData.healthCapacity;
+        s16 health_change = ((Rand_Next() % max_health) << 1) - max_health;
+        if(gSaveContext.save.saveInfo.playerData.health + health_change < 0)
+        {
+            health_change = -(gSaveContext.save.saveInfo.playerData.health - 1);
+        }
+
+        Health_ChangeBy(play, health_change);
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_CHANGE_RUPEE) && gSaveContext.rupeeAccumulator == 0)
+    {
+        s16 max_rupee = CUR_CAPACITY(UPG_WALLET);
+        s16 rupee_change = 0;
+        
+        while(rupee_change == 0)
+        {
+            rupee_change = ((Rand_Next() % max_rupee) << 1) - max_rupee;
+            if(gSaveContext.save.saveInfo.playerData.rupees + rupee_change < 0)
+            {
+                rupee_change = -gSaveContext.save.saveInfo.playerData.rupees;
+            }
+        }
+
+        Rupees_ChangeBy(rupee_change);
+    }
 
     sPlayerControlInput = input;
     if (this->unk_D6A < 0) {
@@ -12537,6 +12629,14 @@ void Player_Draw(Actor* thisx, PlayState* play) {
     Player* this = THIS;
     f32 one = 1.0f;
     s32 spEC = false;
+    // Gfx* gfx;
+    // Gfx* polyOpa;
+    // GfxPrint gfx_print;
+
+    // OPEN_DISPS(play->state.gfxCtx);
+    // GfxPrint_Open(&gfx_print, POLY_OPA_DISP);
+    // GfxPrint_PrintString(&gfx_print, "SHIT");
+    // CLOSE_DISPS(playe->state.gfxCtx);
 
     Math_Vec3f_Copy(&this->unk_D6C, &this->bodyPartsPos[PLAYER_BODYPART_WAIST]);
     if (this->stateFlags3 & (PLAYER_STATE3_100 | PLAYER_STATE3_40000)) {
@@ -12752,6 +12852,26 @@ void Player_Draw(Actor* thisx, PlayState* play) {
     }
 
     play->actorCtx.flags &= ~ACTORCTX_FLAG_3;
+
+    // OPEN_DISPS(play->state.gfxCtx);
+    // polyOpa = POLY_OPA_DISP;
+    // gfx = Graph_GfxPlusOne(polyOpa);
+    // gSPDisplayList(OVERLAY_DISP++, gfx);
+
+    // GfxPrint_Init(&gfx_print);
+    // GfxPrint_Open(&gfx_print, gfx);
+    // GfxPrint_SetColor(&gfx_print, 255, 255, 255, 255);
+    // GfxPrint_SetPos(&gfx_print, 0, 0);
+    // GfxPrint_Printf(&gfx_print, "ShiIIIIIIIIIIIIIt");
+    // gfx = GfxPrint_Close(&gfx_print);
+    // GfxPrint_Destroy(&gfx_print);
+
+    // gSPEndDisplayList(gfx++);
+    // Graph_BranchDlist(polyOpa, gfx);
+    // POLY_OPA_DISP = gfx;
+    // CLOSE_DISPS(gfxCtx);
+
+    Chaos_PrintCodes(play);
 }
 
 void Player_Destroy(Actor* thisx, PlayState* play) {
@@ -15426,6 +15546,14 @@ void Player_Action_41(Player* this, PlayState* play) {
 void Player_Action_42(Player* this, PlayState* play) {
     f32 speedTarget;
     s16 yawTarget;
+    f32 throw_horizontal_scale = 1.0f;
+    f32 throw_vertical_scale = 1.0f;
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_YEET))
+    {
+        throw_horizontal_scale = 10.0f;
+        throw_vertical_scale = 2.0f;
+    }
 
     func_80832F24(this);
 
@@ -15434,7 +15562,7 @@ void Player_Action_42(Player* this, PlayState* play) {
          Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_CURVED, play))) {
         func_80836988(this, play);
     } else if (PlayerAnimation_OnFrame(&this->skelAnime, 3.0f)) {
-        func_808409A8(play, this, this->linearVelocity + 8.0f, 12.0f);
+        func_808409A8(play, this, this->linearVelocity + 8.0f * throw_horizontal_scale, 12.0f * throw_vertical_scale);
     }
 }
 
@@ -15451,7 +15579,7 @@ void Player_Action_43(Player* this, PlayState* play) {
             Player_UpdateUpperBody(this, play);
         }
     }
-
+ 
     if (((this->unk_AA5 == PLAYER_UNKAA5_2) && !(play->actorCtx.flags & ACTORCTX_FLAG_PICTO_BOX_ON)) ||
         ((this->unk_AA5 != PLAYER_UNKAA5_2) &&
          ((((this->csAction != PLAYER_CSACTION_NONE) || ((u32)this->unk_AA5 == PLAYER_UNKAA5_0) ||
@@ -20495,6 +20623,11 @@ void func_8085B384(Player* this, PlayState* play) {
  */
 s32 Player_InflictDamage(PlayState* play, s32 damage) {
     Player* player = GET_PLAYER(play);
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_ONE_HIT_KO) && damage > 0)
+    {
+        return true;
+    }
 
     if ((player->stateFlags2 & PLAYER_STATE2_80) || !Player_InBlockingCsMode(play, player)) {
         if (func_808339D4(play, player, damage) == 0) {

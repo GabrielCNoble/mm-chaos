@@ -4,6 +4,7 @@
 #include "functions.h"
 #include "z64vismono.h"
 #include "z64visfbuf.h"
+#include "chaos_fuckery.h"
 
 // Variables are put before most headers as a hacky way to bypass bss reordering
 s16 sTransitionFillTimer;
@@ -28,7 +29,7 @@ u8 sMotionBlurStatus;
 #include "z64quake.h"
 #include "z64rumble.h"
 #include "z64shrink_window.h"
-#include "z64view.h"
+#include "z64view.h" 
 
 #include "overlays/gamestates/ovl_daytelop/z_daytelop.h"
 #include "overlays/gamestates/ovl_opening/z_opening.h"
@@ -915,13 +916,16 @@ const char D_801DFA34[][4] = {
     "f",   "g",  "g",  "h",  "h",  "i",  "i",  "all", "all", "a",  "b",  "c",  "d",  "e",  "f",  "g",
     "h",   "i",  "f",  "fa", "fb", "fc", "fd", "fe",  "ff",  "fg", "fh", "fi", "fj", "fk",
 };
-
+ 
+#define NON_MATCHING
 #ifdef NON_MATCHING
 // Stack issues
 void Play_UpdateMain(PlayState* this) {
     Input* input = this->state.input;
     u8 freezeFlashTimer;
     s32 sp5C = false;
+
+    Chaos_UpdateChaos(this);
 
     gSegments[4] = OS_K0_TO_PHYSICAL(this->objectCtx.slots[this->objectCtx.mainKeepSlot].segment);
     gSegments[5] = OS_K0_TO_PHYSICAL(this->objectCtx.slots[this->objectCtx.subKeepSlot].segment);
@@ -1027,7 +1031,7 @@ void Play_UpdateMain(PlayState* this) {
         }
     }
 
-    if (!sp5C || gDbgCamEnabled) {
+    if (!sp5C || gDbgCamEnabled) {  
         s32 sp54;   // camId
         Vec3s sp48; // InputDir
 
@@ -2078,7 +2082,7 @@ void Play_AssignPlayerCsIdsFromScene(GameState* thisx, s32 spawnCsId) {
             }
         }
     }
-}
+} 
 
 // Set values to fill screen
 void Play_FillScreen(GameState* thisx, s16 fillScreenOn, u8 red, u8 green, u8 blue, u8 alpha) {
@@ -2357,4 +2361,6 @@ void Play_Init(GameState* thisx) {
     gSaveContext.respawnFlag = 0;
     sBombersNotebookOpen = false;
     BombersNotebook_Init(&sBombersNotebook);
+
+    Chaos_Init();
 }

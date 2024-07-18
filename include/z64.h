@@ -264,6 +264,7 @@ typedef struct PlayState {
     /* 0x18E6C */ char unk_18E6C[0x3EC];
 } PlayState; // size = 0x19258
 
+
 typedef enum {
     /* 0 */ PICTO_PHOTO_STATE_OFF,
     /* 1 */ PICTO_PHOTO_STATE_SETUP,

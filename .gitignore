@@ -27,6 +27,7 @@ asm/
 data/
 expected/
 nonmatchings/
+notes
 
 # Tool artifacts
 tools/ido5.3_compiler/

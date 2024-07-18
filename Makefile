@@ -45,6 +45,8 @@ ifneq ($(FULL_DISASM), 0)
 endif
 
 PROJECT_DIR := $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
+VENV_PATH := ~/Documents/temp_env
+PYTHON3 := $(VENV_PATH)/bin/python3
 
 MAKE = make
 CPPFLAGS += -P
@@ -90,7 +92,7 @@ AS         := $(MIPS_BINUTILS_PREFIX)as
 LD         := $(MIPS_BINUTILS_PREFIX)ld
 OBJCOPY    := $(MIPS_BINUTILS_PREFIX)objcopy
 OBJDUMP    := $(MIPS_BINUTILS_PREFIX)objdump
-ASM_PROC   := python3 tools/asm-processor/build.py
+ASM_PROC   := $(PYTHON3) tools/asm-processor/build.py
 
 ASM_PROC_FLAGS := --input-enc=utf-8 --output-enc=euc-jp --convert-statics=global-with-filename
 
@@ -253,16 +255,18 @@ build/assets/%.o: CC := $(ASM_PROC) $(ASM_PROC_FLAGS) $(CC) -- $(AS) $(ASFLAGS) 
 #### Main Targets ###
 
 uncompressed: $(ROM)
-ifeq ($(COMPARE),1)
-	@md5sum $(ROM)
-	@md5sum -c checksum_uncompressed.md5
-endif
+	
+# ifeq ($(COMPARE),1)
+# 	@md5sum $(ROM)
+# 	@md5sum -c checksum_uncompressed.md5
+# endif
 
 compressed: $(ROMC)
-ifeq ($(COMPARE),1)
-	@md5sum $(ROMC)
-	@md5sum -c checksum.md5
-endif
+
+# ifeq ($(COMPARE),1)
+# 	@md5sum $(ROMC)
+# 	@md5sum -c checksum.md5
+# endif
 
 .PHONY: all uncompressed compressed clean assetclean distclean assets disasm init setup
 .DEFAULT_GOAL := uncompressed
@@ -272,7 +276,7 @@ $(ROM): $(ELF)
 	$(ELF2ROM) -cic 6105 $< $@
 
 $(ROMC): $(ROM)
-	python3 tools/z64compress_wrapper.py $(COMPFLAGS) $(ROM) $@ $(ELF) build/$(SPEC)
+	$(PYTHON3) tools/z64compress_wrapper.py $(COMPFLAGS) $(ROM) $@ $(ELF) build/$(SPEC)
 
 $(ELF): $(TEXTURE_FILES_OUT) $(ASSET_FILES_OUT) $(O_FILES) $(OVL_RELOC_FILES) build/ldscript.txt build/undefined_syms.txt
 	$(LD) -T build/undefined_syms.txt -T build/ldscript.txt --no-check-sections --accept-unknown-input-arch --emit-relocs -Map build/mm.map -o $@
@@ -307,17 +311,17 @@ distclean: assetclean clean
 ## Extraction step
 setup:
 	$(MAKE) -C tools
-	python3 tools/fixbaserom.py
-	python3 tools/extract_baserom.py
-	python3 tools/decompress_yars.py
+	$(PYTHON3) tools/fixbaserom.py
+	$(PYTHON3) tools/extract_baserom.py
+	$(PYTHON3) tools/decompress_yars.py
 
 assets:
-	python3 extract_assets.py -j $(N_THREADS) -Z Wno-hardcoded-pointer
+	$(PYTHON3) extract_assets.py -j $(N_THREADS) -Z Wno-hardcoded-pointer
 
 ## Assembly generation
 disasm:
 	$(RM) -rf asm data
-	python3 tools/disasm/disasm.py -j $(N_THREADS) $(DISASM_FLAGS)
+	$(PYTHON3) tools/disasm/disasm.py -j $(N_THREADS) $(DISASM_FLAGS)
 
 diff-init: uncompressed
 	$(RM) -rf expected/
@@ -380,14 +384,14 @@ build/src/%.o: src/%.c
 build/src/libultra/libc/ll.o: src/libultra/libc/ll.c
 	$(CC_CHECK) $<
 	$(CC) -c $(CFLAGS) $(MIPS_VERSION) $(OPTFLAGS) -o $@ $<
-	python3 tools/set_o32abi_bit.py $@
+	$(PYTHON3) tools/set_o32abi_bit.py $@
 	$(OBJDUMP_CMD)
 	$(RM_MDEBUG)
 
 build/src/libultra/libc/llcvt.o: src/libultra/libc/llcvt.c
 	$(CC_CHECK) $<
 	$(CC) -c $(CFLAGS) $(MIPS_VERSION) $(OPTFLAGS) -o $@ $<
-	python3 tools/set_o32abi_bit.py $@
+	$(PYTHON3) tools/set_o32abi_bit.py $@
 	$(OBJDUMP_CMD)
 	$(RM_MDEBUG)
 

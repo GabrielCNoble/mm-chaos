@@ -2151,6 +2151,7 @@ u16 D_801D027C[] = { 0x2001, 0x2003, 0x2004, 0x2002 };
 // Counterpart to NES sMaskCodeTextENG
 u16 D_801D0284[] = { 0x90D4, 0x90C2, 0x89A9, 0x97CE };
 
+#define NON_MATCHING
 #ifdef NON_MATCHING
 // https://decomp.me/scratch/ZTbP4
 void Message_Decode(PlayState* play) {
@@ -3043,6 +3044,7 @@ void Message_Decode(PlayState* play);
 #pragma GLOBAL_ASM("asm/non_matchings/code/z_message/Message_Decode.s")
 #endif
 
+/* Message_SetupTextboxBackground */
 void func_80150A84(PlayState* play) {
     MessageContext* msgCtx = &play->msgCtx;
     s32 textBoxType = msgCtx->textBoxType;

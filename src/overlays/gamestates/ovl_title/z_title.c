@@ -10,6 +10,7 @@
 #include "CIC6105.h"
 #include "overlays/gamestates/ovl_opening/z_opening.h"
 #include "misc/nintendo_rogo_static/nintendo_rogo_static.h"
+// #include "gfxprint.h"
 
 void ConsoleLogo_UpdateCounters(ConsoleLogoState* this) {
     if ((this->coverAlpha == 0) && (this->visibleDuration != 0)) {
@@ -62,6 +63,7 @@ void ConsoleLogo_Draw(GameState* thisx) {
     Vec3f object;
     Vec3f eye;
     s32 pad[2];
+    GfxPrint gfx_print;
 
     OPEN_DISPS(this->state.gfxCtx);
 
@@ -84,7 +86,7 @@ void ConsoleLogo_Draw(GameState* thisx) {
     ConsoleLogo_RenderView(this, 0.0f, 150.0f, 300.0f);
     Gfx_SetupDL25_Opa(this->state.gfxCtx);
     Matrix_Translate(-53.0f, -5.0f, 0.0f, MTXMODE_NEW);
-    Matrix_Scale(1.0f, 1.0f, 1.0f, MTXMODE_APPLY);
+    Matrix_Scale(1.0f, 1.0f + sTitleRotation * 0.0001f, 1.0f, MTXMODE_APPLY);
     Matrix_RotateZYX(0, sTitleRotation, 0, MTXMODE_APPLY);
 
     gSPMatrix(POLY_OPA_DISP++, Matrix_NewMtx(this->state.gfxCtx), G_MTX_LOAD);
@@ -114,7 +116,14 @@ void ConsoleLogo_Draw(GameState* thisx) {
 
     Environment_FillScreen(this->state.gfxCtx, 0, 0, 0, this->coverAlpha, 2);
 
-    sTitleRotation += 300;
+    sTitleRotation += 3600;
+
+    // // OPEN_DISPS(play->state.gfxCtx);
+    // GfxPrint_Open(&gfx_print, POLY_XLU_DISP);
+    // GfxPrint_SetPosPx(&gfx_print, 10, 10);
+    // GfxPrint_SetColor(&gfx_print, 0xff, 0xff, 0xff, 0xff);
+    // GfxPrint_PrintString(&gfx_print, "SHIT");
+    // // CLOSE_DISPS(playe->state.gfxCtx);
 
     CLOSE_DISPS(this->state.gfxCtx);
 }

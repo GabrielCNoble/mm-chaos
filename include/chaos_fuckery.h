@@ -1,0 +1,193 @@
+#ifndef CHAOS_FUCKERY_H
+#define CHAOS_FUCKERY_H
+
+#include "ultra64.h"
+#include "z64.h"
+
+enum CHAOS_CODES
+{
+    CHAOS_CODE_NONE,
+    CHAOS_CODE_FIRST,
+    /* gravity is 5x lower */
+    CHAOS_CODE_LOW_GRAVITY = CHAOS_CODE_FIRST,
+    /* randomly changes health */
+    CHAOS_CODE_CHANGE_HEALTH,
+    /* set wallet to random value */
+    CHAOS_CODE_CHANGE_RUPEE,
+    /* self explanatory */
+    CHAOS_CODE_ACTOR_CHASE,
+    /* throw stuff far */
+    CHAOS_CODE_YEET,
+    /* poke */
+    CHAOS_CODE_POKE,
+    /* make the moon dance */
+    CHAOS_CODE_MOON_DANCE,
+    /* self explanatory */
+    CHAOS_CODE_ONE_HIT_KO,
+    /* player gets tossed randomly */
+    CHAOS_CODE_RANDOM_KNOCKBACK,
+    /* player gets ice-trapped */
+    CHAOS_CODE_ICE_TRAP,
+    // CHAOS_CODE_ENTRANCE_RANDO,
+    // CHAOS_CODE_SLOW_ANIMATION,
+    // CHAOS_CODE_RANDOM_ITEM,
+    // CHAOS_CODE_BUTTERFINGERS,
+    // CHAOS_CODE_RANDOM_KNOCKBACK,
+    // CHAOS_CODE_INCREDIBLE_KNOCKBACK,
+    // CHAOS_CODE_RANDOM_SWORD_TRAILS,
+    // CHAOS_CODE_NO_Z_TARGETING,
+    
+    // CHAOS_CODE_HIGH_PING,
+    // CHAOS_CODE_WEIRD_ARROWS,
+    // CHAOS_CODE_UPSIDE_DOWN,
+    
+    // CHAOS_CODE_TAKE_SCREENSHOT,
+    // CHAOS_CODE_MOVE_BACKWARDS,
+    // CHAOS_CODE_INVINCIBLE,
+    // CHAOS_CODE_ICE_TRAP,
+    // CHAOS_CODE_MUSIC_SWAP,
+    // CHAOS_CODE_RANDOM_SCALING,
+    // CHAOS_CODE_SWAP_HEAL_AND_HURT,
+    // CHAOS_CODE_SHOW_SCREENSHOT,
+    // CHAOS_CODE_ANTIVIRUS,
+    // CHAOS_CODE_RANDOM_HEALTH_DOWN,
+    // CHAOS_CODE_TIMER_UP,
+    // CHAOS_CODE_FASTER_ANIMATIONS,
+    // CHAOS_CODE_SONG_OF_STORMS,
+    // CHAOS_CODE_SIGNPOST,
+    // CHAOS_CODE_SHOCK,
+    // CHAOS_CODE_SLIPPERY_FLOORS,
+    // CHAOS_CODE_ROTATE_SLOWLY,
+    // CHAOS_CODE_ENVIRONMENT_SETTINGS,
+    // CHAOS_CODE_LOVELESS_MARRIAGE,
+    // CHAOS_CODE_AMBUSH,
+    // CHAOS_CODE_SHORT_TERM_MEMORY_LOSS,
+    // CHAOS_CODE_TUNIC_COLOR,
+    
+    // CHAOS_CODE_RANDOM_PLAYER_SOUNDS,
+    // CHAOS_CODE_SLOW_DOWN,
+    // CHAOS_CODE_JUNK_ITEM,
+    // CHAOS_CODE_RANDOM_C_BUTTONS,
+    // CHAOS_CODE_HEAT_TIMER,
+    // CHAOS_CODE_QUICKSAND,
+    // CHAOS_CODE_STARFOX,
+    // CHAOS_CODE_RANDOM_BOMB_TIMERS,
+    // CHAOS_CODE_SNAP_TO_FLOOR,
+    // CHAOS_CODE_TERRIBLE_MUSIC,
+    // CHAOS_CODE_RUPPEE_CHANGE,
+    // CHAOS_CODE_ACTIVATE_SWORD_COLLIDER,
+    // CHAOS_CODE_NO_AUTOJUMP,
+    // CHAOS_CODE_NAVI,
+    // CHAOS_CODE_SPEEDBOOST,
+    // CHAOS_CODE_EXPLOSIONS,
+    // CHAOS_CODE_CARTIDGE_TILTING,
+    // CHAOS_CODE_DIVE,
+    // CHAOS_CODE_NO_COLLECTIBLES,
+    // CHAOS_CODE_IGNORE_WATER,
+    // CHAOS_CODE_ALL_SOUNDS_ARE_PLAYER,
+    // CHAOS_CODE_CHANGE_MAGIC,
+    // CHAOS_CODE_INFINITE_HOVER_BOOTS,
+    // CHAOS_CODE_BUTTON_SWAP,
+    // CHAOS_CODE_MAGIC_ARMOR,
+
+    // CHAOS_CODE_PUZZLE_EVENT,
+
+    // CHAOS_CODE_PUT_AWAY_ITEMS,
+    // CHAOS_CODE_TEXTBOX,
+    // CHAOS_CODE_EARTHQUAKE,
+    // CHAOS_CODE_CAMERA_SHAKE,
+    // CHAOS_CODE_VOID_OUT,
+    // CHAOS_CODE_CLIMB_EVERYTHING,
+    // CHAOS_CODE_SUN_SONG,
+    // CHAOS_CODE_USE_OCARINA,
+
+
+    /* slow goron roll */
+    // CHAOS_CODE_GOT_A_FLAT,
+    /* swap tatl model with the moon's */
+    // CHAOS_CODE_EVIL_VOICES,
+    /* moon always faces the player */
+    // CHAOS_CODE_BIG_BROTHER,
+    /* randomly trips */
+    // CHAOS_CODE_KLUTZ,
+    /* walk over water */
+    // CHAOS_CODE_HIM,
+    /* fake insta-death */
+    // CHAOS_CODE_SIKE,
+    /* all sounds are the same player sound */
+    // CHAOS_CODE_UNORIGINAL,
+    /* tatl gives random tips */
+    // CHAOS_CODE_PARTKING_IS_WHAT_MATTERS
+    
+    CHAOS_CODE_LAST
+};
+
+enum MOON_MOVES
+{
+    MOON_MOVE_SPEEN    = 1,
+    MOON_MOVE_BOB      = 1 << 1,
+    MOON_MOVE_SWAY     = 1 << 2,
+    MOON_MOVE_BEEGER   = 1 << 3,
+    MOON_MOVE_HYPE     = 1 << 4,
+    MOON_MOVE_LAST
+};
+
+struct ChaosCodeDef
+{
+    u8 min_time;
+    u8 max_time;
+};
+
+struct ChaosCode
+{
+    u16 timer;
+    u8  code;
+    u8  data;
+};
+
+// #define MAX_CODE_TIMER          30
+// #define MIN_CODE_TIMER          10
+#define MAX_CHAOS_TIMER         8
+#define MIN_CHAOS_TIMER         2
+#define CHAOS_SECONDS_TO_FRAMES(seconds)    (((u16)(seconds)) * (20))
+
+#define MAX_ACTIVE_CODES 8
+typedef struct ChaosContext 
+{
+    OSTime              prev_update_counter; 
+    u32                 elapsed_usec; 
+    u16                 chaos_timer;
+    u8                  active_code_count;
+    struct ChaosCode    active_codes[MAX_ACTIVE_CODES];
+    // u8 active_codes[MAX_ACTIVE_CODES];
+
+    struct 
+    {
+        f32             pitch;
+        f32             yaw;
+        f32             bob;
+        f32             sway;
+        f32             scale;
+    }                   moon;
+    
+} ChaosContext;
+
+#define CHAOS_ADD_RESULT_OK             0
+#define CHAOS_ADD_RESULT_ALREADY_ACTIVE 1
+#define CHAOS_ADD_RESULT_NO_SLOTS       2
+
+void Chaos_Init();
+
+void Chaos_UpdateChaos(PlayState *playstate);
+
+void Chaos_PrintCodes(PlayState *playstate);
+
+u8 Chaos_AddCode(u8 code, u8 seconds);
+
+u8 Chaos_DropCodeAtIndex(u8 index);
+
+u8 Chaos_IsCodeActive(u8 code);
+
+struct ChaosCode *Chaos_GetCode(u8 code);
+
+#endif

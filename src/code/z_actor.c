@@ -11,6 +11,7 @@
 #include "z64horse.h"
 #include "z64quake.h"
 #include "z64rumble.h"
+#include "chaos_fuckery.h"
 
 #include "overlays/actors/ovl_En_Horse/z_en_horse.h"
 #include "overlays/actors/ovl_En_Part/z_en_part.h"
@@ -1148,7 +1149,7 @@ void Actor_SetMovementScale(s32 scale) {
  */
 void Actor_UpdatePos(Actor* actor) {
     f32 speedRate = sActorMovementScale;
-
+ 
     actor->world.pos.x += (actor->velocity.x * speedRate) + actor->colChkInfo.displacement.x;
     actor->world.pos.y += (actor->velocity.y * speedRate) + actor->colChkInfo.displacement.y;
     actor->world.pos.z += (actor->velocity.z * speedRate) + actor->colChkInfo.displacement.z;
@@ -1161,10 +1162,15 @@ void Actor_UpdatePos(Actor* actor) {
  * It is recommended to not call this function directly and use `Actor_MoveWithGravity` instead
  */
 void Actor_UpdateVelocityWithGravity(Actor* actor) {
+    f32 gravity_scale = 1.0f;
     actor->velocity.x = actor->speed * Math_SinS(actor->world.rot.y);
     actor->velocity.z = actor->speed * Math_CosS(actor->world.rot.y);
+    if(Chaos_IsCodeActive(CHAOS_CODE_LOW_GRAVITY))
+    {
+        gravity_scale = 0.2f;
+    }
 
-    actor->velocity.y += actor->gravity;
+    actor->velocity.y += actor->gravity * gravity_scale;
     if (actor->velocity.y < actor->terminalVelocity) {
         actor->velocity.y = actor->terminalVelocity;
     }
@@ -2482,6 +2488,17 @@ Actor* Actor_UpdateActor(UpdateActor_Params* params) {
 
     if (actor->world.pos.y < -25000.0f) {
         actor->world.pos.y = -25000.0f;
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_ACTOR_CHASE))
+    {
+        if(actor != (Actor *)params->player)
+        {
+            Vec3f actor_player_vec;
+            Math_Vec3f_DistXYZAndStoreNormDiff(&actor->world.pos, &params->player->actor.world.pos, 1.0f, &actor_player_vec);
+            Math_Vec3f_Scale(&actor_player_vec, 7.0f);
+            Math_Vec3f_Sum(&actor->world.pos, &actor_player_vec, &actor->world.pos);
+        }
     }
 
     actor->sfxId = 0;
@@ -4613,7 +4630,7 @@ void Actor_ChangeAnimationByInfo(SkelAnime* skelAnime, AnimationInfo* animInfo, 
  * has motion involved.
  *
  * Note: This function goes unused in favor of `SubS_UpdateFidgetTables`.
- */
+ */  
 void Actor_UpdateFidgetTables(PlayState* play, s16* fidgetTableY, s16* fidgetTableZ, s32 tableLen) {
     s32 frames = play->gameplayFrames;
     s32 i;
@@ -4651,7 +4668,7 @@ Actor* Actor_FindNearby(PlayState* play, Actor* inActor, s16 actorId, u8 actorCa
     }
 
     return NULL;
-}
+} 
 
 s32 func_800BE184(PlayState* play, Actor* actor, f32 xzDist, s16 arg3, s16 arg4, s16 arg5) {
     Player* player = GET_PLAYER(play);
@@ -4791,7 +4808,7 @@ s32 Actor_IsSmallChest(struct EnBox* chest) {
         return true;
     }
     return false;
-}
+} 
 
 TexturePtr sElectricSparkTextures[] = {
     gElectricSpark1Tex,
