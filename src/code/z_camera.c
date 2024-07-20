@@ -49,6 +49,7 @@
 #include "z64shrink_window.h"
 #include "z64view.h"
 #include "overlays/actors/ovl_En_Horse/z_en_horse.h"
+#include "chaos_fuckery.h"
 
 void func_800DDFE0(Camera* camera);
 s32 Camera_ChangeMode(Camera* camera, s16 mode);
@@ -7269,6 +7270,8 @@ s32 Camera_UpdateWater(Camera* camera) {
 
 void Camera_EarthquakeDay3(Camera* camera) {
     static s16 sEarthquakeTimer = 0;
+    u32 chaos_earthquake = 0;
+    u32 chaos_earthquake_index = 0xffffffff;
     u16 time;
     s16 quakeIndex;
     s32 timeSpeedOffset;
@@ -7279,18 +7282,33 @@ void Camera_EarthquakeDay3(Camera* camera) {
         0x1FC, // 8 Large Earthquakes between CLOCK_TIME(4, 30) to CLOCK_TIME(6, 00)
     };
 
-    if ((CURRENT_DAY == 3) && (CutsceneManager_GetCurrentCsId() == -1)) {
+    if(Chaos_IsCodeActive(CHAOS_CODE_EARTHQUAKE))
+    {
+        chaos_earthquake = 1;
+        chaos_earthquake_index = Rand_Next() % 2;
+    }
+
+    if (((CURRENT_DAY == 3) || chaos_earthquake) && (CutsceneManager_GetCurrentCsId() == -1)) {
         time = gSaveContext.save.time;
         timeSpeedOffset = gSaveContext.save.timeSpeedOffset;
 
         // Large earthquake created
         // Times based on sEarthquakeFreq
-        if ((time > CLOCK_TIME(0, 0)) && (time < CLOCK_TIME(6, 0)) && ((sEarthquakeFreq[time >> 12] & time) == 0) &&
-            (Quake_GetNumActiveQuakes() < 2)) {
+        if (((time > CLOCK_TIME(0, 0)) && (time < CLOCK_TIME(6, 0)) && ((sEarthquakeFreq[time >> 12] & time) == 0) &&
+            (Quake_GetNumActiveQuakes() < 2)) || chaos_earthquake_index == 0) {
             quakeIndex = Quake_Request(camera, QUAKE_TYPE_4);
             if (quakeIndex != 0) {
                 Quake_SetSpeed(quakeIndex, 30000);
                 Quake_SetPerturbations(quakeIndex, (time >> 12) + 2, 1, 5, 60);
+                // if(chaos_earthquake_index == 0)
+                // {
+                //     sEarthquakeTimer = 120 + Rand_Next() % 240;
+                // }
+                // else
+                // {
+                    
+                // }
+
                 sEarthquakeTimer = ((time >> 10) - timeSpeedOffset) + 80;
                 Quake_SetDuration(quakeIndex, sEarthquakeTimer);
             }
@@ -7298,8 +7316,8 @@ void Camera_EarthquakeDay3(Camera* camera) {
 
         // Small earthquake created
         // Around CLOCK_TIME(17, 33) || Around CLOCK_TIME(20, 33) || Every 1024 frames (around every 51s)
-        if (((((time + 0x4D2) & 0xDFFC) == 0xC000) || ((camera->play->state.frames % 1024) == 0)) &&
-            (Quake_GetNumActiveQuakes() < 2)) {
+        if ((((((time + 0x4D2) & 0xDFFC) == 0xC000) || ((camera->play->state.frames % 1024) == 0)) &&
+            (Quake_GetNumActiveQuakes() < 2)) || chaos_earthquake_index == 1) {
             quakeIndex = Quake_Request(camera, QUAKE_TYPE_3);
             if (quakeIndex != 0) {
                 Quake_SetSpeed(quakeIndex, 16000);

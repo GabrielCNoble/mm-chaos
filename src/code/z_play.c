@@ -925,8 +925,6 @@ void Play_UpdateMain(PlayState* this) {
     u8 freezeFlashTimer;
     s32 sp5C = false;
 
-    Chaos_UpdateChaos(this);
-
     gSegments[4] = OS_K0_TO_PHYSICAL(this->objectCtx.slots[this->objectCtx.mainKeepSlot].segment);
     gSegments[5] = OS_K0_TO_PHYSICAL(this->objectCtx.slots[this->objectCtx.subKeepSlot].segment);
     gSegments[2] = OS_K0_TO_PHYSICAL(this->sceneSegment);
@@ -994,6 +992,7 @@ void Play_UpdateMain(PlayState* this) {
                         this->envCtx.fillScreen = false;
                     }
                 } else {
+                    // Chaos_UpdateChaos(this);
                     Room_HandleLoadCallbacks(this, &this->roomCtx);
                     CollisionCheck_AT(this, &this->colChkCtx);
                     CollisionCheck_OC(this, &this->colChkCtx);
@@ -1030,6 +1029,8 @@ void Play_UpdateMain(PlayState* this) {
             TransitionFade_Update(&this->unk_18E48, this->state.framerateDivisor);
         }
     }
+
+    Chaos_UpdateChaos(this);
 
     if (!sp5C || gDbgCamEnabled) {  
         s32 sp54;   // camId
@@ -1449,6 +1450,8 @@ SkipPostWorldDraw:
     }
 
     CLOSE_DISPS(gfxCtx);
+
+    Chaos_PrintCodes(this);
 }
 #else
 void Play_DrawMain(PlayState* this);
@@ -2122,9 +2125,11 @@ void Play_Init(GameState* thisx) {
     }
 
     if (gSaveContext.save.entrance == -1) {
+        /* setup title screen */
         gSaveContext.save.entrance = 0;
         STOP_GAMESTATE(&this->state);
         SET_NEXT_GAMESTATE(&this->state, TitleSetup_Init, sizeof(TitleSetupState));
+        Chaos_Init();
         return;
     }
 
@@ -2361,6 +2366,4 @@ void Play_Init(GameState* thisx) {
     gSaveContext.respawnFlag = 0;
     sBombersNotebookOpen = false;
     BombersNotebook_Init(&sBombersNotebook);
-
-    Chaos_Init();
 }

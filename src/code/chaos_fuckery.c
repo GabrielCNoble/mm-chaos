@@ -2,21 +2,27 @@
 #include "functions.h"
 #include "regs.h"
 #include "gfxprint.h"
+#include "variables.h"
+#include "z64.h"
+#include "z64cutscene.h"
 
 ChaosContext gChaosContext; 
 
 struct ChaosCodeDef gChaosCodeDefs[] = {
-    /* [CHAOS_CODE_NONE]                = */ {0, 0                                       },
-    /* [CHAOS_CODE_LOW_GRAVITY]         = */ {/* .min_time = */ 10,  /* .max_time = */ 18},
-    /* [CHAOS_CODE_CHANGE_HEALTH]       = */ {/* .min_time = */ 1,   /* .max_time = */ 10},
-    /* [CHAOS_CODE_CHANGE_RUPEE]        = */ {/* .min_time = */ 0,   /* .max_time = */ 0},
-    /* [CHAOS_CODE_ACTOR_CHASE]         = */ {/* .min_time = */ 6,   /* .max_time = */ 15},
-    /* [CHAOS_CODE_YEET]                = */ {/* .min_time = */ 8,   /* .max_time = */ 17},
-    /* [CHAOS_CODE_POKE]                = */ {/* .min_time = */ 0,   /* .max_time = */ 0},
-    /* [CHAOS_CODE_MOON_DANCE]          = */ {/* .min_time = */ 5,   /* .max_time = */ 30},
-    /* [CHAOS_CODE_ONE_HIT_KO]          = */ {/* .min_time = */ 8,   /* .max_time = */ 23},
-    /* [CHAOS_CODE_RANDOM_KNOCKBACK]    = */ {/* .min_time = */ 8,   /* .max_time = */ 15},
-    /* [CHAOS_CODE_ICE_TRAP]            = */ {/* .min_time = */ 0,   /* .max_time = */ 0},
+    /* [CHAOS_CODE_NONE]                = */ {0, 0, 0                                       },
+    /* [CHAOS_CODE_LOW_GRAVITY]         = */ {/* .min_time = */ 10,  /* .max_time = */ 18, /* .always_update = */ 1},
+    /* [CHAOS_CODE_CHANGE_HEALTH]       = */ {/* .min_time = */ 1,   /* .max_time = */ 10, /* .always_update = */ 1},
+    /* [CHAOS_CODE_CHANGE_RUPEE]        = */ {/* .min_time = */ 0,   /* .max_time = */ 0,  /* .always_update = */ 1},
+    /* [CHAOS_CODE_ACTOR_CHASE]         = */ {/* .min_time = */ 6,   /* .max_time = */ 15, /* .always_update = */ 0},
+    /* [CHAOS_CODE_YEET]                = */ {/* .min_time = */ 8,   /* .max_time = */ 17, /* .always_update = */ 1},
+    /* [CHAOS_CODE_POKE]                = */ {/* .min_time = */ 0,   /* .max_time = */ 0,  /* .always_update = */ 0},
+    /* [CHAOS_CODE_MOON_DANCE]          = */ {/* .min_time = */ 5,   /* .max_time = */ 30, /* .always_update = */ 1},
+    /* [CHAOS_CODE_ONE_HIT_KO]          = */ {/* .min_time = */ 8,   /* .max_time = */ 23, /* .always_update = */ 0},
+    /* [CHAOS_CODE_RANDOM_KNOCKBACK]    = */ {/* .min_time = */ 8,   /* .max_time = */ 15, /* .always_update = */ 0},
+    /* [CHAOS_CODE_ICE_TRAP]            = */ {/* .min_time = */ 0,   /* .max_time = */ 0,  /* .always_update = */ 0},
+    /* [CHAOS_CODE_TIMER_UP]            = */ {/* .min_time = */ 10,  /* .max_time = */ 20, /* .always_update = */ 0},
+    /* [CHAOS_CODE_SHOCK]               = */ {/* .min_time = */ 0,   /* .max_time = */ 0,  /* .always_update = */ 0},
+    /* [CHAOS_CODE_EARTHQUAKE]          = */ {/* .min_time = */ 0,   /* .max_time = */ 0,  /* .always_update = */ 1},
 };
 
 const char *gChaosCodeNames[] = {
@@ -31,6 +37,9 @@ const char *gChaosCodeNames[] = {
     /* [CHAOS_CODE_ONE_HIT_KO]          = */ "One-hit KO",
     /* [CHAOS_CODE_RANDOM_KNOCKBACK]    = */ "Random knockback",
     /* [CHAOS_CODE_ICE_TRAP]            = */ "Ice trap",
+    /* [CHAOS_CODE_TIMER_UP]            = */ "Timer up",
+    /* [CHAOS_CODE_SHOCK]               = */ "Shock",
+    /* [CHAOS_CODE_EARTHQUAKE]          = */ "Earthquake",
 };
 
 void Chaos_Init()
@@ -38,93 +47,113 @@ void Chaos_Init()
     gChaosContext.moon.pitch = 0.0f;
     gChaosContext.moon.yaw = 0.0f;
     gChaosContext.active_code_count = 0;
-    // gChaosContext.chaos_timer = CHAOS_SECONDS_TO_FRAMES(5);
     gChaosContext.chaos_timer = 15;
-    gChaosContext.elapsed_usec = 0;
+    gChaosContext.code_elapsed_usec = 0;
+    gChaosContext.chaos_elapsed_usec = 0;
     gChaosContext.prev_update_counter = osGetTime();
+    gChaosContext.update_enabled = 1;
 }
  
 void Chaos_UpdateChaos(PlayState *playstate)
 {
     OSTime              update_counter = osGetTime();
-    u32                 elapsed_seconds;
+    u32                 code_elapsed_seconds;
+    u32                 chaos_elapsed_seconds;
     u32                 slot_index;
     u32                 next_rand;
     u32                 code_add_result;
+    u32                 elapsed_usec;
     u8                  next_code; 
     u8                  next_code_timer;
     struct ChaosCode *  last_code = NULL;
 
-    if(update_counter < gChaosContext.prev_update_counter)
+    if(Chaos_CanUpdateChaos(playstate))
     {
-        /* PARANOID: cpu counter overflow */
-        gChaosContext.prev_update_counter = update_counter;
-    }
-
-    gChaosContext.elapsed_usec += (OS_CYCLES_TO_USEC(update_counter) - OS_CYCLES_TO_USEC(gChaosContext.prev_update_counter));
-    gChaosContext.prev_update_counter = update_counter;
-
-    elapsed_seconds = gChaosContext.elapsed_usec / 1000000;
-
-    slot_index = 0;
-    while(slot_index < gChaosContext.active_code_count)
-    {
-        struct ChaosCode *code = gChaosContext.active_codes + slot_index;
-
-        if(elapsed_seconds >= code->timer)
+        if(update_counter < gChaosContext.prev_update_counter)
         {
-            Chaos_DropCodeAtIndex(slot_index);
-            continue;
+            /* PARANOID: cpu counter overflow */
+            gChaosContext.prev_update_counter = update_counter;
         }
 
-        code->timer -= elapsed_seconds;
-        slot_index++;
-    }
+        elapsed_usec = (OS_CYCLES_TO_USEC(update_counter) - OS_CYCLES_TO_USEC(gChaosContext.prev_update_counter));
+        gChaosContext.code_elapsed_usec += elapsed_usec;
+        gChaosContext.prev_update_counter = update_counter;
 
-    if(elapsed_seconds > 0)
-    {
-        gChaosContext.elapsed_usec -= elapsed_seconds * 1000000;
+        code_elapsed_seconds = gChaosContext.code_elapsed_usec / 1000000;
 
-        if(elapsed_seconds > gChaosContext.chaos_timer)
+        if(Chaos_IsCodeActive(CHAOS_CODE_TIMER_UP))
         {
-            gChaosContext.chaos_timer = 0;
+            elapsed_usec *= 2;
+            gChaosContext.chaos_elapsed_usec += elapsed_usec;
+            chaos_elapsed_seconds = gChaosContext.chaos_elapsed_usec / 1000000;
         }
         else
         {
-            gChaosContext.chaos_timer -= elapsed_seconds;
-        }  
-    
-        if(gChaosContext.chaos_timer == 0)  
+            gChaosContext.chaos_elapsed_usec = gChaosContext.code_elapsed_usec;
+            chaos_elapsed_seconds = code_elapsed_seconds;
+        }
+
+        slot_index = 0;
+        while(slot_index < gChaosContext.active_code_count)
         {
-            gChaosContext.chaos_timer = MIN_CHAOS_TIMER + Rand_Next() % (MAX_CHAOS_TIMER - MIN_CHAOS_TIMER);
-            next_rand = Rand_Next();
-            do
+            struct ChaosCode *code = gChaosContext.active_codes + slot_index;
+
+            if(code_elapsed_seconds >= code->timer)
             {
-                next_code = CHAOS_CODE_FIRST + Rand_Next() % (CHAOS_CODE_LAST - CHAOS_CODE_FIRST);
-                next_code_timer = gChaosCodeDefs[next_code].min_time + next_rand % (gChaosCodeDefs[next_code].max_time - gChaosCodeDefs[next_code].min_time);
-                code_add_result = Chaos_AddCode(next_code, next_code_timer);
+                Chaos_DropCodeAtIndex(slot_index);
+                continue;
             }
-            while(code_add_result == CHAOS_ADD_RESULT_ALREADY_ACTIVE);
 
-            if(code_add_result == CHAOS_ADD_RESULT_OK)
+            code->timer -= code_elapsed_seconds;
+            slot_index++;
+        }
+        gChaosContext.code_elapsed_usec -= code_elapsed_seconds * 1000000;
+
+        if(chaos_elapsed_seconds > 0)
+        {
+            gChaosContext.chaos_elapsed_usec -= chaos_elapsed_seconds * 1000000;
+
+            if(chaos_elapsed_seconds > gChaosContext.chaos_timer)
             {
-                last_code = gChaosContext.active_codes + (gChaosContext.active_code_count - 1);
-
-                switch(last_code->code)
+                gChaosContext.chaos_timer = 0;
+            }
+            else
+            {
+                gChaosContext.chaos_timer -= chaos_elapsed_seconds;
+            }  
+        
+            if(gChaosContext.chaos_timer == 0)  
+            {
+                gChaosContext.chaos_timer = MIN_CHAOS_TIMER + Rand_Next() % (MAX_CHAOS_TIMER - MIN_CHAOS_TIMER);
+                next_rand = Rand_Next();
+                do
                 {
-                    case CHAOS_CODE_MOON_DANCE:
-                        do
-                        {
-                            /* pick a random combination of moon dance move flags */
-                            last_code->data = Rand_Next() % MOON_MOVE_LAST;
-                        }
-                        while(last_code->data == 0);
-                    break;
+                    next_code = CHAOS_CODE_FIRST + Rand_Next() % (CHAOS_CODE_LAST - CHAOS_CODE_FIRST);
+                    next_code_timer = gChaosCodeDefs[next_code].min_time + next_rand % (gChaosCodeDefs[next_code].max_time - gChaosCodeDefs[next_code].min_time);
+                    code_add_result = Chaos_AddCode(next_code, next_code_timer);
+                }
+                while(code_add_result == CHAOS_ADD_RESULT_ALREADY_ACTIVE);
 
-                    case CHAOS_CODE_RANDOM_KNOCKBACK:
-                        /* deal first knockback on the same frame this got activated */
-                        last_code->data = 1;
-                    break;
+                if(code_add_result == CHAOS_ADD_RESULT_OK)
+                {
+                    last_code = gChaosContext.active_codes + (gChaosContext.active_code_count - 1);
+
+                    switch(last_code->code)
+                    {
+                        case CHAOS_CODE_MOON_DANCE:
+                            do
+                            {
+                                /* pick a random combination of moon dance move flags */
+                                last_code->data = Rand_Next() % MOON_MOVE_LAST;
+                            }
+                            while(last_code->data == 0);
+                        break;
+
+                        case CHAOS_CODE_RANDOM_KNOCKBACK:
+                            /* deal first knockback on the same frame it gets activated */
+                            last_code->data = 1;
+                        break;
+                    }
                 }
             }
         }
@@ -213,11 +242,28 @@ u8 Chaos_IsCodeActive(u8 code)
     {
         if(gChaosContext.active_codes[slot_index].code == code)
         {
-            return 1;
+            return gChaosCodeDefs[code].always_update || gChaosContext.update_enabled;
         }
     }
 
     return 0;
+}
+
+u8 Chaos_CanUpdateChaos(struct PlayState *play)
+{
+    u8 enable_update = (play->transitionMode == TRANS_MODE_OFF) && 
+                       (gSaveContext.gameMode == GAMEMODE_NORMAL) &&
+                       CutsceneManager_GetCurrentCsId() == CS_ID_NONE;
+
+    if(enable_update && !gChaosContext.update_enabled)
+    {
+        gChaosContext.code_elapsed_usec = 0;
+        gChaosContext.chaos_elapsed_usec = 0;
+        gChaosContext.prev_update_counter = osGetTime();
+    }
+
+    gChaosContext.update_enabled = enable_update;
+    return gChaosContext.update_enabled;
 }
 
 struct ChaosCode *Chaos_GetCode(u8 code)
@@ -227,7 +273,12 @@ struct ChaosCode *Chaos_GetCode(u8 code)
     {
         if(gChaosContext.active_codes[slot_index].code == code)
         {
-            return gChaosContext.active_codes + slot_index;
+            if(gChaosCodeDefs[code].always_update || gChaosContext.update_enabled)
+            {
+                return gChaosContext.active_codes + slot_index;
+            }
+
+            return NULL;
         }
     }
 

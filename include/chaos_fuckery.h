@@ -28,6 +28,14 @@ enum CHAOS_CODES
     CHAOS_CODE_RANDOM_KNOCKBACK,
     /* player gets ice-trapped */
     CHAOS_CODE_ICE_TRAP,
+    /* chaos timer counts down twice as fast */
+    CHAOS_CODE_TIMER_UP,
+    /* shocks player */
+    CHAOS_CODE_SHOCK,
+    /* random quake */
+    CHAOS_CODE_EARTHQUAKE,
+    /* sets tunic to random color */
+    // CHAOS_CODE_TUNIC_COLOR,
     // CHAOS_CODE_ENTRANCE_RANDO,
     // CHAOS_CODE_SLOW_ANIMATION,
     // CHAOS_CODE_RANDOM_ITEM,
@@ -44,21 +52,19 @@ enum CHAOS_CODES
     // CHAOS_CODE_TAKE_SCREENSHOT,
     // CHAOS_CODE_MOVE_BACKWARDS,
     // CHAOS_CODE_INVINCIBLE,
-    // CHAOS_CODE_ICE_TRAP,
     // CHAOS_CODE_MUSIC_SWAP,
     // CHAOS_CODE_RANDOM_SCALING,
     // CHAOS_CODE_SWAP_HEAL_AND_HURT,
     // CHAOS_CODE_SHOW_SCREENSHOT,
     // CHAOS_CODE_ANTIVIRUS,
     // CHAOS_CODE_RANDOM_HEALTH_DOWN,
-    // CHAOS_CODE_TIMER_UP,
     // CHAOS_CODE_FASTER_ANIMATIONS,
     // CHAOS_CODE_SONG_OF_STORMS,
     // CHAOS_CODE_SIGNPOST,
-    // CHAOS_CODE_SHOCK,
     // CHAOS_CODE_SLIPPERY_FLOORS,
     // CHAOS_CODE_ROTATE_SLOWLY,
     // CHAOS_CODE_ENVIRONMENT_SETTINGS,
+    /* spawns like like above player */
     // CHAOS_CODE_LOVELESS_MARRIAGE,
     // CHAOS_CODE_AMBUSH,
     // CHAOS_CODE_SHORT_TERM_MEMORY_LOSS,
@@ -74,7 +80,6 @@ enum CHAOS_CODES
     // CHAOS_CODE_RANDOM_BOMB_TIMERS,
     // CHAOS_CODE_SNAP_TO_FLOOR,
     // CHAOS_CODE_TERRIBLE_MUSIC,
-    // CHAOS_CODE_RUPPEE_CHANGE,
     // CHAOS_CODE_ACTIVATE_SWORD_COLLIDER,
     // CHAOS_CODE_NO_AUTOJUMP,
     // CHAOS_CODE_NAVI,
@@ -108,16 +113,28 @@ enum CHAOS_CODES
     // CHAOS_CODE_EVIL_VOICES,
     /* moon always faces the player */
     // CHAOS_CODE_BIG_BROTHER,
-    /* randomly trips */
-    // CHAOS_CODE_KLUTZ,
     /* walk over water */
     // CHAOS_CODE_HIM,
     /* fake insta-death */
-    // CHAOS_CODE_SIKE,
+    // CHAOS_CODE_SYKE,
     /* all sounds are the same player sound */
     // CHAOS_CODE_UNORIGINAL,
-    /* tatl gives random tips */
-    // CHAOS_CODE_PARTKING_IS_WHAT_MATTERS
+    /* tatl frequently pipes up with random quest tips */
+    // CHAOS_CODE_PARTICIPATION_AWARD,
+    /* drop bombs around player */
+    // CHAOS_CODE_AIR_STRIKE,
+    /* bow fires several arrows at once */
+    // CHAOS_CODE_BUCKSHOT_ARROWS,
+    /* arrows explode on inpact */
+    // CHAOS_CODE_EXPLOSIVE_ARROWS,
+    /* spawns snow head wind effect */
+    // CHAOS_CODE_BLIZZARD,
+    /* spawns the 4 ghost sisters */
+    // CHAOS_CODE_HEY_SOUL_SISTERS,
+    /* spawns dancing redeads around player */
+    // CHAOS_CODE_REDEADASS_GROOVE,
+    /* enemies explode when killed */
+    // CHAOS_CODE_VOLATILE_ENEMIES,
     
     CHAOS_CODE_LAST
 };
@@ -136,6 +153,7 @@ struct ChaosCodeDef
 {
     u8 min_time;
     u8 max_time;
+    u8 always_update;
 };
 
 struct ChaosCode
@@ -143,7 +161,7 @@ struct ChaosCode
     u16 timer;
     u8  code;
     u8  data;
-};
+}; 
 
 // #define MAX_CODE_TIMER          30
 // #define MIN_CODE_TIMER          10
@@ -155,9 +173,11 @@ struct ChaosCode
 typedef struct ChaosContext 
 {
     OSTime              prev_update_counter; 
-    u32                 elapsed_usec; 
+    u32                 chaos_elapsed_usec; 
+    u32                 code_elapsed_usec; 
     u16                 chaos_timer;
     u8                  active_code_count;
+    u8                  update_enabled;
     struct ChaosCode    active_codes[MAX_ACTIVE_CODES];
     // u8 active_codes[MAX_ACTIVE_CODES];
 
@@ -176,6 +196,9 @@ typedef struct ChaosContext
 #define CHAOS_ADD_RESULT_ALREADY_ACTIVE 1
 #define CHAOS_ADD_RESULT_NO_SLOTS       2
 
+/* forward declaration */
+struct PlayState;
+
 void Chaos_Init();
 
 void Chaos_UpdateChaos(PlayState *playstate);
@@ -187,6 +210,8 @@ u8 Chaos_AddCode(u8 code, u8 seconds);
 u8 Chaos_DropCodeAtIndex(u8 index);
 
 u8 Chaos_IsCodeActive(u8 code);
+
+u8 Chaos_CanUpdateChaos(struct PlayState *play);
 
 struct ChaosCode *Chaos_GetCode(u8 code);
 

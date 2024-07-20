@@ -190,12 +190,13 @@ void Player_Action_73(Player* this, PlayState* play);
 void Player_Action_74(Player* this, PlayState* play);
 void Player_Action_75(Player* this, PlayState* play);
 void Player_Action_76(Player* this, PlayState* play);
+/* PLAYER_ACTION_ICE_TRAPPED_ZORA */
 void Player_Action_77(Player* this, PlayState* play);
 void Player_Action_78(Player* this, PlayState* play);
 void Player_Action_79(Player* this, PlayState* play);
 void Player_Action_80(Player* this, PlayState* play);
 void Player_Action_81(Player* this, PlayState* play);
-/* PLAYER_ACTION_ICE_TRAPPED */
+/* PLAYER_ACTION_ICE_TRAPPED_COMMON */
 void Player_Action_82(Player* this, PlayState* play);
 /* PLAYER_ACTION_SHOCKED */
 void Player_Action_83(Player* this, PlayState* play);
@@ -519,6 +520,19 @@ typedef enum
     HIT_TYPE_SHOCK              = 4
 }HitType;
 
+typedef enum
+{ 
+    PLAYER_LIB_IGNORE_FOCUS_X        = 1,
+    PLAYER_LIB_IGNORE_FOCUS_Y        = 1 << 1,
+    PLAYER_LIB_IGNORE_FOCUS_Z        = 1 << 2,
+    PLAYER_LIB_IGNORE_HEAD_LIMB_X    = 1 << 3,
+    PLAYER_LIB_IGNORE_HEAD_LIMB_Y    = 1 << 4,
+    PLAYER_LIB_IGNORE_HEAD_LIMB_Z    = 1 << 5,
+    PLAYER_LIB_IGNORE_UPPER_LIMB_X   = 1 << 6,
+    PLAYER_LIB_IGNORE_UPPER_LIMB_Y   = 1 << 7,
+    PLAYER_LIB_IGNORE_UPPER_LIMB_Z   = 1 << 8,
+}PlayerAngleResetIgnoreFlags;
+
 f32 sPlayerControlStickMagnitude;
 s16 sPlayerControlStickAngle;
 s16 D_80862B02; // analog stick yaw + camera yaw
@@ -662,6 +676,7 @@ void func_8082DE50(PlayState* play, Player* this) {
     Player_DetachHeldActor(play, this);
 }
 
+/* Actor_AccumulateInputMash */
 s32 func_8082DE88(Player* this, s32 arg1, s32 arg2) {
     s16 controlStickAngleDiff = this->prevControlStickAngle - sPlayerControlStickAngle;
 
@@ -5651,6 +5666,7 @@ void func_80834140(PlayState* play, Player* this, PlayerAnimationHeader* anim) {
     }
 }
 
+/* Player_UpdateBurning */
 s32 func_808341F4(PlayState* play, Player* this) {
     f32 temp_fv0;
     f32 flameScale;
@@ -5659,6 +5675,7 @@ s32 func_808341F4(PlayState* play, Player* this) {
     s32 timerStep;
     s32 spawnedFlame = false;
     s32 var_v0;
+    /* speedExtinctionFactor */
     s32 var_v1;
     u8* timerPtr = this->flameTimers;
 
@@ -5673,8 +5690,11 @@ s32 func_808341F4(PlayState* play, Player* this) {
         }
     } else {
         if (this->transformation == PLAYER_FORM_GORON) {
+            /* goron is made out of rock, so flames go extinct a lot faster */
             var_v1 = 20;
         } else {
+            /* moving makes the flames go away faster, which means
+            dropping down and rolling actually makes a difference */
             var_v1 = (s32)(this->linearVelocity * 0.4f) + 1;
         }
 
@@ -5694,6 +5714,7 @@ s32 func_808341F4(PlayState* play, Player* this) {
             spawnedFlame = true;
             *timerPtr -= timerStep;
             if (*timerPtr > 20.0f) {
+                /* Not sure why they did it this way. Could've just set flameScale to 0.2f */
                 temp_fv0 = (*timerPtr - 20.0f) * 0.01f;
                 flameScale = CLAMP(temp_fv0, 0.19999999f, 0.2f);
             } else {
@@ -5718,6 +5739,7 @@ s32 func_808341F4(PlayState* play, Player* this) {
     return this->stateFlags1 & PLAYER_STATE1_80;
 }
 
+/* Player_SetPlayerOnFire */
 s32 func_808344C0(PlayState* play, Player* this) {
     s32 i = 0;
 
@@ -10609,7 +10631,7 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
         ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawFeet, this->ageProperties->shadowScale);
     }
 
-    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_DEKU] = ITEM_MASK_DEKU;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
 
     this->subCamId = CAM_ID_NONE;
     Collider_InitAndSetCylinder(play, &this->cylinder, &this->actor, &D_8085C2EC);
@@ -10927,6 +10949,7 @@ void func_80842510(s16* arg0) {
     Math_ScaledStepToS(arg0, 0, temp_ft0);
 }
 
+/* Player_ResetLimbRotations */
 void func_808425B4(Player* this) {
     if (!(this->unk_AA6 & 2)) {
         s16 sp26 = this->actor.focus.rot.y - this->actor.shape.rot.y;
@@ -11646,6 +11669,7 @@ void func_808442D8(PlayState* play, Player* this) {
     }
 }
 
+/* Player_UpdateShockEffect */
 void func_808445C4(PlayState* play, Player* this) {
     this->shockTimer--;
     this->unk_B66 += this->shockTimer;
@@ -11967,6 +11991,11 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         func_80833B18(play, this, HIT_TYPE_ICE_TRAP, 0, 0, 0, 0);
     } 
 
+    if(Chaos_IsCodeActive(CHAOS_CODE_SHOCK))
+    {
+        func_80833B18(play, this, HIT_TYPE_SHOCK, 0, 0, 0, 0);
+    }
+
     code = Chaos_GetCode(CHAOS_CODE_RANDOM_KNOCKBACK);
 
     if(code != NULL)
@@ -11980,7 +12009,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
             s16 hit_angle = Rand_Next() % 0xffff;
             func_80833B18(play, this, HIT_TYPE_MELEE_TOSS, horizontal_speed, vertical_speed, hit_angle, 0);
             Player_PlaySfx(this, NA_SE_SY_OCARINA_ERROR);
-            code->data = 2 + Rand_Next() % 253;
+            code->data = 2 + Rand_Next() % 160;
         }
     }
 
@@ -12629,14 +12658,6 @@ void Player_Draw(Actor* thisx, PlayState* play) {
     Player* this = THIS;
     f32 one = 1.0f;
     s32 spEC = false;
-    // Gfx* gfx;
-    // Gfx* polyOpa;
-    // GfxPrint gfx_print;
-
-    // OPEN_DISPS(play->state.gfxCtx);
-    // GfxPrint_Open(&gfx_print, POLY_OPA_DISP);
-    // GfxPrint_PrintString(&gfx_print, "SHIT");
-    // CLOSE_DISPS(playe->state.gfxCtx);
 
     Math_Vec3f_Copy(&this->unk_D6C, &this->bodyPartsPos[PLAYER_BODYPART_WAIST]);
     if (this->stateFlags3 & (PLAYER_STATE3_100 | PLAYER_STATE3_40000)) {
@@ -12852,26 +12873,6 @@ void Player_Draw(Actor* thisx, PlayState* play) {
     }
 
     play->actorCtx.flags &= ~ACTORCTX_FLAG_3;
-
-    // OPEN_DISPS(play->state.gfxCtx);
-    // polyOpa = POLY_OPA_DISP;
-    // gfx = Graph_GfxPlusOne(polyOpa);
-    // gSPDisplayList(OVERLAY_DISP++, gfx);
-
-    // GfxPrint_Init(&gfx_print);
-    // GfxPrint_Open(&gfx_print, gfx);
-    // GfxPrint_SetColor(&gfx_print, 255, 255, 255, 255);
-    // GfxPrint_SetPos(&gfx_print, 0, 0);
-    // GfxPrint_Printf(&gfx_print, "ShiIIIIIIIIIIIIIt");
-    // gfx = GfxPrint_Close(&gfx_print);
-    // GfxPrint_Destroy(&gfx_print);
-
-    // gSPEndDisplayList(gfx++);
-    // Graph_BranchDlist(polyOpa, gfx);
-    // POLY_OPA_DISP = gfx;
-    // CLOSE_DISPS(gfxCtx);
-
-    Chaos_PrintCodes(play);
 }
 
 void Player_Destroy(Actor* thisx, PlayState* play) {
@@ -17708,7 +17709,7 @@ void Player_Action_77(Player* this, PlayState* play) {
             if (!SurfaceType_IsWallDamage(&play->colCtx, this->actor.floorPoly, this->actor.floorBgId)) {
                 gSaveContext.respawnFlag = -5;
             }
-
+            
             play->transitionType = TRANS_TYPE_FADE_BLACK_FAST;
             Audio_PlaySfx(NA_SE_OC_ABYSS);
         } else {
@@ -17795,9 +17796,11 @@ void Player_Action_81(Player* this, PlayState* play) {
 void Player_Action_82(Player* this, PlayState* play) {
     if (this->av1.actionVar1 >= 0) {
         if (this->av1.actionVar1 < 6) {
+            /* wait 6 frames before letting the action continue processing */
             this->av1.actionVar1++;
         } else {
             this->unk_B48 = (this->av1.actionVar1 >> 1) * 22.0f;
+            /* let the player mash controls */
             if (func_8082DE88(this, 1, 0x64)) {
                 this->av1.actionVar1 = -1;
                 EffectSsIcePiece_SpawnBurst(play, &this->actor.world.pos, this->actor.scale.x);
@@ -17805,6 +17808,7 @@ void Player_Action_82(Player* this, PlayState* play) {
             }
 
             if (this->transformation == PLAYER_FORM_ZORA) {
+                /* zora just voids out after a while */
                 func_80834104(play, this);
                 this->skelAnime.animation = NULL;
                 this->av2.actionVar2 = -0x28;
@@ -18442,12 +18446,14 @@ void Player_Action_93(Player* this, PlayState* play) {
         }
         this->unk_ABC += this->unk_B48;
         if (this->unk_ABC < -3900.0f) {
+            /* link is done diving, so turn him to the direction the camera is facing */
             this->unk_ABC = -3900.0f;
             this->av1.actionVar1 = 2;
             this->actor.shape.rot.y = Camera_GetInputDirYaw(GET_ACTIVE_CAM(play));
             this->actor.scale.y = 0.01f;
             this->currentYaw = this->actor.world.rot.y = this->actor.shape.rot.y;
         } else {
+            /* deku flower dive spin? */
             temp_fv0_2 = Math_SinS((1000.0f + this->unk_ABC) * (-30.0f)) * 0.004f;
             this->actor.scale.y = 0.01f + temp_fv0_2;
             this->actor.scale.z = this->actor.scale.x = 0.01f - (this->unk_B48 * -0.000015f);
@@ -20624,10 +20630,10 @@ void func_8085B384(Player* this, PlayState* play) {
 s32 Player_InflictDamage(PlayState* play, s32 damage) {
     Player* player = GET_PLAYER(play);
 
-    if(Chaos_IsCodeActive(CHAOS_CODE_ONE_HIT_KO) && damage > 0)
-    {
-        return true;
-    }
+    // if(Chaos_IsCodeActive(CHAOS_CODE_ONE_HIT_KO) && damage < 0)
+    // {
+    //     return true;
+    // }
 
     if ((player->stateFlags2 & PLAYER_STATE2_80) || !Player_InBlockingCsMode(play, player)) {
         if (func_808339D4(play, player, damage) == 0) {

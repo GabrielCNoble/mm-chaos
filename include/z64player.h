@@ -1197,7 +1197,7 @@ typedef struct Player {
     /* 0xAA0 */ f32 closestSecretDistSq; // Used to augment `secretRumbleCharge`. Cleared every frame
     /* 0xAA4 */ s8 unk_AA4;
     /* 0xAA5 */ u8 unk_AA5; // PlayerUnkAA5 enum
-    /* 0xAA6 */ u16 unk_AA6; // flags of some kind
+    /* 0xAA6 */ u16 unk_AA6; // flags of some kind (player limb angle reset ignore flags)
     /* 0xAA8 */ s16 unk_AA8;
     /* 0xAAA */ s16 unk_AAA;
     /* 0xAAC */ Vec3s headLimbRot;
@@ -1221,10 +1221,12 @@ typedef struct Player {
     /* 0xADE */ u8 unk_ADE;
     /* 0xADF */ s8 unk_ADF[4]; // Circular buffer used for testing for triggering a quickspin
     /* 0xAE3 */ s8 unk_AE3[4]; // Circular buffer used for ?
-    /* 0xAE7 */ union { 
+    /* 0xAE7 */ union {
+        s8 iceTrapHaltCounter; // Used when the player is trapped in ice.
         s8 actionVar1;
     } av1; // "Action Variable 1": context dependent variable that has different meanings depending on what action is currently running
     /* 0xAE8 */ union { 
+        s16 inputMashAccumulator;
         s16 actionVar2;
     } av2; // "Action Variable 2": context dependent variable that has different meanings depending on what action is currently running
     /* 0xAEC */ f32 unk_AEC;
