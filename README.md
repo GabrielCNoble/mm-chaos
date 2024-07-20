@@ -1,29 +1,6 @@
-# Legend of Zelda: Majora's Mask (US) 1.0
+# Legend of Zelda: Majora's Mask chaos mod
 
-[![Build Status][jenkins-badge]][jenkins] [![Decompilation Progress][progress-badge]][progress] [![Contributors][contributors-badge]][contributors] [![Discord Channel][discord-badge]][discord]
-
-[jenkins]: https://jenkins.deco.mp/job/MM/job/main
-[jenkins-badge]: https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fjenkins.deco.mp%2Fjob%2FMM%2Fjob%2Fmain
-
-[progress]: https://zelda64.dev/games/mm
-[progress-badge]: https://img.shields.io/endpoint?url=https://zelda64.dev/assets/csv/progress-mm-shield.json
-
-[contributors]: https://github.com/zeldaret/mm/graphs/contributors
-[contributors-badge]: https://img.shields.io/github/contributors/zeldaret/mm
-
-[discord]: https://discord.zelda64.dev
-[discord-badge]: https://img.shields.io/discord/688807550715560050?color=%237289DA&logo=discord&logoColor=%23FFFFFF
-
-```diff
-- WARNING! -
-
-This repository is a work in progress, and while it can be used to make certain changes, it's 
-still constantly evolving. If you wish to use it for modding purposes in its current state,
-please be aware that the codebase could drastically change at any time. Also note that some
-parts of the ROM may not be 'shiftable' yet, so modifying them could currently be difficult.
-```
-
-This is a WIP **decompilation** of ***The Legend of Zelda: Majora's Mask***. The purpose of the project is to recreate a source code base for the game from scratch, using information found inside the game along with static and/or dynamic analysis. **It is not, and will not, produce a PC port.** For frequently asked questions, you can visit [our website](https://zelda64.dev/games/mm), and for more information you can get in touch with the team on our [Discord server](https://discord.zelda64.dev).
+This project is based on the excelent Legend of Zelda: Majora's Mask (US) 1.0 [decompilation project](https://github.com/zeldaret/mm).
 
 The only version currently supported is N64 US, but we intend to eventually support every retail version of the original game (i.e. not versions of MM3D, which is a totally different game).
 
@@ -78,16 +55,16 @@ sudo apt install make git build-essential binutils-mips-linux-gnu python3 python
 
 #### 2. Clone the repository
 
-Create your own fork of the repository at `https://github.com/zeldaret/mm`. Then clone your fork where you wish to have the project, with the command:
+Create your own fork of the repository at `https://github.com/GabrielCNoble/mm-chaos`. Then clone your fork where you wish to have the project, with the command:
 
 ```bash
-git clone https://github.com/<YOUR_USERNAME>/mm.git
+git clone https://github.com/<YOUR_USERNAME>/mm-chaos.git
 ```
 
-This will copy the GitHub repository contents into a new folder in the current directory called `mm`. Change into this directory before doing anything else:
+This will copy the GitHub repository contents into a new folder in the current directory called `mm-chaos`. Change into this directory before doing anything else:
 
 ```bash
-cd mm
+cd mm-chaos
 ```
 
 #### 3. Install python dependencies
@@ -141,7 +118,5 @@ All contributions are welcome. This is a group effort, and even small contributi
 Some work also doesn't require much knowledge to get started.
 
 Please note that is is our strict policy that *Anyone who wishes to contribute to the OOT or MM projects **must not have accessed leaked source code at any point in time** for Nintendo 64 SDK, iQue player SDK, libultra, Ocarina of Time, Majora's Mask, Animal Crossing/Animal Forest, or any other game that shares the same game engine or significant portions of code to a Zelda 64 game or any other console similar to the Nintendo 64.*
-
-Most discussions happen on our [Discord Server](https://discord.zelda64.dev), where you are welcome to ask if you need help getting started, or if you have any questions regarding this project or ZeldaRET's other decompilation projects.
 
 For more information on getting started, see our [Contributing Guide](docs/CONTRIBUTING.md), [Style Guide](docs/STYLE.md) and our [Code Review Guidelines](docs/REVIEWING.md) to see what code quality guidelines we follow.
