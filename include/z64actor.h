@@ -482,7 +482,7 @@ typedef enum {
 #define ACTOR_FLAG_10            (1 << 4)
 // 
 #define ACTOR_FLAG_20            (1 << 5)
-// 
+// actor is visible (as in, not culled away)
 #define ACTOR_FLAG_40            (1 << 6)
 // hidden or revealed by Lens of Truth (depending on room lensMode)
 #define ACTOR_FLAG_REACT_TO_LENS (1 << 7)

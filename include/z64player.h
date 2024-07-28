@@ -893,7 +893,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_200000     (1 << 21)
 // 
 #define PLAYER_STATE1_400000     (1 << 22)
-// 
+// Mounted on Epona?
 #define PLAYER_STATE1_800000     (1 << 23)
 // 
 #define PLAYER_STATE1_1000000    (1 << 24)
@@ -927,7 +927,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE2_20         (1 << 5)
 // 
 #define PLAYER_STATE2_40         (1 << 6)
-// 
+// player grabbed?
 #define PLAYER_STATE2_80         (1 << 7)
 // 
 #define PLAYER_STATE2_100        (1 << 8)
@@ -965,7 +965,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE2_1000000    (1 << 24)
 // 
 #define PLAYER_STATE2_2000000    (1 << 25)
-// 
+// Draw player wobble reflection
 #define PLAYER_STATE2_4000000    (1 << 26)
 // 
 #define PLAYER_STATE2_8000000    (1 << 27)
@@ -1180,7 +1180,7 @@ typedef struct Player {
     /* 0x9C8 */ u8 morphTableUpperBuffer[PLAYER_LIMB_BUF_SIZE];
     /* 0xA68 */ PlayerAgeProperties* ageProperties; // repurposed as "transformation properties"?
     /* 0xA6C */ u32 stateFlags1;
-    /* 0xA70 */ u32 stateFlags2;
+    /* 0xA70 */ u32 stateFlags2; // Current player form draw flags?
     /* 0xA74 */ u32 stateFlags3;
     /* 0xA78 */ Actor* unk_A78;
     /* 0xA7C */ Actor* boomerangActor;
@@ -1204,7 +1204,7 @@ typedef struct Player {
     /* 0xAB2 */ Vec3s upperLimbRot;
     /* 0xAB8 */ f32 unk_AB8;
     /* 0xABC */ f32 unk_ABC;
-    /* 0xAC0 */ f32 unk_AC0;
+    /* 0xAC0 */ f32 unk_AC0; // Walk speed based on floor slope?
     /* 0xAC4 */ PlayerUpperActionFunc upperActionFunc; // Upper body/item action functions
     /* 0xAC8 */ f32 skelAnimeUpperBlendWeight;
     /* 0xACC */ s16 unk_ACC;
@@ -1259,7 +1259,7 @@ typedef struct Player {
     /* 0xB5E */ u8 unk_B5E;
     /* 0xB5F */ u8 unk_B5F;
     /* 0xB60 */ u16 blastMaskTimer;
-    /* 0xB62 */ s16 unk_B62;
+    /* 0xB62 */ s16 unk_B62; // Zora magic shield active?
     /* 0xB64 */ u8 unk_B64;
     /* 0xB65 */ u8 shockTimer;
     /* 0xB66 */ u8 unk_B66;
@@ -1270,11 +1270,11 @@ typedef struct Player {
     /* 0xB6E */ s16 floorPitchAlt; // the calculation for this value is bugged and doesn't represent anything meaningful
     /* 0xB70 */ s16 unk_B70;
     /* 0xB72 */ u16 floorSfxOffset;
-    /* 0xB74 */ u8 unk_B74;
-    /* 0xB75 */ u8 unk_B75;
-    /* 0xB76 */ s16 unk_B76;
-    /* 0xB78 */ f32 unk_B78;
-    /* 0xB7C */ f32 unk_B7C;
+    /* 0xB74 */ u8 unk_B74;  // hit damage?
+    /* 0xB75 */ u8 unk_B75;  // hit type?
+    /* 0xB76 */ s16 unk_B76; // hit angle?
+    /* 0xB78 */ f32 unk_B78; // hit speed?
+    /* 0xB7C */ f32 unk_B7C; // hit y velocity?
     /* 0xB80 */ f32 pushedSpeed; // Pushing player, examples include water currents, floor conveyors, climbing sloped surfaces
     /* 0xB84 */ s16 pushedYaw; // Yaw of direction in which player is being pushed
     /* 0xB86 */ s16 unk_B86[2]; // unknown length

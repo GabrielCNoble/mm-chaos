@@ -64,6 +64,8 @@ void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
     objectCtx->spaceStart = objectCtx->slots[0].segment = THA_AllocTailAlign16(&gameState->tha, spaceSize);
     objectCtx->spaceEnd = (void*)((u32)objectCtx->spaceStart + spaceSize);
     objectCtx->mainKeepSlot = Object_SpawnPersistent(objectCtx, GAMEPLAY_KEEP);
+    /* keep like-like always loaded */
+    Object_SpawnPersistent(objectCtx, OBJECT_RR);
 
     gSegments[4] = OS_K0_TO_PHYSICAL(objectCtx->slots[objectCtx->mainKeepSlot].segment);
 }
@@ -265,9 +267,11 @@ void Scene_CommandMesh(PlayState* play, SceneCmd* cmd) {
 
 // SceneTableEntry Header Command 0x0B:  Object List
 void Scene_CommandObjectList(PlayState* play, SceneCmd* cmd) {
-    s32 i;
+    // s32 i;
+    s32 non_persistent_entry_index;
     s32 j;
-    s32 k;
+    // s32 k;
+    s32 object_list_entry_index;
     ObjectEntry* firstObject;
     ObjectEntry* entry;
     ObjectEntry* invalidatedEntry;
@@ -275,45 +279,62 @@ void Scene_CommandObjectList(PlayState* play, SceneCmd* cmd) {
     void* nextPtr;
 
     objectEntry = Lib_SegmentedToVirtual(cmd->objectList.segment);
-    k = 0;
-    i = play->objectCtx.numPersistentEntries;
-    entry = &play->objectCtx.slots[i];
+    // k = 0;
+    // i = play->objectCtx.numPersistentEntries;
+    object_list_entry_index = 0;
+    non_persistent_entry_index = play->objectCtx.numPersistentEntries;
+    // entry = &play->objectCtx.slots[i];
+    entry = &play->objectCtx.slots[non_persistent_entry_index];
     firstObject = &play->objectCtx.slots[0];
 
-    while (i < play->objectCtx.numEntries) {
+    
+    // while (i < play->objectCtx.numEntries) {
+    /* look for the first non-persistent entry that doesn't match the object list */
+    while (non_persistent_entry_index < play->objectCtx.numEntries) {
         if (entry->id != *objectEntry) {
-            invalidatedEntry = &play->objectCtx.slots[i];
+            // invalidatedEntry = &play->objectCtx.slots[i];
+            /* entry doesn't match */
+            invalidatedEntry = &play->objectCtx.slots[non_persistent_entry_index];
 
-            for (j = i; j < play->objectCtx.numEntries; j++) {
+            /* so nuke everything after it */
+            for (j = non_persistent_entry_index; j < play->objectCtx.numEntries; j++) {
                 invalidatedEntry->id = 0;
                 invalidatedEntry++;
             }
 
-            play->objectCtx.numEntries = i;
+            // play->objectCtx.numEntries = i;
+            play->objectCtx.numEntries = non_persistent_entry_index;
             Actor_KillAllWithMissingObject(play, &play->actorCtx);
 
             continue;
         }
-
-        i++;
-        k++;
+        // i++
+        // k++;
+        non_persistent_entry_index++;
+        object_list_entry_index++;
         objectEntry++;
         entry++;
     }
 
-    while (k < cmd->objectList.num) {
-        nextPtr = func_8012F73C(&play->objectCtx, i, *objectEntry);
+    while (object_list_entry_index < cmd->objectList.num) {
+        // nextPtr = func_8012F73C(&play->objectCtx, i, *objectEntry);
+        nextPtr = func_8012F73C(&play->objectCtx, non_persistent_entry_index, *objectEntry);
 
-        if (i < ARRAY_COUNT(play->objectCtx.slots) - 1) {
-            firstObject[i + 1].segment = nextPtr;
+        // if (i < ARRAY_COUNT(play->objectCtx.slots) - 1) {
+        if (non_persistent_entry_index < ARRAY_COUNT(play->objectCtx.slots) - 1) {
+            // firstObject[i + 1].segment = nextPtr;
+            firstObject[non_persistent_entry_index + 1].segment = nextPtr;
         }
 
-        i++;
-        k++;
+        // i++;
+        // k++;
+        non_persistent_entry_index++;
+        object_list_entry_index++;
         objectEntry++;
     }
 
-    play->objectCtx.numEntries = i;
+    // play->objectCtx.numEntries = i;
+    play->objectCtx.numEntries = non_persistent_entry_index;
 }
 
 // SceneTableEntry Header Command 0x0C: Light List
@@ -588,6 +609,8 @@ void (*sSceneCmdHandlers[SCENE_CMD_MAX])(PlayState*, SceneCmd*) = {
  */
 s32 Scene_ExecuteCommands(PlayState* play, SceneCmd* sceneCmd) {
     u32 cmdId;
+
+    Chaos_ClearActors();
 
     while (true) {
         cmdId = sceneCmd->base.code;

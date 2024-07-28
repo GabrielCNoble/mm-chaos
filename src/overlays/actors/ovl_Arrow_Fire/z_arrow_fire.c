@@ -185,7 +185,8 @@ void FireArrow_Fly(ArrowFire* this, PlayState* play) {
     }
 
     FireArrow_Lerp(&this->firedPos, &this->actor.world.pos, 0.05f);
-    if (arrow->unk_261 & 1) {
+    // if (arrow->unk_261 & 1) {
+    if (arrow->unk_261 & ARROW_HIT_FLAG_1) {
         Actor_PlaySfx(&this->actor, NA_SE_IT_EXPLOSION_FRAME);
         ArrowFire_SetupAction(this, FireArrow_Hit);
         this->timer = 32;
@@ -246,7 +247,8 @@ void ArrowFire_Draw(Actor* thisx, PlayState* play) {
     arrow = (EnArrow*)this->actor.parent;
 
     if ((arrow != NULL) && (arrow->actor.update != NULL) && (this->timer < 255)) {
-        Actor* transform = (arrow->unk_261 & 2) ? &this->actor : &arrow->actor;
+        // Actor* transform = (arrow->unk_261 & 2) ? &this->actor : &arrow->actor;
+        Actor* transform = (arrow->unk_261 & ARROW_HIT_FLAG_2) ? &this->actor : &arrow->actor;
 
         OPEN_DISPS(play->state.gfxCtx);
 

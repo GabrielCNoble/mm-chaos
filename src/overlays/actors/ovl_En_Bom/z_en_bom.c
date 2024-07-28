@@ -144,7 +144,14 @@ void EnBom_Init(Actor* thisx, PlayState* play) {
         play->actorCtx.flags |= ACTORCTX_FLAG_0;
         this->timer = gSaveContext.powderKegTimer;
     } else {
-        this->timer = 70;
+        if(Chaos_IsCodeActive(CHAOS_CODE_RANDOM_BOMB_TIMER) && this->actor.params != BOMB_TYPE_ARROW)
+        {
+            this->timer = 10 + Rand_Next() % 200;
+        }
+        else
+        {
+            this->timer = 70;
+        }
     }
 
     Collider_InitCylinder(play, &this->collider1);
@@ -166,6 +173,11 @@ void EnBom_Init(Actor* thisx, PlayState* play) {
     this->actor.shape.rot.z &= 0xFF;
     if (ENBOM_GET_80(&this->actor)) {
         this->actor.shape.rot.z |= 0xFF00;
+    }
+
+    if(this->actor.params == BOMB_TYPE_ARROW)
+    {
+        this->collider2Elements[0].info.toucher.damage = 32;
     }
 
     this->collider2.elements[0].dim.worldSphere.center.x = this->actor.world.pos.x;
@@ -480,7 +492,7 @@ void EnBom_Update(Actor* thisx, PlayState* play) {
         Actor_UpdateBgCheckInfo(play, thisx, 35.0f, 10.0f, 36.0f,
                                 UPDBGCHECKINFO_FLAG_1 | UPDBGCHECKINFO_FLAG_2 | UPDBGCHECKINFO_FLAG_4 |
                                     UPDBGCHECKINFO_FLAG_8 | UPDBGCHECKINFO_FLAG_10);
-        if (thisx->params == BOMB_TYPE_BODY) {
+        if (thisx->params == BOMB_TYPE_BODY || thisx->params == BOMB_TYPE_ARROW) {
             static Vec3us D_80872ED4[] = {
                 { 40, 20, 100 },
                 { 300, 60, 600 },
@@ -681,7 +693,7 @@ void func_80872648(PlayState* play, Vec3f* arg1) {
         fuseSegmentPtr->rotX = 0x4000;
     }
 }
-
+/* EnBom_UpdateKegFuse */
 void func_808726DC(PlayState* play, Vec3f* arg1, Vec3f* arg2, Vec3f* arg3, s32 arg4) {
     s32 i;
     f32 temp_f20;

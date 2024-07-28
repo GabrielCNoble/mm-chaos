@@ -2871,6 +2871,7 @@ ColChkVsFunc sACVsFuncs[COLSHAPE_MAX][COLSHAPE_MAX] = {
 /**
  * Iterates through all AC colliders, performing AC collisions with the AT collider.
  */
+/* could be made faster by using something like a bvh tree */
 void CollisionCheck_AC(PlayState* play, CollisionCheckContext* colCtxt, Collider* colAT) {
     Collider** col;
 

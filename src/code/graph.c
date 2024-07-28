@@ -24,6 +24,7 @@ OSTime sGraphPrevUpdateEndTime;
 #include "overlays/gamestates/ovl_select/z_select.h"
 #include "overlays/gamestates/ovl_title/z_title.h"
 #include "z_title_setup.h"
+#include "chaos_fuckery.h"
 
 void Graph_FaultClient(void) {
     FaultDrawer_DrawText(30, 100, "ShowFrameBuffer PAGE 0/1");
@@ -355,6 +356,8 @@ void Graph_ThreadEntry(void* arg) {
     SysCfb_Init();
     Fault_SetFrameBuffer(gWorkBuffer, SCREEN_WIDTH, SCREEN_HEIGHT);
     Graph_Init(&gfxCtx);
+
+    Chaos_Init();
 
     while (nextOvl) {
         ovl = nextOvl;

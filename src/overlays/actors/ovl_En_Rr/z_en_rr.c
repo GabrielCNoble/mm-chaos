@@ -214,6 +214,7 @@ void func_808FA19C(EnRr* this, PlayState* play) {
     }
 }
 
+/* EnRr_SetMoveSpeed */
 void func_808FA238(EnRr* this, f32 arg1) {
     this->actor.speed = arg1;
     Actor_PlaySfx(&this->actor, NA_SE_EN_LIKE_WALK);
@@ -263,6 +264,7 @@ void func_808FA344(EnRr* this) {
     }
 }
 
+/* EnRr_BeginGobblePlayer */
 void func_808FA3F8(EnRr* this, Player* player) {
     s32 i;
 
@@ -290,12 +292,17 @@ void func_808FA3F8(EnRr* this, Player* player) {
     Actor_PlaySfx(&this->actor, NA_SE_EN_SUISEN_DRINK);
 }
 
+/* EnRr_SpitPlayer */
 void func_808FA4F4(EnRr* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
-    u32 sp38;
-    s32 sp34;
-    f32 sp30;
-    f32 sp2C;
+    // u32 sp38;
+    u32 player_damage;
+    // s32 sp34;
+    s32 shield_stolen;
+    // f32 sp30;
+    f32 player_throw_xz_speed;
+    // f32 sp2C;
+    f32 player_throw_y_velocity;
 
     if (player->stateFlags2 & PLAYER_STATE2_80) {
         player->actor.parent = NULL;
@@ -308,30 +315,30 @@ void func_808FA4F4(EnRr* this, PlayState* play) {
 
         if (((this->unk_1E2 == 0) && (GET_PLAYER_FORM == PLAYER_FORM_HUMAN)) &&
             (GET_CUR_EQUIP_VALUE(EQUIP_TYPE_SHIELD) == EQUIP_VALUE_SHIELD_HERO)) {
-            sp34 = true;
+            shield_stolen = true;
             this->unk_1E2 = Inventory_DeleteEquipment(play, EQUIP_VALUE_SHIELD_HERO);
         } else {
-            sp34 = false;
+            shield_stolen = false;
         }
 
-        if (sp34 && (Message_GetState(&play->msgCtx) == TEXT_STATE_NONE)) {
+        if (shield_stolen && (Message_GetState(&play->msgCtx) == TEXT_STATE_NONE)) {
             Message_StartTextbox(play, 0xF6, NULL);
         }
 
         if (this->actor.params == LIKE_LIKE_PARAM_0) {
-            sp38 = 8;
+            player_damage = 8;
         } else {
-            sp38 = 16;
+            player_damage = 16;
         }
 
-        sp30 = this->actor.scale.x * 210.52632f;
-        sp2C = this->actor.scale.x * 631.579f;
+        player_throw_xz_speed = this->actor.scale.x * 210.52632f;
+        player_throw_y_velocity = this->actor.scale.x * 631.579f;
 
-        player->actor.world.pos.x += sp30 * Math_SinS(this->actor.shape.rot.y);
-        player->actor.world.pos.y += sp2C;
-        player->actor.world.pos.z += sp30 * Math_CosS(this->actor.shape.rot.y);
+        player->actor.world.pos.x += player_throw_xz_speed * Math_SinS(this->actor.shape.rot.y);
+        player->actor.world.pos.y += player_throw_y_velocity;
+        player->actor.world.pos.z += player_throw_xz_speed * Math_CosS(this->actor.shape.rot.y);
 
-        func_800B8D50(play, &this->actor, sp30, this->actor.shape.rot.y, sp2C, sp38);
+        func_800B8D50(play, &this->actor, player_throw_xz_speed, this->actor.shape.rot.y, player_throw_y_velocity, player_damage);
         Actor_PlaySfx(&this->actor, NA_SE_EN_SUISEN_THROW);
     }
 }
@@ -567,6 +574,7 @@ void func_808FAE50(EnRr* this, PlayState* play) {
     }
 }
 
+/* EnRr_Action_SeekPlayer */
 void func_808FAF94(EnRr* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
@@ -628,6 +636,7 @@ void func_808FB088(EnRr* this, PlayState* play) {
     }
 }
 
+/* EnRr_Action_GobblePlayer */
 void func_808FB1C0(EnRr* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
@@ -643,6 +652,7 @@ void func_808FB1C0(EnRr* this, PlayState* play) {
     if (this->unk_1EA == 0) {
         func_808FA7AC(this);
     } else {
+        /* smootly move the player into the mouth of the like-like */
         Math_StepToF(&player->actor.world.pos.x, this->unk_228.x, 30.0f);
         Math_StepToF(&player->actor.world.pos.y, this->unk_228.y + this->unk_218, 30.0f);
         Math_StepToF(&player->actor.world.pos.z, this->unk_228.z, 30.0f);
@@ -650,6 +660,7 @@ void func_808FB1C0(EnRr* this, PlayState* play) {
     }
 }
 
+/* EnRr_Action_ChewPlayer */
 void func_808FB2C0(EnRr* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 

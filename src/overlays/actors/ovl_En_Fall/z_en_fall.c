@@ -752,13 +752,14 @@ void EnFall_FireRing_Update(Actor* thisx, PlayState* play) {
 
 void EnFall_Moon_ChaosStuff()
 {
-    struct ChaosCode *code = Chaos_GetCode(CHAOS_CODE_MOON_DANCE);
     Vec3f up_axis = {0.0f, 1.0f, 0.0f};
     Vec3f forward_axis = {0.0f, 0.0f, 1.0f};
 
+    struct ChaosCode *code = Chaos_GetCode(CHAOS_CODE_MOON_DANCE);
+
     if(code != NULL)
     {
-        if(code->data == MOON_MOVE_HYPE)
+        if(code->data == CHAOS_MOON_MOVE_HYPE)
         {
             if(gChaosContext.moon.bob > 0.0f)
             {
@@ -773,13 +774,13 @@ void EnFall_Moon_ChaosStuff()
         }
         else
         {
-            if(code->data & MOON_MOVE_BEEGER)
+            if(code->data & CHAOS_MOON_MOVE_BEEGER)
             {
                 f32 scale = 1.0f + Rand_ZeroOne() * 2.0f;
                 Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
             }
 
-            if(code->data & MOON_MOVE_SPEEN)
+            if(code->data & CHAOS_MOON_MOVE_SPEEN)
             {
                 Matrix_RotateAxisF(gChaosContext.moon.yaw, &up_axis, MTXMODE_APPLY);
                 Matrix_RotateAxisF(gChaosContext.moon.pitch, &forward_axis, MTXMODE_APPLY);
@@ -787,18 +788,18 @@ void EnFall_Moon_ChaosStuff()
                 gChaosContext.moon.yaw += 0.39f;
             }
 
-            if(code->data & (MOON_MOVE_BOB | MOON_MOVE_SWAY))
+            if(code->data & (CHAOS_MOON_MOVE_BOB | CHAOS_MOON_MOVE_SWAY))
             {
                 f32 bob = 0.0f;
                 f32 sway = 0.0f;
 
-                if(code->data & MOON_MOVE_BOB)
+                if(code->data & CHAOS_MOON_MOVE_BOB)
                 {
                     bob = sinf(gChaosContext.moon.bob);
                     gChaosContext.moon.bob = fmodf(gChaosContext.moon.bob + 0.12f, 2.0f * M_PI);
                 }
 
-                if(code->data & MOON_MOVE_SWAY)
+                if(code->data & CHAOS_MOON_MOVE_SWAY)
                 {
                     sway = sinf(gChaosContext.moon.sway);
                     gChaosContext.moon.sway = fmodf(gChaosContext.moon.sway + 0.09f, 2.0f * M_PI);
@@ -835,7 +836,7 @@ void EnFall_Moon_Draw(Actor* thisx, PlayState* play) {
     gSPDisplayList(POLY_OPA_DISP++, gMoonDL);
 
     CLOSE_DISPS(play->state.gfxCtx);
-}
+} 
 
 void EnFall_OpenMouthMoon_Draw(Actor* thisx, PlayState* play) {
     EnFall* this = THIS;
@@ -859,67 +860,12 @@ void EnFall_LodMoon_Draw(Actor* thisx, PlayState* play) {
     s32 pad;
     EnFall* this = THIS;
     s32 primColor;
-    // Vec3f up_axis = {0.0f, 1.0f, 0.0f};
-    // Vec3f forward_axis = {0.0f, 0.0f, 1.0f};
-    // struct ChaosCode *code = Chaos_GetCode(CHAOS_CODE_MOON_DANCE);
 
     OPEN_DISPS(play->state.gfxCtx);
 
     Gfx_SetupDL25_Opa(play->state.gfxCtx);
 
     EnFall_Moon_ChaosStuff();
-    // if(code != NULL)
-    // {
-    //     if(code->data == MOON_MOVE_HYPE)
-    //     {
-    //         if(gChaosContext.moon.bob > 0.0f)
-    //         {
-    //             gChaosContext.moon.bob = -1.0f;
-    //         }
-    //         else
-    //         {
-    //             gChaosContext.moon.bob = 1.0f;
-    //         }
-
-    //         Matrix_Translate(0.0f, gChaosContext.moon.bob * 5000.0f, 0.0f, MTXMODE_APPLY);
-    //     }
-    //     else
-    //     {
-    //         if(code->data & MOON_MOVE_BEEGER)
-    //         {
-    //             f32 scale = 1.0f + Rand_ZeroOne() * 5.0f;
-    //             Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
-    //         }
-
-    //         if(code->data & MOON_MOVE_SPEEN)
-    //         {
-    //             Matrix_RotateAxisF(gChaosContext.moon.yaw, &up_axis, MTXMODE_APPLY);
-    //             Matrix_RotateAxisF(gChaosContext.moon.pitch, &forward_axis, MTXMODE_APPLY);
-    //             gChaosContext.moon.pitch += 0.28f;
-    //             gChaosContext.moon.yaw += 0.39f;
-    //         }
-
-    //         if(code->data & (MOON_MOVE_BOB | MOON_MOVE_SWAY))
-    //         {
-    //             f32 bob = 0.0f;
-    //             f32 sway = 0.0f;
-
-    //             if(code->data & MOON_MOVE_BOB)
-    //             {
-    //                 bob = sinf(gChaosContext.moon.bob);
-    //                 gChaosContext.moon.bob = fmodf(gChaosContext.moon.bob + 0.12f, 2.0f * M_PI);
-    //             }
-
-    //             if(code->data & MOON_MOVE_SWAY)
-    //             {
-    //                 sway = sinf(gChaosContext.moon.sway);
-    //                 gChaosContext.moon.sway = fmodf(gChaosContext.moon.sway + 0.09f, 2.0f * M_PI);
-    //             }
-
-    //             Matrix_Translate(sway * 10000.0f, bob * 10000.0f, 0.0f, MTXMODE_APPLY);
-    //         }
-    //     }
-    // }
 
     gSPMatrix(POLY_OPA_DISP++, Matrix_NewMtx(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
 

@@ -4,6 +4,11 @@
 #include "ultra64.h"
 #include "z64.h"
 
+/* 
+    random-knockback/poke/shock/ice-trap should not be active when there's a 
+    like-like around. It gets the player stuck midair, in a falling pose
+*/
+
 enum CHAOS_CODES
 {
     CHAOS_CODE_NONE,
@@ -36,17 +41,34 @@ enum CHAOS_CODES
     CHAOS_CODE_EARTHQUAKE,
     /* sets tunic to random color */
     // CHAOS_CODE_TUNIC_COLOR,
+    /* arrows explode on impact */
+    CHAOS_CODE_BOMB_ARROWS,
+    /* arrows fly erratically */
+    CHAOS_CODE_WEIRD_ARROWS,
+    /* bow fires several arrows at once */
+    CHAOS_CODE_BUCKSHOT_ARROWS,
+    /* gives bombs random timers */
+    CHAOS_CODE_RANDOM_BOMB_TIMER,
+    /* spawns like like above player 
+        
+       TODO: make like-like steal more items and teleport them to the curiosity shop
+    */
+    CHAOS_CODE_LOVELESS_MARRIAGE,
+    /* makes the ui behave unpredictably (shake, wave, bounce around) */
+    CHAOS_CODE_WEIRD_UI,
+    /* activate motion blur */
+    CHAOS_CODE_BEER_GOGGLES,
+    /* enemies explode when killed */
+    // CHAOS_CODE_VILETILE_ENEMIES,
     // CHAOS_CODE_ENTRANCE_RANDO,
     // CHAOS_CODE_SLOW_ANIMATION,
     // CHAOS_CODE_RANDOM_ITEM,
     // CHAOS_CODE_BUTTERFINGERS,
-    // CHAOS_CODE_RANDOM_KNOCKBACK,
     // CHAOS_CODE_INCREDIBLE_KNOCKBACK,
     // CHAOS_CODE_RANDOM_SWORD_TRAILS,
     // CHAOS_CODE_NO_Z_TARGETING,
     
     // CHAOS_CODE_HIGH_PING,
-    // CHAOS_CODE_WEIRD_ARROWS,
     // CHAOS_CODE_UPSIDE_DOWN,
     
     // CHAOS_CODE_TAKE_SCREENSHOT,
@@ -56,6 +78,7 @@ enum CHAOS_CODES
     // CHAOS_CODE_RANDOM_SCALING,
     // CHAOS_CODE_SWAP_HEAL_AND_HURT,
     // CHAOS_CODE_SHOW_SCREENSHOT,
+    /* spawn walls of fire around player */
     // CHAOS_CODE_ANTIVIRUS,
     // CHAOS_CODE_RANDOM_HEALTH_DOWN,
     // CHAOS_CODE_FASTER_ANIMATIONS,
@@ -64,11 +87,9 @@ enum CHAOS_CODES
     // CHAOS_CODE_SLIPPERY_FLOORS,
     // CHAOS_CODE_ROTATE_SLOWLY,
     // CHAOS_CODE_ENVIRONMENT_SETTINGS,
-    /* spawns like like above player */
-    // CHAOS_CODE_LOVELESS_MARRIAGE,
+    
     // CHAOS_CODE_AMBUSH,
     // CHAOS_CODE_SHORT_TERM_MEMORY_LOSS,
-    // CHAOS_CODE_TUNIC_COLOR,
     
     // CHAOS_CODE_RANDOM_PLAYER_SOUNDS,
     // CHAOS_CODE_SLOW_DOWN,
@@ -77,7 +98,6 @@ enum CHAOS_CODES
     // CHAOS_CODE_HEAT_TIMER,
     // CHAOS_CODE_QUICKSAND,
     // CHAOS_CODE_STARFOX,
-    // CHAOS_CODE_RANDOM_BOMB_TIMERS,
     // CHAOS_CODE_SNAP_TO_FLOOR,
     // CHAOS_CODE_TERRIBLE_MUSIC,
     // CHAOS_CODE_ACTIVATE_SWORD_COLLIDER,
@@ -123,30 +143,30 @@ enum CHAOS_CODES
     // CHAOS_CODE_PARTICIPATION_AWARD,
     /* drop bombs around player */
     // CHAOS_CODE_AIR_STRIKE,
-    /* bow fires several arrows at once */
-    // CHAOS_CODE_BUCKSHOT_ARROWS,
-    /* arrows explode on inpact */
-    // CHAOS_CODE_EXPLOSIVE_ARROWS,
     /* spawns snow head wind effect */
     // CHAOS_CODE_BLIZZARD,
     /* spawns the 4 ghost sisters */
     // CHAOS_CODE_HEY_SOUL_SISTERS,
     /* spawns dancing redeads around player */
     // CHAOS_CODE_REDEADASS_GROOVE,
+    /* spawns hostile redeads around player */
+    // CHAOS_CODE_PAIN_IN_THE_REDEADASS,
+    /* spawns majora's wrath */
+    // CHAOS_CODE_MAJORAS_WRATH
     /* enemies explode when killed */
-    // CHAOS_CODE_VOLATILE_ENEMIES,
+    // CHAOS_CODE_VILETILE_ENEMIES,
+    /* set all enemies on fire */
+    // CHAOS_CODE_TORCH_ENEMIES,
+    /* spawns a wasp nest, which when broken spawns three random enemies */
+    // CHAOS_CODE_LOTTERY_NEST,
+    /* player randomly screams */
+    // CHAOS_CODE_TOURETTE,
+    /* player takes flight like a gossip stone */
+    // CHAOS_CODE_LIFTOFF,
+    
+    
     
     CHAOS_CODE_LAST
-};
-
-enum MOON_MOVES
-{
-    MOON_MOVE_SPEEN    = 1,
-    MOON_MOVE_BOB      = 1 << 1,
-    MOON_MOVE_SWAY     = 1 << 2,
-    MOON_MOVE_BEEGER   = 1 << 3,
-    MOON_MOVE_HYPE     = 1 << 4,
-    MOON_MOVE_LAST
 };
 
 struct ChaosCodeDef
@@ -158,37 +178,92 @@ struct ChaosCodeDef
 
 struct ChaosCode
 {
+    u32 data;
     u16 timer;
     u8  code;
-    u8  data;
-}; 
+};
 
-// #define MAX_CODE_TIMER          30
-// #define MIN_CODE_TIMER          10
+enum CHAOS_MOON_MOVES
+{
+    CHAOS_MOON_MOVE_SPEEN    = 1,
+    CHAOS_MOON_MOVE_BOB      = 1 << 1,
+    CHAOS_MOON_MOVE_SWAY     = 1 << 2,
+    CHAOS_MOON_MOVE_BEEGER   = 1 << 3,
+    CHAOS_MOON_MOVE_HYPE     = 1 << 4,
+    CHAOS_MOON_MOVE_LAST
+};
+
+enum CHAOS_ARROW_EFFECTS
+{
+    CHAOS_ARROW_EFFECT_WEIRD      = 1,
+    CHAOS_ARROW_EFFECT_BUCKSHOT   = 1 << 1,
+    CHAOS_ARROW_EFFECT_BOMB       = 1 << 2
+};
+
+enum CHAOS_UI_EFFECTS
+{
+    CHAOS_UI_EFFECT_SHAKE   = 1,
+    CHAOS_UI_EFFECT_BOUNCE  = 1 << 1,
+    CHAOS_UI_EFFECT_SPEEN   = 1 << 2
+};
+
+#define INVALID_CODE_INDEX      0xff 
 #define MAX_CHAOS_TIMER         8
 #define MIN_CHAOS_TIMER         2
 #define CHAOS_SECONDS_TO_FRAMES(seconds)    (((u16)(seconds)) * (20))
 
+#define MAX_SPAWNED_ACTORS  32
+#define ACTOR_DESPAWN_TIMER 10
+
+struct ChaosActor
+{
+    Actor *     actor;
+    u16         timer;
+};
+
+// struct ChaosLikeLikeItems
+// {
+
+// };
+
 #define MAX_ACTIVE_CODES 8
 typedef struct ChaosContext 
 {
-    OSTime              prev_update_counter; 
-    u32                 chaos_elapsed_usec; 
-    u32                 code_elapsed_usec; 
-    u16                 chaos_timer;
-    u8                  active_code_count;
-    u8                  update_enabled;
-    struct ChaosCode    active_codes[MAX_ACTIVE_CODES];
-    // u8 active_codes[MAX_ACTIVE_CODES];
+    OSTime                  prev_update_counter; 
+    u32                     chaos_elapsed_usec; 
+    u32                     code_elapsed_usec; 
+    u16                     chaos_timer;
+    u8                      active_code_count;
+    u8                      update_enabled;
+    struct ChaosCode        active_codes[MAX_ACTIVE_CODES];
+    u8                      active_code_indices[CHAOS_CODE_LAST];
 
     struct 
     {
-        f32             pitch;
-        f32             yaw;
-        f32             bob;
-        f32             sway;
-        f32             scale;
-    }                   moon;
+        f32                 pitch;
+        f32                 yaw;
+        f32                 bob;
+        f32                 sway;
+        f32                 scale;
+    } moon;
+
+    struct
+    {
+        f32                 beer_x_offset;
+        f32                 beer_y_offset;
+        s16                 beer_pitch;
+        s16                 beer_yaw;
+        u8                  beer_alpha;
+        u8                  tunic_r;
+        u8                  tunic_g;
+        u8                  tunic_b;
+    } link;
+
+    struct
+    {
+        struct ChaosActor   slots[MAX_SPAWNED_ACTORS];
+        u8                  spawned_actors;
+    } actors;
     
 } ChaosContext;
 
@@ -199,7 +274,7 @@ typedef struct ChaosContext
 /* forward declaration */
 struct PlayState;
 
-void Chaos_Init();
+void Chaos_Init(void);
 
 void Chaos_UpdateChaos(PlayState *playstate);
 
@@ -211,8 +286,18 @@ u8 Chaos_DropCodeAtIndex(u8 index);
 
 u8 Chaos_IsCodeActive(u8 code);
 
+struct ChaosCode *Chaos_GetCode(u8 code);
+
 u8 Chaos_CanUpdateChaos(struct PlayState *play);
 
-struct ChaosCode *Chaos_GetCode(u8 code);
+Actor *Chaos_SpawnActor(ActorContext *context, PlayState *play, s16 actor_id, f32 pos_x, f32 pos_y, f32 pos_z, s16 rot_x, s16 rot_y, s16 rot_z, s32 params);
+
+void Chaos_KillActorAtIndex(u32 index);
+
+void Chaos_DropActorAtIndex(u32 index);
+
+void Chaos_DropActor(Actor *actor);
+
+void Chaos_ClearActors(void);
 
 #endif

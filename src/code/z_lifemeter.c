@@ -2,6 +2,7 @@
 #include "global.h"
 #include "overlays/kaleido_scope/ovl_kaleido_scope/z_kaleido_scope.h"
 #include "interface/parameter_static/parameter_static.h"
+#include "chaos_fuckery.h"
 
 s16 sHeartsPrimColors[3][3] = { { 255, 70, 50 }, { 255, 190, 0 }, { 100, 100, 255 } };
 s16 sHeartsEnvColors[3][3] = { { 50, 40, 60 }, { 255, 0, 0 }, { 0, 0, 255 } };
@@ -216,6 +217,8 @@ void LifeMeter_Draw(PlayState* play) {
     s32 i;
     f32 posY;
     f32 posX;
+    f32 chaos_x = 0;
+    f32 chaos_y = 0;
     f32 halfTexSize;
     f32 temp_f4;
     GraphicsContext* gfxCtx = play->state.gfxCtx;
@@ -241,6 +244,13 @@ void LifeMeter_Draw(PlayState* play) {
     curColorSet = -1;
 
     for (i = 0; i < healthCapacity; i++) {
+
+        if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+        {
+            chaos_x = (Rand_ZeroOne() * 2.0f - 1.0f) * 6.0f;
+            chaos_y = (Rand_ZeroOne() * 2.0f - 1.0f) * 6.0f;
+        }
+
         if ((ddCount < 0) || (ddCount < i)) {
             if (i < fullHeartCount) {
                 if (curColorSet != 0) {
@@ -351,8 +361,9 @@ void LifeMeter_Draw(PlayState* play) {
                 gDPSetCombineLERP(OVERLAY_DISP++, ENVIRONMENT, PRIMITIVE, TEXEL0, PRIMITIVE, TEXEL0, 0, PRIMITIVE, 0,
                                   ENVIRONMENT, PRIMITIVE, TEXEL0, PRIMITIVE, TEXEL0, 0, PRIMITIVE, 0);
             }
-            posY = 26.0f + offsetY;
-            posX = 30.0f + offsetX;
+
+            posY = 26.0f + offsetY + chaos_x;
+            posX = 30.0f + offsetX + chaos_y;
             temp_f4 = 1.0f;
             temp_f4 /= 0.68f;
             temp_f4 *= 1 << 10;
@@ -383,7 +394,7 @@ void LifeMeter_Draw(PlayState* play) {
             }
             mtx = GRAPH_ALLOC(gfxCtx, sizeof(Mtx));
             Mtx_SetTranslateScaleMtx(mtx, 1.0f - (0.32f * lifesize), 1.0f - (0.32f * lifesize),
-                                     1.0f - (0.32f * lifesize), -130.0f + offsetX, 94.5f - offsetY, 0.0f);
+                                     1.0f - (0.32f * lifesize), -130.0f + offsetX + chaos_x, 94.5f - offsetY + chaos_y, 0.0f);
             gSPMatrix(OVERLAY_DISP++, mtx, G_MTX_LOAD | G_MTX_MODELVIEW);
             gSPVertex(OVERLAY_DISP++, beatingHeartVtx, 4, 0);
             gSP1Quadrangle(OVERLAY_DISP++, 0, 2, 3, 1, 0);

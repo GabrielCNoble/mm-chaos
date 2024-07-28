@@ -16,6 +16,7 @@
 #include "overlays/actors/ovl_En_Horse/z_en_horse.h"
 #include "overlays/actors/ovl_En_Part/z_en_part.h"
 #include "overlays/actors/ovl_En_Box/z_en_box.h"
+#include "overlays/actors/ovl_En_Bom/z_en_bom.h"
 #include "objects/gameplay_keep/gameplay_keep.h"
 #include "objects/gameplay_dangeon_keep/gameplay_dangeon_keep.h"
 #include "objects/object_bdoor/object_bdoor.h"
@@ -1131,6 +1132,8 @@ void Actor_Init(Actor* actor, PlayState* play) {
 
 void Actor_Destroy(Actor* actor, PlayState* play) {
     if (actor->init == NULL) {
+        /* no-op if the actor wasn't spawned by an effect */
+        Chaos_DropActor(actor);
         if (actor->destroy != NULL) {
             actor->destroy(actor, play);
             actor->destroy = NULL;
@@ -1161,7 +1164,7 @@ void Actor_UpdatePos(Actor* actor) {
  *
  * It is recommended to not call this function directly and use `Actor_MoveWithGravity` instead
  */
-void Actor_UpdateVelocityWithGravity(Actor* actor) {
+void Actor_UpdateVelocityWithGravity(Actor* actor) { 
     f32 gravity_scale = 1.0f;
     actor->velocity.x = actor->speed * Math_SinS(actor->world.rot.y);
     actor->velocity.z = actor->speed * Math_CosS(actor->world.rot.y);
@@ -2244,16 +2247,29 @@ s32 Actor_HasNoRider(PlayState* play, Actor* horse) {
     return false;
 }
 
-void func_800B8D10(PlayState* play, Actor* actor, f32 arg2, s16 arg3, f32 arg4, u32 arg5, u32 arg6) {
+// void func_800B8D10(PlayState* play, Actor* actor, f32 arg2, s16 arg3, f32 arg4, u32 arg5, u32 arg6) {
+/* Actor_HitPlayer */
+void func_800B8D10(PlayState* play, Actor* actor, f32 xz_speed, s16 hit_angle, f32 y_velocity, u32 hit_type, u32 hit_damage) {
     Player* player = GET_PLAYER(play);
 
-    player->unk_B74 = arg6;
-    player->unk_B75 = arg5;
-    player->unk_B78 = arg2;
-    player->unk_B76 = arg3;
-    player->unk_B7C = arg4;
+    // player->unk_B74 = arg6;
+    // player->unk_B75 = arg5;
+    // player->unk_B78 = arg2;
+    // player->unk_B76 = arg3;
+    // player->unk_B7C = arg4;
+
+    player->unk_B74 = hit_damage;
+    player->unk_B75 = hit_type;
+    player->unk_B78 = xz_speed;
+    player->unk_B76 = hit_angle;
+    player->unk_B7C = y_velocity;
 }
 
+/* 
+    arg2 = horizontal speed
+    arg4 = y-velocity
+    arg5 = damage
+*/
 void func_800B8D50(PlayState* play, Actor* actor, f32 arg2, s16 yaw, f32 arg4, u32 arg5) {
     func_800B8D10(play, actor, arg2, yaw, arg4, 3, arg5);
 }
@@ -2492,7 +2508,9 @@ Actor* Actor_UpdateActor(UpdateActor_Params* params) {
 
     if(Chaos_IsCodeActive(CHAOS_CODE_ACTOR_CHASE))
     {
-        if(actor != (Actor *)params->player)
+        // if(actor != (Actor *)params->player && actor->id != ACTOR_EN_DOOR)
+        /* don't attract the player nor doors */
+        if(actor->id != ACTOR_PLAYER && actor->id != ACTOR_EN_DOOR)
         {
             Vec3f actor_player_vec;
             Math_Vec3f_DistXYZAndStoreNormDiff(&actor->world.pos, &params->player->actor.world.pos, 1.0f, &actor_player_vec);
@@ -3304,7 +3322,7 @@ ActorInit* Actor_LoadOverlay(ActorContext* actorCtx, s16 index) {
 Actor* Actor_SpawnAsChildAndCutscene(ActorContext* actorCtx, PlayState* play, s16 index, f32 x, f32 y, f32 z, s16 rotX,
                                      s16 rotY, s16 rotZ, s32 params, u32 csId, u32 halfDaysBits, Actor* parent) {
     s32 pad;
-    Actor* actor;
+    Actor* actor = NULL;
     ActorInit* actorInit;
     s32 objectSlot;
     ActorOverlay* overlayEntry;
@@ -3314,7 +3332,7 @@ Actor* Actor_SpawnAsChildAndCutscene(ActorContext* actorCtx, PlayState* play, s1
     }
 
     actorInit = Actor_LoadOverlay(actorCtx, index);
-    if (actorInit == NULL) {
+    if (actorInit == NULL && actorInit->id == 1) {
         return NULL;
     }
 

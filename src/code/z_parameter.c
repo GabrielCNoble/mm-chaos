@@ -3751,6 +3751,18 @@ void Magic_Update(PlayState* play) {
 void Magic_DrawMeter(PlayState* play) {
     InterfaceContext* interfaceCtx = &play->interfaceCtx;
     s16 magicBarY;
+    s16 chaos_y0 = 0;
+    s16 chaos_y1 = 0;
+    s16 chaos_x0 = 0;
+    s16 chaos_x1 = 0;
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    {
+        chaos_y0 = Rand_S16Offset(-10, 20);
+        chaos_y1 = Rand_S16Offset(-10, 20);
+        chaos_x0 = Rand_S16Offset(-10, 20);
+        chaos_x1 = Rand_S16Offset(-10, 20);
+    }
 
     OPEN_DISPS(play->state.gfxCtx);
 
@@ -3766,14 +3778,16 @@ void Magic_DrawMeter(PlayState* play) {
         gDPSetEnvColor(OVERLAY_DISP++, 100, 50, 50, 255);
 
         OVERLAY_DISP = Gfx_DrawTexRectIA8_DropShadow(
-            OVERLAY_DISP, gMagicMeterEndTex, 8, 16, 18, magicBarY, 8, 16, 1 << 10, 1 << 10, sMagicMeterOutlinePrimRed,
+            OVERLAY_DISP, gMagicMeterEndTex, 8, 16, 18 + chaos_x0, magicBarY + chaos_y0, 8, 16, 1 << 10, 1 << 10, sMagicMeterOutlinePrimRed,
             sMagicMeterOutlinePrimGreen, sMagicMeterOutlinePrimBlue, interfaceCtx->magicAlpha);
-        OVERLAY_DISP = Gfx_DrawTexRectIA8_DropShadow(OVERLAY_DISP, gMagicMeterMidTex, 24, 16, 26, magicBarY,
+
+        OVERLAY_DISP = Gfx_DrawTexRectIA8_DropShadow(OVERLAY_DISP, gMagicMeterMidTex, 24, 16, 26 + chaos_x0, magicBarY + chaos_y0,
                                                      ((void)0, gSaveContext.magicCapacity), 16, 1 << 10, 1 << 10,
                                                      sMagicMeterOutlinePrimRed, sMagicMeterOutlinePrimGreen,
                                                      sMagicMeterOutlinePrimBlue, interfaceCtx->magicAlpha);
+
         OVERLAY_DISP = Gfx_DrawTexRectIA8_DropShadowOffset(
-            OVERLAY_DISP, gMagicMeterEndTex, 8, 16, ((void)0, gSaveContext.magicCapacity) + 26, magicBarY, 8, 16,
+            OVERLAY_DISP, gMagicMeterEndTex, 8, 16, ((void)0, gSaveContext.magicCapacity) + 26 + chaos_x0, magicBarY + chaos_y0, 8, 16,
             1 << 10, 1 << 10, sMagicMeterOutlinePrimRed, sMagicMeterOutlinePrimGreen, sMagicMeterOutlinePrimBlue,
             interfaceCtx->magicAlpha, 3, 0x100);
 
@@ -3787,9 +3801,9 @@ void Magic_DrawMeter(PlayState* play) {
             gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 250, 250, 0, interfaceCtx->magicAlpha);
             gDPLoadTextureBlock_4b(OVERLAY_DISP++, gMagicMeterFillTex, G_IM_FMT_I, 16, 16, 0, G_TX_NOMIRROR | G_TX_WRAP,
                                    G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
-            gSPTextureRectangle(OVERLAY_DISP++, 104, (magicBarY + 3) << 2,
-                                (((void)0, gSaveContext.save.saveInfo.playerData.magic) + 26) << 2,
-                                (magicBarY + 10) << 2, G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
+            gSPTextureRectangle(OVERLAY_DISP++, 104 + chaos_x1, ((magicBarY + 3) << 2) + chaos_y1,
+                                ((((void)0, gSaveContext.save.saveInfo.playerData.magic) + 26) << 2) + chaos_x1,
+                                ((magicBarY + 10) << 2) + chaos_y1, G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
 
             // Fill the rest of the meter with the normal magic color
             gDPPipeSync(OVERLAY_DISP++);
@@ -3818,9 +3832,9 @@ void Magic_DrawMeter(PlayState* play) {
 
             gDPLoadTextureBlock_4b(OVERLAY_DISP++, gMagicMeterFillTex, G_IM_FMT_I, 16, 16, 0, G_TX_NOMIRROR | G_TX_WRAP,
                                    G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
-            gSPTextureRectangle(OVERLAY_DISP++, 104, (magicBarY + 3) << 2,
-                                (((void)0, gSaveContext.save.saveInfo.playerData.magic) + 26) << 2,
-                                (magicBarY + 10) << 2, G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
+            gSPTextureRectangle(OVERLAY_DISP++, 104 + chaos_x1, ((magicBarY + 3) << 2) + chaos_y1,
+                                ((((void)0, gSaveContext.save.saveInfo.playerData.magic) + 26) << 2) + chaos_x1,
+                                ((magicBarY + 10) << 2) + chaos_y1, G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
         }
     }
 
@@ -3874,6 +3888,7 @@ void Interface_DrawItemButtons(PlayState* play) {
     Player* player = GET_PLAYER(play);
     PauseContext* pauseCtx = &play->pauseCtx;
     MessageContext* msgCtx = &play->msgCtx;
+    s16 chaos_cbutton_offsets[3][2];
     s16 temp; // Used as both an alpha value and a button index
     s32 pad;
 
@@ -3882,6 +3897,19 @@ void Interface_DrawItemButtons(PlayState* play) {
     gDPPipeSync(OVERLAY_DISP++);
     gDPSetCombineMode(OVERLAY_DISP++, G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM);
 
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    {
+        for(temp = 0; temp < 3; temp++)
+        {
+            chaos_cbutton_offsets[temp][0] = Rand_S16Offset(-10, 20);
+            chaos_cbutton_offsets[temp][1] = Rand_S16Offset(-10, 20);
+        }
+    }
+    else
+    {
+        bzero(chaos_cbutton_offsets, sizeof(chaos_cbutton_offsets));
+    }
+
     // B Button Color & Texture
     OVERLAY_DISP = Gfx_DrawTexRectIA8_DropShadow(
         OVERLAY_DISP, gButtonBackgroundTex, 0x20, 0x20, D_801BF9D4[EQUIP_SLOT_B], D_801BF9DC[EQUIP_SLOT_B],
@@ -3889,21 +3917,30 @@ void Interface_DrawItemButtons(PlayState* play) {
         100, 255, 120, interfaceCtx->bAlpha);
     gDPPipeSync(OVERLAY_DISP++);
 
-    // C-Left Button Color & Texture
-    OVERLAY_DISP = Gfx_DrawRect_DropShadow(OVERLAY_DISP, D_801BF9D4[EQUIP_SLOT_C_LEFT], D_801BF9DC[EQUIP_SLOT_C_LEFT],
-                                           D_801BFAF4[EQUIP_SLOT_C_LEFT], D_801BFAF4[EQUIP_SLOT_C_LEFT],
-                                           D_801BF9E4[EQUIP_SLOT_C_LEFT] * 2, D_801BF9E4[EQUIP_SLOT_C_LEFT] * 2, 255,
-                                           240, 0, interfaceCtx->cLeftAlpha);
-    // C-Down Button Color & Texture
-    OVERLAY_DISP = Gfx_DrawRect_DropShadow(OVERLAY_DISP, D_801BF9D4[EQUIP_SLOT_C_DOWN], D_801BF9DC[EQUIP_SLOT_C_DOWN],
-                                           D_801BFAF4[EQUIP_SLOT_C_DOWN], D_801BFAF4[EQUIP_SLOT_C_DOWN],
-                                           D_801BF9E4[EQUIP_SLOT_C_DOWN] * 2, D_801BF9E4[EQUIP_SLOT_C_DOWN] * 2, 255,
-                                           240, 0, interfaceCtx->cDownAlpha);
-    // C-Right Button Color & Texture
-    OVERLAY_DISP = Gfx_DrawRect_DropShadow(OVERLAY_DISP, D_801BF9D4[EQUIP_SLOT_C_RIGHT], D_801BF9DC[EQUIP_SLOT_C_RIGHT],
-                                           D_801BFAF4[EQUIP_SLOT_C_RIGHT], D_801BFAF4[EQUIP_SLOT_C_RIGHT],
-                                           D_801BF9E4[EQUIP_SLOT_C_RIGHT] * 2, D_801BF9E4[EQUIP_SLOT_C_RIGHT] * 2, 255,
-                                           240, 0, interfaceCtx->cRightAlpha);
+    for(temp = EQUIP_SLOT_C_LEFT; temp <= EQUIP_SLOT_C_RIGHT; temp++)
+    {
+        // C-Left Button Color & Texture
+        OVERLAY_DISP = Gfx_DrawRect_DropShadow(OVERLAY_DISP, D_801BF9D4[temp] + chaos_cbutton_offsets[temp - EQUIP_SLOT_C_LEFT][0], 
+                                           D_801BF9DC[temp] + chaos_cbutton_offsets[temp - EQUIP_SLOT_C_LEFT][1], D_801BFAF4[temp], 
+                                           D_801BFAF4[temp], D_801BF9E4[temp] * 2, D_801BF9E4[temp] * 2, 255,
+                                           240, 0, interfaceCtx->cLeftAlpha);    
+    }
+
+    // // C-Left Button Color & Texture
+    // OVERLAY_DISP = Gfx_DrawRect_DropShadow(OVERLAY_DISP, D_801BF9D4[EQUIP_SLOT_C_LEFT], D_801BF9DC[EQUIP_SLOT_C_LEFT],
+    //                                        D_801BFAF4[EQUIP_SLOT_C_LEFT], D_801BFAF4[EQUIP_SLOT_C_LEFT],
+    //                                        D_801BF9E4[EQUIP_SLOT_C_LEFT] * 2, D_801BF9E4[EQUIP_SLOT_C_LEFT] * 2, 255,
+    //                                        240, 0, interfaceCtx->cLeftAlpha);
+    // // C-Down Button Color & Texture
+    // OVERLAY_DISP = Gfx_DrawRect_DropShadow(OVERLAY_DISP, D_801BF9D4[EQUIP_SLOT_C_DOWN], D_801BF9DC[EQUIP_SLOT_C_DOWN],
+    //                                        D_801BFAF4[EQUIP_SLOT_C_DOWN], D_801BFAF4[EQUIP_SLOT_C_DOWN],
+    //                                        D_801BF9E4[EQUIP_SLOT_C_DOWN] * 2, D_801BF9E4[EQUIP_SLOT_C_DOWN] * 2, 255,
+    //                                        240, 0, interfaceCtx->cDownAlpha);
+    // // C-Right Button Color & Texture
+    // OVERLAY_DISP = Gfx_DrawRect_DropShadow(OVERLAY_DISP, D_801BF9D4[EQUIP_SLOT_C_RIGHT], D_801BF9DC[EQUIP_SLOT_C_RIGHT],
+    //                                        D_801BFAF4[EQUIP_SLOT_C_RIGHT], D_801BFAF4[EQUIP_SLOT_C_RIGHT],
+    //                                        D_801BF9E4[EQUIP_SLOT_C_RIGHT] * 2, D_801BF9E4[EQUIP_SLOT_C_RIGHT] * 2, 255,
+    //                                        240, 0, interfaceCtx->cRightAlpha);
 
     if (!IS_PAUSE_STATE_GAMEOVER) {
         if ((play->pauseCtx.state != PAUSE_STATE_OFF) || (play->pauseCtx.debugEditor != DEBUG_EDITOR_NONE)) {
@@ -3975,7 +4012,8 @@ void Interface_DrawItemButtons(PlayState* play) {
                 gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 255, 240, 0, interfaceCtx->cRightAlpha);
             }
             OVERLAY_DISP = Gfx_DrawTexRectIA8(OVERLAY_DISP, ((u8*)gButtonBackgroundTex + ((32 * 32) * (temp + 1))),
-                                              0x20, 0x20, D_801BF9D4[temp], D_801BF9DC[temp], D_801BFAF4[temp],
+                                              0x20, 0x20, D_801BF9D4[temp] + chaos_cbutton_offsets[temp - EQUIP_SLOT_C_LEFT][0], 
+                                              D_801BF9DC[temp] + chaos_cbutton_offsets[temp - EQUIP_SLOT_C_LEFT][1], D_801BFAF4[temp],
                                               D_801BFAF4[temp], D_801BF9E4[temp] * 2, D_801BF9E4[temp] * 2);
         }
     }
@@ -3985,14 +4023,22 @@ void Interface_DrawItemButtons(PlayState* play) {
 
 void Interface_DrawItemIconTexture(PlayState* play, TexturePtr texture, s16 button) {
     static s16 D_801BFAFC[] = { 30, 24, 24, 24 };
+    s16 chaos_x = 0;
+    s16 chaos_y = 0;
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    {
+        chaos_x = Rand_S16Offset(-20, 40);
+        chaos_y = Rand_S16Offset(-20, 40);
+    }
 
     OPEN_DISPS(play->state.gfxCtx);
 
     gDPLoadTextureBlock(OVERLAY_DISP++, texture, G_IM_FMT_RGBA, G_IM_SIZ_32b, 32, 32, 0, G_TX_NOMIRROR | G_TX_WRAP,
                         G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
 
-    gSPTextureRectangle(OVERLAY_DISP++, D_801BF9D4[button] << 2, D_801BF9DC[button] << 2,
-                        (D_801BF9D4[button] + D_801BFAFC[button]) << 2, (D_801BF9DC[button] + D_801BFAFC[button]) << 2,
+    gSPTextureRectangle(OVERLAY_DISP++, (D_801BF9D4[button] << 2) + chaos_x, (D_801BF9DC[button] << 2) + chaos_y,
+                        ((D_801BF9D4[button] + D_801BFAFC[button]) << 2) + chaos_x, ((D_801BF9DC[button] + D_801BFAFC[button]) << 2) + chaos_y,
                         G_TX_RENDERTILE, 0, 0, D_801BF9BC[button] << 1, D_801BF9BC[button] << 1);
 
     CLOSE_DISPS(play->state.gfxCtx);
@@ -4004,6 +4050,19 @@ s16 D_801BFB0C[] = { 0x23, 0x23, 0x33, 0x23 };
 void Interface_DrawAmmoCount(PlayState* play, s16 button, s16 alpha) {
     u8 i;
     u16 ammo;
+
+    s16 chaos_x0 = 0;
+    s16 chaos_y0 = 0;
+    s16 chaos_x1 = 0;
+    s16 chaos_y1 = 0;
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    {
+        chaos_x0 = Rand_S16Offset(-10, 20);
+        chaos_y0 = Rand_S16Offset(-10, 20);
+        chaos_x1 = Rand_S16Offset(-10, 20);
+        chaos_y1 = Rand_S16Offset(-10, 20);
+    }
 
     OPEN_DISPS(play->state.gfxCtx);
 
@@ -4054,12 +4113,12 @@ void Interface_DrawAmmoCount(PlayState* play, s16 button, s16 alpha) {
         // Draw upper digit (tens)
         if ((u32)i != 0) {
             OVERLAY_DISP = Gfx_DrawTexRectIA8(OVERLAY_DISP, ((u8*)gAmmoDigit0Tex + ((8 * 8) * i)), 8, 8,
-                                              D_801BFB04[button], D_801BFB0C[button], 8, 8, 1 << 10, 1 << 10);
+                                              D_801BFB04[button] + chaos_x0, D_801BFB0C[button] + chaos_y0, 8, 8, 1 << 10, 1 << 10);
         }
 
         // Draw lower digit (ones)
         OVERLAY_DISP = Gfx_DrawTexRectIA8(OVERLAY_DISP, ((u8*)gAmmoDigit0Tex + ((8 * 8) * ammo)), 8, 8,
-                                          D_801BFB04[button] + 6, D_801BFB0C[button], 8, 8, 1 << 10, 1 << 10);
+                                          D_801BFB04[button] + 6 + chaos_x1, D_801BFB0C[button] + chaos_y1, 8, 8, 1 << 10, 1 << 10);
     }
 
     CLOSE_DISPS(play->state.gfxCtx);
@@ -4151,6 +4210,7 @@ void Interface_DrawBButtonIcons(PlayState* play) {
 void Interface_DrawCButtonIcons(PlayState* play) {
     InterfaceContext* interfaceCtx = &play->interfaceCtx;
 
+
     OPEN_DISPS(play->state.gfxCtx);
 
     gDPPipeSync(OVERLAY_DISP++);
@@ -4198,6 +4258,10 @@ void Interface_DrawCButtonIcons(PlayState* play) {
 void Interface_DrawAButton(PlayState* play) {
     InterfaceContext* interfaceCtx = &play->interfaceCtx;
     s16 aAlpha;
+    f32 chaos_x0 = 0;
+    f32 chaos_y0 = 0;
+    f32 chaos_x1 = 0;
+    f32 chaos_y1 = 0;
 
     OPEN_DISPS(play->state.gfxCtx);
 
@@ -4205,6 +4269,14 @@ void Interface_DrawAButton(PlayState* play) {
 
     if (aAlpha > 100) {
         aAlpha = 100;
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    {
+        chaos_x0 = (Rand_ZeroOne() * 2.0 - 1.0f) * 6.0f;
+        chaos_y0 = (Rand_ZeroOne() * 2.0 - 1.0f) * 6.0f;
+        chaos_x1 = (Rand_ZeroOne() * 2.0 - 1.0f) * 6.0f;
+        chaos_y1 = (Rand_ZeroOne() * 2.0 - 1.0f) * 6.0f;
     }
 
     Gfx_SetupDL42_Overlay(play->state.gfxCtx);
@@ -4215,7 +4287,7 @@ void Interface_DrawAButton(PlayState* play) {
     gDPSetCombineMode(OVERLAY_DISP++, G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM);
     gDPSetAlphaCompare(OVERLAY_DISP++, G_AC_THRESHOLD);
 
-    Matrix_Translate(0.0f, 0.0f, -38.0f, MTXMODE_NEW);
+    Matrix_Translate(chaos_x0, chaos_y0, -38.0f, MTXMODE_NEW);
     Matrix_Scale(1.0f, 1.0f, 1.0f, MTXMODE_APPLY);
     Matrix_RotateXFApply(interfaceCtx->aButtonRoll / 10000.0f);
 
@@ -4243,7 +4315,7 @@ void Interface_DrawAButton(PlayState* play) {
     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 255, 255, 255, interfaceCtx->aAlpha);
     gDPSetEnvColor(OVERLAY_DISP++, 0, 0, 0, 0);
 
-    Matrix_Translate(0.0f, 0.0f, D_801BF9CC[gSaveContext.options.language] / 10.0f, MTXMODE_NEW);
+    Matrix_Translate(chaos_x1, chaos_y1, D_801BF9CC[gSaveContext.options.language] / 10.0f, MTXMODE_NEW);
     Matrix_Scale(1.0f, 1.0f, 1.0f, MTXMODE_APPLY);
     Matrix_RotateXFApply(interfaceCtx->aButtonRoll / 10000.0f);
     gSPMatrix(OVERLAY_DISP++, Matrix_NewMtx(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);

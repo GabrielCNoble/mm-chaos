@@ -4,6 +4,7 @@
 #include "z64.h"
 #include "segment_symbols.h"
 #include "macros.h"
+#include "chaos_fuckery.h"
 
 // pre-boot variables
 extern u16 gFramebuffer1[SCREEN_HEIGHT][SCREEN_WIDTH]; // at 0x80000500
@@ -1890,6 +1891,7 @@ extern AudioCustomSynthFunction gAudioCustomSynthFunction;
 extern GfxMasterList D_0E000000;
 extern Mtx D_01000000;
 extern u16 D_0F000000[];
+// extern ChaosContext gChaosContext;
 
 
 #endif

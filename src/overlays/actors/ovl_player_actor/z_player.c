@@ -47,10 +47,12 @@
 
 #define THIS ((Player*)thisx)
 
+void Player_SetTunicColor(Player *this);
 void Player_Init(Actor* thisx, PlayState* play);
 void Player_Destroy(Actor* thisx, PlayState* play);
 void Player_Update(Actor* thisx, PlayState* play);
 void Player_Draw(Actor* thisx, PlayState* play);
+
 
 s32 Player_GrabPlayer(PlayState* play, Player* this);
 s32 func_8085B28C(PlayState* play, Player* this, PlayerCsAction csAction);
@@ -177,6 +179,7 @@ void Player_Action_60(Player* this, PlayState* play);
 void Player_Action_61(Player* this, PlayState* play);
 void Player_Action_62(Player* this, PlayState* play);
 void Player_Action_63(Player* this, PlayState* play);
+/* PLAYER_ACTION_TOSS_DEKU_NUT */
 void Player_Action_64(Player* this, PlayState* play);
 void Player_Action_65(Player* this, PlayState* play);
 void Player_Action_66(Player* this, PlayState* play);
@@ -511,26 +514,26 @@ typedef struct struct_8085D200 {
 typedef enum
 {
     /* player flinches */
-    HIT_TYPE_MELEE              = 0,
+    HIT_TYPE_MELEE_LIGHT        = 0,
     /* player gets tossed away from hitter with configurable horizontal/vertical velocities */
-    HIT_TYPE_MELEE_TOSS         = 1,
+    HIT_TYPE_MELEE_HEAVY        = 1,
     /* player gets shoved away from hitter */
-    HIT_TYPE_MELEE_SHOVE        = 2,
-    HIT_TYPE_ICE_TRAP           = 3,
+    HIT_TYPE_MELEE_MID          = 2,
+    HIT_TYPE_FREEZE             = 3,
     HIT_TYPE_SHOCK              = 4
 }HitType;
 
 typedef enum
 { 
-    PLAYER_LIB_IGNORE_FOCUS_X        = 1,
-    PLAYER_LIB_IGNORE_FOCUS_Y        = 1 << 1,
-    PLAYER_LIB_IGNORE_FOCUS_Z        = 1 << 2,
-    PLAYER_LIB_IGNORE_HEAD_LIMB_X    = 1 << 3,
-    PLAYER_LIB_IGNORE_HEAD_LIMB_Y    = 1 << 4,
-    PLAYER_LIB_IGNORE_HEAD_LIMB_Z    = 1 << 5,
-    PLAYER_LIB_IGNORE_UPPER_LIMB_X   = 1 << 6,
-    PLAYER_LIB_IGNORE_UPPER_LIMB_Y   = 1 << 7,
-    PLAYER_LIB_IGNORE_UPPER_LIMB_Z   = 1 << 8,
+    PLAYER_ANGLE_IGNORE_FOCUS_X        = 1,
+    PLAYER_ANGLE_IGNORE_FOCUS_Y        = 1 << 1,
+    PLAYER_ANGLE_IGNORE_FOCUS_Z        = 1 << 2,
+    PLAYER_ANGLE_IGNORE_HEAD_LIMB_X    = 1 << 3,
+    PLAYER_ANGLE_IGNORE_HEAD_LIMB_Y    = 1 << 4,
+    PLAYER_ANGLE_IGNORE_HEAD_LIMB_Z    = 1 << 5,
+    PLAYER_ANGLE_IGNORE_UPPER_LIMB_X   = 1 << 6,
+    PLAYER_ANGLE_IGNORE_UPPER_LIMB_Y   = 1 << 7,
+    PLAYER_ANGLE_IGNORE_UPPER_LIMB_Z   = 1 << 8
 }PlayerAngleResetIgnoreFlags;
 
 f32 sPlayerControlStickMagnitude;
@@ -3892,6 +3895,7 @@ u8 sMagicArrowCosts[] = {
 s32 func_808306F8(Player* this, PlayState* play) {
     if ((this->heldItemAction >= PLAYER_IA_BOW_FIRE) && (this->heldItemAction <= PLAYER_IA_BOW_LIGHT) &&
         (gSaveContext.magicState != MAGIC_STATE_IDLE)) {
+        /* can't use magic arrows if something else is already consuming magic */
         Audio_PlaySfx(NA_SE_SY_ERROR);
     } else {
         Player_SetUpperAction(play, this, Player_UpperAction_7);
@@ -3916,6 +3920,7 @@ s32 func_808306F8(Player* this, PlayState* play) {
                     if ((ARROW_GET_MAGIC_FROM_TYPE(arrowType) >= ARROW_MAGIC_FIRE) &&
                         (ARROW_GET_MAGIC_FROM_TYPE(arrowType) <= ARROW_MAGIC_LIGHT)) {
                         if (((void)0, gSaveContext.save.saveInfo.playerData.magic) < sMagicArrowCosts[magicArrowType]) {
+                            /* not enough magic to use magic arrow */
                             arrowType = ARROW_TYPE_NORMAL;
                             magicArrowType = ARROW_MAGIC_INVALID;
                         }
@@ -3929,6 +3934,29 @@ s32 func_808306F8(Player* this, PlayState* play) {
                     this->heldActor = Actor_SpawnAsChild(
                         &play->actorCtx, &this->actor, play, ACTOR_EN_ARROW, this->actor.world.pos.x,
                         this->actor.world.pos.y, this->actor.world.pos.z, 0, this->actor.shape.rot.y, 0, arrowType);
+
+                    if(arrowType < ARROW_TYPE_SLINGSHOT)
+                    {
+                        u8 chaos_arrow_effects = 0;
+                        EnArrow *arrow = (EnArrow *)this->heldActor;
+
+                        if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_ARROWS))
+                        {
+                            chaos_arrow_effects |= CHAOS_ARROW_EFFECT_WEIRD;
+                        }
+
+                        if(Chaos_IsCodeActive(CHAOS_CODE_BOMB_ARROWS))
+                        {
+                            chaos_arrow_effects |= CHAOS_ARROW_EFFECT_BOMB;
+                        }
+
+                        if(Chaos_IsCodeActive(CHAOS_CODE_BUCKSHOT_ARROWS))
+                        {
+                            chaos_arrow_effects |= CHAOS_ARROW_EFFECT_BUCKSHOT;
+                        }
+
+                        arrow->unk_262 = chaos_arrow_effects;
+                    }
 
                     if ((this->heldActor != NULL) && (magicArrowType > ARROW_MAGIC_INVALID)) {
                         Magic_Consume(play, sMagicArrowCosts[magicArrowType], MAGIC_CONSUME_NOW);
@@ -4165,14 +4193,48 @@ s32 func_80831124(PlayState* play, Player* this) {
     return false;
 }
 
+/* Player_ShootArrow? */
 s32 func_80831194(PlayState* play, Player* this) {
+    u32 buckarrow_index;
     if (this->heldActor != NULL) {
         if (!Player_IsHoldingHookshot(this)) {
             ItemId item;
             ArrowType arrowType;
+            // u8 chaos_arrow_effects = 0;
+
+            // if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_ARROWS))
+            // {
+            //     chaos_arrow_effects |= CHAOS_ARROW_EFFECT_WEIRD;
+            // }
+
+            // if(Chaos_IsCodeActive(CHAOS_CODE_BOMB_ARROWS))
+            // {
+            //     chaos_arrow_effects |= CHAOS_ARROW_EFFECT_BOMB;
+            // }
 
             func_808305BC(play, this, &item, &arrowType);
             if ((this->transformation != PLAYER_FORM_DEKU) && !(this->stateFlags3 & PLAYER_STATE3_400)) {
+                EnArrow *first_arrow = (EnArrow *)this->heldActor;
+
+                if(first_arrow->unk_262 & CHAOS_ARROW_EFFECT_BUCKSHOT)
+                {
+                    for(buckarrow_index = 0; buckarrow_index < 5; buckarrow_index++)
+                    {
+                        EnArrow *arrow = (EnArrow *)Actor_Spawn(&play->actorCtx, play, ACTOR_EN_ARROW, 
+                                                        first_arrow->actor.world.pos.x, first_arrow->actor.world.pos.y, first_arrow->actor.world.pos.z, 
+                                                        first_arrow->actor.shape.rot.x, first_arrow->actor.shape.rot.y, first_arrow->actor.shape.rot.z, 
+                                                        first_arrow->actor.params);
+                        if(arrow != NULL)
+                        {
+                            arrow->actor.world.rot.x += Rand_S16Offset(-700, 1400);
+                            arrow->actor.world.rot.y += Rand_S16Offset(-700, 1400);
+                            arrow->unk_262 = first_arrow->unk_262;
+                        }
+                    }
+                }
+
+                first_arrow->unk_262 &= ~CHAOS_ARROW_EFFECT_BUCKSHOT;
+
                 if (gSaveContext.minigameStatus == MINIGAME_STATUS_ACTIVE) {
                     if ((play->sceneId != SCENE_SYATEKI_MIZU) && (play->sceneId != SCENE_F01) &&
                         (play->sceneId != SCENE_SYATEKI_MORI)) {
@@ -4181,7 +4243,7 @@ s32 func_80831194(PlayState* play, Player* this) {
                 } else if (play->unk_1887C != 0) {
                     play->unk_1887C--;
                 } else {
-                    Inventory_ChangeAmmo(item, -1);
+                    // Inventory_ChangeAmmo(item, -1);
                 }
             }
 
@@ -4195,6 +4257,8 @@ s32 func_80831194(PlayState* play, Player* this) {
             this->unk_B48 = 0.0f;
         }
 
+        /* Arrow actors check for the player's unk_D57 variable. Setting it to anything other than
+        zero effectively fires the arrow. */
         this->unk_D57 = (this->transformation == PLAYER_FORM_DEKU) ? 20 : 4;
 
         this->heldActor->parent = NULL;
@@ -5472,10 +5536,10 @@ PlayerAnimationHeader* D_8085D0D4[] = {
     &gPlayerAnim_link_anchor_back_hitR,
 };
 
+// void func_80833B18(PlayState* play, Player* this, s32 arg2, f32 speed, f32 velocityY, s16 arg5,
+//                    s32 invincibilityTimer) {
 /* Player_HitResponse */
-/* arg2 = hit type? */
-/* arg5 = hit direction angle? */
-void func_80833B18(PlayState* play, Player* this, s32 arg2, f32 speed, f32 velocityY, s16 arg5,
+void func_80833B18(PlayState* play, Player* this, s32 hit_type, f32 speed, f32 velocityY, s16 hit_angle,
                    s32 invincibilityTimer) {
     PlayerAnimationHeader* anim = NULL;
 
@@ -5503,7 +5567,8 @@ void func_80833B18(PlayState* play, Player* this, s32 arg2, f32 speed, f32 veloc
     }
 
     /* ice trap? */
-    if (arg2 == 3) {
+    // if (arg2 == 3) {
+    if(hit_type == HIT_TYPE_FREEZE) {
         Player_SetAction(play, this, Player_Action_82, 0);
         anim = &gPlayerAnim_link_normal_ice_down;
         func_8082DAD4(this);
@@ -5515,7 +5580,8 @@ void func_80833B18(PlayState* play, Player* this, s32 arg2, f32 speed, f32 veloc
         Player_AnimSfx_PlayVoice(this, NA_SE_VO_LI_FREEZE);
     } 
     /* shocked? */
-    else if (arg2 == 4) {
+    // else if (arg2 == 4) {
+    else if(hit_type == HIT_TYPE_SHOCK) {
         Player_SetAction(play, this, Player_Action_83, 0);
         func_8082DB60(play, this, &gPlayerAnim_link_normal_electric_shock);
         func_8082DAD4(this);
@@ -5530,14 +5596,16 @@ void func_80833B18(PlayState* play, Player* this, s32 arg2, f32 speed, f32 veloc
         /* melee hit */
 
         /* relative hit angle to player */
-        arg5 -= this->actor.shape.rot.y;
+        // arg5 -= this->actor.shape.rot.y;
+        hit_angle -= this->actor.shape.rot.y;
 
         if (this->stateFlags1 & PLAYER_STATE1_8000000) {
             /* player hit while swimming */
             Player_SetAction(play, this, Player_Action_61, 0);
             Player_RequestRumble(play, this, 180, 20, 50, SQ(0));
 
-            if (arg2 == 1) {
+            // if (arg2 == 1) {
+            if(hit_type == HIT_TYPE_MELEE_HEAVY) {
                 this->linearVelocity = speed * 1.5f;
                 this->actor.velocity.y = velocityY * 0.7f;
             } else {
@@ -5547,8 +5615,10 @@ void func_80833B18(PlayState* play, Player* this, s32 arg2, f32 speed, f32 veloc
 
             Player_AnimSfx_PlayVoice(this, NA_SE_VO_LI_DAMAGE_S);
             anim = &gPlayerAnim_link_swimer_swim_hit;
-        } else if ((arg2 == 1) || (arg2 == 2) || !(this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) ||
-                   (this->stateFlags1 & (PLAYER_STATE1_4 | PLAYER_STATE1_2000 | PLAYER_STATE1_4000 | PLAYER_STATE1_200000))) {
+        // } else if ((arg2 == 1) || (arg2 == 2) || !(this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) ||
+        } else if ((hit_type == HIT_TYPE_MELEE_HEAVY) || (hit_type == HIT_TYPE_MELEE_MID) || 
+                    !(this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) || (this->stateFlags1 & 
+                        (PLAYER_STATE1_4 | PLAYER_STATE1_2000 | PLAYER_STATE1_4000 | PLAYER_STATE1_200000))) {
             /* player hit while not swimming */
             Player_SetAction(play, this, Player_Action_21, 0);
 
@@ -5557,7 +5627,8 @@ void func_80833B18(PlayState* play, Player* this, s32 arg2, f32 speed, f32 veloc
             Player_RequestRumble(play, this, 255, 20, 150, SQ(0));
             func_8082DAD4(this);
 
-            if (arg2 == 2) {
+            // if (arg2 == 2) {
+            if (hit_type == HIT_TYPE_MELEE_MID) {
                 /* shove player */
                 this->av2.actionVar2 = 4;
 
@@ -5573,7 +5644,8 @@ void func_80833B18(PlayState* play, Player* this, s32 arg2, f32 speed, f32 veloc
                 this->linearVelocity = speed;
                 this->actor.velocity.y = velocityY;
 
-                if (ABS_ALT(arg5) > 0x4000) {
+                // if (ABS_ALT(arg5) > 0x4000) {
+                if (ABS_ALT(hit_angle) > 0x4000) {
                     /* something hit the player from behind, so fall forwards */
                     anim = &gPlayerAnim_link_normal_front_downA;
                 } else {
@@ -5605,7 +5677,8 @@ void func_80833B18(PlayState* play, Player* this, s32 arg2, f32 speed, f32 veloc
                 animPtr += 4;
             }
 
-            if (ABS_ALT(arg5) <= 0x4000) {
+            // if (ABS_ALT(arg5) <= 0x4000) {
+            if (ABS_ALT(hit_angle) <= 0x4000) {
                 animPtr += 2;
             }
 
@@ -5617,11 +5690,13 @@ void func_80833B18(PlayState* play, Player* this, s32 arg2, f32 speed, f32 veloc
             Player_AnimSfx_PlayVoice(this, NA_SE_VO_LI_DAMAGE_S);
         }
 
-        this->actor.shape.rot.y += arg5;
+        // this->actor.shape.rot.y += arg5;
+        this->actor.shape.rot.y += hit_angle;
         this->currentYaw = this->actor.shape.rot.y;
         this->actor.world.rot.y = this->actor.shape.rot.y;
 
-        if (ABS_ALT(arg5) > 0x4000) {
+        // if (ABS_ALT(arg5) > 0x4000) {
+        if (ABS_ALT(hit_angle) > 0x4000) {
             this->actor.shape.rot.y += 0x8000;
         }
     }
@@ -5777,6 +5852,7 @@ void func_808345C8(void) {
     }
 }
 
+/* Player_HandleReceivedAttacks? */
 s32 func_80834600(Player* this, PlayState* play) {
     s32 pad74;
     s32 var_v0;
@@ -5789,6 +5865,8 @@ s32 func_80834600(Player* this, PlayState* play) {
     } else if ((var_v0 = ((Player_GetHeight(this) - 8.0f) < (this->unk_AB8 * this->actor.scale.y))) ||
                (this->actor.bgCheckFlags & BGCHECKFLAG_CRUSHED) || (sPlayerFloorType == FLOOR_TYPE_9) ||
                (this->stateFlags2 & PLAYER_STATE2_80000000)) {
+
+        /* fell into the void / crushed? */
         Player_AnimSfx_PlayVoice(this, NA_SE_VO_LI_DAMAGE_S);
 
         if (var_v0) {
@@ -5805,9 +5883,11 @@ s32 func_80834600(Player* this, PlayState* play) {
         Audio_PlaySfx(NA_SE_OC_ABYSS);
     } else if ((this->unk_B75 != 0) && ((this->unk_B75 >= 3) || (this->invincibilityTimer == 0))) {
         u8 sp6C[] = { 0, 2, 1, 1 };
+        /* handle link getting thrown after being grabbed...? */
 
         if (!func_8083456C(play, this)) {
-            if (this->unk_B75 == 4) {
+            // if (this->unk_B75 == 4) {
+            if(this->unk_B75 == HIT_TYPE_SHOCK) {
                 this->shockTimer = 40;
             }
 
@@ -5853,35 +5933,43 @@ s32 func_80834600(Player* this, PlayState* play) {
     } else if (this->cylinder.base.acFlags & AC_HIT) {
         Actor* sp60 = this->cylinder.base.ac;
         /* hitEffect */
-        s32 var_a2_2;
+        // s32 var_a2_2;
+        s32 hit_type;
 
         if (sp60->flags & ACTOR_FLAG_1000000) {
             Player_PlaySfx(this, NA_SE_PL_BODY_HIT);
         }
 
         if (this->actor.colChkInfo.acHitEffect == 2) {
-            var_a2_2 = 3;
+            // var_a2_2 = 3;
+            hit_type = HIT_TYPE_FREEZE;
         } else if (this->actor.colChkInfo.acHitEffect == 3) {
-            var_a2_2 = 4;
+            // var_a2_2 = 4;
+            hit_type = HIT_TYPE_SHOCK;
         } else if (this->actor.colChkInfo.acHitEffect == 7) {
-            var_a2_2 = 1;
+            // var_a2_2 = 1;
+            hit_type = HIT_TYPE_MELEE_HEAVY;
             this->shockTimer = 40;
         } else if (this->actor.colChkInfo.acHitEffect == 9) {
-            var_a2_2 = 1;
+            // var_a2_2 = 1;
+            hit_type = HIT_TYPE_MELEE_HEAVY;
             if (func_80834534(play, this)) {
                 return true;
             }
 
         } else if (((this->actor.colChkInfo.acHitEffect == 4) && (this->currentMask != PLAYER_MASK_GIANT)) ||
                    (this->stateFlags3 & PLAYER_STATE3_1000)) {
-            var_a2_2 = 1;
+            // var_a2_2 = 1;
+            hit_type = HIT_TYPE_MELEE_HEAVY;
         } else {
-            var_a2_2 = 0;
+            // var_a2_2 = 0;
+            hit_type = HIT_TYPE_MELEE_LIGHT;
             if (func_8083456C(play, this)) {
                 return true;
             }
         }
-        func_80833B18(play, this, var_a2_2, 4.0f, 5.0f, Actor_WorldYawTowardActor(sp60, &this->actor), 20);
+        // func_80833B18(play, this, var_a2_2, 4.0f, 5.0f, Actor_WorldYawTowardActor(sp60, &this->actor), 20);
+        func_80833B18(play, this, hit_type, 4.0f, 5.0f, Actor_WorldYawTowardActor(sp60, &this->actor), 20);
     } else if (this->invincibilityTimer != 0) {
         return false;
     } else {
@@ -10608,6 +10696,8 @@ static InitChainEntry sInitChain[] = {
 Vec3s sPlayerSkeletonBaseTransl = { -57, 3377, 0 };
 
 void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHeader) {
+    u32 update_index;
+    Gfx color_gfx[1];
     Actor_ProcessInitChain(&this->actor, sInitChain);
     this->currentYaw = this->actor.world.rot.y;
 
@@ -10631,7 +10721,22 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
         ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawFeet, this->ageProperties->shadowScale);
     }
 
-    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
+    gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_DEKU] = ITEM_MASK_DEKU;
+    gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] = ITEM_OCARINA_OF_TIME;
+    gSaveContext.save.saveInfo.inventory.items[SLOT_BOW] = ITEM_BOW;
+    gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_FIRE] = ITEM_ARROW_FIRE;
+    gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_ICE] = ITEM_ARROW_ICE;
+    gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_LIGHT] = ITEM_ARROW_LIGHT;
+    gSaveContext.save.saveInfo.inventory.items[SLOT_BOMB] = ITEM_BOMB;
+    gSaveContext.save.saveInfo.playerData.magicLevel = 2;
+    gSaveContext.save.saveInfo.playerData.magic = 10;
+    gSaveContext.save.saveInfo.playerData.isMagicAcquired = true;
+    gSaveContext.save.saveInfo.playerData.isDoubleMagicAcquired = true;
+    gSaveContext.save.saveInfo.inventory.questItems |= 1 << QUEST_SONG_TIME;
+    gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOW] = 30;
+    gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOMB] = 10;
+    gSaveContext.save.saveInfo.inventory.upgrades |= 3 << gUpgradeShifts[UPG_QUIVER];
+    gSaveContext.save.saveInfo.inventory.upgrades |= 1 << gUpgradeShifts[UPG_BOMB_BAG];
 
     this->subCamId = CAM_ID_NONE;
     Collider_InitAndSetCylinder(play, &this->cylinder, &this->actor, &D_8085C2EC);
@@ -10639,6 +10744,8 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     Collider_InitAndSetQuad(play, &this->meleeWeaponQuads[0], &this->actor, &D_8085C344);
     Collider_InitAndSetQuad(play, &this->meleeWeaponQuads[1], &this->actor, &D_8085C344);
     Collider_InitAndSetQuad(play, &this->shieldQuad, &this->actor, &D_8085C394);
+
+    // Player_SetTunicColor(this);
 }
 
 void func_80841A50(PlayState* play, Player* this) {
@@ -10689,6 +10796,47 @@ Color_RGBA8 D_8085D338 = { 0, 0, 15, 100 };
 Color_RGBA8 D_8085D33C = { 0, 0, 0, 150 };
 Vec3f D_8085D340 = { 0.0f, 50.0f, 0.0f };
 
+struct gPlayerDrawListColorUpdate
+{
+    Gfx *draw_list;
+    u32  offset;
+
+} gPlayerDrawListColorUpdates[] = {
+    { gLinkHumanTorsoDL,            3},
+    { gLinkHumanCollarDL,           3},
+    { gLinkHumanWaistDL,            3},
+    { gLinkHumanHatDL,              7},
+    { gLinkHumanRightShoulderDL,    7},
+    { gLinkHumanLeftShoulderDL,     7},
+    { gLinkHumanRightThighDL,       7},
+    { gLinkHumanLeftThighDL,        7},
+    { gLinkHumanHeadDL,            81},
+    // { gLinkDekuWaistDL,            12}
+};
+
+extern struct ChaosContext gChaosContext;
+
+void Player_SetTunicColor(Player *this)
+{
+    u32 update_index;
+    Gfx color_gfx[1];
+
+    // if(gChaosContext.update_enabled)
+    {
+        color_gfx[0].words.w0 = (_SHIFTL(G_SETPRIMCOLOR, 24, 8) | _SHIFTL(0, 8, 8) |_SHIFTL(0xff, 0, 8));
+        color_gfx[0].words.w1 = (_SHIFTL(gChaosContext.link.tunic_r, 24, 8) | 
+                                _SHIFTL(gChaosContext.link.tunic_g, 16, 8) | 
+                                _SHIFTL(gChaosContext.link.tunic_b, 8, 8)  |	
+                                _SHIFTL(255, 0, 8));
+
+        for(update_index = 0; update_index < sizeof(gPlayerDrawListColorUpdates) / sizeof(gPlayerDrawListColorUpdates[0]); update_index++)
+        {
+            struct gPlayerDrawListColorUpdate *update = gPlayerDrawListColorUpdates + update_index;
+            ((Gfx *)SEGMENTED_TO_K0(update->draw_list))[update->offset] = color_gfx[0];
+        }
+    }
+}
+
 void Player_Init(Actor* thisx, PlayState* play) {
     s32 pad;
     Player* this = THIS;
@@ -10715,6 +10863,7 @@ void Player_Init(Actor* thisx, PlayState* play) {
 
     this->actor.room = -1;
     this->csId = CS_ID_NONE;
+    // this->actor.shape.rot.x = PLAYER_FORM_HUMAN + 1;
 
     if (this->actor.shape.rot.x != 0) {
         this->transformation = this->actor.shape.rot.x - 1;
@@ -10951,38 +11100,38 @@ void func_80842510(s16* arg0) {
 
 /* Player_ResetLimbRotations */
 void func_808425B4(Player* this) {
-    if (!(this->unk_AA6 & 2)) {
+    if (!(this->unk_AA6 & /* PLAYER_ANGLE_IGNORE_FOCUS_Y */ 2)) {
         s16 sp26 = this->actor.focus.rot.y - this->actor.shape.rot.y;
 
         func_80842510(&sp26);
         this->actor.focus.rot.y = this->actor.shape.rot.y + sp26;
     }
-    if (!(this->unk_AA6 & 1)) {
+    if (!(this->unk_AA6 & /* PLAYER_ANGLE_IGNORE_FOCUS_X */ 1)) {
         func_80842510(&this->actor.focus.rot.x);
     }
-    if (!(this->unk_AA6 & 8)) {
+    if (!(this->unk_AA6 & /* PLAYER_ANGLE_IGNORE_HEAD_LIMB_X */ 8)) {
         func_80842510(&this->headLimbRot.x);
     }
-    if (!(this->unk_AA6 & 0x40)) {
+    if (!(this->unk_AA6 & /* PLAYER_ANGLE_IGNORE_UPPER_LIMB_X */ 0x40)) {
         func_80842510(&this->upperLimbRot.x);
     }
-    if (!(this->unk_AA6 & 4)) {
+    if (!(this->unk_AA6 & /* PLAYER_ANGLE_IGNORE_FOCUS_Z */ 4)) {
         func_80842510(&this->actor.focus.rot.z);
     }
-    if (!(this->unk_AA6 & 0x10)) {
+    if (!(this->unk_AA6 & /* PLAYER_ANGLE_IGNORE_HEAD_LIMB_Y */ 0x10)) {
         func_80842510(&this->headLimbRot.y);
     }
-    if (!(this->unk_AA6 & 0x20)) {
+    if (!(this->unk_AA6 & /* PLAYER_ANGLE_IGNORE_HEAD_LIMB_Z */ 0x20)) {
         func_80842510(&this->headLimbRot.z);
     }
-    if (!(this->unk_AA6 & 0x80)) {
+    if (!(this->unk_AA6 & /* PLAYER_ANGLE_IGNORE_UPPER_LIMB_Y */ 0x80)) {
         if (this->unk_AA8 != 0) {
             func_80842510(&this->unk_AA8);
         } else {
             func_80842510(&this->upperLimbRot.y);
         }
     }
-    if (!(this->unk_AA6 & 0x100)) {
+    if (!(this->unk_AA6 & /* PLAYER_ANGLE_IGNORE_UPPER_LIMB_Z */ 0x100)) {
         func_80842510(&this->upperLimbRot.z);
     }
 
@@ -11975,49 +12124,83 @@ f32 sFloorConveyorSpeeds[CONVEYOR_SPEED_MAX - 1] = {
     1.0f, // CONVEYOR_SPEED_MEDIUM
     3.0f, // CONVEYOR_SPEED_FAST
 };  
+
+u32 gCurrentArrowEffect = 0;
+struct gArrowEffectTest {
+    u8 code_count;
+    u8 codes[4];
+} gArrowEffectTests[] = {
+    0, {CHAOS_CODE_NONE},
+    1, {CHAOS_CODE_BOMB_ARROWS},
+    1, {CHAOS_CODE_WEIRD_ARROWS},
+    1, {CHAOS_CODE_BUCKSHOT_ARROWS},
+    2, {CHAOS_CODE_BOMB_ARROWS, CHAOS_CODE_WEIRD_ARROWS},
+    2, {CHAOS_CODE_BOMB_ARROWS, CHAOS_CODE_BUCKSHOT_ARROWS},
+    2, {CHAOS_CODE_WEIRD_ARROWS, CHAOS_CODE_BUCKSHOT_ARROWS},
+    3, {CHAOS_CODE_BOMB_ARROWS, CHAOS_CODE_WEIRD_ARROWS, CHAOS_CODE_BUCKSHOT_ARROWS}
+};
  
 void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     f32 temp_fv0;
     f32 temp_fv1;
+    u32 update_index;
+    u32 code_index;
+    s16 prev_health;
     struct ChaosCode *code = NULL;
+    // LodLimb *torso_limb;
+    // Gfx *draw_list;
+    Gfx color_gfx[1];
 
-    if(Chaos_IsCodeActive(CHAOS_CODE_POKE))
+    if(CHECK_BTN_ANY(input->press.button, BTN_L))
     {
-        func_80833B18(play, this, HIT_TYPE_MELEE, 0, 0, 0, 0);
-    }
-
-    if(Chaos_IsCodeActive(CHAOS_CODE_ICE_TRAP))
-    {
-        func_80833B18(play, this, HIT_TYPE_ICE_TRAP, 0, 0, 0, 0);
-    } 
-
-    if(Chaos_IsCodeActive(CHAOS_CODE_SHOCK))
-    {
-        func_80833B18(play, this, HIT_TYPE_SHOCK, 0, 0, 0, 0);
-    }
-
-    code = Chaos_GetCode(CHAOS_CODE_RANDOM_KNOCKBACK);
-
-    if(code != NULL)
-    {
-        code->data--;
-
-        if(code->data == 0)
+        gCurrentArrowEffect = (gCurrentArrowEffect + 1) % (sizeof(gArrowEffectTests) / sizeof(gArrowEffectTests)[0]);
+        Chaos_Init();
+        for(code_index = 0; code_index < gArrowEffectTests[gCurrentArrowEffect].code_count; code_index++)
         {
-            f32 horizontal_speed = Rand_ZeroOne() * 20.0f;
-            f32 vertical_speed = Rand_ZeroOne() * 20.0f;
-            s16 hit_angle = Rand_Next() % 0xffff;
-            func_80833B18(play, this, HIT_TYPE_MELEE_TOSS, horizontal_speed, vertical_speed, hit_angle, 0);
-            Player_PlaySfx(this, NA_SE_SY_OCARINA_ERROR);
-            code->data = 2 + Rand_Next() % 160;
+            Chaos_AddCode(gArrowEffectTests[gCurrentArrowEffect].codes[code_index], 5);
+        }
+    }
+
+    if(!(this->stateFlags2 & PLAYER_STATE2_80))
+    {
+        if(Chaos_IsCodeActive(CHAOS_CODE_POKE))
+        {
+            func_80833B18(play, this, HIT_TYPE_MELEE_LIGHT, 0, 0, 0, 0);
+        }
+
+        if(Chaos_IsCodeActive(CHAOS_CODE_ICE_TRAP))
+        {
+            func_80833B18(play, this, HIT_TYPE_FREEZE, 0, 0, 0, 0);
+        } 
+
+        if(Chaos_IsCodeActive(CHAOS_CODE_SHOCK))
+        {
+            func_80833B18(play, this, HIT_TYPE_SHOCK, 0, 0, 0, 0);
+        }
+
+        code = Chaos_GetCode(CHAOS_CODE_RANDOM_KNOCKBACK);
+
+        if(code != NULL)
+        {
+            code->data--;
+
+            if(code->data == 0)
+            {
+                f32 horizontal_speed = Rand_ZeroOne() * 20.0f;
+                f32 vertical_speed = Rand_ZeroOne() * 20.0f;
+                s16 hit_angle = Rand_Next() % 0xffff;
+                func_80833B18(play, this, HIT_TYPE_MELEE_HEAVY, horizontal_speed, vertical_speed, hit_angle, 0);
+                Player_PlaySfx(this, NA_SE_SY_OCARINA_ERROR);
+                code->data = 2 + Rand_Next() % 160;
+            }
         }
     }
 
     if(Chaos_IsCodeActive(CHAOS_CODE_CHANGE_HEALTH))
     {
         s16 max_health = gSaveContext.save.saveInfo.playerData.healthCapacity;
-        s16 health_change = ((Rand_Next() % max_health) << 1) - max_health;
-        if(gSaveContext.save.saveInfo.playerData.health + health_change < 0)
+        s16 health_change = Rand_S16Offset(-max_health, max_health << 1);
+        if(gSaveContext.save.saveInfo.playerData.health + health_change <= 0)
         {
             health_change = -(gSaveContext.save.saveInfo.playerData.health - 1);
         }
@@ -12041,6 +12224,26 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
 
         Rupees_ChangeBy(rupee_change);
     }
+
+    // code = Chaos_GetCode(CHAOS_CODE_TUNIC_COLOR);
+
+    // if(Chaos_IsCodeActive(CHAOS_CODE_TUNIC_COLOR))
+    // {
+    //     // Player_SetTunicColor();
+    //     // u8 r = code->data;
+    //     // u8 g = code->data >> 8;
+    //     // u8 b = code->data >> 16;
+    //     // u32 update_index;
+
+    //     // color_gfx[0].words.w0 = (_SHIFTL(G_SETPRIMCOLOR, 24, 8) | _SHIFTL(0, 8, 8) |_SHIFTL(0xff, 0, 8));
+    //     // color_gfx[0].words.w1 = (_SHIFTL(r, 24, 8) | _SHIFTL(g, 16, 8) | _SHIFTL(b, 8, 8) |	_SHIFTL(255, 0, 8));
+
+    //     // for(update_index = 0; update_index < sizeof(gPlayerDrawListColorUpdates) / sizeof(gPlayerDrawListColorUpdates[0]); update_index++)
+    //     // {
+    //     //     struct gPlayerDrawListColorUpdate *update = gPlayerDrawListColorUpdates + update_index;
+    //     //     ((Gfx *)SEGMENTED_TO_K0(update->draw_list))[update->offset] = color_gfx[0];
+    //     // }
+    // }
 
     sPlayerControlInput = input;
     if (this->unk_D6A < 0) {
@@ -12658,6 +12861,19 @@ void Player_Draw(Actor* thisx, PlayState* play) {
     Player* this = THIS;
     f32 one = 1.0f;
     s32 spEC = false;
+    LodLimb *torso_limb;
+    FlexSkeletonHeader *header;
+    LodLimb **limbs;
+    Gfx *color_gfx;
+
+    Gfx bleh[] = {
+        gsDPSetPrimColor(0, 0xFF, 30, 105, 27, 255),
+    };
+
+    Gfx* gfx;
+    Gfx* polyOpa;
+    Gfx *limb_gfx;
+    GfxPrint gfx_print;
 
     Math_Vec3f_Copy(&this->unk_D6C, &this->bodyPartsPos[PLAYER_BODYPART_WAIST]);
     if (this->stateFlags3 & (PLAYER_STATE3_100 | PLAYER_STATE3_40000)) {
@@ -12717,6 +12933,9 @@ void Player_Draw(Actor* thisx, PlayState* play) {
         func_80122868(play, this);
 
         if (this->stateFlags3 & PLAYER_STATE3_1000) {
+            /* draw curled goron */
+
+
             Color_RGB8 spBC;
             f32 spB8 = this->unk_ABC + 1.0f;
             f32 spB4 = 1.0f - (this->unk_ABC * 0.5f);
@@ -12809,6 +13028,7 @@ void Player_Draw(Actor* thisx, PlayState* play) {
             }
 
             if (this->stateFlags2 & PLAYER_STATE2_4000000) {
+                /* draw player reflection? */
                 s16 temp_s0_2 = play->gameplayFrames * 600;
                 s16 sp70 = (play->gameplayFrames * 1000) & 0xFFFF;
 
@@ -12820,11 +13040,15 @@ void Player_Draw(Actor* thisx, PlayState* play) {
                                                  (this->unk_ABC * this->actor.scale.y),
                                              this->actor.world.pos.z, &this->actor.shape.rot);
                 Matrix_Scale(this->actor.scale.x, this->actor.scale.y, this->actor.scale.z, MTXMODE_APPLY);
+
+                /* this block makes the player model wobble */
                 Matrix_RotateXS(temp_s0_2, MTXMODE_APPLY);
                 Matrix_RotateYS(sp70, MTXMODE_APPLY);
                 Matrix_Scale(1.1f, 0.95f, 1.05f, MTXMODE_APPLY);
                 Matrix_RotateYS(-sp70, MTXMODE_APPLY);
                 Matrix_RotateXS(-temp_s0_2, MTXMODE_APPLY);
+
+
                 Player_DrawGameplay(play, this, lod, gCullFrontDList, sp84);
                 this->actor.scale.y = -this->actor.scale.y;
 
@@ -12873,6 +13097,48 @@ void Player_Draw(Actor* thisx, PlayState* play) {
     }
 
     play->actorCtx.flags &= ~ACTORCTX_FLAG_3;
+    
+    // if(this->skelAnimeUpper.skeleton != NULL)
+    // {
+    //     // header = OS_PHYSICAL_TO_K0(gPlayerSkeletons[PLAYER_FORM_HUMAN]);
+    //     // limbs = this->skelAnimeUpper.skeleton;
+    //     // torso_limb = OS_PHYSICAL_TO_K0(limbs[LINK_HUMAN_LIMB_TORSO]);
+    //     // torso_limb = Lib_SegmentedToVirtual(limbs[LINK_HUMAN_LIMB_TORSO]);
+    //     // limb_gfx = SEGMENTED_TO_K0(torso_limb->dLists[0]);
+    //     // torso_limb = gPlayerSkeletons[PLAYER_FORM_HUMAN]->sh.segment[LINK_HUMAN_LIMB_TORSO];
+    //     // torso_limb = header->sh.segment[LINK_HUMAN_LIMB_TORSO];
+        
+    //     // color_gfx = SEGMENTED_TO_K0(gLinkHumanTorsoDL);
+
+    //     OPEN_DISPS(play->state.gfxCtx);
+    //     polyOpa = POLY_OPA_DISP;
+    //     gfx = Graph_GfxPlusOne(polyOpa);
+    //     gSPDisplayList(OVERLAY_DISP++, gfx);
+
+    //     GfxPrint_Init(&gfx_print);
+    //     GfxPrint_Open(&gfx_print, gfx);
+    //     GfxPrint_SetColor(&gfx_print, 255, 255, 255, 255);
+    //     GfxPrint_SetPos(&gfx_print, 10, 10);
+    //     GfxPrint_Printf(&gfx_print, "%x %x %x", gLinkHumanTorsoDL, OS_PHYSICAL_TO_K0(gLinkHumanTorsoDL), SEGMENTED_TO_K0(gLinkHumanTorsoDL));
+    //     // GfxPrint_Printf(&gfx_print, "%x %x", color_gfx[3].words.w1, color_gfx[3].words.w0);
+    //     // GfxPrint_SetPos(&gfx_print, 10, 11);
+    //     // GfxPrint_Printf(&gfx_print, "%x %x", bleh[0].words.w1, bleh[0].words.w0);
+    //     // GfxPrint_SetPos(&gfx_print, 10, 12);
+    //     // GfxPrint_Printf(&gfx_print, "%x", color_gfx);
+    //     // GfxPrint_SetPos(&gfx_print, 10, 13);
+    //     // GfxPrint_Printf(&gfx_print, "%x", gLinkHumanTorsoDL);
+    //     // GfxPrint_SetPos(&gfx_print, 10, 14);
+    //     // GfxPrint_Printf(&gfx_print, "%x", gSegments[6]);
+    //     // GfxPrint_Printf(&gfx_print, "%x %x %x %x", limb_gfx[3].words.w1, limb_gfx[3].words.w0, bleh[0].words.w1, bleh[0].words.w0);
+
+
+    //     gfx = GfxPrint_Close(&gfx_print);
+    //     GfxPrint_Destroy(&gfx_print);
+    //     gSPEndDisplayList(gfx++);
+    //     Graph_BranchDlist(polyOpa, gfx);
+    //     POLY_OPA_DISP = gfx;
+    //     CLOSE_DISPS(gfxCtx);
+    // }
 }
 
 void Player_Destroy(Actor* thisx, PlayState* play) {
@@ -12952,8 +13218,10 @@ void func_8084748C(Player* this, f32* speed, f32 speedTarget, s16 yawTarget) {
 void func_808475B4(Player* this) {
     f32 sp4;
     f32 temp_fa1;
+    /* head_depth */
     f32 temp_fv0;
     f32 var_ft4 = -5.0f;
+    /* head_height */
     f32 var_ft5 = this->ageProperties->unk_28;
     f32 var_ft5_4;
 
@@ -12968,13 +13236,17 @@ void func_808475B4(Player* this) {
     } else {
         if (!(this->stateFlags1 & PLAYER_STATE1_80) && (this->currentBoots >= PLAYER_BOOTS_ZORA_UNDERWATER) &&
             (this->actor.velocity.y >= -5.0f)) {
+            /* speed up zora link sinking until hitting cap sink velocity */
             sp4 = -0.3f;
         } else if ((this->transformation == PLAYER_FORM_DEKU) && (this->actor.velocity.y < 0.0f)) {
             var_ft4 = 0.0f;
             sp4 = -this->actor.velocity.y;
         } else {
+            /* quickly slow down human link to a halt if fall velocity is negative, 
+            then slowly make him rise to the surface */
             var_ft4 = 2.0f;
             var_ft5_4 = CLAMP(temp_fv0, 0.1f, 0.4f);
+            
             sp4 = ((this->actor.velocity.y >= 0.0f) ? 0.0f : this->actor.velocity.y * -0.3f) + var_ft5_4;
         }
 
@@ -17815,7 +18087,7 @@ void Player_Action_82(Player* this, PlayState* play) {
                 this->av1.actionVar1 = 1;
                 this->linearVelocity = 0.0f;
             } else if (play->gameplayFrames % 4 == 0) {
-                Player_InflictDamage(play, -1);
+                // Player_InflictDamage(play, -1);
             }
         }
 

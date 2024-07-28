@@ -89,6 +89,9 @@ typedef struct {
     /* 0x4 */ void* segment;
 } SCmdMesh; // size = 0x8
 
+/* specifies a list of non-persistent objects necessary for that scene. The
+first element of the list corresponts to the first non-persistent slot, the
+second element to the second non-persistent slot, and so on */
 typedef struct {
     /* 0x0 */ u8  code;
     /* 0x1 */ u8  num;

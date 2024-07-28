@@ -37,8 +37,16 @@ u8 sMotionBlurStatus;
 #include "overlays/kaleido_scope/ovl_kaleido_scope/z_kaleido_scope.h"
 #include "debug.h"
 
+#include "objects/object_link_boy/object_link_boy.h"
+#include "objects/object_link_goron/object_link_goron.h"
+#include "objects/object_link_zora/object_link_zora.h"
+#include "objects/object_link_nuts/object_link_nuts.h"
+#include "objects/object_link_child/object_link_child.h"
+
 s32 gDbgCamEnabled = false;
 u8 D_801D0D54 = false;
+
+extern struct ChaosContext gChaosContext;
 
 typedef enum {
     /* 0 */ MOTION_BLUR_OFF,
@@ -1059,6 +1067,35 @@ void Play_UpdateMain(PlayState* this) {
         } else {
             Sram_UpdateWriteToFlashDefault(&this->sramCtx);
         }
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_LOVELESS_MARRIAGE))
+    {
+        Player *player = GET_PLAYER(this);
+        Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_RR, 
+            player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z,
+            0, 0, 0, 0);
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_BEER_GOGGLES))
+    {  
+        if(gChaosContext.link.beer_alpha < 210)
+        {
+            gChaosContext.link.beer_alpha += 5;
+        }
+    }
+    else if(gChaosContext.link.beer_alpha > 0)
+    {
+        gChaosContext.link.beer_alpha -= 5;
+    }
+
+    if(gChaosContext.link.beer_alpha > 0)
+    {
+        Play_EnableMotionBlurPriority(gChaosContext.link.beer_alpha);
+    }
+    else
+    {
+        Play_DisableMotionBlurPriority();
     }
 }
 #else
@@ -2096,6 +2133,48 @@ void Play_FillScreen(GameState* thisx, s16 fillScreenOn, u8 red, u8 green, u8 bl
     R_PLAY_FILL_SCREEN_ALPHA = alpha;
 }
 
+// struct gPlayerDrawListColorUpdate
+// {
+//     Gfx *draw_list;
+//     u32  offset;
+
+// } gPlayerDrawListColorUpdates[] = {
+//     { gLinkHumanTorsoDL,            3},
+//     { gLinkHumanCollarDL,           3},
+//     { gLinkHumanWaistDL,            3},
+//     { gLinkHumanHatDL,              7},
+//     { gLinkHumanRightShoulderDL,    7},
+//     { gLinkHumanLeftShoulderDL,     7},
+//     { gLinkHumanRightThighDL,       7},
+//     { gLinkHumanLeftThighDL,        7},
+//     { gLinkHumanHeadDL,            81},
+//     // { gLinkDekuWaistDL,            12}
+// };
+
+// extern struct ChaosContext gChaosContext;
+
+// void Play_SetTunicColor()
+// {
+//     u32 update_index;
+//     Gfx color_gfx[1];
+
+//     // if(gChaosContext.update_enabled)
+//     {
+//         color_gfx[0].words.w0 = (_SHIFTL(G_SETPRIMCOLOR, 24, 8) | _SHIFTL(0, 8, 8) |_SHIFTL(0xff, 0, 8));
+//         color_gfx[0].words.w1 = (_SHIFTL(gChaosContext.link.tunic_r, 24, 8) | 
+//                                 _SHIFTL(gChaosContext.link.tunic_g, 16, 8) | 
+//                                 _SHIFTL(gChaosContext.link.tunic_b, 8, 8)  |	
+//                                 _SHIFTL(255, 0, 8));
+
+//         for(update_index = 0; update_index < sizeof(gPlayerDrawListColorUpdates) / sizeof(gPlayerDrawListColorUpdates[0]); update_index++)
+//         {
+//             struct gPlayerDrawListColorUpdate *update = gPlayerDrawListColorUpdates + update_index;
+//             ((Gfx *)SEGMENTED_TO_K0(update->draw_list))[update->offset] = color_gfx[0];
+//             osWritebackDCache(((Gfx *)SEGMENTED_TO_K0(update->draw_list)) + update->offset, sizeof(Gfx));
+//         }
+//     }
+// }
+
 void Play_Init(GameState* thisx) {
     PlayState* this = (PlayState*)thisx;
     GraphicsContext* gfxCtx = this->state.gfxCtx;
@@ -2129,7 +2208,6 @@ void Play_Init(GameState* thisx) {
         gSaveContext.save.entrance = 0;
         STOP_GAMESTATE(&this->state);
         SET_NEXT_GAMESTATE(&this->state, TitleSetup_Init, sizeof(TitleSetupState));
-        Chaos_Init();
         return;
     }
 
@@ -2366,4 +2444,6 @@ void Play_Init(GameState* thisx) {
     gSaveContext.respawnFlag = 0;
     sBombersNotebookOpen = false;
     BombersNotebook_Init(&sBombersNotebook);
+
+    // Play_SetTunicColor();
 }
