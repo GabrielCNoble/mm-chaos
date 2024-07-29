@@ -3266,8 +3266,23 @@ void func_80115428(InterfaceContext* interfaceCtx, u16 doAction, s16 loadOffset)
 s32 Health_ChangeBy(PlayState* play, s16 healthChange) {
     if (healthChange > 0) {
         Audio_PlaySfx(NA_SE_SY_HP_RECOVER);
-    } else if (gSaveContext.save.saveInfo.playerData.doubleDefense && (healthChange < 0)) {
-        healthChange >>= 1;
+    } else if (healthChange < 0) {
+        if(gSaveContext.save.saveInfo.playerData.doubleDefense) {
+            healthChange >>= 1;
+        }
+        if(Chaos_IsCodeActive(CHAOS_CODE_INVINCIBLE))
+        {
+            healthChange = 0;
+        }
+        else if(Chaos_IsCodeActive(CHAOS_CODE_ONE_HIT_KO))
+        {
+            healthChange = -gSaveContext.save.saveInfo.playerData.health;
+        }
+        else if(Chaos_IsCodeActive(CHAOS_CODE_BEER_GOGGLES))
+        {
+            /* he's drunk, what do you expect? */
+            healthChange /= 4;
+        }
     }
 
     gSaveContext.save.saveInfo.playerData.health += healthChange;
@@ -3363,6 +3378,19 @@ void Magic_Reset(PlayState* play) {
     if ((gSaveContext.magicState != MAGIC_STATE_STEP_CAPACITY) && (gSaveContext.magicState != MAGIC_STATE_FILL)) {
         sMagicMeterOutlinePrimRed = sMagicMeterOutlinePrimGreen = sMagicMeterOutlinePrimBlue = 255;
         gSaveContext.magicState = MAGIC_STATE_IDLE;
+    }
+}
+
+void Magic_ChangeBy(PlayState *play, s16 magic)
+{
+    gSaveContext.save.saveInfo.playerData.magic += magic;
+    if(gSaveContext.save.saveInfo.playerData.magic > gSaveContext.magicCapacity)
+    {
+        gSaveContext.save.saveInfo.playerData.magic = gSaveContext.magicCapacity;
+    }
+    else if(gSaveContext.save.saveInfo.playerData.magic < 0)
+    {
+        gSaveContext.save.saveInfo.playerData.magic = 0;
     }
 }
 
@@ -3889,6 +3917,8 @@ void Interface_DrawItemButtons(PlayState* play) {
     PauseContext* pauseCtx = &play->pauseCtx;
     MessageContext* msgCtx = &play->msgCtx;
     s16 chaos_cbutton_offsets[3][2];
+    s16 chaos_bbutton_x = 0;
+    s16 chaos_bbutton_y = 0;
     s16 temp; // Used as both an alpha value and a button index
     s32 pad;
 
@@ -3904,6 +3934,9 @@ void Interface_DrawItemButtons(PlayState* play) {
             chaos_cbutton_offsets[temp][0] = Rand_S16Offset(-10, 20);
             chaos_cbutton_offsets[temp][1] = Rand_S16Offset(-10, 20);
         }
+
+        chaos_bbutton_x = Rand_S16Offset(-10, 20);
+        chaos_bbutton_y = Rand_S16Offset(-10, 20);
     }
     else
     {
@@ -3912,9 +3945,9 @@ void Interface_DrawItemButtons(PlayState* play) {
 
     // B Button Color & Texture
     OVERLAY_DISP = Gfx_DrawTexRectIA8_DropShadow(
-        OVERLAY_DISP, gButtonBackgroundTex, 0x20, 0x20, D_801BF9D4[EQUIP_SLOT_B], D_801BF9DC[EQUIP_SLOT_B],
-        D_801BFAF4[EQUIP_SLOT_B], D_801BFAF4[EQUIP_SLOT_B], D_801BF9E4[EQUIP_SLOT_B] * 2, D_801BF9E4[EQUIP_SLOT_B] * 2,
-        100, 255, 120, interfaceCtx->bAlpha);
+        OVERLAY_DISP, gButtonBackgroundTex, 0x20, 0x20, D_801BF9D4[EQUIP_SLOT_B] + chaos_bbutton_x, 
+        D_801BF9DC[EQUIP_SLOT_B] + chaos_bbutton_y, D_801BFAF4[EQUIP_SLOT_B], D_801BFAF4[EQUIP_SLOT_B], 
+        D_801BF9E4[EQUIP_SLOT_B] * 2, D_801BF9E4[EQUIP_SLOT_B] * 2, 100, 255, 120, interfaceCtx->bAlpha);
     gDPPipeSync(OVERLAY_DISP++);
 
     for(temp = EQUIP_SLOT_C_LEFT; temp <= EQUIP_SLOT_C_RIGHT; temp++)
@@ -4128,6 +4161,15 @@ void Interface_DrawBButtonIcons(PlayState* play) {
     InterfaceContext* interfaceCtx = &play->interfaceCtx;
     Player* player = GET_PLAYER(play);
 
+    s16 chaos_x = 0;
+    s16 chaos_y = 0;
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    {
+        chaos_x = Rand_S16Offset(-10, 20);
+        chaos_y = Rand_S16Offset(-10, 20);
+    }
+
     OPEN_DISPS(play->state.gfxCtx);
 
     gDPPipeSync(OVERLAY_DISP++);
@@ -4181,9 +4223,9 @@ void Interface_DrawBButtonIcons(PlayState* play) {
         D_801BF9B0 = 1024.0f / (D_801BF9B4[gSaveContext.options.language] / 100.0f);
 
         gSPTextureRectangle(
-            OVERLAY_DISP++, (D_801BF9C4[gSaveContext.options.language] * 4),
-            (D_801BF9C8[gSaveContext.options.language] * 4), ((D_801BF9C4[gSaveContext.options.language] + 0x30) << 2),
-            ((D_801BF9C8[gSaveContext.options.language] + 0x10) << 2), G_TX_RENDERTILE, 0, 0, D_801BF9B0, D_801BF9B0);
+            OVERLAY_DISP++, (D_801BF9C4[gSaveContext.options.language] * 4 + chaos_x),
+            (D_801BF9C8[gSaveContext.options.language] * 4) + chaos_y, ((D_801BF9C4[gSaveContext.options.language] + 0x30) << 2) + chaos_x,
+            ((D_801BF9C8[gSaveContext.options.language] + 0x10) << 2) + chaos_y, G_TX_RENDERTILE, 0, 0, D_801BF9B0, D_801BF9B0);
     } else if (interfaceCtx->bButtonDoAction != DO_ACTION_NONE) {
         gDPPipeSync(OVERLAY_DISP++);
         gDPSetCombineLERP(OVERLAY_DISP++, PRIMITIVE, ENVIRONMENT, TEXEL0, ENVIRONMENT, TEXEL0, 0, PRIMITIVE, 0,
@@ -4196,9 +4238,9 @@ void Interface_DrawBButtonIcons(PlayState* play) {
         D_801BF9B0 = 1024.0f / (D_801BF9B4[gSaveContext.options.language] / 100.0f);
 
         gSPTextureRectangle(
-            OVERLAY_DISP++, (D_801BF9C4[gSaveContext.options.language] * 4),
-            (D_801BF9C8[gSaveContext.options.language] * 4), ((D_801BF9C4[gSaveContext.options.language] + 0x30) << 2),
-            ((D_801BF9C8[gSaveContext.options.language] + 0x10) << 2), G_TX_RENDERTILE, 0, 0, D_801BF9B0, D_801BF9B0);
+            OVERLAY_DISP++, (D_801BF9C4[gSaveContext.options.language] * 4) + chaos_x,
+            (D_801BF9C8[gSaveContext.options.language] * 4) + chaos_y, (((D_801BF9C4[gSaveContext.options.language] + 0x30) << 2) + chaos_x),
+            ((D_801BF9C8[gSaveContext.options.language] + 0x10) << 2) + chaos_y, G_TX_RENDERTILE, 0, 0, D_801BF9B0, D_801BF9B0);
     }
 
     CLOSE_DISPS(play->state.gfxCtx);
@@ -4469,6 +4511,24 @@ void Interface_DrawClock(PlayState* play) {
     s16 finalHoursClockSlots[8];
     s16 index;
 
+    s16 chaos_x[18];
+    s16 chaos_y[18];
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    {
+        u32 index;
+        for(index = 0; index < 18; index++)
+        {
+            chaos_x[index] = Rand_S16Offset(-10, 20);
+            chaos_y[index] = Rand_S16Offset(-10, 20);
+        }
+    }
+    else
+    {
+        bzero(chaos_x, sizeof(chaos_x));
+        bzero(chaos_y, sizeof(chaos_y));
+    }
+
     OPEN_DISPS(play->state.gfxCtx);
 
     if ((R_TIME_SPEED != 0) &&
@@ -4525,7 +4585,7 @@ void Interface_DrawClock(PlayState* play) {
             gDPSetCombineLERP(OVERLAY_DISP++, 0, 0, 0, PRIMITIVE, TEXEL0, 0, PRIMITIVE, 0, 0, 0, 0, PRIMITIVE, TEXEL0,
                               0, PRIMITIVE, 0);
 
-            OVERLAY_DISP = Gfx_DrawTexRect4b(OVERLAY_DISP, gThreeDayClockHourLinesTex, 4, 64, 35, 96, 180, 128, 35, 1,
+            OVERLAY_DISP = Gfx_DrawTexRect4b(OVERLAY_DISP, gThreeDayClockHourLinesTex, 4, 64, 35, 96 + chaos_x[0], 180 + chaos_y[0], 128, 35, 1,
                                              6, 0, 1 << 10, 1 << 10);
 
             /**
@@ -4540,7 +4600,7 @@ void Interface_DrawClock(PlayState* play) {
             //!      resulting in this reading into the next texture. This results in a white
             //!      dot in the bottom center of the clock. For the three-day clock, this is
             //!      covered by the diamond. However, it can be seen by the final-hours clock.
-            OVERLAY_DISP = Gfx_DrawTexRect4b(OVERLAY_DISP, gThreeDayClockBorderTex, 4, 64, 50, 96, 168, 128, 50, 1, 6,
+            OVERLAY_DISP = Gfx_DrawTexRect4b(OVERLAY_DISP, gThreeDayClockBorderTex, 4, 64, 50, 96 + chaos_x[1], 168 + chaos_y[1], 128, 50, 1, 6,
                                              0, 1 << 10, 1 << 10);
 
             if (((CURRENT_DAY >= 4) ||
@@ -4636,7 +4696,7 @@ void Interface_DrawClock(PlayState* play) {
                     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 0, 170, 100, sThreeDayClockAlpha);
                 }
 
-                OVERLAY_DISP = Gfx_DrawTexRectIA8(OVERLAY_DISP, gThreeDayClockDiamondTex, 40, 32, 140, 190, 40, 32,
+                OVERLAY_DISP = Gfx_DrawTexRectIA8(OVERLAY_DISP, gThreeDayClockDiamondTex, 40, 32, 140 + chaos_x[2], 190 + chaos_y[2], 40, 32,
                                                   1 << 10, 1 << 10);
 
                 /**
@@ -4645,8 +4705,8 @@ void Interface_DrawClock(PlayState* play) {
                 gDPPipeSync(OVERLAY_DISP++);
                 gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 255, 255, 155, sThreeDayClockAlpha);
 
-                OVERLAY_DISP = Gfx_DrawTexRectIA8(OVERLAY_DISP, interfaceCtx->doActionSegment + 0x780, 48, 27, 137, 192,
-                                                  48, 27, 1 << 10, 1 << 10);
+                OVERLAY_DISP = Gfx_DrawTexRectIA8(OVERLAY_DISP, interfaceCtx->doActionSegment + 0x780, 48, 27, 137 + chaos_x[3], 
+                                    192 + chaos_y[3], 48, 27, 1 << 10, 1 << 10);
 
                 /**
                  * Section: Draw Three-Day Clock's Star (for the Minute Tracker)
@@ -4684,7 +4744,7 @@ void Interface_DrawClock(PlayState* play) {
                 gDPSetAlphaCompare(OVERLAY_DISP++, G_AC_THRESHOLD);
                 gDPSetRenderMode(OVERLAY_DISP++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
 
-                Matrix_Translate(0.0f, -86.0f, 0.0f, MTXMODE_NEW);
+                Matrix_Translate(0.0f + chaos_x[4], -86.0f + chaos_y[4], 0.0f, MTXMODE_NEW);
                 Matrix_Scale(1.0f, 1.0f, D_801BF980, MTXMODE_APPLY);
                 Matrix_RotateZF(-(timeInSeconds * 0.0175f) / 10.0f, MTXMODE_APPLY);
 
@@ -4722,7 +4782,7 @@ void Interface_DrawClock(PlayState* play) {
             gDPSetCombineMode(OVERLAY_DISP++, G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM);
             gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 255, 100, 110, sThreeDayClockAlpha);
 
-            Matrix_Translate(sp1D8, temp_f14, 0.0f, MTXMODE_NEW);
+            Matrix_Translate(sp1D8 + chaos_x[5], temp_f14 + chaos_y[5], 0.0f, MTXMODE_NEW);
             Matrix_Scale(1.0f, 1.0f, 1.0f, MTXMODE_APPLY);
 
             gSPMatrix(OVERLAY_DISP++, Matrix_NewMtx(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
@@ -4740,7 +4800,7 @@ void Interface_DrawClock(PlayState* play) {
             gDPSetCombineMode(OVERLAY_DISP++, G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM);
             gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 255, 255, 55, sThreeDayClockAlpha);
 
-            Matrix_Translate(sp1D8, temp_f14, 0.0f, MTXMODE_NEW);
+            Matrix_Translate(sp1D8 + chaos_x[6], temp_f14 + chaos_x[6], 0.0f, MTXMODE_NEW);
             Matrix_Scale(1.0f, 1.0f, 1.0f, MTXMODE_APPLY);
             gSPMatrix(OVERLAY_DISP++, Matrix_NewMtx(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
             gSPVertex(OVERLAY_DISP++, &interfaceCtx->actionVtx[20], 4, 0);
@@ -4760,7 +4820,7 @@ void Interface_DrawClock(PlayState* play) {
             sp1CC = gSaveContext.save.time * 0.000096131f; // (2.0f * 3.15f / 0x10000)
 
             // Rotates Three-Day Clock's Hour Digit To Above the Sun
-            Matrix_Translate(0.0f, R_THREE_DAY_CLOCK_Y_POS / 10.0f, 0.0f, MTXMODE_NEW);
+            Matrix_Translate(0.0f + chaos_x[7], R_THREE_DAY_CLOCK_Y_POS / 10.0f + chaos_y[7], 0.0f, MTXMODE_NEW);
             Matrix_Scale(1.0f, 1.0f, 1.0f, MTXMODE_APPLY);
             Matrix_RotateZF(-(sp1CC - 3.15f), MTXMODE_APPLY);
             gSPMatrix(OVERLAY_DISP++, Matrix_NewMtx(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
@@ -4784,7 +4844,7 @@ void Interface_DrawClock(PlayState* play) {
              */
 
             // Rotates Three-Day Clock's Hour Digit To Above the Moon
-            Matrix_Translate(0.0f, R_THREE_DAY_CLOCK_Y_POS / 10.0f, 0.0f, MTXMODE_NEW);
+            Matrix_Translate(0.0f + chaos_x[8], R_THREE_DAY_CLOCK_Y_POS / 10.0f + chaos_x[8], 0.0f, MTXMODE_NEW);
             Matrix_Scale(1.0f, 1.0f, 1.0f, MTXMODE_APPLY);
             Matrix_RotateZF(-sp1CC, MTXMODE_APPLY);
             gSPMatrix(OVERLAY_DISP++, Matrix_NewMtx(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
@@ -4886,7 +4946,7 @@ void Interface_DrawClock(PlayState* play) {
                 gDPSetEnvColor(OVERLAY_DISP++, sFinalHoursClockFrameEnvRed, sFinalHoursClockFrameEnvGreen,
                                sFinalHoursClockFrameEnvBlue, 0);
 
-                OVERLAY_DISP = Gfx_DrawTexRect4b(OVERLAY_DISP, gFinalHoursClockFrameTex, 3, 80, 13, 119, 202, 80, 13, 0,
+                OVERLAY_DISP = Gfx_DrawTexRect4b(OVERLAY_DISP, gFinalHoursClockFrameTex, 3, 80, 13, 119 + chaos_x[9], 202 + chaos_y[9], 80, 13, 0,
                                                  0, 0, 1 << 10, 1 << 10);
 
                 timeUntilMoonCrash = TIME_UNTIL_MOON_CRASH;
@@ -4938,7 +4998,7 @@ void Interface_DrawClock(PlayState* play) {
 
                     OVERLAY_DISP =
                         Gfx_DrawTexRectI8(OVERLAY_DISP, sFinalHoursDigitTextures[finalHoursClockSlots[sp1C6]], 8, 8,
-                                          index, 205, 8, 8, 1 << 10, 1 << 10);
+                                          index + chaos_x[sp1C6 + 10], 205 + chaos_y[sp1C6 + 10], 8, 8, 1 << 10, 1 << 10);
                 }
             }
         }
@@ -6252,6 +6312,24 @@ void Interface_Draw(PlayState* play) {
     s16 counterDigits[4];
     s16 magicAlpha;
 
+    s16 chaos_x[6];
+    s16 chaos_y[6];
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    {
+        u32 index;
+        for(index = 0; index < 6; index++)
+        {
+            chaos_x[index] = Rand_S16Offset(-10, 20);
+            chaos_y[index] = Rand_S16Offset(-10, 20);
+        }
+    }
+    else
+    {
+        bzero(chaos_x, sizeof(chaos_x));
+        bzero(chaos_y, sizeof(chaos_y));
+    }
+
     OPEN_DISPS(play->state.gfxCtx);
 
     gSPSegment(OVERLAY_DISP++, 0x02, interfaceCtx->parameterSegment);
@@ -6301,7 +6379,7 @@ void Interface_Draw(PlayState* play) {
                        sRupeeCounterIconEnvColors[CUR_UPG_VALUE(UPG_WALLET)].g,
                        sRupeeCounterIconEnvColors[CUR_UPG_VALUE(UPG_WALLET)].b, 255);
         OVERLAY_DISP =
-            Gfx_DrawTexRectIA8(OVERLAY_DISP, gRupeeCounterIconTex, 16, 16, 26, 206, 16, 16, 1 << 10, 1 << 10);
+            Gfx_DrawTexRectIA8(OVERLAY_DISP, gRupeeCounterIconTex, 16, 16, 26 + chaos_x[0], 206 + chaos_y[0], 16, 16, 1 << 10, 1 << 10);
 
         switch (play->sceneId) {
             case SCENE_INISIE_N:
@@ -6453,7 +6531,7 @@ void Interface_Draw(PlayState* play) {
             gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 0, 0, 0, magicAlpha);
 
             OVERLAY_DISP = Gfx_DrawTexRectI8(OVERLAY_DISP, (u8*)gCounterDigit0Tex + (8 * 16 * counterDigits[sp2CC]), 8,
-                                             16, sp2CA + 1, 207, 8, 16, 1 << 10, 1 << 10);
+                                             16, sp2CA + 1 + chaos_x[1 + sp2CE * 2], 207 + chaos_y[1 + sp2CE * 2], 8, 16, 1 << 10, 1 << 10);
 
             gDPPipeSync(OVERLAY_DISP++);
 
@@ -6465,7 +6543,8 @@ void Interface_Draw(PlayState* play) {
                 gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 100, 100, 100, interfaceCtx->magicAlpha);
             }
 
-            gSPTextureRectangle(OVERLAY_DISP++, sp2CA * 4, 824, (sp2CA * 4) + 0x20, 888, G_TX_RENDERTILE, 0, 0, 1 << 10,
+            gSPTextureRectangle(OVERLAY_DISP++, sp2CA * 4 + chaos_x[2 + sp2CE * 2], 824 + chaos_y[2 + sp2CE * 2], 
+                                               (sp2CA * 4) + 0x20 + chaos_x[2 + sp2CE * 2], 888 + chaos_y[2 + sp2CE * 2], G_TX_RENDERTILE, 0, 0, 1 << 10,
                                 1 << 10);
         }
 

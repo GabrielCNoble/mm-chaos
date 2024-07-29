@@ -887,7 +887,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_40000      (1 << 18)
 // 
 #define PLAYER_STATE1_80000      (1 << 19)
-// 
+// First person?
 #define PLAYER_STATE1_100000     (1 << 20)
 // 
 #define PLAYER_STATE1_200000     (1 << 21)

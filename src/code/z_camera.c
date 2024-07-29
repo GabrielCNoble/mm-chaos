@@ -51,6 +51,8 @@
 #include "overlays/actors/ovl_En_Horse/z_en_horse.h"
 #include "chaos_fuckery.h"
 
+extern struct ChaosContext gChaosContext;
+
 void func_800DDFE0(Camera* camera);
 s32 Camera_ChangeMode(Camera* camera, s16 mode);
 s16 Camera_ChangeSettingFlags(Camera* camera, s16 setting, s16 flags);
@@ -604,6 +606,10 @@ s32 func_800CBC84(Camera* camera, Vec3f* from, CameraCollision* to, s32 arg3) {
     return floorBgId + 1;
 }
 
+/*
+    arg1 = at
+    arg2 = eye
+*/
 void func_800CBFA4(Camera* camera, Vec3f* arg1, Vec3f* arg2, s32 arg3) {
     CameraCollision sp20;
     s32 pad;
@@ -7402,6 +7408,8 @@ Vec3s* Camera_Update(Vec3s* inputDir, Camera* camera) {
     DynaPolyActor* meshActor;
     PosRot focalActorPosRot;
     ShakeInfo camShake;
+    // ShakeInfo chaos_shake;
+    Vec3f chaos_shake;
     Actor* focalActor = camera->focalActor;
     VecGeo sp3C;
     s16 bgCamIndex;
@@ -7426,6 +7434,7 @@ Vec3s* Camera_Update(Vec3s* inputDir, Camera* camera) {
             } else {
                 Actor_GetWorld(&focalActorPosRot, camera->focalActor);
             }
+
             camera->unk_0F0.x = focalActorPosRot.pos.x - camera->focalActorPosRot.pos.x;
             camera->unk_0F0.y = focalActorPosRot.pos.y - camera->focalActorPosRot.pos.y;
             camera->unk_0F0.z = focalActorPosRot.pos.z - camera->focalActorPosRot.pos.z;
@@ -7595,29 +7604,79 @@ Vec3s* Camera_Update(Vec3s* inputDir, Camera* camera) {
      * which view uses to calculate the viewing/projection matrices
      */
     numQuakesApplied = Quake_Update(camera, &camShake);
-
     bgId = numQuakesApplied; // required to match
 
+    // if(Chaos_IsCodeActive(CHAOS_CODE_BEER_GOGGLES))
+    // {
+    //     float offset_x;
+    //     float offset_y;
+    //     Vec3f forward_vec;
+    //     Vec3f right_vec;
+
+    //     Math_Vec3f_DistXYZAndStoreNormDiff(&camera->eye, &camera->at, 1.0f, &forward_vec);
+
+    //     offset_y = Math_SinF(gChaosContext.link.beer_y_offset) * 15.0f;
+    //     offset_x = Math_SinF(gChaosContext.link.beer_x_offset) * 15.0f;
+
+    //     right_vec.x = forward_vec.y * camera->up.z - forward_vec.z * camera->up.y;
+    //     right_vec.y = forward_vec.x * camera->up.z - forward_vec.z * camera->up.x;
+    //     right_vec.z = forward_vec.x * camera->up.y - forward_vec.y * camera->up.x;
+
+    //     gChaosContext.link.beer_sway.x = camera->up.x * offset_y + right_vec.x * offset_x;
+    //     gChaosContext.link.beer_sway.y = camera->up.y * offset_y + right_vec.y * offset_x;
+    //     gChaosContext.link.beer_sway.z = camera->up.z * offset_y + right_vec.z * offset_x;
+
+    //     // camera->at.x += chaos_shake.x * 0.1f;
+    //     // camera->at.y += chaos_shake.y * 0.1f;
+    //     // camera->at.z += chaos_shake.z * 0.1f;
+
+    //     // camera->eye.x += chaos_shake.x * 0.1f;
+    //     // camera->eye.y += chaos_shake.y * 0.1f;
+    //     // camera->eye.z += chaos_shake.z * 0.1f;
+
+    //     // chaos_shake.x = 0;
+    //     // chaos_shake.y = 0;
+    //     // chaos_shake.z = 0;
+    // }
+    // else
+    // {
+    //     chaos_shake.x = 0;
+    //     chaos_shake.y = 0;
+    //     chaos_shake.z = 0;
+    // }
+
     if (numQuakesApplied != 0) {
-        viewAt.x = camera->at.x + camShake.atOffset.x;
-        viewAt.y = camera->at.y + camShake.atOffset.y;
-        viewAt.z = camera->at.z + camShake.atOffset.z;
-        viewEye.x = camera->eye.x + camShake.eyeOffset.x;
-        viewEye.y = camera->eye.y + camShake.eyeOffset.y;
-        viewEye.z = camera->eye.z + camShake.eyeOffset.z;
+        viewAt.x = camera->at.x + camShake.atOffset.x + gChaosContext.link.beer_sway.x;
+        viewAt.y = camera->at.y + camShake.atOffset.y + gChaosContext.link.beer_sway.y;
+        viewAt.z = camera->at.z + camShake.atOffset.z + gChaosContext.link.beer_sway.z;
+        viewEye.x = camera->eye.x + camShake.eyeOffset.x + gChaosContext.link.beer_sway.x;
+        viewEye.y = camera->eye.y + camShake.eyeOffset.y + gChaosContext.link.beer_sway.y;
+        viewEye.z = camera->eye.z + camShake.eyeOffset.z + gChaosContext.link.beer_sway.z;
         OLib_Vec3fDiffToVecGeo(&sp3C, &viewEye, &viewAt);
         Camera_CalcUpVec(&viewUp, sp3C.pitch, sp3C.yaw, camera->roll + camShake.upRollOffset);
         viewFov = camera->fov + CAM_BINANG_TO_DEG(camShake.fovOffset);
     } else if (sIsFalse) {
         //! condition is impossible to achieve
-        viewAt = camera->at;
-        viewEye = camera->eye;
+        viewAt.x = camera->at.x;
+        viewAt.y = camera->at.y;
+        viewAt.z = camera->at.z;
+
+        viewEye.x = camera->eye.x;
+        viewEye.y = camera->eye.y;
+        viewEye.z = camera->eye.z;
         OLib_Vec3fDiffToVecGeo(&sp3C, &viewEye, &viewAt);
         viewUp = camera->up;
         viewFov = camera->fov;
     } else {
-        viewAt = camera->at;
-        viewEye = camera->eye;
+        viewAt.x = camera->at.x + gChaosContext.link.beer_sway.x;
+        viewAt.y = camera->at.y + gChaosContext.link.beer_sway.y;
+        viewAt.z = camera->at.z + gChaosContext.link.beer_sway.z;
+
+        viewEye.x = camera->eye.x + gChaosContext.link.beer_sway.x;
+        viewEye.y = camera->eye.y + gChaosContext.link.beer_sway.y;
+        viewEye.z = camera->eye.z + gChaosContext.link.beer_sway.z;
+        // viewAt = camera->at;
+        // viewEye = camera->eye;
         OLib_Vec3fDiffToVecGeo(&sp3C, &viewEye, &viewAt);
         Camera_CalcUpVec(&viewUp, sp3C.pitch, sp3C.yaw, camera->roll);
         viewFov = camera->fov;

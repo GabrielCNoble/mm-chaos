@@ -520,7 +520,8 @@ typedef enum
     /* player gets shoved away from hitter */
     HIT_TYPE_MELEE_MID          = 2,
     HIT_TYPE_FREEZE             = 3,
-    HIT_TYPE_SHOCK              = 4
+    HIT_TYPE_SHOCK              = 4,
+    HIT_TYPE_DRUNK_TRIP         = 5,
 }HitType;
 
 typedef enum
@@ -1845,12 +1846,24 @@ void Player_AnimSfx_PlayFloorByAge(Player* this, u16 sfxId) {
 // ANIMSFX_TYPE_6 and ANIMSFX_TYPE_8
 void Player_AnimSfx_PlayFloorWalk(Player* this, f32 freqVolumeLerp) {
     s32 sfxId;
+    struct ChaosCode *code;
 
     if (this->currentMask == PLAYER_MASK_GIANT) {
         sfxId = NA_SE_PL_GIANT_WALK;
     } else {
         sfxId = Player_GetFloorSfxByAge(this, NA_SE_PL_WALK_GROUND);
     }
+
+    // code = Chaos_GetCode(CHAOS_CODE_BEER_GOGGLES);
+
+    // if(code != NULL)
+    // {
+    //     if(code->data == 0)
+    //     {
+    //         code->data = Rand_S16Offset(200, 200);
+    //         // func_80833B18()
+    //     }
+    // }
 
     // Audio_PlaySfx_AtPosForMetalEffectsWithSyncedFreqAndVolume
     Audio_PlaySfx_AtPosForMetalEffectsWithSyncedFreqAndVolume(&this->actor.projectedPos, sfxId, freqVolumeLerp);
@@ -5616,7 +5629,7 @@ void func_80833B18(PlayState* play, Player* this, s32 hit_type, f32 speed, f32 v
             Player_AnimSfx_PlayVoice(this, NA_SE_VO_LI_DAMAGE_S);
             anim = &gPlayerAnim_link_swimer_swim_hit;
         // } else if ((arg2 == 1) || (arg2 == 2) || !(this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) ||
-        } else if ((hit_type == HIT_TYPE_MELEE_HEAVY) || (hit_type == HIT_TYPE_MELEE_MID) || 
+        } else if ((hit_type == HIT_TYPE_MELEE_HEAVY) || (hit_type == HIT_TYPE_MELEE_MID) || (hit_type == HIT_TYPE_DRUNK_TRIP) ||
                     !(this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) || (this->stateFlags1 & 
                         (PLAYER_STATE1_4 | PLAYER_STATE1_2000 | PLAYER_STATE1_4000 | PLAYER_STATE1_200000))) {
             /* player hit while not swimming */
@@ -5652,7 +5665,10 @@ void func_80833B18(PlayState* play, Player* this, s32 hit_type, f32 speed, f32 v
                     /* something hit the player from the front, so fall backwards */
                     anim = &gPlayerAnim_link_normal_back_downA;
                 }
-                Player_AnimSfx_PlayVoice(this, NA_SE_VO_LI_FALL_L);
+                if(hit_type != HIT_TYPE_DRUNK_TRIP)
+                {
+                    Player_AnimSfx_PlayVoice(this, NA_SE_VO_LI_FALL_L);
+                }
             }
             this->actor.bgCheckFlags &= ~BGCHECKFLAG_GROUND;
         } else if ((this->linearVelocity > 4.0f) && !func_80123420(this)) {
@@ -10721,22 +10737,22 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
         ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawFeet, this->ageProperties->shadowScale);
     }
 
-    gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_DEKU] = ITEM_MASK_DEKU;
-    gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] = ITEM_OCARINA_OF_TIME;
-    gSaveContext.save.saveInfo.inventory.items[SLOT_BOW] = ITEM_BOW;
-    gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_FIRE] = ITEM_ARROW_FIRE;
-    gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_ICE] = ITEM_ARROW_ICE;
-    gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_LIGHT] = ITEM_ARROW_LIGHT;
-    gSaveContext.save.saveInfo.inventory.items[SLOT_BOMB] = ITEM_BOMB;
-    gSaveContext.save.saveInfo.playerData.magicLevel = 2;
-    gSaveContext.save.saveInfo.playerData.magic = 10;
-    gSaveContext.save.saveInfo.playerData.isMagicAcquired = true;
-    gSaveContext.save.saveInfo.playerData.isDoubleMagicAcquired = true;
-    gSaveContext.save.saveInfo.inventory.questItems |= 1 << QUEST_SONG_TIME;
-    gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOW] = 30;
-    gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOMB] = 10;
-    gSaveContext.save.saveInfo.inventory.upgrades |= 3 << gUpgradeShifts[UPG_QUIVER];
-    gSaveContext.save.saveInfo.inventory.upgrades |= 1 << gUpgradeShifts[UPG_BOMB_BAG];
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_DEKU] = ITEM_MASK_DEKU;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] = ITEM_OCARINA_OF_TIME;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_BOW] = ITEM_BOW;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_FIRE] = ITEM_ARROW_FIRE;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_ICE] = ITEM_ARROW_ICE;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_LIGHT] = ITEM_ARROW_LIGHT;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_BOMB] = ITEM_BOMB;
+    // gSaveContext.save.saveInfo.playerData.magicLevel = 2;
+    // gSaveContext.save.saveInfo.playerData.magic = 10;
+    // gSaveContext.save.saveInfo.playerData.isMagicAcquired = true;
+    // gSaveContext.save.saveInfo.playerData.isDoubleMagicAcquired = true;
+    // gSaveContext.save.saveInfo.inventory.questItems |= 1 << QUEST_SONG_TIME;
+    // gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOW] = 30;
+    // gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOMB] = 10;
+    // gSaveContext.save.saveInfo.inventory.upgrades |= 3 << gUpgradeShifts[UPG_QUIVER];
+    // gSaveContext.save.saveInfo.inventory.upgrades |= 1 << gUpgradeShifts[UPG_BOMB_BAG];
 
     this->subCamId = CAM_ID_NONE;
     Collider_InitAndSetCylinder(play, &this->cylinder, &this->actor, &D_8085C2EC);
@@ -12151,15 +12167,17 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     // Gfx *draw_list;
     Gfx color_gfx[1];
 
-    if(CHECK_BTN_ANY(input->press.button, BTN_L))
-    {
-        gCurrentArrowEffect = (gCurrentArrowEffect + 1) % (sizeof(gArrowEffectTests) / sizeof(gArrowEffectTests)[0]);
-        Chaos_Init();
-        for(code_index = 0; code_index < gArrowEffectTests[gCurrentArrowEffect].code_count; code_index++)
-        {
-            Chaos_AddCode(gArrowEffectTests[gCurrentArrowEffect].codes[code_index], 5);
-        }
-    }
+    // if(CHECK_BTN_ANY(input->press.button, BTN_L))
+    // {
+    //     // gCurrentArrowEffect = (gCurrentArrowEffect + 1) % (sizeof(gArrowEffectTests) / sizeof(gArrowEffectTests)[0]);
+    //     // Chaos_Init();
+    //     // for(code_index = 0; code_index < gArrowEffectTests[gCurrentArrowEffect].code_count; code_index++)
+    //     // {
+    //     //     Chaos_AddCode(gArrowEffectTests[gCurrentArrowEffect].codes[code_index], 5);
+    //     // }
+
+    //     Chaos_AddCode(CHAOS_CODE_BEER_GOGGLES, 30);
+    // }
 
     if(!(this->stateFlags2 & PLAYER_STATE2_80))
     {
@@ -12206,6 +12224,14 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         }
 
         Health_ChangeBy(play, health_change);
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_CHANGE_MAGIC))
+    {
+        s16 max_magic = gSaveContext.magicCapacity;
+        s16 magic_change = Rand_S16Offset(-max_magic, max_magic << 1);
+
+        Magic_ChangeBy(magic_change);
     }
 
     if(Chaos_IsCodeActive(CHAOS_CODE_CHANGE_RUPEE) && gSaveContext.rupeeAccumulator == 0)
@@ -13159,13 +13185,22 @@ void Player_Destroy(Actor* thisx, PlayState* play) {
     func_80831454(this);
 }
 
+/* Player_FirstPersonInput */
 s32 func_80847190(PlayState* play, Player* this, s32 arg2) {
     s32 pad;
     s16 var_s0;
 
     if (!func_800B7128(this) && !func_8082EF20(this) && !arg2) {
+        s16 min_step = 0x1E;
         var_s0 = sPlayerControlInput->rel.stick_y * 0xF0;
-        Math_SmoothStepToS(&this->actor.focus.rot.x, var_s0, 0xE, 0xFA0, 0x1E);
+
+        if(Chaos_IsCodeActive(CHAOS_CODE_BEER_GOGGLES))
+        {
+            min_step = 0;
+        }
+
+        // Math_SmoothStepToS(&this->actor.focus.rot.x, var_s0, 0xE, 0xFA0, 0x1E);
+        Math_SmoothStepToS(&this->actor.focus.rot.x, var_s0, 0xE, 0xFA0, min_step);
 
         var_s0 = sPlayerControlInput->rel.stick_x * -0x10;
         var_s0 = CLAMP(var_s0, -0xBB8, 0xBB8);
@@ -16306,6 +16341,7 @@ AnimSfxEntry D_8085D67C[] = {
     ANIMSFX(ANIMSFX_TYPE_SURFACE, 30, NA_SE_PL_WALK_LADDER, STOP),
 };
 
+/* Player_Action_Running? */
 void Player_Action_51(Player* this, PlayState* play) {
     s32 temp_v0;
 
@@ -18087,7 +18123,7 @@ void Player_Action_82(Player* this, PlayState* play) {
                 this->av1.actionVar1 = 1;
                 this->linearVelocity = 0.0f;
             } else if (play->gameplayFrames % 4 == 0) {
-                // Player_InflictDamage(play, -1);
+                Player_InflictDamage(play, -1);
             }
         }
 
@@ -20902,13 +20938,9 @@ void func_8085B384(Player* this, PlayState* play) {
 s32 Player_InflictDamage(PlayState* play, s32 damage) {
     Player* player = GET_PLAYER(play);
 
-    // if(Chaos_IsCodeActive(CHAOS_CODE_ONE_HIT_KO) && damage < 0)
-    // {
-    //     return true;
-    // }
-
     if ((player->stateFlags2 & PLAYER_STATE2_80) || !Player_InBlockingCsMode(play, player)) {
         if (func_808339D4(play, player, damage) == 0) {
+            /* player died while grabbed, so ungrab them */
             player->stateFlags2 &= ~PLAYER_STATE2_80;
             return true;
         }

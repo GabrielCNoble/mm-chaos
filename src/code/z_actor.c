@@ -2509,8 +2509,8 @@ Actor* Actor_UpdateActor(UpdateActor_Params* params) {
     if(Chaos_IsCodeActive(CHAOS_CODE_ACTOR_CHASE))
     {
         // if(actor != (Actor *)params->player && actor->id != ACTOR_EN_DOOR)
-        /* don't attract the player nor doors */
-        if(actor->id != ACTOR_PLAYER && actor->id != ACTOR_EN_DOOR)
+        /* don't attract the player, doors nor grottoes */
+        if(actor->id != ACTOR_PLAYER && actor->id != ACTOR_EN_DOOR && actor->id != ACTOR_DOOR_ANA)
         {
             Vec3f actor_player_vec;
             Math_Vec3f_DistXYZAndStoreNormDiff(&actor->world.pos, &params->player->actor.world.pos, 1.0f, &actor_player_vec);

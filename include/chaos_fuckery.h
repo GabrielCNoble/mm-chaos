@@ -58,8 +58,13 @@ enum CHAOS_CODES
     CHAOS_CODE_WEIRD_UI,
     /* activate motion blur */
     CHAOS_CODE_BEER_GOGGLES,
+    /* randomly changes magic */
+    CHAOS_CODE_CHANGE_MAGIC,
+    /* self explanatory */
+    CHAOS_CODE_INVINCIBLE,
     /* enemies explode when killed */
     // CHAOS_CODE_VILETILE_ENEMIES,
+
     // CHAOS_CODE_ENTRANCE_RANDO,
     // CHAOS_CODE_SLOW_ANIMATION,
     // CHAOS_CODE_RANDOM_ITEM,
@@ -73,7 +78,7 @@ enum CHAOS_CODES
     
     // CHAOS_CODE_TAKE_SCREENSHOT,
     // CHAOS_CODE_MOVE_BACKWARDS,
-    // CHAOS_CODE_INVINCIBLE,
+    
     // CHAOS_CODE_MUSIC_SWAP,
     // CHAOS_CODE_RANDOM_SCALING,
     // CHAOS_CODE_SWAP_HEAL_AND_HURT,
@@ -153,8 +158,6 @@ enum CHAOS_CODES
     // CHAOS_CODE_PAIN_IN_THE_REDEADASS,
     /* spawns majora's wrath */
     // CHAOS_CODE_MAJORAS_WRATH
-    /* enemies explode when killed */
-    // CHAOS_CODE_VILETILE_ENEMIES,
     /* set all enemies on fire */
     // CHAOS_CODE_TORCH_ENEMIES,
     /* spawns a wasp nest, which when broken spawns three random enemies */
@@ -251,8 +254,13 @@ typedef struct ChaosContext
     {
         f32                 beer_x_offset;
         f32                 beer_y_offset;
-        s16                 beer_pitch;
-        s16                 beer_yaw;
+        f32                 beer_pitch;
+        f32                 beer_yaw;
+        f32                 beer_roll;
+        Vec3f               beer_sway;
+        // Vec3f               beer_pitch_yaw;
+        // Vec3f               beer_forward_vec;
+        // Vec3f               beer_right_vec;
         u8                  beer_alpha;
         u8                  tunic_r;
         u8                  tunic_g;

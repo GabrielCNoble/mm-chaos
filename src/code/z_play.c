@@ -930,8 +930,17 @@ const char D_801DFA34[][4] = {
 // Stack issues
 void Play_UpdateMain(PlayState* this) {
     Input* input = this->state.input;
+    Player *player = GET_PLAYER(this);
     u8 freezeFlashTimer;
     s32 sp5C = false;
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_LOVELESS_MARRIAGE))
+    {
+        Player *player = GET_PLAYER(this);
+        Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_RR, 
+            player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z,
+            0, 0, 0, 0);
+    }
 
     gSegments[4] = OS_K0_TO_PHYSICAL(this->objectCtx.slots[this->objectCtx.mainKeepSlot].segment);
     gSegments[5] = OS_K0_TO_PHYSICAL(this->objectCtx.slots[this->objectCtx.subKeepSlot].segment);
@@ -1000,7 +1009,6 @@ void Play_UpdateMain(PlayState* this) {
                         this->envCtx.fillScreen = false;
                     }
                 } else {
-                    // Chaos_UpdateChaos(this);
                     Room_HandleLoadCallbacks(this, &this->roomCtx);
                     CollisionCheck_AT(this, &this->colChkCtx);
                     CollisionCheck_OC(this, &this->colChkCtx);
@@ -1053,6 +1061,84 @@ void Play_UpdateMain(PlayState* this) {
         Camera_Update(&sp48, this->cameraPtrs[this->nextCamera]);
     }
 
+    if(Chaos_IsCodeActive(CHAOS_CODE_BEER_GOGGLES))
+    {  
+        if(gChaosContext.link.beer_alpha < 210)
+        {
+            gChaosContext.link.beer_alpha += 5;
+        }
+
+        gChaosContext.link.beer_pitch = fmodf(gChaosContext.link.beer_pitch + 0.0915f, M_PI * 2.0f);
+        gChaosContext.link.beer_yaw = fmodf(gChaosContext.link.beer_yaw + 0.1593f, M_PI * 2.0f);
+        gChaosContext.link.beer_roll = fmodf(gChaosContext.link.beer_roll + 0.0293f, M_PI * 2.0f);
+        gChaosContext.link.beer_x_offset = fmodf(gChaosContext.link.beer_x_offset + 0.061f, M_PI * 2.0f);
+        gChaosContext.link.beer_y_offset = fmodf(gChaosContext.link.beer_y_offset + 0.0950f, M_PI * 2.0f);
+    }
+    else if(gChaosContext.link.beer_alpha > 0)
+    {
+        gChaosContext.link.beer_alpha -= 5;
+        gChaosContext.link.beer_sway.x *= 0.9f;
+        gChaosContext.link.beer_sway.y *= 0.9f;
+        gChaosContext.link.beer_sway.z *= 0.9f;
+    }
+
+    if(gChaosContext.link.beer_alpha > 0)
+    {
+        Camera *camera = &this->mainCamera;
+        Vec3f forward_vec;
+        Vec3f right_vec;
+        Vec3f sway_offset;
+        Vec3f pitch_yaw;
+        f32 offset_x;
+        f32 offset_y;
+        f32 alpha_scale = (f32)gChaosContext.link.beer_alpha / 210.0f;
+
+        Play_EnableMotionBlurPriority(gChaosContext.link.beer_alpha);
+        Math_Vec3f_DistXYZAndStoreNormDiff(&camera->eye, &camera->at, 1.0f, &forward_vec);
+
+        right_vec.x = forward_vec.y * camera->up.z - forward_vec.z * camera->up.y;
+        right_vec.y = forward_vec.x * camera->up.z - forward_vec.z * camera->up.x;
+        right_vec.z = forward_vec.x * camera->up.y - forward_vec.y * camera->up.x;
+
+        offset_y = Math_SinF(gChaosContext.link.beer_y_offset) * 15.0f * alpha_scale;
+        offset_x = Math_SinF(gChaosContext.link.beer_x_offset) * 15.0f * alpha_scale;
+
+        sway_offset.x = camera->up.x * offset_y + right_vec.x * offset_x;
+        sway_offset.y = camera->up.y * offset_y + right_vec.y * offset_x;
+        sway_offset.z = camera->up.z * offset_y + right_vec.z * offset_x;
+
+        offset_y = Math_SinF(gChaosContext.link.beer_pitch) * 15.0f * alpha_scale;
+        offset_x = Math_SinF(gChaosContext.link.beer_yaw) * 15.0f * alpha_scale;
+
+        pitch_yaw.x = camera->up.x * offset_y + right_vec.x * offset_x;
+        pitch_yaw.y = camera->up.y * offset_y + right_vec.y * offset_x;
+        pitch_yaw.z = camera->up.z * offset_y + right_vec.z * offset_x;        
+
+        if(camera->mode == CAM_MODE_FIRSTPERSON || (player->stateFlags1 & PLAYER_STATE1_100000))
+        {
+            player->actor.focus.rot.x += offset_y * 3;
+            player->actor.focus.rot.y += offset_x * 3;
+            gChaosContext.link.beer_sway.x = sway_offset.x * 0.025f;
+            gChaosContext.link.beer_sway.y = sway_offset.y * 0.025f;
+            gChaosContext.link.beer_sway.z = sway_offset.z * 0.025f;
+        }
+        else
+        {
+            gChaosContext.link.beer_sway = sway_offset;
+            camera->at.x += pitch_yaw.x * 0.035f;
+            camera->at.y += pitch_yaw.y * 0.035f;
+            camera->at.z += pitch_yaw.z * 0.035f;
+            camera->roll += Math_SinF(gChaosContext.link.beer_roll) * 350.0f * alpha_scale;
+        }
+    }
+    else
+    {
+        Play_DisableMotionBlurPriority();
+        gChaosContext.link.beer_sway.x = 0;
+        gChaosContext.link.beer_sway.y = 0;
+        gChaosContext.link.beer_sway.z = 0;
+    }
+
     if (!sp5C) {
         Play_UpdateWaterCamera(this, this->cameraPtrs[this->nextCamera]);
         Distortion_Update();
@@ -1067,35 +1153,6 @@ void Play_UpdateMain(PlayState* this) {
         } else {
             Sram_UpdateWriteToFlashDefault(&this->sramCtx);
         }
-    }
-
-    if(Chaos_IsCodeActive(CHAOS_CODE_LOVELESS_MARRIAGE))
-    {
-        Player *player = GET_PLAYER(this);
-        Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_RR, 
-            player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z,
-            0, 0, 0, 0);
-    }
-
-    if(Chaos_IsCodeActive(CHAOS_CODE_BEER_GOGGLES))
-    {  
-        if(gChaosContext.link.beer_alpha < 210)
-        {
-            gChaosContext.link.beer_alpha += 5;
-        }
-    }
-    else if(gChaosContext.link.beer_alpha > 0)
-    {
-        gChaosContext.link.beer_alpha -= 5;
-    }
-
-    if(gChaosContext.link.beer_alpha > 0)
-    {
-        Play_EnableMotionBlurPriority(gChaosContext.link.beer_alpha);
-    }
-    else
-    {
-        Play_DisableMotionBlurPriority();
     }
 }
 #else

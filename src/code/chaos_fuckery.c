@@ -33,6 +33,8 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_WEIRD_UI]            = */ {/* .min_time = */ 8,   /* .max_time = */ 15, /* .always_update = */ 0},
     // /* [CHAOS_CODE_VILETILE_ENEMIES]    = */ {/* .min_time = */ 10,  /* .max_time = */ 20, /* .always_update = */ 0},
     /* [CHAOS_CODE_BEER_GOGGLES]        = */ {/* .min_time = */ 15,   /* .max_time = */ 30, /* .always_update = */ 1},
+    /* [CHAOS_CODE_CHANGE_MAGIC]        = */ {/* .min_time = */ 1,   /* .max_time = */ 10, /* .always_update = */ 1},
+    /* [CHAOS_CODE_INVINCIBLE]          = */ {/* .min_time = */ 8,   /* .max_time = */ 23, /* .always_update = */ 0},
 };
 
 const char *gChaosCodeNames[] = {
@@ -59,6 +61,8 @@ const char *gChaosCodeNames[] = {
     /* [CHAOS_CODE_WEIRD_UI]            = */ "Weird UI",
     // /* [CHAOS_CODE_VILETILE_ENEMIES]    = */ "Viletile enemies",
     /* [CHAOS_CODE_BEER_GOGGLES]        = */ "Beer goggles",
+    /* [CHAOS_CODE_CHANGE_MAGIC]        = */ "Change magic",
+    /* [CHAOS_CODE_INVINCIBLE]          = */ "Invincible",
 };
 
 void Chaos_Init(void)
@@ -186,6 +190,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                     next_code = CHAOS_CODE_FIRST + Rand_Next() % (CHAOS_CODE_LAST - CHAOS_CODE_FIRST);
                     next_code_timer = gChaosCodeDefs[next_code].min_time + next_rand % (gChaosCodeDefs[next_code].max_time - gChaosCodeDefs[next_code].min_time);
 
+                    /* TODO: create a effect exclusion list for each effect, to avoid a bunch of branching here */
                     switch(next_code)
                     {
                         case CHAOS_CODE_POKE:
@@ -215,6 +220,29 @@ void Chaos_UpdateChaos(PlayState *playstate)
                                 continue;
                             }
                         break;
+
+                        case CHAOS_CODE_ONE_HIT_KO:
+                            if(Chaos_IsCodeActive(CHAOS_CODE_CHANGE_HEALTH) || Chaos_IsCodeActive(CHAOS_CODE_INVINCIBLE))
+                            {
+                                /* changing health would one-hit the player or not have any effect at all, so don't activate it */
+                                continue;
+                            }
+                        break;
+
+                        case CHAOS_CODE_CHANGE_HEALTH:
+                            if(Chaos_IsCodeActive(CHAOS_CODE_ONE_HIT_KO) || Chaos_IsCodeActive(CHAOS_CODE_INVINCIBLE))
+                            {
+                                /* changing health would one-hit the player or not have any effect at all, so don't activate it */
+                                continue;
+                            }
+                        break;
+
+                        case CHAOS_CODE_INVINCIBLE:
+                            if(Chaos_IsCodeActive(CHAOS_CODE_ONE_HIT_KO) || Chaos_IsCodeActive(CHAOS_CODE_CHANGE_HEALTH))
+                            {
+                                continue;
+                            }
+                        break;
                     }
 
                     code_add_result = Chaos_AddCode(next_code, next_code_timer);
@@ -241,6 +269,10 @@ void Chaos_UpdateChaos(PlayState *playstate)
                             last_code->data = 1;
                         break;
 
+                        case CHAOS_CODE_BEER_GOGGLES:
+                            last_code->data = Rand_S16Offset(200, 200);
+                        break;
+
                         // case CHAOS_CODE_TUNIC_COLOR:
                         // {
                         //     u32 color = Rand_Next() % 0xffffff;
@@ -263,7 +295,6 @@ void Chaos_PrintCodes(PlayState *playstate)
     GfxPrint gfx_print;
     u32 slot_index;
     u32 y_pos = 1;
-
     if(gSaveContext.gameMode == GAMEMODE_NORMAL)
     {
         OPEN_DISPS(playstate->state.gfxCtx);
@@ -283,10 +314,18 @@ void Chaos_PrintCodes(PlayState *playstate)
         while(slot_index < gChaosContext.active_code_count)
         {
             struct ChaosCode *code = gChaosContext.active_codes + slot_index;
+
+            // if(code->code > CHAOS_CODE_LAST)
+            // {
+            //     u32 *blah = (u32 *)code->code;
+            //     *blah = 5;
+            // }
+
             if(code->timer > 0)
             {
                 GfxPrint_SetPos(&gfx_print, 1, y_pos++);
                 GfxPrint_Printf(&gfx_print, "%s: %d", gChaosCodeNames[code->code], (u32)code->timer);
+                // GfxPrint_Printf(&gfx_print, "%s: %d", gChaosCodeNames[0], (u32)code->timer);
             }
             slot_index++;
         }
@@ -329,14 +368,14 @@ u8 Chaos_DropCodeAtIndex(u8 index)
         code = gChaosContext.active_codes[index].code;
         gChaosContext.active_code_indices[code] = INVALID_CODE_INDEX;
 
-        if(index < gChaosContext.active_code_count - 1)
+        gChaosContext.active_code_count--;
+
+        if(index < gChaosContext.active_code_count)
         {
-            gChaosContext.active_codes[index] = gChaosContext.active_codes[gChaosContext.active_code_count - 1];
+            gChaosContext.active_codes[index] = gChaosContext.active_codes[gChaosContext.active_code_count];
             code = gChaosContext.active_codes[index].code;
             gChaosContext.active_code_indices[code] = index;
         }
-
-        gChaosContext.active_code_count--;
     }
 }
 
