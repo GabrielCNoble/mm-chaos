@@ -3383,14 +3383,17 @@ void Magic_Reset(PlayState* play) {
 
 void Magic_ChangeBy(PlayState *play, s16 magic)
 {
-    gSaveContext.save.saveInfo.playerData.magic += magic;
-    if(gSaveContext.save.saveInfo.playerData.magic > gSaveContext.magicCapacity)
+    // if(gSaveContext.save.saveInfo.playerData.isMagicAcquired)
     {
-        gSaveContext.save.saveInfo.playerData.magic = gSaveContext.magicCapacity;
-    }
-    else if(gSaveContext.save.saveInfo.playerData.magic < 0)
-    {
-        gSaveContext.save.saveInfo.playerData.magic = 0;
+        gSaveContext.save.saveInfo.playerData.magic += magic;
+        if(gSaveContext.save.saveInfo.playerData.magic > gSaveContext.magicCapacity)
+        {
+            gSaveContext.save.saveInfo.playerData.magic = gSaveContext.magicCapacity;
+        }
+        else if(gSaveContext.save.saveInfo.playerData.magic < 0)
+        {
+            gSaveContext.save.saveInfo.playerData.magic = 0;
+        }
     }
 }
 

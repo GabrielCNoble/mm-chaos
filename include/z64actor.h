@@ -390,6 +390,19 @@ typedef enum {
     /* 1 */ LENS_MODE_SHOW_ACTORS // lens actors are invisible by default, and shown by using lens (for example, invisible enemies)
 } LensMode;
 
+typedef enum
+{
+    /* player flinches */
+    HIT_TYPE_MELEE_LIGHT        = 0,
+    /* player gets tossed away from hitter with configurable horizontal/vertical velocities */
+    HIT_TYPE_MELEE_HEAVY        = 1,
+    /* player gets shoved away from hitter */
+    HIT_TYPE_MELEE_MID          = 2,
+    HIT_TYPE_FREEZE             = 3,
+    HIT_TYPE_SHOCK              = 4,
+    HIT_TYPE_DRUNK_TRIP         = 5
+}HitType;
+
 #define LENS_ACTOR_MAX 32
 
 // Target size when activated
@@ -435,7 +448,7 @@ typedef struct ActorContext {
     /* 0x254 */ struct EnTorch2* elegyShells[5]; // PLAYER_FORM_MAX
     /* 0x268 */ u8 unk268;
     /* 0x269 */ UNK_TYPE1 pad269[0x3];
-    /* 0x26C */ Input unk_26C;
+    /* 0x26C */ Input unk_26C; // player input?
 } ActorContext; // size = 0x284
 
 typedef enum {

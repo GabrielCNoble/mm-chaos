@@ -238,6 +238,7 @@ beginseg
     include "build/src/boot/O2/__osStrcpy.o"
     include "build/src/boot/O2/__osMemcpy.o"
     include "build/src/boot/build.o"
+    include "build/asm/code/dbg.o"
 endseg
 
 beginseg

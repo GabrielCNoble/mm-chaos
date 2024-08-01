@@ -29,7 +29,7 @@ u8 sMotionBlurStatus;
 #include "z64quake.h"
 #include "z64rumble.h"
 #include "z64shrink_window.h"
-#include "z64view.h" 
+#include "z64view.h"  
 
 #include "overlays/gamestates/ovl_daytelop/z_daytelop.h"
 #include "overlays/gamestates/ovl_opening/z_opening.h"
@@ -46,8 +46,8 @@ u8 sMotionBlurStatus;
 s32 gDbgCamEnabled = false;
 u8 D_801D0D54 = false;
 
-extern struct ChaosContext gChaosContext;
-
+extern struct ChaosContext gChaosContext;  
+ 
 typedef enum {
     /* 0 */ MOTION_BLUR_OFF,
     /* 1 */ MOTION_BLUR_SETUP,
@@ -924,6 +924,8 @@ const char D_801DFA34[][4] = {
     "f",   "g",  "g",  "h",  "h",  "i",  "i",  "all", "all", "a",  "b",  "c",  "d",  "e",  "f",  "g",
     "h",   "i",  "f",  "fa", "fb", "fc", "fd", "fe",  "ff",  "fg", "fh", "fi", "fj", "fk",
 };
+
+extern MessageTableEntry D_801C6B98[];
  
 #define NON_MATCHING
 #ifdef NON_MATCHING
@@ -933,13 +935,58 @@ void Play_UpdateMain(PlayState* this) {
     Player *player = GET_PLAYER(this);
     u8 freezeFlashTimer;
     s32 sp5C = false;
+    struct ChaosCode *code;
 
     if(Chaos_IsCodeActive(CHAOS_CODE_LOVELESS_MARRIAGE))
     {
-        Player *player = GET_PLAYER(this);
         Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_RR, 
             player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z,
             0, 0, 0, 0);
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_TEXTBOX))
+    {
+        s16 entry_index = Rand_Next() % 4590;
+        MessageTableEntry *entry = D_801C6B98 + entry_index;
+        Message_StartTextbox(this, entry->textId, &player->actor);
+        CutsceneManager_Queue(CS_ID_GLOBAL_TALK);
+        Chaos_DropCode(CHAOS_CODE_TEXTBOX);
+    }
+
+    code = Chaos_GetCode(CHAOS_CODE_TERRIBLE_MUSIC);
+
+    if(code != NULL)
+    {
+        if(code->timer > 1)
+        {
+            code->data--;
+
+            if(code->data == 0)
+            {
+                u16 frequency_duration = Rand_S16Offset(5, 15);
+                u16 tempo_duration = Rand_S16Offset(5, 15);
+                f32 scale;
+
+                if(frequency_duration > tempo_duration)
+                {
+                    code->data = frequency_duration;
+                }
+                else
+                {
+                    code->data = tempo_duration;
+                }
+
+                scale = 0.25f + Rand_ZeroOne() * 2.5f;
+                SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_MAIN, frequency_duration, scale * 1000.0f);
+                scale = 0.25f + Rand_ZeroOne() * 2.5f;
+                SEQCMD_SET_TEMPO(SEQ_PLAYER_BGM_MAIN, tempo_duration, scale * 100.0f);
+            }
+        }
+        else
+        {
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_MAIN, 10, 1000.0f);
+            SEQCMD_RESET_TEMPO(SEQ_PLAYER_BGM_MAIN, 10);
+        }
     }
 
     gSegments[4] = OS_K0_TO_PHYSICAL(this->objectCtx.slots[this->objectCtx.mainKeepSlot].segment);
@@ -1234,6 +1281,7 @@ void Play_DrawMain(PlayState* this) {
     GraphicsContext* gfxCtx = this->state.gfxCtx;
     Lights* sp268;
     Vec3f sp25C;
+    Input inputs[MAXCONTROLLERS];
     u8 sp25B = false;
 
     if (R_PAUSE_BG_PRERENDER_STATE >= PAUSE_BG_PRERENDER_UNK4) {
@@ -1545,7 +1593,11 @@ SkipPostWorldDraw:
 
     CLOSE_DISPS(gfxCtx);
 
-    Chaos_PrintCodes(this);
+    PadMgr_GetInput(inputs, false);
+    if(CHECK_BTN_ANY(inputs[0].press.button, BTN_DLEFT))
+    {
+        Chaos_PrintCodes(this);
+    }
 }
 #else
 void Play_DrawMain(PlayState* this);

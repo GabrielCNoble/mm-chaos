@@ -14,7 +14,7 @@
  * - RisingDebris: The debris that rises from the ground as the moon is crashing.
  * - FireRing: The ring of fire that expands outward when the moon is almost done crashing.
  */
-
+ 
 #include "z_en_fall.h"
 #include "overlays/actors/ovl_En_Clear_Tag/z_en_clear_tag.h"
 #include "objects/object_fall/object_fall.h"
@@ -22,7 +22,7 @@
 #include "objects/object_lodmoon/object_lodmoon.h"
 #include "objects/object_moonston/object_moonston.h"
 #include "chaos_fuckery.h" 
-
+ 
 #define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_20)
 
 #define THIS ((EnFall*)thisx)
@@ -30,7 +30,7 @@
 #define FLAG_FIRE_BALL_INTENSIFIES (1 << 0)
 #define FLAG_FIRE_RING_APPEARS (1 << 1)
 
-extern ChaosContext gChaosContext;
+extern ChaosContext gChaosContext;  
 
 void EnFall_Init(Actor* thisx, PlayState* play);
 void EnFall_Destroy(Actor* thisx, PlayState* play);
@@ -46,7 +46,7 @@ void EnFall_MoonsTear_Fall(EnFall* this, PlayState* play);
 void EnFall_Fireball_Update(Actor* thisx, PlayState* play);
 void EnFall_RisingDebris_Update(Actor* thisx, PlayState* play);
 void EnFall_FireRing_Update(Actor* thisx, PlayState* play);
-void EnFall_Moon_ChaosStuff();
+void EnFall_Moon_ChaosStuff(void);
 void EnFall_Moon_Draw(Actor* thisx, PlayState* play);
 void EnFall_OpenMouthMoon_Draw(Actor* thisx, PlayState* play);
 void EnFall_LodMoon_DrawWithoutLerp(Actor* thisx, PlayState* play);
@@ -750,7 +750,7 @@ void EnFall_FireRing_Update(Actor* thisx, PlayState* play) {
     }
 }
 
-void EnFall_Moon_ChaosStuff()
+void EnFall_Moon_ChaosStuff(void)
 {
     Vec3f up_axis = {0.0f, 1.0f, 0.0f};
     Vec3f forward_axis = {0.0f, 0.0f, 1.0f};

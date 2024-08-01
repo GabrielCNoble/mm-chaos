@@ -1500,6 +1500,7 @@ PlayerSword Player_SwordFromIA(Player* player, PlayerItemAction itemAction) {
     return PLAYER_SWORD_NONE;
 }
 
+/* Player_IsPlayerFloating? */
 s32 func_801242B4(Player* player) {
     return (player->stateFlags1 & PLAYER_STATE1_8000000) && (player->currentBoots < PLAYER_BOOTS_ZORA_UNDERWATER);
 }

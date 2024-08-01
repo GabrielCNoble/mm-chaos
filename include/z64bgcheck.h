@@ -115,7 +115,7 @@ typedef enum FloorType {
     /*  2 */ FLOOR_TYPE_2,
     /*  3 */ FLOOR_TYPE_3,
     /*  4 */ FLOOR_TYPE_4,
-    /*  5 */ FLOOR_TYPE_5,
+    /*  5 */ FLOOR_TYPE_5, // ice/slippery floor
     /*  6 */ FLOOR_TYPE_6,
     /*  7 */ FLOOR_TYPE_7,
     /*  8 */ FLOOR_TYPE_8,

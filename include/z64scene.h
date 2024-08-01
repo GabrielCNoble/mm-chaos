@@ -411,15 +411,25 @@ typedef struct {
     /* 0x8 */ char* name; // unused
 } SceneEntranceTableEntry; // size = 0xC
 
+#define MAX_OBJ_REQUESTS 16
+
+typedef struct 
+{
+    s16         slot_index;
+    OSMesgQueue load_queue;
+    OSMesg      load_msg;
+} ObjectRequest;
+
 typedef struct {
     /* 0x00 */ s16 id; // Negative ids mean that the object is unloaded
     /* 0x02 */ UNK_TYPE1 pad2[0x2];
+            //    s16 request_index;
     /* 0x04 */ void* segment;
     /* 0x08 */ DmaRequest dmaReq;
     /* 0x28 */ OSMesgQueue loadQueue;
     /* 0x40 */ OSMesg loadMsg;
 } ObjectEntry; // size = 0x44
-
+ 
 typedef struct {
     /* 0x0 */ RomFile segment;
     /* 0x8 */ u16 titleTextId;
@@ -485,6 +495,11 @@ typedef struct {
     /* 0x00A */ u8 mainKeepSlot; // "gameplay_keep" slot
     /* 0x00B */ u8 subKeepSlot; // "gameplay_field_keep" or "gameplay_dangeon_keep" slot
     /* 0x00C */ ObjectEntry slots[35];
+                // ObjectRequest requests[MAX_OBJ_REQUESTS];
+                // u8 request_count;
+                // u8 next_free_request;
+                // u8 next_pending_request;
+                // u8 pad[0x958 - 0x7bb];
 } ObjectContext; // size = 0x958
 
 #define PATH_INDEX_NONE -1

@@ -5,6 +5,9 @@
 #include "functions.h"
 #include "variables.h"
 #include "macros.h"
+#include "chaos_fuckery.h"
+
+extern struct ChaosContext gChaosContext;  
 
 void GameOver_Init(PlayState* play) {
     play->gameOverCtx.state = GAMEOVER_INACTIVE;
@@ -66,6 +69,7 @@ void GameOver_Update(PlayState* play) {
             gSaveContext.nextHudVisibility = HUD_VISIBILITY_IDLE;
             gSaveContext.hudVisibility = HUD_VISIBILITY_IDLE;
             gSaveContext.hudVisibilityTimer = 0;
+
             Environment_InitGameOverLights(play);
             sGameOverTimer = 20;
             Rumble_Request(0.0f, 126, 124, 63);
@@ -94,6 +98,15 @@ void GameOver_Update(PlayState* play) {
             sGameOverTimer = 0;
             Environment_InitGameOverLights(play);
             ShrinkWindow_Letterbox_SetSizeTarget(32);
+
+            if(gChaosContext.link.syke)
+            {
+                gSaveContext.hudVisibilityForceButtonAlphasByStatus = false;
+                gSaveContext.nextHudVisibility = HUD_VISIBILITY_IDLE;
+                gSaveContext.hudVisibility = HUD_VISIBILITY_IDLE;
+                gSaveContext.hudVisibilityTimer = 0;
+            }
+
             break;
 
         case GAMEOVER_REVIVE_RUMBLE:
@@ -105,17 +118,26 @@ void GameOver_Update(PlayState* play) {
         case GAMEOVER_REVIVE_WAIT_GROUND:
             sGameOverTimer--;
             if (sGameOverTimer == 0) {
-                sGameOverTimer = 64;
+                sGameOverTimer = 63;
                 gameOverCtx->state++; // GAMEOVER_REVIVE_WAIT_FAIRY
             }
             break;
 
         case GAMEOVER_REVIVE_WAIT_FAIRY:
-            sGameOverTimer--;
-            if (sGameOverTimer == 0) {
+            if(sGameOverTimer > 0)
+            {
+                sGameOverTimer--;
+            }
+            else if(!gChaosContext.link.syke || (gChaosContext.link.syke && 
+                AudioSeq_GetActiveSeqId(SEQ_PLAYER_FANFARE) != NA_BGM_GAME_OVER))
+            {
                 sGameOverTimer = 50;
                 gameOverCtx->state++; // GAMEOVER_REVIVE_FADE_OUT
             }
+            // if (sGameOverTimer == 0) {
+            //     sGameOverTimer = 50;
+            //     gameOverCtx->state++; // GAMEOVER_REVIVE_FADE_OUT
+            // }
             break;
 
         case GAMEOVER_REVIVE_FADE_OUT:

@@ -861,7 +861,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_20         (1 << 5)
 // 
 #define PLAYER_STATE1_40         (1 << 6)
-// 
+// Player dead
 #define PLAYER_STATE1_80         (1 << 7)
 // 
 #define PLAYER_STATE1_100        (1 << 8)
@@ -901,7 +901,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_2000000    (1 << 25)
 // 
 #define PLAYER_STATE1_4000000    (1 << 26)
-// Swimming?
+// Swimming/in water?
 #define PLAYER_STATE1_8000000    (1 << 27)
 // 
 #define PLAYER_STATE1_10000000   (1 << 28)
@@ -1223,6 +1223,7 @@ typedef struct Player {
     /* 0xAE3 */ s8 unk_AE3[4]; // Circular buffer used for ?
     /* 0xAE7 */ union {
         s8 iceTrapHaltCounter; // Used when the player is trapped in ice.
+        s8 revivePlayer; // Used to flag the player should be revived
         s8 actionVar1;
     } av1; // "Action Variable 1": context dependent variable that has different meanings depending on what action is currently running
     /* 0xAE8 */ union { 

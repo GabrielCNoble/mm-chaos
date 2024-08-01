@@ -39,8 +39,6 @@ enum CHAOS_CODES
     CHAOS_CODE_SHOCK,
     /* random quake */
     CHAOS_CODE_EARTHQUAKE,
-    /* sets tunic to random color */
-    // CHAOS_CODE_TUNIC_COLOR,
     /* arrows explode on impact */
     CHAOS_CODE_BOMB_ARROWS,
     /* arrows fly erratically */
@@ -62,14 +60,35 @@ enum CHAOS_CODES
     CHAOS_CODE_CHANGE_MAGIC,
     /* self explanatory */
     CHAOS_CODE_INVINCIBLE,
+    /* fake insta-death */
+    CHAOS_CODE_SYKE,
+    /* real insta-death */
+    CHAOS_CODE_DIE,
+    /* player randomly screams */
+    CHAOS_CODE_TOURETTE,
+    /* opens random textbox */
+    CHAOS_CODE_TEXTBOX,
+    /* ice physics */
+    CHAOS_CODE_SLIPPERY_FLOORS,
+    /* link walks slowly */
+    CHAOS_CODE_SLOW_DOWN,
+    /* self explanatory */
+    CHAOS_CODE_ENTRANCE_RANDO,
+    /* varies bgm tempo and frequency randomly */
+    CHAOS_CODE_TERRIBLE_MUSIC,
+    /* received attacks have enormous knockback */
+    CHAOS_CODE_INCREDIBLE_KNOCKBACK,
     /* enemies explode when killed */
     // CHAOS_CODE_VILETILE_ENEMIES,
 
-    // CHAOS_CODE_ENTRANCE_RANDO,
+    /* sets tunic to random color */
+    // CHAOS_CODE_TUNIC_COLOR,
+
+    
     // CHAOS_CODE_SLOW_ANIMATION,
     // CHAOS_CODE_RANDOM_ITEM,
     // CHAOS_CODE_BUTTERFINGERS,
-    // CHAOS_CODE_INCREDIBLE_KNOCKBACK,
+    
     // CHAOS_CODE_RANDOM_SWORD_TRAILS,
     // CHAOS_CODE_NO_Z_TARGETING,
     
@@ -85,11 +104,9 @@ enum CHAOS_CODES
     // CHAOS_CODE_SHOW_SCREENSHOT,
     /* spawn walls of fire around player */
     // CHAOS_CODE_ANTIVIRUS,
-    // CHAOS_CODE_RANDOM_HEALTH_DOWN,
     // CHAOS_CODE_FASTER_ANIMATIONS,
     // CHAOS_CODE_SONG_OF_STORMS,
     // CHAOS_CODE_SIGNPOST,
-    // CHAOS_CODE_SLIPPERY_FLOORS,
     // CHAOS_CODE_ROTATE_SLOWLY,
     // CHAOS_CODE_ENVIRONMENT_SETTINGS,
     
@@ -104,7 +121,6 @@ enum CHAOS_CODES
     // CHAOS_CODE_QUICKSAND,
     // CHAOS_CODE_STARFOX,
     // CHAOS_CODE_SNAP_TO_FLOOR,
-    // CHAOS_CODE_TERRIBLE_MUSIC,
     // CHAOS_CODE_ACTIVATE_SWORD_COLLIDER,
     // CHAOS_CODE_NO_AUTOJUMP,
     // CHAOS_CODE_NAVI,
@@ -123,8 +139,6 @@ enum CHAOS_CODES
     // CHAOS_CODE_PUZZLE_EVENT,
 
     // CHAOS_CODE_PUT_AWAY_ITEMS,
-    // CHAOS_CODE_TEXTBOX,
-    // CHAOS_CODE_EARTHQUAKE,
     // CHAOS_CODE_CAMERA_SHAKE,
     // CHAOS_CODE_VOID_OUT,
     // CHAOS_CODE_CLIMB_EVERYTHING,
@@ -140,8 +154,7 @@ enum CHAOS_CODES
     // CHAOS_CODE_BIG_BROTHER,
     /* walk over water */
     // CHAOS_CODE_HIM,
-    /* fake insta-death */
-    // CHAOS_CODE_SYKE,
+    
     /* all sounds are the same player sound */
     // CHAOS_CODE_UNORIGINAL,
     /* tatl frequently pipes up with random quest tips */
@@ -162,8 +175,7 @@ enum CHAOS_CODES
     // CHAOS_CODE_TORCH_ENEMIES,
     /* spawns a wasp nest, which when broken spawns three random enemies */
     // CHAOS_CODE_LOTTERY_NEST,
-    /* player randomly screams */
-    // CHAOS_CODE_TOURETTE,
+    
     /* player takes flight like a gossip stone */
     // CHAOS_CODE_LIFTOFF,
     
@@ -174,10 +186,16 @@ enum CHAOS_CODES
 
 struct ChaosCodeDef
 {
-    u8 min_time;
-    u8 max_time;
-    u8 always_update;
+    u32     range_start;
+    u32     range_end;
+    f32     probability;
+    
+    u8      min_time;
+    u8      max_time;
+    u8      always_update;
 };
+ 
+#define CHAOS_CODE_DEF(min_time, max_time, always_update, probability) {0, 0, probability, min_time, max_time, always_update}
 
 struct ChaosCode
 {
@@ -240,6 +258,7 @@ typedef struct ChaosContext
     u8                      update_enabled;
     struct ChaosCode        active_codes[MAX_ACTIVE_CODES];
     u8                      active_code_indices[CHAOS_CODE_LAST];
+    // u8                      show_codes;
 
     struct 
     {
@@ -265,6 +284,8 @@ typedef struct ChaosContext
         u8                  tunic_r;
         u8                  tunic_g;
         u8                  tunic_b;
+        u16                 syke_health;
+        u8                  syke;
     } link;
 
     struct
@@ -290,7 +311,11 @@ void Chaos_PrintCodes(PlayState *playstate);
 
 u8 Chaos_AddCode(u8 code, u8 seconds);
 
-u8 Chaos_DropCodeAtIndex(u8 index);
+void Chaos_DropCodeAtIndex(u8 index);
+
+void Chaos_DropCode(u8 code);
+
+
 
 u8 Chaos_IsCodeActive(u8 code);
 

@@ -1,4 +1,7 @@
 #include "global.h"
+#include "fault.h"
+
+FaultClient gObjectFaultClient;
 
 /**
  * Spawn an object file of a specified ID that will persist through room changes.
@@ -35,11 +38,30 @@ s32 Object_SpawnPersistent(ObjectContext* objectCtx, s16 id) {
     return objectCtx->numEntries - 1;
 }
 
+void Object_FaultClient(void *arg0, void *arg1)
+{
+    u32 object_index;
+    ObjectContext *context = (ObjectContext *)arg0;
+
+    FaultDrawer_SetCharPad(-2, 0);
+
+    FaultDrawer_Printf("object table\n");
+    FaultDrawer_Printf(" ID  | Segment  |   VROM   |   DRAM   \n");
+
+    for(object_index = 0; object_index < context->numEntries; object_index++)
+    {
+        ObjectEntry *entry = context->slots + object_index;
+        FaultDrawer_Printf("%04d | %08x | %08x | %08x\n", entry->id, entry->segment, entry->dmaReq.vromAddr, entry->dmaReq.dramAddr);
+    }
+}
+
 void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
     PlayState* play = (PlayState*)gameState;
     s32 pad;
     u32 spaceSize;
     s32 i;
+
+    Fault_AddClient(&gObjectFaultClient, Object_FaultClient, objectCtx, NULL);
 
     if (play->sceneId == SCENE_CLOCKTOWER || play->sceneId == SCENE_TOWN || play->sceneId == SCENE_BACKTOWN ||
         play->sceneId == SCENE_ICHIBA) {
@@ -56,9 +78,16 @@ void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
     objectCtx->numPersistentEntries = 0;
     objectCtx->mainKeepSlot = 0;
     objectCtx->subKeepSlot = 0;
+    // objectCtx->request_count = 0;
+    // objectCtx->next_free_request = 0;
+    // objectCtx->next_pending_request = 0;
 
     // clang-format off
-    for (i = 0; i < ARRAY_COUNT(objectCtx->slots); i++) { objectCtx->slots[i].id = 0; }
+    for (i = 0; i < ARRAY_COUNT(objectCtx->slots); i++) 
+    { 
+        objectCtx->slots[i].id = 0; 
+        // objectCtx->slots[i].request_index = MAX_OBJ_REQUESTS;
+    }
     // clang-format on
 
     objectCtx->spaceStart = objectCtx->slots[0].segment = THA_AllocTailAlign16(&gameState->tha, spaceSize);
@@ -70,11 +99,86 @@ void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
     gSegments[4] = OS_K0_TO_PHYSICAL(objectCtx->slots[objectCtx->mainKeepSlot].segment);
 }
 
+s16 Object_RequestLoad(ObjectContext *context, ObjectEntry *entry, void *vram_start, uintptr_t vrom_start, size_t size)
+{
+    s16 request_index = MAX_OBJ_REQUESTS;
+    // ObjectRequest *object_request;
+    // if(context->request_count < MAX_OBJ_REQUESTS)
+    // {
+    //     request_index = context->next_free_request;
+    //     context->request_count++;
+    //     context->next_free_request = (context->next_free_request + 1) & (MAX_OBJ_REQUESTS - 1);
+
+    //     object_request = context->requests + request_index;
+    //     object_request->slot_index = entry - &context->slots[0];
+    //     // entry->request_index = request_index;
+    //     osCreateMesgQueue(&object_request->load_queue, &object_request->load_msg, 1);
+    //     DmaMgr_SendRequestImpl(&entry->dmaReq, vram_start, vrom_start, size, 0, &object_request->load_queue, NULL);
+    // }
+
+    return request_index;
+}
+
 void Object_UpdateEntries(ObjectContext* objectCtx) {
     s32 i;
     ObjectEntry* entry = &objectCtx->slots[0];
     RomFile* objectFile;
     size_t size;
+
+    // do
+    // {
+    //     u32 request_count = objectCtx->request_count;
+
+    //     for(i = 0; i < request_count; i++)
+    //     {
+    //         ObjectRequest *request = objectCtx->requests + objectCtx->next_pending_request;
+            
+    //         if(!osRecvMesg(&request->load_queue, NULL, OS_MESG_NOBLOCK))
+    //         {
+    //             ObjectEntry *pending_entry = objectCtx->slots + request->slot_index;
+    //             pending_entry->id = -pending_entry->id;
+    //             // pending_entry->request_index = MAX_OBJ_REQUESTS;
+    //             objectCtx->request_count--;
+    //             objectCtx->next_pending_request = (objectCtx->next_pending_request + 1) & (MAX_OBJ_REQUESTS - 1);
+
+
+                
+    //             // if(objectCtx->request_count > MAX_OBJ_REQUESTS)
+    //             // {
+    //             //     Fault_AddHungupAndCrash("SHIT's FUCKED", 146);
+    //             // }
+    //         }
+    //         else
+    //         {
+    //             break;
+    //         }
+    //     }
+
+    //     for (i = 0; i < objectCtx->numEntries; i++)
+    //     {
+    //         ObjectEntry *entry = &objectCtx->slots[i];
+    //         if(entry->id < 0)
+    //         {
+    //             s32 id = -entry->id;
+
+    //             if(entry->dmaReq.vromAddr == 0)
+    //             {
+    //                 objectFile = &gObjectTable[id];
+    //                 size = objectFile->vromEnd - objectFile->vromStart;
+
+    //                 if(size == 0) 
+    //                 {
+    //                     entry->id = 0;
+    //                 } 
+    //                 else if(Object_RequestLoad(objectCtx, entry, entry->segment, objectFile->vromStart, size) == MAX_OBJ_REQUESTS)
+    //                 {
+    //                     break;
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+    // while(objectCtx->request_count > 0);
 
     for (i = 0; i < objectCtx->numEntries; i++) {
         if (entry->id < 0) {
@@ -137,6 +241,7 @@ void Object_LoadAll(ObjectContext* objectCtx) {
     }
 }
 
+/* Object_AddObjectToEntry */
 void* func_8012F73C(ObjectContext* objectCtx, s32 slot, s16 id) {
     u32 addr;
     uintptr_t vromSize;
@@ -144,6 +249,7 @@ void* func_8012F73C(ObjectContext* objectCtx, s32 slot, s16 id) {
 
     objectCtx->slots[slot].id = -id;
     objectCtx->slots[slot].dmaReq.vromAddr = 0;
+    // objectCtx->slots[slot].request_index = MAX_OBJ_REQUESTS;
 
     fileTableEntry = &gObjectTable[id];
     vromSize = fileTableEntry->vromEnd - fileTableEntry->vromStart;
@@ -299,6 +405,7 @@ void Scene_CommandObjectList(PlayState* play, SceneCmd* cmd) {
             /* so nuke everything after it */
             for (j = non_persistent_entry_index; j < play->objectCtx.numEntries; j++) {
                 invalidatedEntry->id = 0;
+                // invalidatedEntry->request_index = MAX_OBJ_REQUESTS;
                 invalidatedEntry++;
             }
 

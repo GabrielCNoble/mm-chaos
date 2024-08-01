@@ -3,21 +3,21 @@
 #include "z64quake.h"
 #include "z64view.h"
 
-// typedef struct {
-//     /* 0x00 */ s16 index;
-//     /* 0x02 */ s16 duration;
-//     /* 0x04 */ Camera* camera;
-//     /* 0x08 */ u32 type;
-//     /* 0x0C */ s16 y;
-//     /* 0x0E */ s16 x;
-//     /* 0x10 */ s16 fov;
-//     /* 0x12 */ s16 upRollOffset;
-//     /* 0x14 */ Vec3s orientation; // alters the orientation of the xy perturbation. Only x (pitch) and y (yaw) are used
-//     /* 0x1A */ s16 speed;
-//     /* 0x1C */ s16 isRelativeToScreen; // is the quake relative to the screen or on world coordinates
-//     /* 0x1E */ s16 timer;
-//     /* 0x20 */ s16 camId;
-// } QuakeRequest; // size = 0x24
+typedef struct {
+    /* 0x00 */ s16 index;
+    /* 0x02 */ s16 duration;
+    /* 0x04 */ Camera* camera;
+    /* 0x08 */ u32 type;
+    /* 0x0C */ s16 y;
+    /* 0x0E */ s16 x;
+    /* 0x10 */ s16 fov;
+    /* 0x12 */ s16 upRollOffset;
+    /* 0x14 */ Vec3s orientation; // alters the orientation of the xy perturbation. Only x (pitch) and y (yaw) are used
+    /* 0x1A */ s16 speed;
+    /* 0x1C */ s16 isRelativeToScreen; // is the quake relative to the screen or on world coordinates
+    /* 0x1E */ s16 timer;
+    /* 0x20 */ s16 camId;
+} QuakeRequest; // size = 0x24
 
 typedef struct {
     /* 0x0 */ PlayState* play;

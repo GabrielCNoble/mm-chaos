@@ -2258,6 +2258,26 @@ void func_800B8D10(PlayState* play, Actor* actor, f32 xz_speed, s16 hit_angle, f
     // player->unk_B76 = arg3;
     // player->unk_B7C = arg4;
 
+    // if(Chaos_IsCodeActive(CHAOS_CODE_INCREDIBLE_KNOCKBACK) && 
+    //     hit_type >= HIT_TYPE_MELEE_LIGHT && hit_type <= HIT_TYPE_MELEE_MID)
+    // {
+    //     hit_type = HIT_TYPE_MELEE_HEAVY;
+
+    //     if(y_velocity == 0.0)
+    //     {
+    //         y_velocity = 5.0f;
+    //     }
+
+    //     if(xz_speed == 0.0f)
+    //     {
+    //         xz_speed = 5.0f;
+    //     }
+
+    //     y_velocity *= 10.0f;
+    //     xz_speed *= 10.0f;
+    // } 
+    
+
     player->unk_B74 = hit_damage;
     player->unk_B75 = hit_type;
     player->unk_B78 = xz_speed;
@@ -2453,7 +2473,7 @@ void Actor_InitContext(PlayState* play, ActorContext* actorCtx, ActorEntry* acto
  * Only spawns actors based on the time flags embedded in their rotation parameters
  */
 void Actor_SpawnSetupActors(PlayState* play, ActorContext* actorCtx) {
-    if (play->numSetupActors > 0) {
+    if (play->numSetupActors > 0 /* && play->objectCtx.request_count == 0 */) {
         ActorEntry* actorEntry = play->setupActorList;
         s32 prevHalfDaysBitValue = actorCtx->halfDaysBit;
         s32 shiftedHalfDaysBit;

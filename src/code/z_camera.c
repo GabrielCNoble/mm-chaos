@@ -41,8 +41,8 @@
  *           v                       v                       v
  *          -Y                      +Z                      -Y
  *
- */
-
+ */ 
+  
 #include "global.h"
 #include "libc/string.h"
 #include "z64quake.h"
@@ -51,8 +51,8 @@
 #include "overlays/actors/ovl_En_Horse/z_en_horse.h"
 #include "chaos_fuckery.h"
 
-extern struct ChaosContext gChaosContext;
-
+extern struct ChaosContext gChaosContext; 
+ 
 void func_800DDFE0(Camera* camera);
 s32 Camera_ChangeMode(Camera* camera, s16 mode);
 s16 Camera_ChangeSettingFlags(Camera* camera, s16 setting, s16 flags);

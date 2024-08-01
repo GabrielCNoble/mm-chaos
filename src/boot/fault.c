@@ -81,6 +81,295 @@ const char* sFpuExceptions[] = {
     "Unimplemented operation", "Invalid operation", "Division by zero", "Overflow", "Underflow", "Inexact operation",
 };
 
+const char *sOpcodeStrs[] = {
+    /* [FAULT_INST_OPCODE_SPECIAL] =  */    "SPECIAL",
+    /* [FAULT_INST_OPCODE_REGIMM] =  */     "REGIMM",
+    /* [FAULT_INST_OPCODE_J] =  */          "J",
+    /* [FAULT_INST_OPCODE_JAL] =  */        "JAL",
+    /* [FAULT_INST_OPCODE_BEQ] =  */        "BEQ",
+    /* [FAULT_INST_OPCODE_BNE] =  */        "BNE",
+    /* [FAULT_INST_OPCODE_BLEZ] =  */       "BLEZ",
+    /* [FAULT_INST_OPCODE_BGTZ] =  */       "BGTZ",
+    /* [FAULT_INST_OPCODE_ADDI] =  */       "ADDI",
+    /* [FAULT_INST_OPCODE_ADDIU] =  */      "ADDIU",
+    /* [FAULT_INST_OPCODE_SLTI] =  */       "SLTI",
+    /* [FAULT_INST_OPCODE_SLTIU] =  */      "SLTIU",
+    /* [FAULT_INST_OPCODE_ANDI] =  */       "ANDI",
+    /* [FAULT_INST_OPCODE_ORI] =  */        "ORI",
+    /* [FAULT_INST_OPCODE_XORI] =  */       "XORI",
+    /* [FAULT_INST_OPCODE_LUI] =  */        "LUI",
+    /* [FAULT_INST_OPCODE_COP0] =  */       "COP0",
+    /* [FAULT_INST_OPCODE_COP1] =  */       "COP1",
+    /* [FAULT_INST_OPCODE_COP2] =  */       "COP2",
+    /* [FAULT_INST_OPCODE_RESERVED0] =  */  "RESERVED0",
+    /* [FAULT_INST_OPCODE_BEQL] =  */       "BEQL",
+    /* [FAULT_INST_OPCODE_BNEL] =  */       "BNEL",
+    /* [FAULT_INST_OPCODE_BLEZL] =  */      "BLEZL",
+    /* [FAULT_INST_OPCODE_BGTZL] =  */      "BGTZL",
+    /* [FAULT_INST_OPCODE_DADDI] =  */      "DADDI",
+    /* [FAULT_INST_OPCODE_DADDIU] =  */     "DADDIU",
+    /* [FAULT_INST_OPCODE_LDL] =  */        "LDL",
+    /* [FAULT_INST_OPCODE_LDR] =  */        "LDR",
+    /* [FAULT_INST_OPCODE_RESERVED1] =  */  "RESERVED1",
+    /* [FAULT_INST_OPCODE_RESERVED2] =  */  "RESERVED2",
+    /* [FAULT_INST_OPCODE_RESERVED3] =  */  "RESERVED3",
+    /* [FAULT_INST_OPCODE_RESERVED4] =  */  "RESERVED4",
+    /* [FAULT_INST_OPCODE_LB] =  */         "LB",
+    /* [FAULT_INST_OPCODE_LH] =  */         "LH",
+    /* [FAULT_INST_OPCODE_LWL] =  */        "LWL",
+    /* [FAULT_INST_OPCODE_LW] =  */         "LW",
+    /* [FAULT_INST_OPCODE_LBU] =  */        "LBU",
+    /* [FAULT_INST_OPCODE_LHU] =  */        "LHU",
+    /* [FAULT_INST_OPCODE_LWR] =  */        "LWR",
+    /* [FAULT_INST_OPCODE_LWU] =  */        "LWU",
+    /* [FAULT_INST_OPCODE_SB] =  */         "SB",
+    /* [FAULT_INST_OPCODE_SH] =  */         "SH",
+    /* [FAULT_INST_OPCODE_SWL] =  */        "SWL",
+    /* [FAULT_INST_OPCODE_SW] =  */         "SW",
+    /* [FAULT_INST_OPCODE_SDL] =  */        "SDL",
+    /* [FAULT_INST_OPCODE_SDR] =  */        "SDR",
+    /* [FAULT_INST_OPCODE_SWR] =  */        "SWR",
+    /* [FAULT_INST_OPCODE_CACHE] =  */      "CACHE",
+    /* [FAULT_INST_OPCODE_LL] =  */         "LL",
+    /* [FAULT_INST_OPCODE_LWC1] =  */       "LWC1",
+    /* [FAULT_INST_OPCODE_LWC2] =  */       "LWC2",
+    /* [FAULT_INST_OPCODE_RESERVED5] =  */  "RESERVED5",
+    /* [FAULT_INST_OPCODE_LLD] =  */        "LLD",
+    /* [FAULT_INST_OPCODE_LDC1] =  */       "LDC1",
+    /* [FAULT_INST_OPCODE_LDC2] =  */       "LDC2",
+    /* [FAULT_INST_OPCODE_LD] =  */         "LD",
+    /* [FAULT_INST_OPCODE_SC] =  */         "SC",
+    /* [FAULT_INST_OPCODE_SWC1] =  */       "SWC1",
+    /* [FAULT_INST_OPCODE_SWC2] =  */       "SWC2",
+    /* [FAULT_INST_OPCODE_RESERVED6] =  */  "RESERVED6",
+    /* [FAULT_INST_OPCODE_SCD] =  */        "SCD",
+    /* [FAULT_INST_OPCODE_SDC1] =  */       "SDC1",
+    /* [FAULT_INST_OPCODE_SDC2] =  */       "SDC2",
+    /* [FAULT_INST_OPCODE_SD] =  */         "SD"
+};
+
+const char *sSpecialStrs[] = {
+    /* [FAULT_INST_SPECIAL_SLL] = */        "SLL",
+    /* [FAULT_INST_SPECIAL_RESERVED0] = */  "RESERVED0",
+    /* [FAULT_INST_SPECIAL_SRL] = */        "SRL",
+    /* [FAULT_INST_SPECIAL_SRA] = */        "SRA",
+    /* [FAULT_INST_SPECIAL_SLLV] = */       "SLLV",
+    /* [FAULT_INST_SPECIAL_RESERVED1] = */  "RESERVED1",
+    /* [FAULT_INST_SPECIAL_SRLV] = */       "SRLV",
+    /* [FAULT_INST_SPECIAL_SRAV] = */       "SRAV",
+    /* [FAULT_INST_SPECIAL_JR] = */         "JR",
+    /* [FAULT_INST_SPECIAL_JALR] = */       "JALR",
+    /* [FAULT_INST_SPECIAL_RESERVED2] = */  "RESERVED2",
+    /* [FAULT_INST_SPECIAL_RESERVED3] = */  "RESERVED3",
+    /* [FAULT_INST_SPECIAL_SYSCALL] = */    "SYSCALL",
+    /* [FAULT_INST_SPECIAL_BREAK] = */      "BREAK",
+    /* [FAULT_INST_SPECIAL_RESERVED4] = */  "RESERVED4",
+    /* [FAULT_INST_SPECIAL_SYNC] = */       "SYNC",
+    /* [FAULT_INST_SPECIAL_MFHI] = */       "MFHI",
+    /* [FAULT_INST_SPECIAL_MTHI] = */       "MTHI",
+    /* [FAULT_INST_SPECIAL_MFLO] = */       "MFLO",
+    /* [FAULT_INST_SPECIAL_MTLO] = */       "MTLO",
+    /* [FAULT_INST_SPECIAL_DSLLV] = */      "DSLLV",
+    /* [FAULT_INST_SPECIAL_RESERVED5] = */  "RESERVED5",
+    /* [FAULT_INST_SPECIAL_DSRLV] = */      "DSRLV",
+    /* [FAULT_INST_SPECIAL_DSRAV] = */      "DSRAV",
+    /* [FAULT_INST_SPECIAL_MULT] = */       "MULT",
+    /* [FAULT_INST_SPECIAL_MULTU] = */      "MULTU",
+    /* [FAULT_INST_SPECIAL_DIV] = */        "DIV",
+    /* [FAULT_INST_SPECIAL_DIVU] = */       "DIVU",
+    /* [FAULT_INST_SPECIAL_DMULT] = */      "DMULT",
+    /* [FAULT_INST_SPECIAL_DMULTU] = */     "DMULTU",
+    /* [FAULT_INST_SPECIAL_DDIV] = */       "DDIV",
+    /* [FAULT_INST_SPECIAL_DDIVU] = */      "DDIVU",
+    /* [FAULT_INST_SPECIAL_ADD] = */        "ADD",
+    /* [FAULT_INST_SPECIAL_ADDU] = */       "ADDU",
+    /* [FAULT_INST_SPECIAL_SUB] = */        "SUB",
+    /* [FAULT_INST_SPECIAL_SUBU] = */       "SUBU",
+    /* [FAULT_INST_SPECIAL_AND] = */        "AND",
+    /* [FAULT_INST_SPECIAL_OR] = */         "OR",
+    /* [FAULT_INST_SPECIAL_XOR] = */        "XOR",
+    /* [FAULT_INST_SPECIAL_NOR] = */        "NOR",
+    /* [FAULT_INST_SPECIAL_RESERVED6] = */  "RESERVED6",
+    /* [FAULT_INST_SPECIAL_RESERVED7] = */  "RESERVED7",
+    /* [FAULT_INST_SPECIAL_SLT] = */        "SLT",
+    /* [FAULT_INST_SPECIAL_SLTU] = */       "SLTU",
+    /* [FAULT_INST_SPECIAL_DADD] = */       "DADD",
+    /* [FAULT_INST_SPECIAL_DADDU] = */      "DADDU",
+    /* [FAULT_INST_SPECIAL_DSUB] = */       "DSUB",
+    /* [FAULT_INST_SPECIAL_DSUBU] = */      "DSUBU",
+    /* [FAULT_INST_SPECIAL_TGE] = */        "TGE",
+    /* [FAULT_INST_SPECIAL_TGEU] = */       "TGEU",
+    /* [FAULT_INST_SPECIAL_TLT] = */        "TLT",
+    /* [FAULT_INST_SPECIAL_TLTU] = */       "TLTU",
+    /* [FAULT_INST_SPECIAL_TEQ] = */        "TEQ",
+    /* [FAULT_INST_SPECIAL_RESERVED8] = */  "RESERVED8",
+    /* [FAULT_INST_SPECIAL_TNE] = */        "TNE",
+    /* [FAULT_INST_SPECIAL_RESERVED9] = */  "RESERVED9",
+    /* [FAULT_INST_SPECIAL_DSLL] = */       "DSLL",
+    /* [FAULT_INST_SPECIAL_RESERVED10] = */ "RESERVED10",
+    /* [FAULT_INST_SPECIAL_DSRL] = */       "DSRL",
+    /* [FAULT_INST_SPECIAL_DSRA] = */       "DSRA",
+    /* [FAULT_INST_SPECIAL_DSLL32] = */     "DSLL32",
+    /* [FAULT_INST_SPECIAL_RESERVED11] = */ "RESERVED11",
+    /* [FAULT_INST_SPECIAL_DSRL32] = */     "DSRL32",
+    /* [FAULT_INST_SPECIAL_DSRA32] = */     "DSRA32"
+};
+
+const char *sRegimmStrs[] = {
+    /* [FAULT_INST_REGIMMS_BLTZ] = */       "BLTZ",
+    /* [FAULT_INST_REGIMMS_BGEZ] = */       "BGEZ",
+    /* [FAULT_INST_REGIMMS_BLTZL] = */      "BLTZL",
+    /* [FAULT_INST_REGIMMS_BGEZL] = */      "BGEZL",
+    /* [FAULT_INST_REGIMMS_RESERVED0] = */  "RESERVED0",
+    /* [FAULT_INST_REGIMMS_RESERVED1] = */  "RESERVED1",
+    /* [FAULT_INST_REGIMMS_RESERVED2] = */  "RESERVED2",
+    /* [FAULT_INST_REGIMMS_RESERVED3] = */  "RESERVED3",
+    /* [FAULT_INST_REGIMMS_TGEI] = */       "TGEI",
+    /* [FAULT_INST_REGIMMS_TGEIU] = */      "TGEIU",
+    /* [FAULT_INST_REGIMMS_TLTI] = */       "TLTI",
+    /* [FAULT_INST_REGIMMS_TLTIU] = */      "TLTIU",
+    /* [FAULT_INST_REGIMMS_TEQI] = */       "TEQI",
+    /* [FAULT_INST_REGIMMS_RESERVED4] = */  "RESERVED4",
+    /* [FAULT_INST_REGIMMS_TNEI] = */       "TNEI",
+    /* [FAULT_INST_REGIMMS_RESERVED5] = */  "RESERVED5",
+    /* [FAULT_INST_REGIMMS_BLTZAL] = */     "BLTZAL",
+    /* [FAULT_INST_REGIMMS_BGEZAL] = */     "BGEZAL",
+    /* [FAULT_INST_REGIMMS_BLTZALL] = */    "BLTZALL",
+    /* [FAULT_INST_REGIMMS_BGEZALL] = */    "BGEZALL",
+    /* [FAULT_INST_REGIMMS_RESERVED6] = */  "RESERVED6",
+    /* [FAULT_INST_REGIMMS_RESERVED7] = */  "RESERVED7",
+    /* [FAULT_INST_REGIMMS_RESERVED8] = */  "RESERVED8",
+    /* [FAULT_INST_REGIMMS_RESERVED9] = */  "RESERVED9",
+    /* [FAULT_INST_REGIMMS_RESERVED10] = */ "RESERVED10",
+    /* [FAULT_INST_REGIMMS_RESERVED11] = */ "RESERVED11",
+    /* [FAULT_INST_REGIMMS_RESERVED12] = */ "RESERVED12",
+    /* [FAULT_INST_REGIMMS_RESERVED13] = */ "RESERVED13",
+    /* [FAULT_INST_REGIMMS_RESERVED14] = */ "RESERVED14",
+    /* [FAULT_INST_REGIMMS_RESERVED15] = */ "RESERVED15",
+    /* [FAULT_INST_REGIMMS_RESERVED16] = */ "RESERVED16",
+    /* [FAULT_INST_REGIMMS_RESERVED17] = */ "RESERVED17"
+};
+
+const char *sCopzrsStrs[] = {
+    /* [FAULT_INST_COPZRS_MF] = */          "MF",
+    /* [FAULT_INST_COPZRS_DMF] = */         "DMF",
+    /* [FAULT_INST_COPZRS_CF] = */          "CF",
+    /* [FAULT_INST_COPZRS_RESERVED0] = */   "RESERVED0",
+    /* [FAULT_INST_COPZRS_MT] = */          "MT",
+    /* [FAULT_INST_COPZRS_DMT] = */         "DMT",
+    /* [FAULT_INST_COPZRS_CT] = */          "CT",
+    /* [FAULT_INST_COPZRS_RESERVED1] = */   "RESERVED1",
+    /* [FAULT_INST_COPZRS_BC] = */          "BC",
+    /* [FAULT_INST_COPZRS_RESERVED2] = */   "RESERVED2",
+    /* [FAULT_INST_COPZRS_RESERVED3] = */   "RESERVED3",
+    /* [FAULT_INST_COPZRS_RESERVED4] = */   "RESERVED4",
+    /* [FAULT_INST_COPZRS_RESERVED5] = */   "RESERVED5",
+    /* [FAULT_INST_COPZRS_RESERVED6] = */   "RESERVED6",
+    /* [FAULT_INST_COPZRS_RESERVED7] = */   "RESERVED7",
+    /* [FAULT_INST_COPZRS_RESERVED8] = */   "RESERVED8"
+};
+
+const char *sCopzrtStrs[] = {
+    /* [FAULT_INST_COPZRT_BCF] = */         "BCF",
+    /* [FAULT_INST_COPZRT_BCT] = */         "BCT",
+    /* [FAULT_INST_COPZRT_BCFL] = */        "BCFL",
+    /* [FAULT_INST_COPZRT_BCTL] = */        "BCTL",
+    /* [FAULT_INST_COPZRT_RESERVED0] = */   "RESERVED0",
+    /* [FAULT_INST_COPZRT_RESERVED1] = */   "RESERVED1",
+    /* [FAULT_INST_COPZRT_RESERVED2] = */   "RESERVED2",
+    /* [FAULT_INST_COPZRT_RESERVED3] = */   "RESERVED3",
+    /* [FAULT_INST_COPZRT_RESERVED4] = */   "RESERVED4",
+    /* [FAULT_INST_COPZRT_RESERVED5] = */   "RESERVED5",
+    /* [FAULT_INST_COPZRT_RESERVED6] = */   "RESERVED6",
+    /* [FAULT_INST_COPZRT_RESERVED7] = */   "RESERVED7",
+    /* [FAULT_INST_COPZRT_RESERVED8] = */   "RESERVED8",
+    /* [FAULT_INST_COPZRT_RESERVED9] = */   "RESERVED9",
+    /* [FAULT_INST_COPZRT_RESERVED10] = */  "RESERVED10",
+    /* [FAULT_INST_COPZRT_RESERVED11] = */  "RESERVED11",
+    /* [FAULT_INST_COPZRT_RESERVED12] = */  "RESERVED12",
+    /* [FAULT_INST_COPZRT_RESERVED13] = */  "RESERVED13",    
+    /* [FAULT_INST_COPZRT_RESERVED14] = */  "RESERVED14",    
+    /* [FAULT_INST_COPZRT_RESERVED15] = */  "RESERVED15",    
+    /* [FAULT_INST_COPZRT_RESERVED16] = */  "RESERVED16",    
+    /* [FAULT_INST_COPZRT_RESERVED17] = */  "RESERVED17",    
+    /* [FAULT_INST_COPZRT_RESERVED18] = */  "RESERVED18",    
+    /* [FAULT_INST_COPZRT_RESERVED19] = */  "RESERVED19",    
+    /* [FAULT_INST_COPZRT_RESERVED20] = */  "RESERVED20",    
+    /* [FAULT_INST_COPZRT_RESERVED21] = */  "RESERVED21",    
+    /* [FAULT_INST_COPZRT_RESERVED22] = */  "RESERVED22",    
+    /* [FAULT_INST_COPZRT_RESERVED23] = */  "RESERVED23",    
+    /* [FAULT_INST_COPZRT_RESERVED24] = */  "RESERVED24",    
+    /* [FAULT_INST_COPZRT_RESERVED25] = */  "RESERVED25",    
+    /* [FAULT_INST_COPZRT_RESERVED26] = */  "RESERVED26",    
+    /* [FAULT_INST_COPZRT_RESERVED27] = */  "RESERVED27"
+};
+
+const char *sCp0Strs[] = {
+    /* [FAULT_INST_CP0_RESERVED0] = */      "RESERVED0",
+    /* [FAULT_INST_CP0_TLBR] = */           "TLBR",
+    /* [FAULT_INST_CP0_TLBWI] = */          "TLBWI",
+    /* [FAULT_INST_CP0_RESERVED1] = */      "RESERVED1",
+    /* [FAULT_INST_CP0_RESERVED2] = */      "RESERVED2",
+    /* [FAULT_INST_CP0_RESERVED3] = */      "RESERVED3",
+    /* [FAULT_INST_CP0_TLBWR] = */          "TLBWR",
+    /* [FAULT_INST_CP0_RESERVED4] = */      "RESERVED4",
+    /* [FAULT_INST_CP0_TLBP] = */           "TLBP",
+    /* [FAULT_INST_CP0_RESERVED5] = */      "RESERVED5",
+    /* [FAULT_INST_CP0_RESERVED6] = */      "RESERVED6",
+    /* [FAULT_INST_CP0_RESERVED7] = */      "RESERVED7",
+    /* [FAULT_INST_CP0_RESERVED8] = */      "RESERVED8",
+    /* [FAULT_INST_CP0_RESERVED9] = */      "RESERVED9",
+    /* [FAULT_INST_CP0_RESERVED10] = */     "RESERVED10",
+    /* [FAULT_INST_CP0_RESERVED11] = */     "RESERVED11",
+    /* [FAULT_INST_CP0_RESERVED12] = */     "RESERVED12",
+    /* [FAULT_INST_CP0_RESERVED13] = */     "RESERVED13",
+    /* [FAULT_INST_CP0_RESERVED14] = */     "RESERVED14",
+    /* [FAULT_INST_CP0_RESERVED15] = */     "RESERVED15",
+    /* [FAULT_INST_CP0_RESERVED16] = */     "RESERVED16",
+    /* [FAULT_INST_CP0_RESERVED17] = */     "RESERVED17",
+    /* [FAULT_INST_CP0_RESERVED18] = */     "RESERVED18",
+    /* [FAULT_INST_CP0_RESERVED19] = */     "RESERVED19",
+    /* [FAULT_INST_CP0_ERET] = */           "ERET",
+    /* [FAULT_INST_CP0_RESERVED20] = */     "RESERVED20",
+    /* [FAULT_INST_CP0_RESERVED21] = */     "RESERVED21",
+    /* [FAULT_INST_CP0_RESERVED22] = */     "RESERVED22",
+    /* [FAULT_INST_CP0_RESERVED23] = */     "RESERVED23",
+    /* [FAULT_INST_CP0_RESERVED24] = */     "RESERVED24",
+    /* [FAULT_INST_CP0_RESERVED25] = */     "RESERVED25",
+    /* [FAULT_INST_CP0_RESERVED26] = */     "RESERVED26",
+    /* [FAULT_INST_CP0_RESERVED27] = */     "RESERVED27",
+    /* [FAULT_INST_CP0_RESERVED28] = */     "RESERVED28",
+    /* [FAULT_INST_CP0_RESERVED29] = */     "RESERVED29",
+    /* [FAULT_INST_CP0_RESERVED30] = */     "RESERVED30",
+    /* [FAULT_INST_CP0_RESERVED31] = */     "RESERVED31",
+    /* [FAULT_INST_CP0_RESERVED32] = */     "RESERVED32",
+    /* [FAULT_INST_CP0_RESERVED33] = */     "RESERVED33",
+    /* [FAULT_INST_CP0_RESERVED34] = */     "RESERVED34",
+    /* [FAULT_INST_CP0_RESERVED35] = */     "RESERVED35",
+    /* [FAULT_INST_CP0_RESERVED36] = */     "RESERVED36",
+    /* [FAULT_INST_CP0_RESERVED37] = */     "RESERVED37",
+    /* [FAULT_INST_CP0_RESERVED38] = */     "RESERVED38",
+    /* [FAULT_INST_CP0_RESERVED39] = */     "RESERVED39",
+    /* [FAULT_INST_CP0_RESERVED40] = */     "RESERVED40",
+    /* [FAULT_INST_CP0_RESERVED41] = */     "RESERVED41",
+    /* [FAULT_INST_CP0_RESERVED42] = */     "RESERVED42",
+    /* [FAULT_INST_CP0_RESERVED43] = */     "RESERVED43",
+    /* [FAULT_INST_CP0_RESERVED44] = */     "RESERVED44",
+    /* [FAULT_INST_CP0_RESERVED45] = */     "RESERVED45",
+    /* [FAULT_INST_CP0_RESERVED46] = */     "RESERVED46",
+    /* [FAULT_INST_CP0_RESERVED47] = */     "RESERVED47",
+    /* [FAULT_INST_CP0_RESERVED48] = */     "RESERVED48",
+    /* [FAULT_INST_CP0_RESERVED49] = */     "RESERVED49",
+    /* [FAULT_INST_CP0_RESERVED50] = */     "RESERVED50",
+    /* [FAULT_INST_CP0_RESERVED51] = */     "RESERVED51",
+    /* [FAULT_INST_CP0_RESERVED52] = */     "RESERVED52",
+    /* [FAULT_INST_CP0_RESERVED53] = */     "RESERVED53",
+    /* [FAULT_INST_CP0_RESERVED54] = */     "RESERVED54",
+    /* [FAULT_INST_CP0_RESERVED55] = */     "RESERVED55",
+    /* [FAULT_INST_CP0_RESERVED56] = */     "RESERVED56",
+    /* [FAULT_INST_CP0_RESERVED57] = */     "RESERVED57"
+};
+
 void Fault_SleepImpl(u32 duration) {
     OSTime value = (duration * OS_CPU_COUNTER) / 1000ULL;
 
@@ -101,7 +390,7 @@ void Fault_AddClient(FaultClient* client, FaultClientCallback callback, void* ar
 
     // Ensure the client is not already registered
     {
-        FaultClient* iter = sFaultInstance->clients;
+        FaultClient* iter = sFaultInstance->first_client;
 
         while (iter != NULL) {
             if (iter == client) {
@@ -115,8 +404,21 @@ void Fault_AddClient(FaultClient* client, FaultClientCallback callback, void* ar
     client->callback = callback;
     client->arg0 = arg0;
     client->arg1 = arg1;
-    client->next = sFaultInstance->clients;
-    sFaultInstance->clients = client;
+
+    if(sFaultInstance->first_client == NULL)
+    {
+        sFaultInstance->first_client = client;
+    }
+    else
+    {
+        sFaultInstance->last_client->next = client;
+        client->prev = sFaultInstance->last_client;
+    }
+
+    sFaultInstance->last_client = client;
+    
+    // client->next = sFaultInstance->clients;
+    // sFaultInstance->clients = client;
 
 end:
     osSetIntMask(mask);
@@ -130,8 +432,8 @@ end:
  * Removes a fault client so that the page is no longer displayed if a crash occurs.
  */
 void Fault_RemoveClient(FaultClient* client) {
-    FaultClient* iter = sFaultInstance->clients;
-    FaultClient* lastIter = NULL;
+    FaultClient* iter = sFaultInstance->first_client;
+    // FaultClient* lastIter = NULL;
     OSIntMask mask;
     u32 listIsEmpty = false;
 
@@ -139,20 +441,39 @@ void Fault_RemoveClient(FaultClient* client) {
 
     while (iter) {
         if (iter == client) {
-            if (lastIter != NULL) {
-                lastIter->next = client->next;
-            } else {
-                sFaultInstance->clients = client;
-                if (sFaultInstance->clients) {
-                    sFaultInstance->clients = client->next;
-                } else {
-                    listIsEmpty = 1;
-                }
+            if(client->prev != NULL)
+            {
+                client->prev->next = client->next;
             }
+            else
+            {
+                sFaultInstance->first_client = client->next;
+            }
+
+            if(client->next != NULL)
+            {
+                client->next->prev = client->prev;
+            }
+            else
+            {
+                sFaultInstance->last_client = client->prev;
+            }
+
             break;
+            // if (lastIter != NULL) {
+            //     lastIter->next = client->next;
+            // } else {
+            //     sFaultInstance->clients = client;
+            //     if (sFaultInstance->clients) {
+            //         sFaultInstance->clients = client->next;
+            //     } else {
+            //         listIsEmpty = 1;
+            //     }
+            // }
+            // break;
         }
 
-        lastIter = iter;
+        // lastIter = iter;
         iter = iter->next;
     }
 
@@ -180,7 +501,7 @@ void Fault_AddAddrConvClient(FaultAddrConvClient* client, FaultAddrConvClientCal
     mask = osSetIntMask(1);
 
     {
-        FaultAddrConvClient* iter = sFaultInstance->addrConvClients;
+        FaultAddrConvClient* iter = sFaultInstance->first_addr_conv_client;
 
         while (iter != NULL) {
             if (iter == client) {
@@ -193,8 +514,21 @@ void Fault_AddAddrConvClient(FaultAddrConvClient* client, FaultAddrConvClientCal
 
     client->callback = callback;
     client->arg = arg;
-    client->next = sFaultInstance->addrConvClients;
-    sFaultInstance->addrConvClients = client;
+
+    if(sFaultInstance->first_addr_conv_client == NULL)
+    {
+        sFaultInstance->first_addr_conv_client = client;
+    }
+    else
+    {
+        sFaultInstance->last_addr_conv_client->next = client;
+        client->prev = sFaultInstance->last_addr_conv_client;
+    }
+
+    sFaultInstance->last_addr_conv_client = client;
+
+    // client->next = sFaultInstance->addrConvClients;
+    // sFaultInstance->addrConvClients = client;
 
 end:
     osSetIntMask(mask);
@@ -205,8 +539,8 @@ end:
 }
 
 void Fault_RemoveAddrConvClient(FaultAddrConvClient* client) {
-    FaultAddrConvClient* iter = sFaultInstance->addrConvClients;
-    FaultAddrConvClient* lastIter = NULL;
+    FaultAddrConvClient* iter = sFaultInstance->first_addr_conv_client;
+    // FaultAddrConvClient* lastIter = NULL;
     OSIntMask mask;
     bool listIsEmpty = false;
 
@@ -214,20 +548,37 @@ void Fault_RemoveAddrConvClient(FaultAddrConvClient* client) {
 
     while (iter) {
         if (iter == client) {
-            if (lastIter != NULL) {
-                lastIter->next = client->next;
-            } else {
-                sFaultInstance->addrConvClients = client;
-                if (sFaultInstance->addrConvClients) {
-                    sFaultInstance->addrConvClients = client->next;
-                } else {
-                    listIsEmpty = true;
-                }
+            // if (lastIter != NULL) {
+            //     lastIter->next = client->next;
+            // } else {
+            //     sFaultInstance->addrConvClients = client;
+            //     if (sFaultInstance->addrConvClients) {
+            //         sFaultInstance->addrConvClients = client->next;
+            //     } else {
+            //         listIsEmpty = true;
+            //     }
+            // }
+            // break;
+            if(client->prev != NULL)
+            {
+                client->prev->next = client->next;
             }
-            break;
+            else
+            {
+                sFaultInstance->first_addr_conv_client = client->next;
+            }
+
+            if(client->next != NULL)
+            {
+                client->next->prev = client->prev;
+            }
+            else
+            {
+                sFaultInstance->last_addr_conv_client = client->prev;
+            }
         }
 
-        lastIter = iter;
+        // lastIter = iter;
         iter = iter->next;
     }
 
@@ -245,7 +596,7 @@ void Fault_RemoveAddrConvClient(FaultAddrConvClient* client) {
  */
 uintptr_t Fault_ConvertAddress(uintptr_t addr) {
     uintptr_t ret;
-    FaultAddrConvClient* iter = sFaultInstance->addrConvClients;
+    FaultAddrConvClient* iter = sFaultInstance->first_addr_conv_client;
 
     while (iter != NULL) {
         if (iter->callback != NULL) {
@@ -320,8 +671,23 @@ u32 Fault_WaitForInputImpl(void) {
     }
 }
 
+u32 Fault_WaitForInput2(void)
+{
+    Input* input = &sFaultInstance->inputs[0];
+
+    do 
+    {
+        Fault_Sleep(1000 / 60);
+        Fault_UpdatePadImpl();
+    }
+    while(input->press.button == 0);
+
+    return input->press.button;
+}
+
 void Fault_WaitForInput(void) {
-    Fault_WaitForInputImpl();
+    Fault_WaitForInput2();
+    // Fault_WaitForInputImpl();
 }
 
 void Fault_DrawRec(s32 x, s32 y, s32 w, s32 h, u16 color) {
@@ -624,13 +990,14 @@ void Fault_DrawMemDumpContents(const char* title, uintptr_t addr, u32 param_3) {
  * @param cRightJump Unused parameter, pressing C-Right jumps to this address
  */
 void Fault_DrawMemDump(uintptr_t pc, uintptr_t sp, uintptr_t cLeftJump, uintptr_t cRightJump) {
-    s32 scrollCountdown;
+    // s32 scrollCountdown;
     s32 off;
     Input* input = &sFaultInstance->inputs[0];
     uintptr_t addr = pc;
 
-    do {
-        scrollCountdown = 0;
+    do 
+    {
+        // scrollCountdown = 0;
         // Ensure address is within the bounds of RDRAM
         if (addr < K0BASE) {
             addr = K0BASE;
@@ -644,31 +1011,33 @@ void Fault_DrawMemDump(uintptr_t pc, uintptr_t sp, uintptr_t cLeftJump, uintptr_
         addr &= ~0xF;
         Fault_DrawMemDumpContents("Dump", addr, 0);
 
-        scrollCountdown = 600;
-        while (sFaultInstance->autoScroll) {
-            // Count down until it's time to move on to the next page
-            if (scrollCountdown == 0) {
-                return;
-            }
+        // scrollCountdown = 600;
+        // while (sFaultInstance->autoScroll) {
+        //     // Count down until it's time to move on to the next page
+        //     if (scrollCountdown == 0) {
+        //         return;
+        //     }
 
-            scrollCountdown--;
+        //     scrollCountdown--;
 
-            Fault_Sleep(1000 / 60);
-            Fault_UpdatePadImpl();
+        //     Fault_Sleep(1000 / 60);
+        //     Fault_UpdatePadImpl();
 
-            if (CHECK_BTN_ALL(input->press.button, BTN_L)) {
-                sFaultInstance->autoScroll = false;
-            }
-        }
+        //     if (CHECK_BTN_ALL(input->press.button, BTN_L)) {
+        //         sFaultInstance->autoScroll = false;
+        //     }
+        // }
 
         // Wait for input
-        do {
-            Fault_Sleep(1000 / 60);
-            Fault_UpdatePadImpl();
-        } while (input->press.button == 0);
+        // do {
+        //     Fault_Sleep(1000 / 60);
+        //     Fault_UpdatePadImpl();
+        // } while (input->press.button == 0);
+
+        Fault_WaitForInput2();
 
         // Move to next page
-        if (CHECK_BTN_ALL(input->press.button, BTN_START)) {
+        if (CHECK_BTN_ANY(input->press.button, BTN_L | BTN_R)) {
             return;
         }
 
@@ -699,11 +1068,100 @@ void Fault_DrawMemDump(uintptr_t pc, uintptr_t sp, uintptr_t cLeftJump, uintptr_
         if (CHECK_BTN_ALL(input->press.button, BTN_CRIGHT)) {
             addr = cRightJump;
         }
-
-    } while (!CHECK_BTN_ALL(input->press.button, BTN_L));
+    }
+    while(true);
+    // } while (!CHECK_BTN_ALL(input->press.button, BTN_L));
 
     // Resume auto-scroll and move to next page
-    sFaultInstance->autoScroll = true;
+    // sFaultInstance->autoScroll = true;
+}
+
+void Fault_Disasm(OSThread *thread)
+{
+    u32 *pc = (u32 *)thread->context.pc;
+    u32 button;
+    char instruction_str[32];
+    do
+    {    
+        u32 line = 0;
+
+        Fault_FillScreenBlack();
+        FaultDrawer_SetCharPad(-1, 0);
+
+        FaultDrawer_Printf("Disasm: %08x\n", pc);
+        FaultDrawer_Printf("    PC    |   INST   |    ASM \n\n");
+        for(line = 0; line < 20; line++)
+        {
+            u32 instruction = pc[line];
+            u32 opcode = (instruction >> FAULT_INST_OPCODE_SHIFT) & FAULT_INST_OPCODE_MASK;
+
+            switch(opcode)
+            {
+                case FAULT_INST_OPCODE_SPECIAL:
+                {
+                    u32 special_instruction = (instruction >> FAULT_INST_SPECIAL_SHIFT) & FAULT_INST_SPECIAL_MASK;
+                    __osStrcpy(instruction_str, sSpecialStrs[special_instruction]);
+                }
+                break;
+
+                case FAULT_INST_OPCODE_REGIMM: 
+                {
+                    u32 regimm_instruction = (instruction >> FAULT_INST_REGIMM_SHIFT) & FAULT_INST_REGIMM_MASK;
+                    __osStrcpy(instruction_str, sRegimmStrs[regimm_instruction]);
+                }
+                break;
+
+                case FAULT_INST_OPCODE_COP0:
+                case FAULT_INST_OPCODE_COP1:
+                case FAULT_INST_OPCODE_COP2:
+                {
+                    if(instruction & FAULT_INST_CO_FLAG)
+                    {
+                        u32 cp0_instruction = (instruction >> FAULT_INST_CP0_SHIFT) & FAULT_INST_CP0_MASK;
+                        __osStrcpy(instruction_str, sCp0Strs[cp0_instruction]);
+                    }
+                    else
+                    {
+                        u32 cop_instruction = ((instruction >> 13) & 0x7) | ((instruction << 3) & 0x18);
+
+                        if(cop_instruction == FAULT_INST_COPZRS_BC)
+                        {
+                            u32 bc_instruction = (instruction >> FAULT_INST_COPZRT_SHIFT) & FAULT_INST_COPZRT_MASK;
+                            __osStrcpy(instruction_str, sCopzrtStrs[bc_instruction]);
+                        }
+                        else
+                        {
+                            __osStrcpy(instruction_str, sCopzrsStrs[cop_instruction]);
+                        }
+                    }
+                }
+                break;
+
+                default:
+                    __osStrcpy(instruction_str, sOpcodeStrs[opcode]);
+                break;
+            }
+
+            FaultDrawer_Printf("%08x | %08x |%s%s\n", pc + line, instruction, ((u32)(pc + line) == thread->context.pc) ? "*" : " ", instruction_str);
+        }
+
+        button = Fault_WaitForInput2();
+
+        if(CHECK_BTN_ANY(button, BTN_L | BTN_R))
+        {
+            break;
+        }
+
+        if(button == BTN_DUP)
+        {
+            pc--;
+        }
+        else if(button == BTN_DDOWN)
+        {
+            pc++;
+        }
+    }
+    while(true);
 }
 
 /**
@@ -901,22 +1359,46 @@ void Fault_DisplayFrameBuffer(void) {
  * Runs all registered fault clients. Each fault client displays a page
  * on the crash screen.
  */
-void Fault_ProcessClients(void) {
-    FaultClient* client = sFaultInstance->clients;
+void Fault_ProcessClients(u32 button) {
+    // FaultClient* client = sFaultInstance->clients;
+    FaultClient *client;
     s32 idx = 0;
+
+    if(button == BTN_L)
+    {
+        client = sFaultInstance->last_client;
+    }
+    else
+    {
+        client = sFaultInstance->first_client;
+    }
 
     while (client != NULL) {
         if (client->callback != NULL) {
             Fault_FillScreenBlack();
             FaultDrawer_SetCharPad(-2, 0);
-            FaultDrawer_Printf(FAULT_COLOR(DARK_GRAY) "CallBack (%d) %08x %08x %08x\n" FAULT_COLOR(WHITE), idx++,
+            FaultDrawer_Printf(FAULT_COLOR(DARK_GRAY) "CallBack (%d) %08x %08x %08x\n" FAULT_COLOR(WHITE), idx,
                                client, client->arg0, client->arg1);
             FaultDrawer_SetCharPad(0, 0);
             client->callback(client->arg0, client->arg1);
-            Fault_WaitForInput();
-            Fault_DisplayFrameBuffer();
+            // Fault_WaitForInput2();
+            // Fault_DisplayFrameBuffer();
         }
-        client = client->next;
+
+        button = Fault_WaitForInput2();
+
+        if(button == BTN_L)
+        {
+            client = client->prev;
+            idx--;
+        }
+        else if(button == BTN_R)
+        {
+            client = client->next;
+            idx++;
+        }
+
+        // client = client->next;
     }
 }
 
@@ -968,6 +1450,9 @@ void Fault_ThreadEntry(void* arg) {
     OSMesg msg;
     u32 pad;
     OSThread* faultedThread;
+    Input* input;
+    u32 page_index;
+    u32 button;
 
     // Direct OS event messages to the fault event queue
     osSetEventMesg(OS_EVENT_CPU_BREAK, &sFaultInstance->queue, FAULT_MSG_CPU_BREAK);
@@ -1016,47 +1501,91 @@ void Fault_ThreadEntry(void* arg) {
         // Show fault framebuffer
         Fault_DisplayFrameBuffer();
 
-        if (sFaultInstance->autoScroll) {
-            Fault_Wait5Seconds();
-        } else {
-            // Draw error bar signifying the crash screen is available
-            Fault_DrawCornerRec(GPACK_RGBA5551(255, 0, 0, 1));
-            // Fault_WaitForButtonCombo();
-        }
+        // if (sFaultInstance->autoScroll) {
+        //     Fault_Wait5Seconds();
+        // } else {
+        //     // Draw error bar signifying the crash screen is available
+        //     Fault_DrawCornerRec(GPACK_RGBA5551(255, 0, 0, 1));
+        //     // Fault_WaitForButtonCombo();
+        // }
 
         // Set auto-scrolling and default colors
         sFaultInstance->autoScroll = true;
         FaultDrawer_SetForeColor(GPACK_RGBA5551(255, 255, 255, 1));
         FaultDrawer_SetBackColor(GPACK_RGBA5551(0, 0, 0, 0));
 
+        input = &sFaultInstance->inputs[0];
+        page_index = 0;
+        button = BTN_R;
         // Draw pages
         do {
+
+            switch(page_index)
+            {
+                case 0:
+                    Fault_PrintThreadContext(faultedThread);
+                    osSyncPrintfThreadContext(faultedThread);
+                break;
+
+                case 1:
+                    Fault_DrawStackTrace(faultedThread, 0);
+                    Fault_LogStackTrace(faultedThread, 0);
+                break;
+
+                case 2:
+                    Fault_Disasm(faultedThread);
+                break;
+
+                case 3:
+                    Fault_ProcessClients(button);
+                break;    
+
+                case 4:
+                    Fault_DrawMemDump((u32)(faultedThread->context.pc - 0x100), (u32)faultedThread->context.sp, 0, 0);
+                break;
+
+                case 5:
+                    Fault_DrawStackTrace(faultedThread, 1);
+                    Fault_LogStackTrace(faultedThread, 1);
+                break;
+            }
+
+            button = Fault_WaitForInput2();
+
+            if(button == BTN_L)
+            {
+                page_index = (page_index - 1) % 0xfffffffa;
+            }
+            else if(button == BTN_R)
+            {
+                page_index = (page_index + 1) % 6;
+            }
             // Thread context page
-            Fault_PrintThreadContext(faultedThread);
-            osSyncPrintfThreadContext(faultedThread);
-            Fault_WaitForInput();
+            // Fault_PrintThreadContext(faultedThread);
+            // osSyncPrintfThreadContext(faultedThread);
+            // Fault_WaitForInput();
 
             // Stack trace page
-            Fault_DrawStackTrace(faultedThread, 0);
-            Fault_LogStackTrace(faultedThread, 0);
-            Fault_WaitForInput();
+            // Fault_DrawStackTrace(faultedThread, 0);
+            // Fault_LogStackTrace(faultedThread, 0);
+            // Fault_WaitForInput();
 
             // Client pages
-            Fault_ProcessClients();
+            // Fault_ProcessClients();
 
             // Memory dump page
-            Fault_DrawMemDump((u32)(faultedThread->context.pc - 0x100), (u32)faultedThread->context.sp, 0, 0);
-            Fault_DrawStackTrace(faultedThread, 1);
-            Fault_LogStackTrace(faultedThread, 1);
-            Fault_WaitForInput();
+            // Fault_DrawMemDump((u32)(faultedThread->context.pc - 0x100), (u32)faultedThread->context.sp, 0, 0);
+            // Fault_DrawStackTrace(faultedThread, 1);
+            // Fault_LogStackTrace(faultedThread, 1);
+            // Fault_WaitForInput();
 
             // End page
-            Fault_FillScreenRed();
-            FaultDrawer_DrawText(64, 80, "    CONGRATURATIONS!    ");
-            FaultDrawer_DrawText(64, 90, "All Pages are displayed.");
-            FaultDrawer_DrawText(64, 100, "       THANK YOU!       ");
-            FaultDrawer_DrawText(64, 110, " You are great debugger!");
-            Fault_WaitForInput();
+            // Fault_FillScreenRed();
+            // FaultDrawer_DrawText(64, 80, "    CONGRATURATIONS!    ");
+            // FaultDrawer_DrawText(64, 90, "All Pages are displayed.");
+            // FaultDrawer_DrawText(64, 100, "       THANK YOU!       ");
+            // FaultDrawer_DrawText(64, 110, " You are great debugger!");
+            // Fault_WaitForInput();
         } while (!sFaultInstance->exit);
 
         while (!sFaultInstance->exit) {}
@@ -1084,7 +1613,8 @@ void Fault_Init(void) {
     sFaultInstance->faultHandlerEnabled = false;
     sFaultInstance->faultedThread = NULL;
     sFaultInstance->padCallback = Fault_PadCallback;
-    sFaultInstance->clients = NULL;
+    sFaultInstance->first_client = NULL;
+    sFaultInstance->last_client = NULL;
     sFaultInstance->autoScroll = false;
     gFaultMgr.faultHandlerEnabled = true;
     osCreateMesgQueue(&sFaultInstance->queue, sFaultInstance->msg, ARRAY_COUNT(sFaultInstance->msg));
@@ -1129,4 +1659,9 @@ void Fault_AddHungupAndCrash(const char* file, s32 line) {
 
     sprintf(msg, "HungUp %s:%d", file, line);
     Fault_AddHungupAndCrashImpl(msg, NULL);
+}
+
+void Fault_DbgBrk()
+{
+    osSendMesg(&sFaultInstance->queue, FAULT_MSG_CPU_BREAK, OS_MESG_NOBLOCK);
 }
