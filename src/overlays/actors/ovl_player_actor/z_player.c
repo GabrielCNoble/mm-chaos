@@ -10866,25 +10866,25 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
         ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawFeet, this->ageProperties->shadowScale);
     }
 
-    gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_DEKU] = ITEM_MASK_DEKU;
-    gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_GORON] = ITEM_MASK_GORON;
-    gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
-    gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] = ITEM_OCARINA_OF_TIME;
-    // gSaveContext.save.saveInfo.inventory.items[SLOT_BOW] = ITEM_BOW;
-    gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_FIRE] = ITEM_ARROW_FIRE;
-    gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_ICE] = ITEM_ARROW_ICE;
-    gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_LIGHT] = ITEM_ARROW_LIGHT;
-    // gSaveContext.save.saveInfo.inventory.items[SLOT_BOMBCHU] = ITEM_BOMBCHU;
-    // gSaveContext.save.saveInfo.inventory.items[SLOT_BOMB] = ITEM_BOMB;
-    // gSaveContext.save.saveInfo.playerData.magicLevel = 2;
-    // gSaveContext.save.saveInfo.playerData.magic = 10;
-    // gSaveContext.save.saveInfo.playerData.isMagicAcquired = true;
-    // gSaveContext.save.saveInfo.playerData.isDoubleMagicAcquired = true;
-    gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_SONG_TIME) | (1 << QUEST_SONG_EPONA);
-    gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOW] = 50;
-    gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOMBCHU] = 50;
-    // gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOMB] = 10;
-    gSaveContext.save.saveInfo.inventory.upgrades |= 3 << gUpgradeShifts[UPG_QUIVER];
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_DEKU] = ITEM_MASK_DEKU;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_GORON] = ITEM_MASK_GORON;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] = ITEM_OCARINA_OF_TIME;
+    // // gSaveContext.save.saveInfo.inventory.items[SLOT_BOW] = ITEM_BOW;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_FIRE] = ITEM_ARROW_FIRE;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_ICE] = ITEM_ARROW_ICE;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_LIGHT] = ITEM_ARROW_LIGHT;
+    // // gSaveContext.save.saveInfo.inventory.items[SLOT_BOMBCHU] = ITEM_BOMBCHU;
+    // // gSaveContext.save.saveInfo.inventory.items[SLOT_BOMB] = ITEM_BOMB;
+    // // gSaveContext.save.saveInfo.playerData.magicLevel = 2;
+    // // gSaveContext.save.saveInfo.playerData.magic = 10;
+    // // gSaveContext.save.saveInfo.playerData.isMagicAcquired = true;
+    // // gSaveContext.save.saveInfo.playerData.isDoubleMagicAcquired = true;
+    // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_SONG_TIME) | (1 << QUEST_SONG_EPONA);
+    // gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOW] = 50;
+    // gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOMBCHU] = 50;
+    // // gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOMB] = 10;
+    // gSaveContext.save.saveInfo.inventory.upgrades |= 3 << gUpgradeShifts[UPG_QUIVER];
     // gSaveContext.save.saveInfo.inventory.upgrades |= 1 << gUpgradeShifts[UPG_BOMB_BAG];
     // gSaveContext.save.saveInfo.inventory.upgrades |= 3 << gUpgradeShifts[UPG_]
 

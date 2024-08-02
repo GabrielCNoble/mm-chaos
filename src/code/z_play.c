@@ -1158,7 +1158,7 @@ void Play_UpdateMain(PlayState* this) {
         f32 offset_y;
         f32 alpha_scale = (f32)gChaosContext.link.beer_alpha / 210.0f;
 
-        Play_EnableMotionBlur(gChaosContext.link.beer_alpha);
+        Play_EnableMotionBlurPriority(gChaosContext.link.beer_alpha);
         Math_Vec3f_DistXYZAndStoreNormDiff(&camera->eye, &camera->at, 1.0f, &forward_vec);
 
         right_vec.x = forward_vec.y * camera->up.z - forward_vec.z * camera->up.y;
@@ -1198,7 +1198,7 @@ void Play_UpdateMain(PlayState* this) {
     }
     else
     {
-        Play_DisableMotionBlur();
+        Play_DisableMotionBlurPriority();
         gChaosContext.link.beer_sway.x = 0;
         gChaosContext.link.beer_sway.y = 0;
         gChaosContext.link.beer_sway.z = 0;
