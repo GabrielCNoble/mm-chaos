@@ -1093,6 +1093,24 @@ void Play_UpdateMain(PlayState* this) {
         }
     }
 
+    if(player->stateFlags1 & PLAYER_STATE1_800000)
+    {
+        Chaos_DisableCode(CHAOS_CODE_SYKE);
+        Chaos_DisableCode(CHAOS_CODE_DIE);
+        Chaos_DisableCode(CHAOS_CODE_ICE_TRAP);
+        Chaos_DisableCode(CHAOS_CODE_POKE);
+        Chaos_DisableCode(CHAOS_CODE_SHOCK);
+    }
+    else if(this->csCtx.state == CS_STATE_IDLE)
+    {
+        /* only reactivate codes once link is done unmounting */
+        Chaos_EnableCode(CHAOS_CODE_SYKE);
+        Chaos_EnableCode(CHAOS_CODE_DIE);
+        Chaos_EnableCode(CHAOS_CODE_ICE_TRAP);
+        Chaos_EnableCode(CHAOS_CODE_POKE);
+        Chaos_EnableCode(CHAOS_CODE_SHOCK);
+    }
+
     Chaos_UpdateChaos(this);
 
     if (!sp5C || gDbgCamEnabled) {  
@@ -1595,10 +1613,22 @@ SkipPostWorldDraw:
 
     PadMgr_GetInput(inputs, false);
     Chaos_PrintCodes(this, &inputs[0]);
-    // if(CHECK_BTN_ANY(inputs[0].press.button, BTN_DLEFT))
-    // {
-        
-    // }
+    
+    if(Chaos_CanUpdateChaos(this))
+    {
+        if(CHECK_BTN_ANY(inputs[0].press.button, BTN_DLEFT))
+        {
+            if(!(gChaosContext.hide_actors & 2))
+            {
+                gChaosContext.hide_actors |= 2;
+                gChaosContext.hide_actors ^= 1;
+            }
+        }
+        else
+        {
+            gChaosContext.hide_actors &= ~2;
+        }
+    }
 }
 #else
 void Play_DrawMain(PlayState* this);
@@ -1784,13 +1814,12 @@ void Play_SpawnScene(PlayState* this, s32 sceneId, s32 spawn) {
     Chaos_EnableCode(CHAOS_CODE_SYKE);
     Chaos_EnableCode(CHAOS_CODE_DIE);
     Chaos_EnableCode(CHAOS_CODE_TOURETTE);
-    Chaos_EnableCode(CHAOS_CODE_TEXTBOX);
+    // Chaos_EnableCode(CHAOS_CODE_TEXTBOX);
     Chaos_EnableCode(CHAOS_CODE_SLIPPERY_FLOORS);
     Chaos_EnableCode(CHAOS_CODE_SLOW_DOWN);
     Chaos_EnableCode(CHAOS_CODE_TERRIBLE_MUSIC);
     Chaos_EnableCode(CHAOS_CODE_INCREDIBLE_KNOCKBACK);
     Chaos_EnableCode(CHAOS_CODE_RANDOM_SCALING);
-    // Chaos_UpdateCodeDistribution();
 }
 
 void Play_GetScreenPos(PlayState* this, Vec3f* worldPos, Vec3f* screenPos) {

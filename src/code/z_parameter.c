@@ -2628,12 +2628,14 @@ u8 Item_Give(PlayState* play, u8 item) {
         }
 
     } else if (item == ITEM_BOMB_BAG_30) {
+        Chaos_EnableCode(CHAOS_CODE_RANDOM_BOMB_TIMER);
         Inventory_ChangeUpgrade(UPG_BOMB_BAG, 2);
         INV_CONTENT(ITEM_BOMB) = ITEM_BOMB;
         AMMO(ITEM_BOMB) = CAPACITY(UPG_BOMB_BAG, 2);
         return ITEM_NONE;
 
     } else if (item == ITEM_BOMB_BAG_40) {
+        Chaos_EnableCode(CHAOS_CODE_RANDOM_BOMB_TIMER);
         Inventory_ChangeUpgrade(UPG_BOMB_BAG, 3);
         INV_CONTENT(ITEM_BOMB) = ITEM_BOMB;
         AMMO(ITEM_BOMB) = CAPACITY(UPG_BOMB_BAG, 3);

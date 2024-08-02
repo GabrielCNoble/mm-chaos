@@ -43,7 +43,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_TEXTBOX]                 = */ CHAOS_CODE_DEF(0,   0, false, 0.008f),
     /* [CHAOS_CODE_SLIPPERY_FLOORS]         = */ CHAOS_CODE_DEF(10, 20, false, 0.012f),
     /* [CHAOS_CODE_SLOW_DOWN]               = */ CHAOS_CODE_DEF(10, 20, false, 0.006f),
-    /* [CHAOS_CODE_ENTRANCE_RANDO]          = */ CHAOS_CODE_DEF(5, 15,  false, 0.002f),
+    /* [CHAOS_CODE_ENTRANCE_RANDO]          = */ CHAOS_CODE_DEF(3,  5,  false, 0.0005f),
     /* [CHAOS_CODE_TERRIBLE_MUSIC]          = */ CHAOS_CODE_DEF(15, 35, true,  0.02f),
     /* [CHAOS_CODE_INCREDIBLE_KNOCKBACK]    = */ CHAOS_CODE_DEF(10, 21, true,  0.03f),
     /* [CHAOS_CODE_RANDOM_SCALING]          = */ CHAOS_CODE_DEF(10, 21, true,  0.09f),
@@ -110,6 +110,7 @@ void Chaos_Init(void)
     gChaosContext.prev_update_counter = osGetTime();
     gChaosContext.update_enabled = 0;
     gChaosContext.need_update_distribution = false;
+    gChaosContext.hide_actors = 0;
     gChaosContext.link.tunic_r = 30;
     gChaosContext.link.tunic_g = 105;
     gChaosContext.link.tunic_b = 27;
@@ -148,7 +149,6 @@ u8 Chaos_RandomCode(void)
     u32 rand_index = Chaos_Rand();
     s32 search_index = gChaosContext.enabled_code_count >> 1;
     s32 search_index_offset = search_index >> 1;
-    u32 *blah = NULL;
 
     if(search_index_offset <= 0)
     {
@@ -199,8 +199,6 @@ u8 Chaos_RandomCode(void)
             search_index_offset >>= 1;
         }
     }
-
-    *blah = 5;
 
     return 0;
 }
@@ -612,7 +610,7 @@ void Chaos_EnableCode(u8 code)
 
 void Chaos_DisableCode(u8 code)
 {
-    if(Chaos_IsCodeActive(code))
+    if(Chaos_IsCodeEnabled(code))
     {
         u32 index = gChaosContext.enabled_code_indices[code];
         gChaosContext.enabled_code_count--;

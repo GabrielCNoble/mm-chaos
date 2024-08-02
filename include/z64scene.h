@@ -999,6 +999,7 @@ void Scene_DrawConfig5(struct PlayState* play);
 void Scene_DrawConfigMatAnimManualStep(struct PlayState* play);
 void Scene_DrawConfigGreatBayTemple(struct PlayState* play);
 EntranceTableEntry* Entrance_GetTableEntry(u16 entrance);
+SceneEntranceTableEntry *Entrance_GetSceneTableEntry(u16 scene);
 s32 Entrance_GetSceneId(u16 entrance);
 s32 Entrance_GetSceneIdAbsolute(u16 entrance);
 s32 Entrance_GetSpawnNum(u16 entrance);

@@ -270,6 +270,7 @@ typedef struct ChaosContext
     struct ChaosCodeSlot    enabled_codes[CHAOS_CODE_LAST];
     u8                      enabled_code_indices[CHAOS_CODE_LAST];
     u8                      need_update_distribution;
+    u8                      hide_actors;
 
     struct 
     {
@@ -301,6 +302,12 @@ typedef struct ChaosContext
         struct ChaosActor   slots[MAX_SPAWNED_ACTORS];
         u8                  spawned_actors;
     } actors;
+
+    struct
+    {
+        u8 player_drown_count;
+        u8 is_last_entrance_rando;
+    } entrance;
     
 } ChaosContext;
 

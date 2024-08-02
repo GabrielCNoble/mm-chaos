@@ -553,7 +553,7 @@ typedef struct PlayerAgeProperties {
     /* 0x20 */ f32 unk_20; // unused?
     /* 0x24 */ f32 unk_24; // water stuff // depthInWater
     /* 0x28 */ f32 unk_28; // water stuff // depthInWater
-    /* 0x2C */ f32 unk_2C; // water stuff // depthInWater
+    /* 0x2C */ f32 unk_2C; // swim threshold? // water stuff // depthInWater
     /* 0x30 */ f32 unk_30; // water stuff // depthInWater
     /* 0x34 */ f32 unk_34; // height?
     /* 0x38 */ f32 wallCheckRadius;
@@ -901,7 +901,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_2000000    (1 << 25)
 // 
 #define PLAYER_STATE1_4000000    (1 << 26)
-// Swimming/in water?
+// Swimming?
 #define PLAYER_STATE1_8000000    (1 << 27)
 // 
 #define PLAYER_STATE1_10000000   (1 << 28)
@@ -951,7 +951,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE2_20000      (1 << 17)
 // 
 #define PLAYER_STATE2_40000      (1 << 18)
-// 
+// Attacking?
 #define PLAYER_STATE2_80000      (1 << 19)
 // 
 #define PLAYER_STATE2_100000     (1 << 20)

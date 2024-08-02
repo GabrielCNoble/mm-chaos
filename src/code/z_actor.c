@@ -43,6 +43,8 @@ Mtx sActorHiliteMtx;
 
 Actor* D_801ED920; // 2 funcs. 1 out of z_actor
 
+extern struct ChaosContext gChaosContext;
+
 #define ACTOR_AUDIO_FLAG_SFX_ACTOR_POS (1 << 0)
 #define ACTOR_AUDIO_FLAG_SFX_CENTERED_1 (1 << 1)
 #define ACTOR_AUDIO_FLAG_SFX_CENTERED_2 (1 << 2)
@@ -2258,26 +2260,6 @@ void func_800B8D10(PlayState* play, Actor* actor, f32 xz_speed, s16 hit_angle, f
     // player->unk_B76 = arg3;
     // player->unk_B7C = arg4;
 
-    // if(Chaos_IsCodeActive(CHAOS_CODE_INCREDIBLE_KNOCKBACK) && 
-    //     hit_type >= HIT_TYPE_MELEE_LIGHT && hit_type <= HIT_TYPE_MELEE_MID)
-    // {
-    //     hit_type = HIT_TYPE_MELEE_HEAVY;
-
-    //     if(y_velocity == 0.0)
-    //     {
-    //         y_velocity = 5.0f;
-    //     }
-
-    //     if(xz_speed == 0.0f)
-    //     {
-    //         xz_speed = 5.0f;
-    //     }
-
-    //     y_velocity *= 10.0f;
-    //     xz_speed *= 10.0f;
-    // } 
-    
-
     player->unk_B74 = hit_damage;
     player->unk_B75 = hit_type;
     player->unk_B78 = xz_speed;
@@ -2517,6 +2499,16 @@ typedef struct {
                            // flag set that matches this bitmask
 } UpdateActor_Params;      // size = 0x1C
 
+
+/* don't attract the player,, swinging doors, shutter doors nor grottoes*/
+u16 gActorExclusionList[] = {
+    ACTOR_PLAYER,
+    ACTOR_EN_DOOR,
+    ACTOR_DOOR_ANA,
+    ACTOR_DOOR_SHUTTER,
+    ACTOR_EN_HORSE
+};
+
 Actor* Actor_UpdateActor(UpdateActor_Params* params) {
     PlayState* play = params->play;
     Actor* actor = params->actor;
@@ -2528,9 +2520,15 @@ Actor* Actor_UpdateActor(UpdateActor_Params* params) {
 
     if(Chaos_IsCodeActive(CHAOS_CODE_ACTOR_CHASE))
     {
-        // if(actor != (Actor *)params->player && actor->id != ACTOR_EN_DOOR)
-        /* don't attract the player, doors nor grottoes */
-        if(actor->id != ACTOR_PLAYER && actor->id != ACTOR_EN_DOOR && actor->id != ACTOR_DOOR_ANA)
+        u32 chase = true;
+        u32 index;
+        for(index = 0; index < ARRAY_COUNT(gActorExclusionList); index++)
+        {
+            chase &= actor->id != gActorExclusionList[index];
+        }
+
+        // if(actor->id != ACTOR_PLAYER && actor->id != ACTOR_EN_DOOR && actor->id != ACTOR_DOOR_ANA)
+        if(chase)
         {
             Vec3f actor_player_vec;
             Math_Vec3f_DistXYZAndStoreNormDiff(&actor->world.pos, &params->player->actor.world.pos, 1.0f, &actor_player_vec);
@@ -2732,6 +2730,23 @@ void Actor_UpdateAll(PlayState* play, ActorContext* actorCtx) {
 
 void Actor_Draw(PlayState* play, Actor* actor) {
     Lights* light;
+
+    if(gChaosContext.hide_actors & 1)
+    {
+        u32 index;
+        for(index = 0; index < ARRAY_COUNT(gActorExclusionList); index++)
+        {
+            if(actor->id == gActorExclusionList[index])
+            {
+                break;
+            }
+        }
+
+        if(index == ARRAY_COUNT(gActorExclusionList))
+        {
+            return;
+        }
+    }
 
     OPEN_DISPS(play->state.gfxCtx);
 

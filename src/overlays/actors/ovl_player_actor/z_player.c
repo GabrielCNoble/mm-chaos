@@ -569,6 +569,43 @@ s32 func_8082DA90(PlayState* play) {
     return (play->transitionTrigger != TRANS_TRIGGER_OFF) || (play->transitionMode != TRANS_MODE_OFF);
 }
 
+#define MAX_SCENE_ENTRANCE_TABLE_ENTRIES 110
+
+u8 gSceneExclusion[] = {
+    ENTR_SCENE_THE_MOON,
+    ENTR_SCENE_MOON_LINK_TRIAL,
+    ENTR_SCENE_MOON_ZORA_TRIAL,
+    ENTR_SCENE_MOON_GORON_TRIAL,
+    ENTR_SCENE_MOON_DEKU_TRIAL,
+    ENTR_SCENE_MAJORAS_LAIR
+};
+
+u16 Player_PickRandomEntrance(PlayState *play)
+{
+    u16 *entrances;
+    u16 scene_index;
+    u16 entrance_index;
+    u8 test_index;
+    SceneEntranceTableEntry *scene_entry;
+
+    do
+    {
+        scene_index = Rand_Next() % MAX_SCENE_ENTRANCE_TABLE_ENTRIES;
+        scene_entry = Entrance_GetSceneTableEntry(scene_index);
+        for(test_index = 0; test_index < sizeof(gSceneExclusion); test_index++)
+        {
+            if(scene_index == gSceneExclusion[test_index])
+            {
+                scene_entry == NULL;
+                break;
+            }
+        }
+    }
+    while(scene_entry == NULL || scene_entry->tableCount == 0);
+    entrance_index = Rand_Next() % scene_entry->tableCount;
+    return Entrance_Create(scene_index, entrance_index, 0);
+}
+
 void Player_StopHorizontalMovement(Player* this) {
     this->linearVelocity = 0.0f;
     this->actor.speed = 0.0f;
@@ -6248,32 +6285,32 @@ u8 sReturnEntranceGroupIndices[] = {
     0, // 0xFE00
 };
 
-#define MAX_SCENE_ENTRANCE_TABLE_ENTRIES 110
-extern SceneEntranceTableEntry sSceneEntranceTable[];
+// extern SceneEntranceTableEntry sSceneEntranceTable[];
 // subfunction of OoT's func_80839034
-/* Player_StartSceneChange */
+/* Player_StartSceneChange? */
 void func_808354A4(PlayState* play, s32 exitIndex, s32 arg2) {
+
+    u32 *p = NULL;
+    Player *player = GET_PLAYER(play);
+    // u8 is_random_entrance = gChaosContext.entrance.is_last_entrance_rando;
+
+    // if(!gChaosContext.entrance.is_last_entrance_rando)
+    // {
+    //     gChaosContext.entrance.player_drown_count = 0;
+    // }
 
     // if(Chaos_IsCodeActive(CHAOS_CODE_ENTRANCE_RANDO))
     // {
-    //     u16 *entrances;
-    //     u16 entrance_index;
-    //     SceneEntranceTableEntry *scene_entry;
-    //     EntranceTableEntry **entry_table_list;
-    //     do
-    //     {
-    //         u32 scene_index = Rand_Next() % MAX_SCENE_ENTRANCE_TABLE_ENTRIES;
-    //         scene_entry = sSceneEntranceTable + scene_index;
-    //     }
-    //     while(scene_entry->tableCount == 0);
-
-    //     // entrances = Lib_SegmentedToVirtual(scene_entry->table);
-    //     // entrance_index = Rand_Next() % scene_entry->tableCount;
+    //     play->nextEntrance = Player_PickRandomEntrance(play);
+    //     gChaosContext.entrance.is_last_entrance_rando = true;
     // }
     // else
     // {
     //     play->nextEntrance = play->setupExitList[exitIndex];
+    //     is_random_entrance = false;
     // }
+
+    play->nextEntrance = play->setupExitList[exitIndex];
 
     if (play->nextEntrance == 0xFFFF) {
         gSaveContext.respawnFlag = 4;
@@ -7139,6 +7176,7 @@ s32 func_80837730(PlayState* play, Player* this, f32 arg2, s32 scale) {
     return false;
 }
 
+/* if deku link is inside water and can still hop */
 s32 func_8083784C(Player* this) {
     if (this->actor.velocity.y < 0.0f) {
         if ((this->actor.depthInWater > 0.0f) &&
@@ -8798,12 +8836,17 @@ void func_8083BB4C(PlayState* play, Player* this) {
         (Player_Action_49 != this->actionFunc) &&
         ((Player_Action_28 != this->actionFunc) || (this->actor.velocity.y < -2.0f))) {
         if (this->ageProperties->unk_2C < this->actor.depthInWater) {
+            /* player is beyond swim threshold threshold */
             if (this->transformation == PLAYER_FORM_GORON) {
+                /* goron sinks like a rock and voids out */
                 func_80834140(play, this, &gPlayerAnim_link_swimer_swim_down);
                 func_808345C8();
                 func_8083B8D0(play, this);
+                
             } else if (this->transformation == PLAYER_FORM_DEKU) {
+                /* deku either hops or voids out */
                 if (this->remainingHopsCounter != 0) {
+                    /* hop */
                     func_808373F8(play, this, NA_SE_VO_LI_AUTO_JUMP);
                 } else {
                     if ((play->sceneId == SCENE_20SICHITAI) && (this->unk_3CF == 0)) {
@@ -10826,8 +10869,8 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_DEKU] = ITEM_MASK_DEKU;
     gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_GORON] = ITEM_MASK_GORON;
     gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
-    // gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] = ITEM_OCARINA_OF_TIME;
-    gSaveContext.save.saveInfo.inventory.items[SLOT_BOW] = ITEM_BOW;
+    gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] = ITEM_OCARINA_OF_TIME;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_BOW] = ITEM_BOW;
     gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_FIRE] = ITEM_ARROW_FIRE;
     gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_ICE] = ITEM_ARROW_ICE;
     gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_LIGHT] = ITEM_ARROW_LIGHT;
@@ -10837,13 +10880,20 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     // gSaveContext.save.saveInfo.playerData.magic = 10;
     // gSaveContext.save.saveInfo.playerData.isMagicAcquired = true;
     // gSaveContext.save.saveInfo.playerData.isDoubleMagicAcquired = true;
-    // gSaveContext.save.saveInfo.inventory.questItems |= 1 << QUEST_SONG_TIME;
+    gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_SONG_TIME) | (1 << QUEST_SONG_EPONA);
     gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOW] = 50;
     gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOMBCHU] = 50;
     // gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOMB] = 10;
     gSaveContext.save.saveInfo.inventory.upgrades |= 3 << gUpgradeShifts[UPG_QUIVER];
     // gSaveContext.save.saveInfo.inventory.upgrades |= 1 << gUpgradeShifts[UPG_BOMB_BAG];
     // gSaveContext.save.saveInfo.inventory.upgrades |= 3 << gUpgradeShifts[UPG_]
+
+    // if(this->transformation == PLAYER_FORM_DEKU && this->remainingHopsCounter == 0 && 
+    //     !(this->actor.bgCheckFlags & BGCHECK_FLAG_))
+    // {
+    //     u32 *blah = NULL;
+    //     *blah = 5;
+    // }
 
     this->subCamId = CAM_ID_NONE;
     Collider_InitAndSetCylinder(play, &this->cylinder, &this->actor, &D_8085C2EC);
@@ -12297,22 +12347,19 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     // Gfx *draw_list;
     Gfx color_gfx[1];
 
-    if(CHECK_BTN_ANY(input->press.button, BTN_L))
-    {
-        // gCurrentArrowEffect = (gCurrentArrowEffect + 1) % (sizeof(gArrowEffectTests) / sizeof(gArrowEffectTests)[0]);
-        // Chaos_Init();
-        // for(code_index = 0; code_index < gArrowEffectTests[gCurrentArrowEffect].code_count; code_index++)
-        // {
-        //     Chaos_AddCode(gArrowEffectTests[gCurrentArrowEffect].codes[code_index], 5);
-        // }
+    // if(CHECK_BTN_ANY(input->press.button, BTN_L))
+    // {
+    //     // gCurrentArrowEffect = (gCurrentArrowEffect + 1) % (sizeof(gArrowEffectTests) / sizeof(gArrowEffectTests)[0]);
+    //     // Chaos_Init();
+    //     // for(code_index = 0; code_index < gArrowEffectTests[gCurrentArrowEffect].code_count; code_index++)
+    //     // {
+    //     //     Chaos_AddCode(gArrowEffectTests[gCurrentArrowEffect].codes[code_index], 5);
+    //     // }
+    //     // Chaos_ActivateCode(CHAOS_CODE_SYKE, 20);
+    //     // Item_Give(play, ITEM_BOMB_BAG_20);
+    // }
 
-        // Chaos_AddCode(CHAOS_CODE_TERRIBLE_MUSIC, 20);
-        // code = Chaos_GetCode(CHAOS_CODE_TERRIBLE_MUSIC);
-        // code->data = 1;
-        Chaos_ActivateCode(CHAOS_CODE_BEER_GOGGLES, 20);
-    }
-
-    if(!(this->stateFlags2 & PLAYER_STATE2_80))
+    if(!(this->stateFlags2 & PLAYER_STATE2_80) & !(this->stateFlags1 & PLAYER_STATE1_800000))
     {
         if(Chaos_IsCodeActive(CHAOS_CODE_POKE))
         {
@@ -12349,7 +12396,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
 
     code = Chaos_GetCode(CHAOS_CODE_TOURETTE);
 
-    if(code != NULL)
+    if(code != NULL && !(this->stateFlags1 & PLAYER_STATE1_80))
     {
         code->data--;
         if(code->data == 0)
@@ -13077,9 +13124,9 @@ void Player_Draw(Actor* thisx, PlayState* play) {
 
     if(Chaos_IsCodeActive(CHAOS_CODE_RANDOM_SCALING))
     {
-        actor_scale.x *= 0.05f + Rand_ZeroOne() * 3.95f;
-        actor_scale.y *= 0.05f + Rand_ZeroOne() * 3.95f;
-        actor_scale.z *= 0.05f + Rand_ZeroOne() * 3.95f;
+        actor_scale.x *= 0.05f + Rand_ZeroOne() * 3.45f;
+        actor_scale.y *= 0.05f + Rand_ZeroOne() * 3.45f;
+        actor_scale.z *= 0.05f + Rand_ZeroOne() * 3.45f;
     } 
 
     Math_Vec3f_Copy(&this->unk_D6C, &this->bodyPartsPos[PLAYER_BODYPART_WAIST]);
@@ -13614,7 +13661,7 @@ s32 func_80847A94(PlayState* play, Player* this, s32 arg2, f32* arg3) {
     }
     return false;
 }
-
+/* Player_Unmount? */
 s32 func_80847BF0(Player* this, PlayState* play) {
     EnHorse* rideActor = (EnHorse*)this->rideActor;
     s32 var_a2;
@@ -14299,6 +14346,7 @@ void Player_Action_0(Player* this, PlayState* play) {
     }
 }
 
+/* water void out warp? */
 void Player_Action_1(Player* this, PlayState* play) {
     this->stateFlags3 |= PLAYER_STATE3_10000000;
     PlayerAnimation_Update(play, &this->skelAnime);
@@ -14310,6 +14358,7 @@ void Player_Action_1(Player* this, PlayState* play) {
         R_PLAY_FILL_SCREEN_R = R_PLAY_FILL_SCREEN_G = R_PLAY_FILL_SCREEN_B = R_PLAY_FILL_SCREEN_ALPHA;
         Audio_PlaySfx(NA_SE_SY_DEKUNUTS_JUMP_FAILED);
     } else if (R_PLAY_FILL_SCREEN_ON > 0) {
+        /* fade the screen to black */
         R_PLAY_FILL_SCREEN_ALPHA += R_PLAY_FILL_SCREEN_ON;
         if (R_PLAY_FILL_SCREEN_ALPHA > 255) {
             R_PLAY_FILL_SCREEN_ALPHA = 255;
@@ -16884,7 +16933,7 @@ s32 func_80850734(PlayState* play, Player* this) {
     }
     return false;
 }
-
+/* Player_CanHop */
 s32 func_80850854(PlayState* play, Player* this) {
     if ((this->transformation == PLAYER_FORM_DEKU) && (this->remainingHopsCounter != 0) &&
         (gSaveContext.save.saveInfo.playerData.health != 0) && (sPlayerControlStickMagnitude != 0.0f)) {
