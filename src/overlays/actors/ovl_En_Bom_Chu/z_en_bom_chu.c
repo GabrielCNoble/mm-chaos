@@ -77,7 +77,16 @@ void EnBomChu_Init(Actor* thisx, PlayState* play) {
     Effect_Add(play, &this->blure1Index, EFFECT_BLURE2, 0, 0, &sBlureInit);
     Effect_Add(play, &this->blure2Index, EFFECT_BLURE2, 0, 0, &sBlureInit);
 
-    this->timer = 120;
+    if(Chaos_IsCodeActive(CHAOS_CODE_RANDOM_BOMB_TIMER) && this->actor.params != BOMB_TYPE_ARROW)
+    {
+        this->timer = 10 + Rand_Next() % 300;
+    }
+    else
+    {
+        this->timer = 120;
+    }
+
+    // this->timer = 120;
     this->actor.room = -1;
     this->shouldTimerCountDown = true;
     this->unk_174 = 0.0f;

@@ -2585,6 +2585,9 @@ u8 Item_Give(PlayState* play, u8 item) {
         }
 
     } else if ((item == ITEM_QUIVER_30) || (item == ITEM_BOW)) {
+        Chaos_EnableCode(CHAOS_CODE_BOMB_ARROWS);
+        Chaos_EnableCode(CHAOS_CODE_BUCKSHOT_ARROWS);
+        Chaos_EnableCode(CHAOS_CODE_WEIRD_ARROWS);
         if (CUR_UPG_VALUE(UPG_QUIVER) == 0) {
             Inventory_ChangeUpgrade(UPG_QUIVER, 1);
             INV_CONTENT(ITEM_BOW) = ITEM_BOW;
@@ -2610,6 +2613,7 @@ u8 Item_Give(PlayState* play, u8 item) {
         return ITEM_NONE;
 
     } else if (item == ITEM_BOMB_BAG_20) {
+        Chaos_EnableCode(CHAOS_CODE_RANDOM_BOMB_TIMER);
         if (CUR_UPG_VALUE(UPG_BOMB_BAG) == 0) {
             Inventory_ChangeUpgrade(UPG_BOMB_BAG, 1);
             INV_CONTENT(ITEM_BOMB) = ITEM_BOMB;
@@ -2749,6 +2753,7 @@ u8 Item_Give(PlayState* play, u8 item) {
         return ITEM_NONE;
 
     } else if (item == ITEM_BOMBCHU) {
+        Chaos_EnableCode(CHAOS_CODE_RANDOM_BOMB_TIMER);
         if (INV_CONTENT(ITEM_BOMBCHU) != ITEM_BOMBCHU) {
             INV_CONTENT(ITEM_BOMBCHU) = ITEM_BOMBCHU;
             AMMO(ITEM_BOMBCHU) = 10;
@@ -3789,10 +3794,10 @@ void Magic_DrawMeter(PlayState* play) {
 
     if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
     {
-        chaos_y0 = Rand_S16Offset(-10, 20);
-        chaos_y1 = Rand_S16Offset(-10, 20);
-        chaos_x0 = Rand_S16Offset(-10, 20);
-        chaos_x1 = Rand_S16Offset(-10, 20);
+        chaos_y0 = Rand_S16Offset(-18, 36);
+        chaos_y1 = Rand_S16Offset(-18, 36);
+        chaos_x0 = Rand_S16Offset(-18, 36);
+        chaos_x1 = Rand_S16Offset(-18, 36);
     }
 
     OPEN_DISPS(play->state.gfxCtx);
@@ -3934,12 +3939,12 @@ void Interface_DrawItemButtons(PlayState* play) {
     {
         for(temp = 0; temp < 3; temp++)
         {
-            chaos_cbutton_offsets[temp][0] = Rand_S16Offset(-10, 20);
-            chaos_cbutton_offsets[temp][1] = Rand_S16Offset(-10, 20);
+            chaos_cbutton_offsets[temp][0] = Rand_S16Offset(-18, 36);
+            chaos_cbutton_offsets[temp][1] = Rand_S16Offset(-18, 36);
         }
 
-        chaos_bbutton_x = Rand_S16Offset(-10, 20);
-        chaos_bbutton_y = Rand_S16Offset(-10, 20);
+        chaos_bbutton_x = Rand_S16Offset(-18, 36);
+        chaos_bbutton_y = Rand_S16Offset(-18, 36);
     }
     else
     {
@@ -4064,8 +4069,8 @@ void Interface_DrawItemIconTexture(PlayState* play, TexturePtr texture, s16 butt
 
     if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
     {
-        chaos_x = Rand_S16Offset(-20, 40);
-        chaos_y = Rand_S16Offset(-20, 40);
+        chaos_x = Rand_S16Offset(-24, 48);
+        chaos_y = Rand_S16Offset(-24, 48);
     }
 
     OPEN_DISPS(play->state.gfxCtx);
@@ -4094,10 +4099,10 @@ void Interface_DrawAmmoCount(PlayState* play, s16 button, s16 alpha) {
 
     if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
     {
-        chaos_x0 = Rand_S16Offset(-10, 20);
-        chaos_y0 = Rand_S16Offset(-10, 20);
-        chaos_x1 = Rand_S16Offset(-10, 20);
-        chaos_y1 = Rand_S16Offset(-10, 20);
+        chaos_x0 = Rand_S16Offset(-18, 36);
+        chaos_y0 = Rand_S16Offset(-18, 36);
+        chaos_x1 = Rand_S16Offset(-18, 36);
+        chaos_y1 = Rand_S16Offset(-18, 36);
     }
 
     OPEN_DISPS(play->state.gfxCtx);
@@ -4169,8 +4174,8 @@ void Interface_DrawBButtonIcons(PlayState* play) {
 
     if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
     {
-        chaos_x = Rand_S16Offset(-10, 20);
-        chaos_y = Rand_S16Offset(-10, 20);
+        chaos_x = Rand_S16Offset(-18, 36);
+        chaos_y = Rand_S16Offset(-18, 36);
     }
 
     OPEN_DISPS(play->state.gfxCtx);
@@ -4318,10 +4323,10 @@ void Interface_DrawAButton(PlayState* play) {
 
     if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
     {
-        chaos_x0 = (Rand_ZeroOne() * 2.0 - 1.0f) * 6.0f;
-        chaos_y0 = (Rand_ZeroOne() * 2.0 - 1.0f) * 6.0f;
-        chaos_x1 = (Rand_ZeroOne() * 2.0 - 1.0f) * 6.0f;
-        chaos_y1 = (Rand_ZeroOne() * 2.0 - 1.0f) * 6.0f;
+        chaos_x0 = (Rand_ZeroOne() * 2.0 - 1.0f) * 8.0f;
+        chaos_y0 = (Rand_ZeroOne() * 2.0 - 1.0f) * 8.0f;
+        chaos_x1 = (Rand_ZeroOne() * 2.0 - 1.0f) * 8.0f;
+        chaos_y1 = (Rand_ZeroOne() * 2.0 - 1.0f) * 8.0f;
     }
 
     Gfx_SetupDL42_Overlay(play->state.gfxCtx);
@@ -4522,8 +4527,8 @@ void Interface_DrawClock(PlayState* play) {
         u32 index;
         for(index = 0; index < 18; index++)
         {
-            chaos_x[index] = Rand_S16Offset(-10, 20);
-            chaos_y[index] = Rand_S16Offset(-10, 20);
+            chaos_x[index] = Rand_S16Offset(-18, 36);
+            chaos_y[index] = Rand_S16Offset(-18, 36);
         }
     }
     else
@@ -6315,16 +6320,16 @@ void Interface_Draw(PlayState* play) {
     s16 counterDigits[4];
     s16 magicAlpha;
 
-    s16 chaos_x[6];
-    s16 chaos_y[6];
+    s16 chaos_x[11];
+    s16 chaos_y[11];
 
     if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
     {
         u32 index;
-        for(index = 0; index < 6; index++)
+        for(index = 0; index < 11; index++)
         {
-            chaos_x[index] = Rand_S16Offset(-10, 20);
-            chaos_y[index] = Rand_S16Offset(-10, 20);
+            chaos_x[index] = Rand_S16Offset(-18, 36);
+            chaos_y[index] = Rand_S16Offset(-18, 36);
         }
     }
     else
@@ -6395,7 +6400,7 @@ void Interface_Draw(PlayState* play) {
                     gDPPipeSync(OVERLAY_DISP++);
                     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 200, 230, 255, interfaceCtx->magicAlpha);
                     gDPSetEnvColor(OVERLAY_DISP++, 0, 0, 20, 255);
-                    OVERLAY_DISP = Gfx_DrawTexRectIA8(OVERLAY_DISP, gSmallKeyCounterIconTex, 16, 16, 26, 190, 16, 16,
+                    OVERLAY_DISP = Gfx_DrawTexRectIA8(OVERLAY_DISP, gSmallKeyCounterIconTex, 16, 16 + chaos_x[6], 26 + chaos_y[6], 190, 16, 16,
                                                       1 << 10, 1 << 10);
 
                     // Small Key Counter
@@ -6419,11 +6424,11 @@ void Interface_Draw(PlayState* play) {
 
                         OVERLAY_DISP =
                             Gfx_DrawTexRectI8(OVERLAY_DISP, (u8*)gCounterDigit0Tex + (8 * 16 * counterDigits[2]), 8, 16,
-                                              43, 191, 8, 16, 1 << 10, 1 << 10);
+                                              43 + chaos_x[7], 191 + chaos_y[7], 8, 16, 1 << 10, 1 << 10);
 
                         gDPPipeSync(OVERLAY_DISP++);
                         gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 255, 255, 255, interfaceCtx->magicAlpha);
-                        gSPTextureRectangle(OVERLAY_DISP++, 168, 760, 200, 824, G_TX_RENDERTILE, 0, 0, 1 << 10,
+                        gSPTextureRectangle(OVERLAY_DISP++, 168 + chaos_x[8], 760 + chaos_y[8], 200 + chaos_x[8], 824 + chaos_y[8], G_TX_RENDERTILE, 0, 0, 1 << 10,
                                             1 << 10);
 
                         sp2CA += 8;
@@ -6433,11 +6438,12 @@ void Interface_Draw(PlayState* play) {
                     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 0, 0, 0, interfaceCtx->magicAlpha);
 
                     OVERLAY_DISP = Gfx_DrawTexRectI8(OVERLAY_DISP, (u8*)gCounterDigit0Tex + (8 * 16 * counterDigits[3]),
-                                                     8, 16, sp2CA + 1, 191, 8, 16, 1 << 10, 1 << 10);
+                                                     8, 16, sp2CA + 1 + chaos_x[9], 191 + chaos_y[9], 8, 16, 1 << 10, 1 << 10);
 
                     gDPPipeSync(OVERLAY_DISP++);
                     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 255, 255, 255, interfaceCtx->magicAlpha);
-                    gSPTextureRectangle(OVERLAY_DISP++, sp2CA * 4, 760, (sp2CA * 4) + 0x20, 824, G_TX_RENDERTILE, 0, 0,
+                    gSPTextureRectangle(OVERLAY_DISP++, sp2CA * 4 + chaos_x[10], 760 + chaos_y[10], 
+                                            (sp2CA * 4) + 0x20 + chaos_x[10], 824 + chaos_y[10], G_TX_RENDERTILE, 0, 0,
                                         1 << 10, 1 << 10);
                 }
                 break;
@@ -6452,7 +6458,8 @@ void Interface_Draw(PlayState* play) {
                 gDPLoadTextureBlock(OVERLAY_DISP++, gGoldSkulltulaCounterIconTex, G_IM_FMT_RGBA, G_IM_SIZ_32b, 24, 24,
                                     0, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK,
                                     G_TX_NOLOD, G_TX_NOLOD);
-                gSPTextureRectangle(OVERLAY_DISP++, 80, 748, 176, 820, G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
+                gSPTextureRectangle(OVERLAY_DISP++, 80 + chaos_x[6], 748 + chaos_y[6], 176 + chaos_x[6], 820 + chaos_y[6], 
+                                    G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
 
                 // Gold Skulluta Counter
                 gDPPipeSync(OVERLAY_DISP++);
@@ -6474,11 +6481,11 @@ void Interface_Draw(PlayState* play) {
                     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 0, 0, 0, interfaceCtx->magicAlpha);
 
                     OVERLAY_DISP = Gfx_DrawTexRectI8(OVERLAY_DISP, (u8*)gCounterDigit0Tex + (8 * 16 * counterDigits[2]),
-                                                     8, 16, 43, 191, 8, 16, 1 << 10, 1 << 10);
+                                                     8, 16, 43 + chaos_x[7], 191 + chaos_y[7], 8, 16, 1 << 10, 1 << 10);
 
                     gDPPipeSync(OVERLAY_DISP++);
                     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 255, 255, 255, interfaceCtx->magicAlpha);
-                    gSPTextureRectangle(OVERLAY_DISP++, 168, 760, 200, 824, G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
+                    gSPTextureRectangle(OVERLAY_DISP++, 168 + chaos_x[8], 760 + chaos_y[8], 200 + chaos_x[8], 824 + chaos_y[8], G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
 
                     sp2CA += 8;
                 }
@@ -6487,12 +6494,12 @@ void Interface_Draw(PlayState* play) {
                 gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 0, 0, 0, interfaceCtx->magicAlpha);
 
                 OVERLAY_DISP = Gfx_DrawTexRectI8(OVERLAY_DISP, (u8*)gCounterDigit0Tex + (8 * 16 * counterDigits[3]), 8,
-                                                 16, sp2CA + 1, 191, 8, 16, 1 << 10, 1 << 10);
+                                                 16, sp2CA + 1 + chaos_x[9], 191 + chaos_y[9], 8, 16, 1 << 10, 1 << 10);
 
                 gDPPipeSync(OVERLAY_DISP++);
                 gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 255, 255, 255, interfaceCtx->magicAlpha);
-                gSPTextureRectangle(OVERLAY_DISP++, sp2CA * 4, 760, (sp2CA * 4) + 0x20, 824, G_TX_RENDERTILE, 0, 0,
-                                    1 << 10, 1 << 10);
+                gSPTextureRectangle(OVERLAY_DISP++, sp2CA * 4 + chaos_x[10], 760 + chaos_y[10], 
+                        (sp2CA * 4) + 0x20 + chaos_x[10], 824 + chaos_y[10], G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
                 break;
 
             default:

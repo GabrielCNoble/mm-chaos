@@ -3,6 +3,7 @@
 
 #include "ultra64.h"
 #include "z64.h"
+#include "padutils.h"
 
 /* 
     random-knockback/poke/shock/ice-trap should not be active when there's a 
@@ -78,6 +79,8 @@ enum CHAOS_CODES
     CHAOS_CODE_TERRIBLE_MUSIC,
     /* received attacks have enormous knockback */
     CHAOS_CODE_INCREDIBLE_KNOCKBACK,
+    /* randomly scales player model */
+    CHAOS_CODE_RANDOM_SCALING,
     /* enemies explode when killed */
     // CHAOS_CODE_VILETILE_ENEMIES,
 
@@ -186,16 +189,20 @@ enum CHAOS_CODES
 
 struct ChaosCodeDef
 {
-    u32     range_start;
-    u32     range_end;
-    f32     probability;
-    
+    f32     probability;   
     u8      min_time;
     u8      max_time;
     u8      always_update;
 };
+
+struct ChaosCodeSlot
+{
+    u32 range_start;
+    u32 range_end;
+    u8  code;
+};
  
-#define CHAOS_CODE_DEF(min_time, max_time, always_update, probability) {0, 0, probability, min_time, max_time, always_update}
+#define CHAOS_CODE_DEF(min_time, max_time, always_update, probability) {probability, min_time, max_time, always_update}
 
 struct ChaosCode
 {
@@ -258,7 +265,11 @@ typedef struct ChaosContext
     u8                      update_enabled;
     struct ChaosCode        active_codes[MAX_ACTIVE_CODES];
     u8                      active_code_indices[CHAOS_CODE_LAST];
-    // u8                      show_codes;
+
+    u8                      enabled_code_count;
+    struct ChaosCodeSlot    enabled_codes[CHAOS_CODE_LAST];
+    u8                      enabled_code_indices[CHAOS_CODE_LAST];
+    u8                      need_update_distribution;
 
     struct 
     {
@@ -277,9 +288,6 @@ typedef struct ChaosContext
         f32                 beer_yaw;
         f32                 beer_roll;
         Vec3f               beer_sway;
-        // Vec3f               beer_pitch_yaw;
-        // Vec3f               beer_forward_vec;
-        // Vec3f               beer_right_vec;
         u8                  beer_alpha;
         u8                  tunic_r;
         u8                  tunic_g;
@@ -307,19 +315,27 @@ void Chaos_Init(void);
 
 void Chaos_UpdateChaos(PlayState *playstate);
 
-void Chaos_PrintCodes(PlayState *playstate);
+void Chaos_PrintCodes(PlayState *playstate, Input *input);
 
-u8 Chaos_AddCode(u8 code, u8 seconds);
+u8 Chaos_ActivateCode(u8 code, u8 seconds);
 
-void Chaos_DropCodeAtIndex(u8 index);
+void Chaos_DeactivateCodeAtIndex(u8 index);
 
-void Chaos_DropCode(u8 code);
-
-
+void Chaos_DeactivateCode(u8 code);
 
 u8 Chaos_IsCodeActive(u8 code);
 
 struct ChaosCode *Chaos_GetCode(u8 code);
+
+void Chaos_EnableCode(u8 code);
+
+void Chaos_DisableCode(u8 code);
+
+u8 Chaos_IsCodeEnabled(u8 code);
+
+void Chaos_ClearEnabledCodes(void);
+
+void Chaos_UpdateCodeDistribution(void);
 
 u8 Chaos_CanUpdateChaos(struct PlayState *play);
 

@@ -146,7 +146,7 @@ void EnBom_Init(Actor* thisx, PlayState* play) {
     } else {
         if(Chaos_IsCodeActive(CHAOS_CODE_RANDOM_BOMB_TIMER) && this->actor.params != BOMB_TYPE_ARROW)
         {
-            this->timer = 10 + Rand_Next() % 200;
+            this->timer = 10 + Rand_Next() % 300;
         }
         else
         {

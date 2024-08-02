@@ -6248,10 +6248,32 @@ u8 sReturnEntranceGroupIndices[] = {
     0, // 0xFE00
 };
 
+#define MAX_SCENE_ENTRANCE_TABLE_ENTRIES 110
+extern SceneEntranceTableEntry sSceneEntranceTable[];
 // subfunction of OoT's func_80839034
 /* Player_StartSceneChange */
 void func_808354A4(PlayState* play, s32 exitIndex, s32 arg2) {
-    play->nextEntrance = play->setupExitList[exitIndex];
+
+    // if(Chaos_IsCodeActive(CHAOS_CODE_ENTRANCE_RANDO))
+    // {
+    //     u16 *entrances;
+    //     u16 entrance_index;
+    //     SceneEntranceTableEntry *scene_entry;
+    //     EntranceTableEntry **entry_table_list;
+    //     do
+    //     {
+    //         u32 scene_index = Rand_Next() % MAX_SCENE_ENTRANCE_TABLE_ENTRIES;
+    //         scene_entry = sSceneEntranceTable + scene_index;
+    //     }
+    //     while(scene_entry->tableCount == 0);
+
+    //     // entrances = Lib_SegmentedToVirtual(scene_entry->table);
+    //     // entrance_index = Rand_Next() % scene_entry->tableCount;
+    // }
+    // else
+    // {
+    //     play->nextEntrance = play->setupExitList[exitIndex];
+    // }
 
     if (play->nextEntrance == 0xFFFF) {
         gSaveContext.respawnFlag = 4;
@@ -10802,11 +10824,14 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     }
 
     gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_DEKU] = ITEM_MASK_DEKU;
+    gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_GORON] = ITEM_MASK_GORON;
+    gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] = ITEM_OCARINA_OF_TIME;
     gSaveContext.save.saveInfo.inventory.items[SLOT_BOW] = ITEM_BOW;
     gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_FIRE] = ITEM_ARROW_FIRE;
     gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_ICE] = ITEM_ARROW_ICE;
     gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_LIGHT] = ITEM_ARROW_LIGHT;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_BOMBCHU] = ITEM_BOMBCHU;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_BOMB] = ITEM_BOMB;
     // gSaveContext.save.saveInfo.playerData.magicLevel = 2;
     // gSaveContext.save.saveInfo.playerData.magic = 10;
@@ -10814,9 +10839,11 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     // gSaveContext.save.saveInfo.playerData.isDoubleMagicAcquired = true;
     // gSaveContext.save.saveInfo.inventory.questItems |= 1 << QUEST_SONG_TIME;
     gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOW] = 50;
+    gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOMBCHU] = 50;
     // gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOMB] = 10;
     gSaveContext.save.saveInfo.inventory.upgrades |= 3 << gUpgradeShifts[UPG_QUIVER];
     // gSaveContext.save.saveInfo.inventory.upgrades |= 1 << gUpgradeShifts[UPG_BOMB_BAG];
+    // gSaveContext.save.saveInfo.inventory.upgrades |= 3 << gUpgradeShifts[UPG_]
 
     this->subCamId = CAM_ID_NONE;
     Collider_InitAndSetCylinder(play, &this->cylinder, &this->actor, &D_8085C2EC);
@@ -10824,6 +10851,24 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     Collider_InitAndSetQuad(play, &this->meleeWeaponQuads[0], &this->actor, &D_8085C344);
     Collider_InitAndSetQuad(play, &this->meleeWeaponQuads[1], &this->actor, &D_8085C344);
     Collider_InitAndSetQuad(play, &this->shieldQuad, &this->actor, &D_8085C394);
+
+    if(gSaveContext.save.saveInfo.playerData.isMagicAcquired)
+    {
+        Chaos_EnableCode(CHAOS_CODE_CHANGE_MAGIC);
+    }
+
+    if(gSaveContext.save.saveInfo.inventory.items[SLOT_BOW] == ITEM_BOW)
+    {
+        Chaos_EnableCode(CHAOS_CODE_BOMB_ARROWS);
+        Chaos_EnableCode(CHAOS_CODE_BUCKSHOT_ARROWS);
+        Chaos_EnableCode(CHAOS_CODE_WEIRD_ARROWS);
+    }
+
+    if(gSaveContext.save.saveInfo.inventory.items[SLOT_BOMB] == ITEM_BOMB ||
+       gSaveContext.save.saveInfo.inventory.items[SLOT_BOMBCHU] == ITEM_BOMBCHU)
+    {
+        Chaos_EnableCode(CHAOS_CODE_RANDOM_BOMB_TIMER);
+    }
 
     // Player_SetTunicColor(this);
 }
@@ -12067,10 +12112,16 @@ void func_80844784(PlayState* play, Player* this) {
     f32 temp_fa1;
     s16 temp_v0;
     f32 temp_fv0_2;
+    u32 allow_slippery_goron = false;
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_SLIPPERY_FLOORS))
+    {
+        allow_slippery_goron = true;
+    }
 
     /* handles sliding on ice floors */
     if ((this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) && (sPlayerFloorType == FLOOR_TYPE_5) &&
-        (this->currentBoots < PLAYER_BOOTS_ZORA_UNDERWATER)) {
+        ((this->currentBoots < PLAYER_BOOTS_ZORA_UNDERWATER) || allow_slippery_goron)) {
         /* standing on ice floor? */
         cur_yaw = this->currentYaw;
         cur_velocity = this->linearVelocity;
@@ -12258,7 +12309,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // Chaos_AddCode(CHAOS_CODE_TERRIBLE_MUSIC, 20);
         // code = Chaos_GetCode(CHAOS_CODE_TERRIBLE_MUSIC);
         // code->data = 1;
-        Chaos_AddCode(CHAOS_CODE_INCREDIBLE_KNOCKBACK, 20);
+        Chaos_ActivateCode(CHAOS_CODE_BEER_GOGGLES, 20);
     }
 
     if(!(this->stateFlags2 & PLAYER_STATE2_80))
@@ -12360,13 +12411,13 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         gChaosContext.link.syke = true;
         gChaosContext.link.syke_health = gSaveContext.save.saveInfo.playerData.health;
         Health_ChangeBy(play, -gSaveContext.save.saveInfo.playerData.health);
-        Chaos_DropCode(CHAOS_CODE_SYKE);
+        Chaos_DeactivateCode(CHAOS_CODE_SYKE);
     }
 
     if(Chaos_IsCodeActive(CHAOS_CODE_DIE))
     {
         Health_ChangeBy(play, -gSaveContext.save.saveInfo.playerData.health);
-        Chaos_DropCode(CHAOS_CODE_DIE);
+        Chaos_DeactivateCode(CHAOS_CODE_DIE);
     }
 
     // code = Chaos_GetCode(CHAOS_CODE_TUNIC_COLOR);
@@ -13012,6 +13063,7 @@ void Player_Draw(Actor* thisx, PlayState* play) {
     LodLimb *torso_limb;
     FlexSkeletonHeader *header;
     LodLimb **limbs;
+    Vec3f actor_scale = {1, 1, 1};
     Gfx *color_gfx;
 
     Gfx bleh[] = {
@@ -13022,6 +13074,13 @@ void Player_Draw(Actor* thisx, PlayState* play) {
     Gfx* polyOpa;
     Gfx *limb_gfx;
     GfxPrint gfx_print;
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_RANDOM_SCALING))
+    {
+        actor_scale.x *= 0.05f + Rand_ZeroOne() * 3.95f;
+        actor_scale.y *= 0.05f + Rand_ZeroOne() * 3.95f;
+        actor_scale.z *= 0.05f + Rand_ZeroOne() * 3.95f;
+    } 
 
     Math_Vec3f_Copy(&this->unk_D6C, &this->bodyPartsPos[PLAYER_BODYPART_WAIST]);
     if (this->stateFlags3 & (PLAYER_STATE3_100 | PLAYER_STATE3_40000)) {
@@ -13038,7 +13097,8 @@ void Player_Draw(Actor* thisx, PlayState* play) {
         spEC = true;
         if (this->stateFlags3 & PLAYER_STATE3_40000) {
             Matrix_SetTranslateRotateYXZ(this->unk_AF0[0].x, this->unk_AF0[0].y, this->unk_AF0[0].z, &gZeroVec3s);
-            Matrix_Scale(this->actor.scale.x, this->actor.scale.y, this->actor.scale.z, MTXMODE_APPLY);
+            // Matrix_Scale(this->actor.scale.x, this->actor.scale.y, this->actor.scale.z, MTXMODE_APPLY);
+            Matrix_Scale(actor_scale.x, actor_scale.y, actor_scale.z, MTXMODE_APPLY);
             spE8 = D_8085D568;
             spE0 = 0.0f;
         } else {
@@ -13082,14 +13142,18 @@ void Player_Draw(Actor* thisx, PlayState* play) {
 
         if (this->stateFlags3 & PLAYER_STATE3_1000) {
             /* draw curled goron */
-
-
             Color_RGB8 spBC;
             f32 spB8 = this->unk_ABC + 1.0f;
             f32 spB4 = 1.0f - (this->unk_ABC * 0.5f);
 
+            actor_scale.x *= this->actor.scale.x;
+            actor_scale.y *= this->actor.scale.y;
+            actor_scale.z *= this->actor.scale.z;
+
             func_80846460(this);
-            Matrix_Translate(this->actor.world.pos.x, this->actor.world.pos.y + (1200.0f * this->actor.scale.y * spB8),
+            // Matrix_Translate(this->actor.world.pos.x, this->actor.world.pos.y + (1200.0f * this->actor.scale.y * spB8),
+            //                  this->actor.world.pos.z, MTXMODE_NEW);
+            Matrix_Translate(this->actor.world.pos.x, this->actor.world.pos.y + (1200.0f * actor_scale.y * spB8),
                              this->actor.world.pos.z, MTXMODE_NEW);
 
             if (this->unk_B86[0] != 0) {
@@ -13101,8 +13165,10 @@ void Player_Draw(Actor* thisx, PlayState* play) {
             Matrix_RotateYS(this->actor.shape.rot.y, MTXMODE_APPLY);
             Matrix_RotateZS(this->actor.shape.rot.z, MTXMODE_APPLY);
 
-            Matrix_Scale(this->actor.scale.x * spB4 * 1.15f, this->actor.scale.y * spB8 * 1.15f,
-                         CLAMP_MIN(spB8, spB4) * this->actor.scale.z * 1.15f, MTXMODE_APPLY);
+            // Matrix_Scale(this->actor.scale.x * spB4 * 1.15f, this->actor.scale.y * spB8 * 1.15f,
+            //              CLAMP_MIN(spB8, spB4) * this->actor.scale.z * 1.15f, MTXMODE_APPLY);
+            Matrix_Scale(actor_scale.x * spB4 * 1.15f, actor_scale.y * spB8 * 1.15f,
+                         CLAMP_MIN(spB8, spB4) * actor_scale.z * 1.15f, MTXMODE_APPLY);
             Matrix_RotateXS(this->actor.shape.rot.x, MTXMODE_APPLY);
             Scene_SetRenderModeXlu(play, 0, 1);
             Color_RGB8_Lerp(&D_8085D580, &D_8085D584, this->unk_B10[0], &spBC);
@@ -13157,10 +13223,15 @@ void Player_Draw(Actor* thisx, PlayState* play) {
                 }
             }
         } else if ((this->transformation == PLAYER_FORM_GORON) && (this->stateFlags1 & PLAYER_STATE1_400000)) {
+            /* draw shielding goron */
             func_80846460(this);
+            Matrix_Push();
+            Matrix_Scale(actor_scale.x, actor_scale.y, actor_scale.z, MTXMODE_APPLY);
             SkelAnime_DrawFlexOpa(play, this->unk_2C8.skeleton, this->unk_2C8.jointTable, this->unk_2C8.dListCount,
                                   NULL, NULL, NULL);
+            Matrix_Pop();
         } else {
+            /* draw all forms */
             OverrideLimbDrawFlex sp84 = Player_OverrideLimbDrawGameplayDefault;
             s32 lod = ((this->csAction != PLAYER_CSACTION_NONE) || (this->actor.projectedPos.z < 320.0f)) ? 0 : 1;
             Vec3f sp74;
@@ -13179,15 +13250,24 @@ void Player_Draw(Actor* thisx, PlayState* play) {
                 /* draw player reflection? */
                 s16 temp_s0_2 = play->gameplayFrames * 600;
                 s16 sp70 = (play->gameplayFrames * 1000) & 0xFFFF;
+                Vec3f reflection_scale = actor_scale;
+                reflection_scale.x *= this->actor.scale.x;
+                reflection_scale.y *= this->actor.scale.y;
+                reflection_scale.z *= this->actor.scale.z;
 
                 Matrix_Push();
 
-                this->actor.scale.y = -this->actor.scale.y;
-                Matrix_SetTranslateRotateYXZ(this->actor.world.pos.x,
-                                             this->actor.world.pos.y + (2.0f * this->actor.depthInWater) +
-                                                 (this->unk_ABC * this->actor.scale.y),
-                                             this->actor.world.pos.z, &this->actor.shape.rot);
-                Matrix_Scale(this->actor.scale.x, this->actor.scale.y, this->actor.scale.z, MTXMODE_APPLY);
+                // this->actor.scale.y = -this->actor.scale.y;
+                actor_scale.y = -actor_scale.y;
+                // Matrix_SetTranslateRotateYXZ(this->actor.world.pos.x,
+                //                              this->actor.world.pos.y + (2.0f * this->actor.depthInWater) +
+                //                                  (this->unk_ABC * this->actor.scale.y),
+                //                              this->actor.world.pos.z, &this->actor.shape.rot);
+                // Matrix_Scale(this->actor.scale.x, this->actor.scale.y, this->actor.scale.z, MTXMODE_APPLY);
+
+                Matrix_SetTranslateRotateYXZ(this->actor.world.pos.x, this->actor.world.pos.y + (2.0f * this->actor.depthInWater) +
+                                                 (this->unk_ABC * reflection_scale.y), this->actor.world.pos.z, &this->actor.shape.rot);
+                Matrix_Scale(reflection_scale.x, reflection_scale.y, reflection_scale.z, MTXMODE_APPLY);
 
                 /* this block makes the player model wobble */
                 Matrix_RotateXS(temp_s0_2, MTXMODE_APPLY);
@@ -13198,7 +13278,8 @@ void Player_Draw(Actor* thisx, PlayState* play) {
 
 
                 Player_DrawGameplay(play, this, lod, gCullFrontDList, sp84);
-                this->actor.scale.y = -this->actor.scale.y;
+                // this->actor.scale.y = -this->actor.scale.y;
+                actor_scale.y = -actor_scale.y;
 
                 Matrix_Pop();
             }
@@ -13216,7 +13297,10 @@ void Player_Draw(Actor* thisx, PlayState* play) {
                 Matrix_Pop();
             }
 
+            Matrix_Push();
+            Matrix_Scale(actor_scale.x, actor_scale.y, actor_scale.z, MTXMODE_APPLY);
             Player_DrawGameplay(play, this, lod, gCullBackDList, sp84);
+            Matrix_Pop();
         }
 
         func_801229A0(play, this);

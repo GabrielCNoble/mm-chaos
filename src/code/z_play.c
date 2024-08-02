@@ -950,7 +950,7 @@ void Play_UpdateMain(PlayState* this) {
         MessageTableEntry *entry = D_801C6B98 + entry_index;
         Message_StartTextbox(this, entry->textId, &player->actor);
         CutsceneManager_Queue(CS_ID_GLOBAL_TALK);
-        Chaos_DropCode(CHAOS_CODE_TEXTBOX);
+        Chaos_DeactivateCode(CHAOS_CODE_TEXTBOX);
     }
 
     code = Chaos_GetCode(CHAOS_CODE_TERRIBLE_MUSIC);
@@ -1140,7 +1140,7 @@ void Play_UpdateMain(PlayState* this) {
         f32 offset_y;
         f32 alpha_scale = (f32)gChaosContext.link.beer_alpha / 210.0f;
 
-        Play_EnableMotionBlurPriority(gChaosContext.link.beer_alpha);
+        Play_EnableMotionBlur(gChaosContext.link.beer_alpha);
         Math_Vec3f_DistXYZAndStoreNormDiff(&camera->eye, &camera->at, 1.0f, &forward_vec);
 
         right_vec.x = forward_vec.y * camera->up.z - forward_vec.z * camera->up.y;
@@ -1180,7 +1180,7 @@ void Play_UpdateMain(PlayState* this) {
     }
     else
     {
-        Play_DisableMotionBlurPriority();
+        Play_DisableMotionBlur();
         gChaosContext.link.beer_sway.x = 0;
         gChaosContext.link.beer_sway.y = 0;
         gChaosContext.link.beer_sway.z = 0;
@@ -1594,10 +1594,11 @@ SkipPostWorldDraw:
     CLOSE_DISPS(gfxCtx);
 
     PadMgr_GetInput(inputs, false);
-    if(CHECK_BTN_ANY(inputs[0].press.button, BTN_DLEFT))
-    {
-        Chaos_PrintCodes(this);
-    }
+    Chaos_PrintCodes(this, &inputs[0]);
+    // if(CHECK_BTN_ANY(inputs[0].press.button, BTN_DLEFT))
+    // {
+        
+    // }
 }
 #else
 void Play_DrawMain(PlayState* this);
@@ -1761,6 +1762,35 @@ void Play_SpawnScene(PlayState* this, s32 sceneId, s32 spawn) {
     gSegments[2] = OS_K0_TO_PHYSICAL(this->sceneSegment);
     Play_InitScene(this, spawn);
     Room_AllocateAndLoad(this, &this->roomCtx);
+
+    Chaos_ClearEnabledCodes();
+    Chaos_EnableCode(CHAOS_CODE_LOW_GRAVITY);
+    Chaos_EnableCode(CHAOS_CODE_CHANGE_HEALTH);
+    Chaos_EnableCode(CHAOS_CODE_CHANGE_RUPEE);
+    Chaos_EnableCode(CHAOS_CODE_ACTOR_CHASE);
+    Chaos_EnableCode(CHAOS_CODE_YEET);
+    Chaos_EnableCode(CHAOS_CODE_POKE);
+    Chaos_EnableCode(CHAOS_CODE_MOON_DANCE);
+    Chaos_EnableCode(CHAOS_CODE_ONE_HIT_KO);
+    Chaos_EnableCode(CHAOS_CODE_RANDOM_KNOCKBACK);
+    Chaos_EnableCode(CHAOS_CODE_ICE_TRAP);
+    Chaos_EnableCode(CHAOS_CODE_TIMER_UP);
+    Chaos_EnableCode(CHAOS_CODE_SHOCK);
+    Chaos_EnableCode(CHAOS_CODE_EARTHQUAKE);
+    Chaos_EnableCode(CHAOS_CODE_LOVELESS_MARRIAGE);
+    Chaos_EnableCode(CHAOS_CODE_WEIRD_UI);
+    Chaos_EnableCode(CHAOS_CODE_BEER_GOGGLES);
+    Chaos_EnableCode(CHAOS_CODE_INVINCIBLE);
+    Chaos_EnableCode(CHAOS_CODE_SYKE);
+    Chaos_EnableCode(CHAOS_CODE_DIE);
+    Chaos_EnableCode(CHAOS_CODE_TOURETTE);
+    Chaos_EnableCode(CHAOS_CODE_TEXTBOX);
+    Chaos_EnableCode(CHAOS_CODE_SLIPPERY_FLOORS);
+    Chaos_EnableCode(CHAOS_CODE_SLOW_DOWN);
+    Chaos_EnableCode(CHAOS_CODE_TERRIBLE_MUSIC);
+    Chaos_EnableCode(CHAOS_CODE_INCREDIBLE_KNOCKBACK);
+    Chaos_EnableCode(CHAOS_CODE_RANDOM_SCALING);
+    // Chaos_UpdateCodeDistribution();
 }
 
 void Play_GetScreenPos(PlayState* this, Vec3f* worldPos, Vec3f* screenPos) {

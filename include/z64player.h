@@ -891,7 +891,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_100000     (1 << 20)
 // 
 #define PLAYER_STATE1_200000     (1 << 21)
-// 
+// Player is shielding
 #define PLAYER_STATE1_400000     (1 << 22)
 // Mounted on Epona?
 #define PLAYER_STATE1_800000     (1 << 23)

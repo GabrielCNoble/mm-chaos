@@ -247,8 +247,8 @@ void LifeMeter_Draw(PlayState* play) {
 
         if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
         {
-            chaos_x = (Rand_ZeroOne() * 2.0f - 1.0f) * 6.0f;
-            chaos_y = (Rand_ZeroOne() * 2.0f - 1.0f) * 6.0f;
+            chaos_x = (Rand_ZeroOne() * 2.0f - 1.0f) * 8.0f;
+            chaos_y = (Rand_ZeroOne() * 2.0f - 1.0f) * 8.0f;
         }
 
         if ((ddCount < 0) || (ddCount < i)) {
