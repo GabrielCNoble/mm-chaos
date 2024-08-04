@@ -811,7 +811,7 @@ void EnFall_Moon_ChaosStuff(PlayState *play, EnFall *this)
             }
         }
     }
-    else if(Chaos_IsCodeActive(CHAOS_CODE_BIG_BROTHER))
+    else if((code = Chaos_GetCode(CHAOS_CODE_BIG_BROTHER)) != NULL)
     {
         Player *player = GET_PLAYER(play);
         MtxF *moon_transform;
@@ -821,6 +821,8 @@ void EnFall_Moon_ChaosStuff(PlayState *play, EnFall *this)
         Vec2f xz_vec;
         f32 yaw_delta;
         f32 pitch_delta;
+        f32 angle_delta_limit = 0.085f;
+        s16 rotation_multiplier = 850;
 
         Math_Vec3f_DistXYZAndStoreNormDiff(&player->actor.world.pos, &this->actor.world.pos, 1.0f, &moon_player_vec);
         moon_transform = Matrix_GetCurrent();
@@ -831,28 +833,60 @@ void EnFall_Moon_ChaosStuff(PlayState *play, EnFall *this)
         moon_up_vec.y = moon_transform->yy;
         moon_up_vec.z = moon_transform->zy;
 
-        // moon_up_vec
-        
-        // Math_Vec3f_Diff(&player->actor.world.pos, &this->actor.world.pos, &moon_player_vec);
-        
-        // xz_vec.x = moon_player_vec.x;
-        // xz_vec.z = moon_player_vec.z;
-
-        // length = moon_player_vec.x * moon_player_vec.x + moon_player_vec.z * moon_player_vec.z;
-
-        // if(length > 0.0f)
-        // {
-        //     xz_vec.x /= length;
-        //     xz_vec.z /= length;
-        // }
-        // gChaosContext.moon.yaw -= (moon_right_vec.x * moon_player_vec.x + moon_right_vec.y * moon_player_vec.y + moon_right_vec.z * moon_player_vec.z) * 0.01f;
-        // gChaosContext.moon.pitch += (moon_up_vec.x * moon_player_vec.x + moon_up_vec.y * moon_player_vec.y + moon_up_vec.z * moon_player_vec.z) * 0.01f;
-
         yaw_delta = (moon_right_vec.x * moon_player_vec.x + moon_right_vec.y * moon_player_vec.y + moon_right_vec.z * moon_player_vec.z);
         pitch_delta = (moon_up_vec.x * moon_player_vec.x + moon_up_vec.y * moon_player_vec.y + moon_up_vec.z * moon_player_vec.z);
 
-        this->actor.shape.rot.x += pitch_delta * 120;
-        this->actor.shape.rot.y -= yaw_delta * 120;
+        if(code->data == CHAOS_BIG_BROTHER_STATE_FAST_LOCKED_ON)
+        {
+            angle_delta_limit = 0.025f;
+        }
+
+        if((fabsf(pitch_delta) < angle_delta_limit && fabsf(yaw_delta) < angle_delta_limit))
+        {
+            if(gChaosContext.moon.eye_glow == 0.0f)
+            {
+                u16 moon_screams[] = {
+                    NA_SE_EN_MOON_SCREAM1,
+                    NA_SE_EN_MOON_SCREAM2,
+                    NA_SE_EN_MOON_SCREAM3,
+                    NA_SE_EN_MOON_SCREAM4
+                };
+
+                u32 scream_index = Rand_Next() % 4;
+
+                gChaosContext.moon.eye_glow = 0.1f;
+                Audio_PlaySfx(NA_SE_EV_MOON_EYE_FLASH);
+                Audio_PlaySfx(moon_screams[scream_index]);
+            }
+
+            code->data = CHAOS_BIG_BROTHER_STATE_SLOW_LOCKED_ON;
+        }
+        else if(code->data != CHAOS_BIG_BROTHER_STATE_TRACKING)
+        {
+            code->data = CHAOS_BIG_BROTHER_STATE_FAST_LOCKED_ON;
+            rotation_multiplier = 10000;
+        }
+
+        this->actor.shape.rot.x += pitch_delta * rotation_multiplier;
+        this->actor.shape.rot.y -= yaw_delta * rotation_multiplier;
+
+        if(this->actor.shape.rot.x > 16384)
+        {
+            this->actor.shape.rot.y += (16384 - this->actor.shape.rot.x) * 2;
+            this->actor.shape.rot.x = 16384;
+        }
+        else if(this->actor.shape.rot.x < -16384)
+        {
+            this->actor.shape.rot.y += (16384 + this->actor.shape.rot.x) * 2;
+            this->actor.shape.rot.x = -16384;
+        }
+
+        if(gChaosContext.moon.eye_glow > 0.0f && gChaosContext.moon.eye_glow < 1.0f)
+        {
+            gChaosContext.moon.eye_glow += 0.05f;
+        }
+
+        this->eyeGlowIntensity = gChaosContext.moon.eye_glow;
     }
 }
 

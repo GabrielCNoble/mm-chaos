@@ -222,6 +222,15 @@ enum CHAOS_MOON_MOVES
     CHAOS_MOON_MOVE_LAST
 };
 
+enum CHAOS_BIG_BROTHER_STATES
+{
+    CHAOS_BIG_BROTHER_STATE_IDLE = 0,
+    CHAOS_BIG_BROTHER_STATE_TRACKING,
+    CHAOS_BIG_BROTHER_STATE_SLOW_LOCKED_ON,
+    CHAOS_BIG_BROTHER_STATE_FAST_LOCKED_ON,
+    CHAOS_BIG_BROTHER_STATE_LAST,
+};
+
 enum CHAOS_ARROW_EFFECTS
 {
     CHAOS_ARROW_EFFECT_WEIRD      = 1,
@@ -279,7 +288,13 @@ typedef struct ChaosContext
         f32                 yaw;
         f32                 bob;
         f32                 sway;
-        f32                 scale;
+
+        union
+        {
+            f32             scale;
+            f32             eye_glow;
+        };
+        
     } moon;
 
     struct

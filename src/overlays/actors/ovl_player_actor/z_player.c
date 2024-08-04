@@ -12355,7 +12355,10 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // {
         //     Chaos_AddCode(gArrowEffectTests[gCurrentArrowEffect].codes[code_index], 5);
         // }
-        Chaos_ActivateCode(CHAOS_CODE_BIG_BROTHER, 20);
+        Chaos_ActivateCode(CHAOS_CODE_BIG_BROTHER, 60);
+        gChaosContext.moon.eye_glow = 0.0f;
+        code = Chaos_GetCode(CHAOS_CODE_BIG_BROTHER);
+        code->data = CHAOS_BIG_BROTHER_STATE_TRACKING;
         // Item_Give(play, ITEM_BOMB_BAG_20);
     }
 

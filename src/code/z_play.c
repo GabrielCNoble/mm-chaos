@@ -978,14 +978,18 @@ void Play_UpdateMain(PlayState* this) {
 
                 scale = 0.25f + Rand_ZeroOne() * 2.5f;
                 SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_MAIN, frequency_duration, scale * 1000.0f);
+                SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_SUB, frequency_duration, scale * 1000.0f);
                 scale = 0.25f + Rand_ZeroOne() * 2.5f;
                 SEQCMD_SET_TEMPO(SEQ_PLAYER_BGM_MAIN, tempo_duration, scale * 100.0f);
+                SEQCMD_SET_TEMPO(SEQ_PLAYER_BGM_SUB, tempo_duration, scale * 100.0f);
             }
         }
         else
         {
             SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_MAIN, 10, 1000.0f);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_SUB, 10, 1000.0f);
             SEQCMD_RESET_TEMPO(SEQ_PLAYER_BGM_MAIN, 10);
+            SEQCMD_RESET_TEMPO(SEQ_PLAYER_BGM_SUB, 10);
         }
     }
 
@@ -1820,6 +1824,7 @@ void Play_SpawnScene(PlayState* this, s32 sceneId, s32 spawn) {
     Chaos_EnableCode(CHAOS_CODE_TERRIBLE_MUSIC);
     Chaos_EnableCode(CHAOS_CODE_INCREDIBLE_KNOCKBACK);
     Chaos_EnableCode(CHAOS_CODE_RANDOM_SCALING);
+    Chaos_EnableCode(CHAOS_CODE_BIG_BROTHER);
 }
 
 void Play_GetScreenPos(PlayState* this, Vec3f* worldPos, Vec3f* screenPos) {

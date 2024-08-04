@@ -44,10 +44,10 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_SLIPPERY_FLOORS]         = */ CHAOS_CODE_DEF(10, 20, false, 0.012f),
     /* [CHAOS_CODE_SLOW_DOWN]               = */ CHAOS_CODE_DEF(10, 20, false, 0.006f),
     /* [CHAOS_CODE_ENTRANCE_RANDO]          = */ CHAOS_CODE_DEF(5,  15, false, 0.0005f),
-    /* [CHAOS_CODE_TERRIBLE_MUSIC]          = */ CHAOS_CODE_DEF(15, 35, true,  0.02f),
+    /* [CHAOS_CODE_TERRIBLE_MUSIC]          = */ CHAOS_CODE_DEF(15, 35, true,  0.03f),
     /* [CHAOS_CODE_INCREDIBLE_KNOCKBACK]    = */ CHAOS_CODE_DEF(10, 21, true,  0.03f),
-    /* [CHAOS_CODE_RANDOM_SCALING]          = */ CHAOS_CODE_DEF(10, 21, true,  0.035f),
-    /* [CHAOS_CODE_BIG_BROTHER]             = */ CHAOS_CODE_DEF(10, 25, true,  0.025f),
+    /* [CHAOS_CODE_RANDOM_SCALING]          = */ CHAOS_CODE_DEF(10, 21, true,  0.025f),
+    /* [CHAOS_CODE_BIG_BROTHER]             = */ CHAOS_CODE_DEF(60, 70, true,  0.006f),
 };
  
 const char *gChaosCodeNames[] = {
@@ -347,6 +347,22 @@ void Chaos_UpdateChaos(PlayState *playstate)
                                 continue;
                             }
                         break;
+
+                        case CHAOS_CODE_BIG_BROTHER:
+                            if(Chaos_IsCodeActive(CHAOS_CODE_MOON_DANCE))
+                            {
+                                /* the moon won't be able to face the player if it starts dancing, so do it later */
+                                continue;
+                            }
+                        break;
+
+                        case CHAOS_CODE_MOON_DANCE:
+                            if(Chaos_IsCodeActive(CHAOS_CODE_BIG_BROTHER))
+                            {
+                                /* the moon won't be able to face the player if it starts dancing, so do it later */
+                                continue;
+                            }
+                        break;
                     }
 
                     code_add_result = Chaos_ActivateCode(next_code, next_code_timer);
@@ -384,6 +400,11 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         case CHAOS_CODE_TERRIBLE_MUSIC:
                             /* start screwing up the bgm on the same frame the effect gets activated */
                             last_code->data = 1;
+                        break;
+
+                        case CHAOS_CODE_BIG_BROTHER:
+                            gChaosContext.moon.eye_glow = 0.0f;
+                            last_code->data = CHAOS_BIG_BROTHER_STATE_TRACKING; 
                         break;
 
                         // case CHAOS_CODE_TUNIC_COLOR:
