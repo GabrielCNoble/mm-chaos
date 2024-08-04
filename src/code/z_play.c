@@ -1813,7 +1813,7 @@ void Play_SpawnScene(PlayState* this, s32 sceneId, s32 spawn) {
     Chaos_EnableCode(CHAOS_CODE_INVINCIBLE);
     Chaos_EnableCode(CHAOS_CODE_SYKE);
     Chaos_EnableCode(CHAOS_CODE_DIE);
-    Chaos_EnableCode(CHAOS_CODE_TOURETTE);
+    Chaos_EnableCode(CHAOS_CODE_TRAP_FLAP);
     // Chaos_EnableCode(CHAOS_CODE_TEXTBOX);
     Chaos_EnableCode(CHAOS_CODE_SLIPPERY_FLOORS);
     Chaos_EnableCode(CHAOS_CODE_SLOW_DOWN);

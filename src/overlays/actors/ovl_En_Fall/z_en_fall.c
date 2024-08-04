@@ -46,7 +46,7 @@ void EnFall_MoonsTear_Fall(EnFall* this, PlayState* play);
 void EnFall_Fireball_Update(Actor* thisx, PlayState* play);
 void EnFall_RisingDebris_Update(Actor* thisx, PlayState* play);
 void EnFall_FireRing_Update(Actor* thisx, PlayState* play);
-void EnFall_Moon_ChaosStuff(void);
+void EnFall_Moon_ChaosStuff(PlayState *play, EnFall *this);
 void EnFall_Moon_Draw(Actor* thisx, PlayState* play);
 void EnFall_OpenMouthMoon_Draw(Actor* thisx, PlayState* play);
 void EnFall_LodMoon_DrawWithoutLerp(Actor* thisx, PlayState* play);
@@ -750,7 +750,7 @@ void EnFall_FireRing_Update(Actor* thisx, PlayState* play) {
     }
 }
 
-void EnFall_Moon_ChaosStuff(void)
+void EnFall_Moon_ChaosStuff(PlayState *play, EnFall *this)
 {
     Vec3f up_axis = {0.0f, 1.0f, 0.0f};
     Vec3f forward_axis = {0.0f, 0.0f, 1.0f};
@@ -805,9 +805,54 @@ void EnFall_Moon_ChaosStuff(void)
                     gChaosContext.moon.sway = fmodf(gChaosContext.moon.sway + 0.09f, 2.0f * M_PI);
                 }
 
+                
+
                 Matrix_Translate(sway * 10000.0f, bob * 10000.0f, 0.0f, MTXMODE_APPLY);
             }
         }
+    }
+    else if(Chaos_IsCodeActive(CHAOS_CODE_BIG_BROTHER))
+    {
+        Player *player = GET_PLAYER(play);
+        MtxF *moon_transform;
+        Vec3f moon_right_vec;
+        Vec3f moon_up_vec;
+        Vec3f moon_player_vec;
+        Vec2f xz_vec;
+        f32 yaw_delta;
+        f32 pitch_delta;
+
+        Math_Vec3f_DistXYZAndStoreNormDiff(&player->actor.world.pos, &this->actor.world.pos, 1.0f, &moon_player_vec);
+        moon_transform = Matrix_GetCurrent();
+        moon_right_vec.x = moon_transform->xx;
+        moon_right_vec.y = moon_transform->yx;
+        moon_right_vec.z = moon_transform->zx;
+        moon_up_vec.x = moon_transform->xy;
+        moon_up_vec.y = moon_transform->yy;
+        moon_up_vec.z = moon_transform->zy;
+
+        // moon_up_vec
+        
+        // Math_Vec3f_Diff(&player->actor.world.pos, &this->actor.world.pos, &moon_player_vec);
+        
+        // xz_vec.x = moon_player_vec.x;
+        // xz_vec.z = moon_player_vec.z;
+
+        // length = moon_player_vec.x * moon_player_vec.x + moon_player_vec.z * moon_player_vec.z;
+
+        // if(length > 0.0f)
+        // {
+        //     xz_vec.x /= length;
+        //     xz_vec.z /= length;
+        // }
+        // gChaosContext.moon.yaw -= (moon_right_vec.x * moon_player_vec.x + moon_right_vec.y * moon_player_vec.y + moon_right_vec.z * moon_player_vec.z) * 0.01f;
+        // gChaosContext.moon.pitch += (moon_up_vec.x * moon_player_vec.x + moon_up_vec.y * moon_player_vec.y + moon_up_vec.z * moon_player_vec.z) * 0.01f;
+
+        yaw_delta = (moon_right_vec.x * moon_player_vec.x + moon_right_vec.y * moon_player_vec.y + moon_right_vec.z * moon_player_vec.z);
+        pitch_delta = (moon_up_vec.x * moon_player_vec.x + moon_up_vec.y * moon_player_vec.y + moon_up_vec.z * moon_player_vec.z);
+
+        this->actor.shape.rot.x += pitch_delta * 120;
+        this->actor.shape.rot.y -= yaw_delta * 120;
     }
 }
 
@@ -825,7 +870,7 @@ void EnFall_Moon_Draw(Actor* thisx, PlayState* play) {
     OPEN_DISPS(play->state.gfxCtx);
     Gfx_SetupDL25_Opa(play->state.gfxCtx);
 
-    EnFall_Moon_ChaosStuff();
+    EnFall_Moon_ChaosStuff(play, this);
 
     gSPMatrix(POLY_OPA_DISP++, Matrix_NewMtx(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
     Matrix_MultVec3f(sFocusOffset, &this->actor.focus.pos);
@@ -845,7 +890,7 @@ void EnFall_OpenMouthMoon_Draw(Actor* thisx, PlayState* play) {
     OPEN_DISPS(play->state.gfxCtx);
 
     Gfx_SetupDL25_Opa(play->state.gfxCtx);
-    EnFall_Moon_ChaosStuff();
+    EnFall_Moon_ChaosStuff(play, this);
     gSPMatrix(POLY_OPA_DISP++, Matrix_NewMtx(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
 
     primColor = (this->eyeGlowIntensity * 200.0f) + 40.0f;
@@ -865,7 +910,7 @@ void EnFall_LodMoon_Draw(Actor* thisx, PlayState* play) {
 
     Gfx_SetupDL25_Opa(play->state.gfxCtx);
 
-    EnFall_Moon_ChaosStuff();
+    EnFall_Moon_ChaosStuff(play, this);
 
     gSPMatrix(POLY_OPA_DISP++, Matrix_NewMtx(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
 

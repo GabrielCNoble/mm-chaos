@@ -66,7 +66,7 @@ enum CHAOS_CODES
     /* real insta-death */
     CHAOS_CODE_DIE,
     /* player randomly screams */
-    CHAOS_CODE_TOURETTE,
+    CHAOS_CODE_TRAP_FLAP,
     /* opens random textbox */
     CHAOS_CODE_TEXTBOX,
     /* ice physics */
@@ -81,6 +81,8 @@ enum CHAOS_CODES
     CHAOS_CODE_INCREDIBLE_KNOCKBACK,
     /* randomly scales player model */
     CHAOS_CODE_RANDOM_SCALING,
+    /* moon always faces the player */
+    CHAOS_CODE_BIG_BROTHER,
     /* enemies explode when killed */
     // CHAOS_CODE_VILETILE_ENEMIES,
 
@@ -117,7 +119,6 @@ enum CHAOS_CODES
     // CHAOS_CODE_SHORT_TERM_MEMORY_LOSS,
     
     // CHAOS_CODE_RANDOM_PLAYER_SOUNDS,
-    // CHAOS_CODE_SLOW_DOWN,
     // CHAOS_CODE_JUNK_ITEM,
     // CHAOS_CODE_RANDOM_C_BUTTONS,
     // CHAOS_CODE_HEAT_TIMER,
@@ -153,8 +154,7 @@ enum CHAOS_CODES
     // CHAOS_CODE_GOT_A_FLAT,
     /* swap tatl model with the moon's */
     // CHAOS_CODE_EVIL_VOICES,
-    /* moon always faces the player */
-    // CHAOS_CODE_BIG_BROTHER,
+    
     /* walk over water */
     // CHAOS_CODE_HIM,
     
@@ -181,7 +181,8 @@ enum CHAOS_CODES
     
     /* player takes flight like a gossip stone */
     // CHAOS_CODE_LIFTOFF,
-    
+    /* link randomly slows down and gasps for air */
+    // CHAOS_CODE_OUT_OF_SHAPE,
     
     
     CHAOS_CODE_LAST

@@ -10866,16 +10866,16 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
         ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawFeet, this->ageProperties->shadowScale);
     }
 
-    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_DEKU] = ITEM_MASK_DEKU;
-    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_GORON] = ITEM_MASK_GORON;
-    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
+    gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_DEKU] = ITEM_MASK_DEKU;
+    gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_GORON] = ITEM_MASK_GORON;
+    gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] = ITEM_OCARINA_OF_TIME;
     // // gSaveContext.save.saveInfo.inventory.items[SLOT_BOW] = ITEM_BOW;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_FIRE] = ITEM_ARROW_FIRE;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_ICE] = ITEM_ARROW_ICE;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_LIGHT] = ITEM_ARROW_LIGHT;
     // // gSaveContext.save.saveInfo.inventory.items[SLOT_BOMBCHU] = ITEM_BOMBCHU;
-    // // gSaveContext.save.saveInfo.inventory.items[SLOT_BOMB] = ITEM_BOMB;
+    gSaveContext.save.saveInfo.inventory.items[SLOT_BOMB] = ITEM_BOMB;
     // // gSaveContext.save.saveInfo.playerData.magicLevel = 2;
     // // gSaveContext.save.saveInfo.playerData.magic = 10;
     // // gSaveContext.save.saveInfo.playerData.isMagicAcquired = true;
@@ -10883,7 +10883,7 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_SONG_TIME) | (1 << QUEST_SONG_EPONA);
     // gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOW] = 50;
     // gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOMBCHU] = 50;
-    // // gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOMB] = 10;
+    gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOMB] = 50;
     // gSaveContext.save.saveInfo.inventory.upgrades |= 3 << gUpgradeShifts[UPG_QUIVER];
     // gSaveContext.save.saveInfo.inventory.upgrades |= 1 << gUpgradeShifts[UPG_BOMB_BAG];
     // gSaveContext.save.saveInfo.inventory.upgrades |= 3 << gUpgradeShifts[UPG_]
@@ -12329,7 +12329,7 @@ struct gArrowEffectTest {
     3, {CHAOS_CODE_BOMB_ARROWS, CHAOS_CODE_WEIRD_ARROWS, CHAOS_CODE_BUCKSHOT_ARROWS}
 };
 
-s16 gTouretteSounds[] = {
+s16 gTrapFlapSounds[] = {
     NA_SE_VO_LI_FALL_L, 
     NA_SE_VO_LI_FALL_S, 
     NA_SE_VO_LI_LASH,
@@ -12347,17 +12347,17 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     // Gfx *draw_list;
     Gfx color_gfx[1];
 
-    // if(CHECK_BTN_ANY(input->press.button, BTN_L))
-    // {
-    //     // gCurrentArrowEffect = (gCurrentArrowEffect + 1) % (sizeof(gArrowEffectTests) / sizeof(gArrowEffectTests)[0]);
-    //     // Chaos_Init();
-    //     // for(code_index = 0; code_index < gArrowEffectTests[gCurrentArrowEffect].code_count; code_index++)
-    //     // {
-    //     //     Chaos_AddCode(gArrowEffectTests[gCurrentArrowEffect].codes[code_index], 5);
-    //     // }
-    //     // Chaos_ActivateCode(CHAOS_CODE_SYKE, 20);
-    //     // Item_Give(play, ITEM_BOMB_BAG_20);
-    // }
+    if(CHECK_BTN_ANY(input->press.button, BTN_L))
+    {
+        // gCurrentArrowEffect = (gCurrentArrowEffect + 1) % (sizeof(gArrowEffectTests) / sizeof(gArrowEffectTests)[0]);
+        // Chaos_Init();
+        // for(code_index = 0; code_index < gArrowEffectTests[gCurrentArrowEffect].code_count; code_index++)
+        // {
+        //     Chaos_AddCode(gArrowEffectTests[gCurrentArrowEffect].codes[code_index], 5);
+        // }
+        Chaos_ActivateCode(CHAOS_CODE_BIG_BROTHER, 20);
+        // Item_Give(play, ITEM_BOMB_BAG_20);
+    }
 
     if(!(this->stateFlags2 & PLAYER_STATE2_80) & !(this->stateFlags1 & PLAYER_STATE1_800000))
     {
@@ -12382,6 +12382,8 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         {
             code->data--;
 
+            /* TODO: figure out which flags are involved when link is getting up after being tossed
+            and wait for them to get cleared, so the effect always applies. */
             if(code->data == 0)
             {
                 f32 horizontal_speed = Rand_ZeroOne() * 20.0f;
@@ -12394,14 +12396,14 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         }
     }
 
-    code = Chaos_GetCode(CHAOS_CODE_TOURETTE);
+    code = Chaos_GetCode(CHAOS_CODE_TRAP_FLAP);
 
     if(code != NULL && !(this->stateFlags1 & PLAYER_STATE1_80))
     {
         code->data--;
         if(code->data == 0)
         {
-            Player_AnimSfx_PlayVoice(this, gTouretteSounds[Rand_Next() % 3]);
+            Player_AnimSfx_PlayVoice(this, gTrapFlapSounds[Rand_Next() % 3]);
             code->data = 10 + Rand_Next() % 50;
         }
     }

@@ -19,7 +19,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_CHANGE_HEALTH]           = */ CHAOS_CODE_DEF(1,  10, false, 0.08f),
     /* [CHAOS_CODE_CHANGE_RUPEE]            = */ CHAOS_CODE_DEF(0,  0,  true,  0.08f),
     /* [CHAOS_CODE_ACTOR_CHASE]             = */ CHAOS_CODE_DEF(6,  15, false, 0.04f),
-    /* [CHAOS_CODE_YEET]                    = */ CHAOS_CODE_DEF(8,  17, true,  0.05f),
+    /* [CHAOS_CODE_YEET]                    = */ CHAOS_CODE_DEF(8,  17, true,  0.03f),
     /* [CHAOS_CODE_POKE]                    = */ CHAOS_CODE_DEF(0,  0,  false, 0.025f),
     /* [CHAOS_CODE_MOON_DANCE]              = */ CHAOS_CODE_DEF(5,  30, true,  0.006f),
     /* [CHAOS_CODE_ONE_HIT_KO]              = */ CHAOS_CODE_DEF(8,  23, false, 0.005f),
@@ -39,16 +39,17 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_INVINCIBLE]              = */ CHAOS_CODE_DEF(8,  23, false, 0.005f),
     /* [CHAOS_CODE_SYKE]                    = */ CHAOS_CODE_DEF(0,  0,  false, 0.00005f),
     /* [CHAOS_CODE_DIE]                     = */ CHAOS_CODE_DEF(0,  0,  false, 0.000005f),
-    /* [CHAOS_CODE_TOURETTE]                = */ CHAOS_CODE_DEF(10, 20, true,  0.04f),
+    /* [CHAOS_CODE_TRAP_FLAP]               = */ CHAOS_CODE_DEF(10, 20, true,  0.04f),
     /* [CHAOS_CODE_TEXTBOX]                 = */ CHAOS_CODE_DEF(0,   0, false, 0.008f),
     /* [CHAOS_CODE_SLIPPERY_FLOORS]         = */ CHAOS_CODE_DEF(10, 20, false, 0.012f),
     /* [CHAOS_CODE_SLOW_DOWN]               = */ CHAOS_CODE_DEF(10, 20, false, 0.006f),
-    /* [CHAOS_CODE_ENTRANCE_RANDO]          = */ CHAOS_CODE_DEF(3,  5,  false, 0.0005f),
+    /* [CHAOS_CODE_ENTRANCE_RANDO]          = */ CHAOS_CODE_DEF(5,  15, false, 0.0005f),
     /* [CHAOS_CODE_TERRIBLE_MUSIC]          = */ CHAOS_CODE_DEF(15, 35, true,  0.02f),
     /* [CHAOS_CODE_INCREDIBLE_KNOCKBACK]    = */ CHAOS_CODE_DEF(10, 21, true,  0.03f),
-    /* [CHAOS_CODE_RANDOM_SCALING]          = */ CHAOS_CODE_DEF(10, 21, true,  0.09f),
+    /* [CHAOS_CODE_RANDOM_SCALING]          = */ CHAOS_CODE_DEF(10, 21, true,  0.035f),
+    /* [CHAOS_CODE_BIG_BROTHER]             = */ CHAOS_CODE_DEF(10, 25, true,  0.025f),
 };
-
+ 
 const char *gChaosCodeNames[] = {
     /* [CHAOS_CODE_NONE]                    = */ "NONE",
     /* [CHAOS_CODE_LOW_GRAVITY]             = */ "Low gravity",
@@ -75,14 +76,15 @@ const char *gChaosCodeNames[] = {
     /* [CHAOS_CODE_INVINCIBLE]              = */ "Invincible",
     /* [CHAOS_CODE_SYKE]                    = */ "SYKE",
     /* [CHAOS_CODE_DIE]                     = */ "DIE",
-    /* [CHAOS_CODE_TOURETTE]                = */ "Tourette",
+    /* [CHAOS_CODE_TRAP_FLAP]               = */ "Trap flap",
     /* [CHAOS_CODE_TEXTBOX]                 = */ "Textbox",
     /* [CHAOS_CODE_SLIPPERY_FLOORS]         = */ "Slippery floors",
     /* [CHAOS_CODE_SLOW_DOWN]               = */ "Slow down",
     /* [CHAOS_CODE_ENTRANCE_RANDO]          = */ "Entrance rando",
     /* [CHAOS_CODE_TERRIBLE_MUSIC]          = */ "Terrible music",
     /* [CHAOS_CODE_INCREDIBLE_KNOCKBACK]    = */ "Incredible knockback",
-    /* [CHAOS_CODE_RANDOM_SCALING]          = */ "Random scaling"
+    /* [CHAOS_CODE_RANDOM_SCALING]          = */ "Random scaling",
+    /* [CHAOS_CODE_BIG_BROTHER]             = */ "Big brother",
 };
 
 /* xorshift* */
@@ -154,28 +156,6 @@ u8 Chaos_RandomCode(void)
     {
         search_index_offset = 1;
     }
-
-    // while(search_index >= CHAOS_CODE_FIRST && search_index < CHAOS_CODE_LAST)
-    // {
-    //     if(rand_index < gChaosCodeDefs[search_index].range_start)
-    //     {
-    //         search_index -= search_index_offset;
-    //     }
-    //     else if(rand_index > gChaosCodeDefs[search_index].range_end)
-    //     {
-    //         search_index += search_index_offset;
-    //     }
-    //     else if(rand_index >= gChaosCodeDefs[search_index].range_start && 
-    //             rand_index <= gChaosCodeDefs[search_index].range_end)
-    //     {
-    //         return search_index;
-    //     }
-
-    //     if(search_index_offset > 1)
-    //     {
-    //         search_index_offset >>= 1;
-    //     }
-    // }
 
     while(search_index >= 0 && search_index < gChaosContext.enabled_code_count)
     {
@@ -363,6 +343,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         case CHAOS_CODE_INVINCIBLE:
                             if(Chaos_IsCodeActive(CHAOS_CODE_ONE_HIT_KO) || Chaos_IsCodeActive(CHAOS_CODE_CHANGE_HEALTH))
                             {
+                                /* making the player invicible now would make both codes not have an effect, so don't activate it */
                                 continue;
                             }
                         break;
@@ -396,7 +377,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                             last_code->data = Rand_S16Offset(200, 200);
                         break;
 
-                        case CHAOS_CODE_TOURETTE:
+                        case CHAOS_CODE_TRAP_FLAP:
                             last_code->data = 1;
                         break;
 
@@ -461,64 +442,64 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
         GfxPrint_SetColor(&gfx_print, 255, 255, 255, 255);
         GfxPrint_SetPos(&gfx_print, 1, y_pos++);
 
-        if(!CHECK_BTN_ANY(input->press.button, BTN_R | BTN_L))
+        // if(!CHECK_BTN_ANY(input->press.button, BTN_R | BTN_L))
+        // {
+        //     gAcceptPageChange = 1;
+        // }
+
+        // if(gAcceptPageChange)
+        // {
+        //     if(CHECK_BTN_ANY(input->press.button, BTN_L))
+        //     {
+        //         gChaosEffectPageIndex = (gChaosEffectPageIndex - 1) % -(enabled_effects_page_count + 1);
+        //         gAcceptPageChange = 0;
+        //     }
+
+        //     if(CHECK_BTN_ANY(input->press.button, BTN_R))
+        //     {
+        //         gChaosEffectPageIndex = (gChaosEffectPageIndex + 1) % (enabled_effects_page_count + 1);
+        //         gAcceptPageChange = 0;
+        //     }
+        // }
+
+        // if(gChaosEffectPageIndex == 0)
+        // {
+        GfxPrint_Printf(&gfx_print, "Chaos timer: %d", (u32)gChaosContext.chaos_timer);
+
+        slot_index = 0;
+        while(slot_index < gChaosContext.active_code_count)
         {
-            gAcceptPageChange = 1;
-        }
+            struct ChaosCode *code = gChaosContext.active_codes + slot_index;
 
-        if(gAcceptPageChange)
-        {
-            if(CHECK_BTN_ANY(input->press.button, BTN_L))
+            if(code->timer > 0)
             {
-                gChaosEffectPageIndex = (gChaosEffectPageIndex - 1) % -(enabled_effects_page_count + 1);
-                gAcceptPageChange = 0;
-            }
-
-            if(CHECK_BTN_ANY(input->press.button, BTN_R))
-            {
-                gChaosEffectPageIndex = (gChaosEffectPageIndex + 1) % (enabled_effects_page_count + 1);
-                gAcceptPageChange = 0;
-            }
-        }
-
-        if(gChaosEffectPageIndex == 0)
-        {
-            GfxPrint_Printf(&gfx_print, "Chaos timer: %d", (u32)gChaosContext.chaos_timer);
-
-            slot_index = 0;
-            while(slot_index < gChaosContext.active_code_count)
-            {
-                struct ChaosCode *code = gChaosContext.active_codes + slot_index;
-
-                if(code->timer > 0)
-                {
-                    GfxPrint_SetPos(&gfx_print, 1, y_pos++);
-                    GfxPrint_Printf(&gfx_print, "%s: %d", gChaosCodeNames[code->code], (u32)code->timer);
-                }
-                slot_index++;
-            }
-        }
-        else
-        {
-            struct ChaosCodeSlot *first_slot;
-            u32 display_effect_count;
-            u32 first_effect_index = (gChaosEffectPageIndex - 1) * ENABLED_EFFECTS_PER_PAGE;
-            first_effect_index = CLAMP_MAX(first_effect_index, gChaosContext.enabled_code_count);
-            first_slot = gChaosContext.enabled_codes + first_effect_index;
-            display_effect_count = gChaosContext.enabled_code_count - first_effect_index;
-            display_effect_count = CLAMP_MAX(display_effect_count, ENABLED_EFFECTS_PER_PAGE);
-            
-            GfxPrint_Printf(&gfx_print, "Enabled effects: (%d/%d)", gChaosEffectPageIndex, enabled_effects_page_count);            
-
-            slot_index = 0;
-            while(slot_index < display_effect_count)
-            {
-                struct ChaosCodeSlot *slot = first_slot + slot_index;
                 GfxPrint_SetPos(&gfx_print, 1, y_pos++);
-                GfxPrint_Printf(&gfx_print, "%s", gChaosCodeNames[slot->code]);
-                slot_index++;
+                GfxPrint_Printf(&gfx_print, "%s: %d", gChaosCodeNames[code->code], (u32)code->timer);
             }
-        }        
+            slot_index++;
+        }
+        // }
+        // else
+        // {
+        //     struct ChaosCodeSlot *first_slot;
+        //     u32 display_effect_count;
+        //     u32 first_effect_index = (gChaosEffectPageIndex - 1) * ENABLED_EFFECTS_PER_PAGE;
+        //     first_effect_index = CLAMP_MAX(first_effect_index, gChaosContext.enabled_code_count);
+        //     first_slot = gChaosContext.enabled_codes + first_effect_index;
+        //     display_effect_count = gChaosContext.enabled_code_count - first_effect_index;
+        //     display_effect_count = CLAMP_MAX(display_effect_count, ENABLED_EFFECTS_PER_PAGE);
+            
+        //     GfxPrint_Printf(&gfx_print, "Enabled effects: (%d/%d)", gChaosEffectPageIndex, enabled_effects_page_count);            
+
+        //     slot_index = 0;
+        //     while(slot_index < display_effect_count)
+        //     {
+        //         struct ChaosCodeSlot *slot = first_slot + slot_index;
+        //         GfxPrint_SetPos(&gfx_print, 1, y_pos++);
+        //         GfxPrint_Printf(&gfx_print, "%s", gChaosCodeNames[slot->code]);
+        //         slot_index++;
+        //     }
+        // }        
 
         gfx = GfxPrint_Close(&gfx_print);
         GfxPrint_Destroy(&gfx_print);
@@ -650,26 +631,29 @@ void Chaos_UpdateCodeDistribution(void)
     f32 probability_scale = 0.0f;
     u64 prev_end = 0;
 
-    for(index = 0; index < gChaosContext.enabled_code_count; index++)
+    if(gChaosContext.enabled_code_count > 0)
     {
-        probability_scale += gChaosCodeDefs[gChaosContext.enabled_codes[index].code].probability;
-    }
-
-    probability_scale = 1.0f / probability_scale;
-
-    for(index = 0; index < gChaosContext.enabled_code_count; index++)
-    {
-        struct ChaosCodeSlot *code_slot = gChaosContext.enabled_codes + index;
-        struct ChaosCodeDef *code_def = gChaosCodeDefs + code_slot->code;
-        u64 next_range_end = prev_end + 0x00000000ffffffff * code_def->probability * probability_scale;
-        if(next_range_end > 0xffffffff)
+        for(index = 0; index < gChaosContext.enabled_code_count; index++)
         {
-            next_range_end = 0xffffffff;
+            probability_scale += gChaosCodeDefs[gChaosContext.enabled_codes[index].code].probability;
         }
 
-        code_slot->range_start = prev_end;
-        code_slot->range_end = (u32)next_range_end;
-        prev_end = next_range_end;
+        probability_scale = 1.0f / probability_scale;
+
+        for(index = 0; index < gChaosContext.enabled_code_count; index++)
+        {
+            struct ChaosCodeSlot *code_slot = gChaosContext.enabled_codes + index;
+            struct ChaosCodeDef *code_def = gChaosCodeDefs + code_slot->code;
+            u64 next_range_end = prev_end + 0x00000000ffffffff * code_def->probability * probability_scale;
+            if(next_range_end > 0xffffffff)
+            {
+                next_range_end = 0xffffffff;
+            }
+
+            code_slot->range_start = prev_end;
+            code_slot->range_end = (u32)next_range_end;
+            prev_end = next_range_end;
+        }
     }
 }
 

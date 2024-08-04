@@ -969,7 +969,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE2_4000000    (1 << 26)
 // 
 #define PLAYER_STATE2_8000000    (1 << 27)
-// 
+// Player health critical?
 #define PLAYER_STATE2_10000000   (1 << 28)
 // Disable drawing player
 #define PLAYER_STATE2_20000000   (1 << 29)
