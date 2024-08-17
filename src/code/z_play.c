@@ -1265,7 +1265,7 @@ void Play_UpdateMain(PlayState* this) {
             camera->roll += Math_SinF(gChaosContext.link.beer_roll) * 350.0f * alpha_scale;
         }
     }
-    else
+    else if(gChaosContext.link.beer_goggles_state != CHAOS_BEER_GOGGLES_STATE_NONE)
     {
         gChaosContext.link.beer_goggles_state = CHAOS_BEER_GOGGLES_STATE_NONE;
         Play_DisableMotionBlurPriority();
@@ -1866,7 +1866,7 @@ void Play_SpawnScene(PlayState* this, s32 sceneId, s32 spawn) {
     Room_AllocateAndLoad(this, &this->roomCtx);
 
     Chaos_ClearEnabledCodes();
-    Chaos_EnableCode(CHAOS_CODE_LOW_GRAVITY);
+    // Chaos_EnableCode(CHAOS_CODE_LOW_GRAVITY);
     Chaos_EnableCode(CHAOS_CODE_CHANGE_HEALTH);
     Chaos_EnableCode(CHAOS_CODE_CHANGE_RUPEE);
     Chaos_EnableCode(CHAOS_CODE_YEET);
@@ -1895,6 +1895,14 @@ void Play_SpawnScene(PlayState* this, s32 sceneId, s32 spawn) {
     Chaos_EnableCode(CHAOS_CODE_SYKE);
     Chaos_EnableCode(CHAOS_CODE_DIE);
     Chaos_EnableCode(CHAOS_CODE_ACTOR_CHASE);
+
+    if(gSaveContext.save.entrance != ENTRANCE(ODOLWAS_LAIR, 0))
+    {
+        /* odolwa can fall out of bounds if he jumps when low gravity is enabled, 
+        essentially forcing the player to warp to the start of the dungeon, so don't
+        enable it if we're fighting him. */
+        Chaos_EnableCode(CHAOS_CODE_LOW_GRAVITY);
+    }
 
     if(gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] == ITEM_OCARINA_OF_TIME)
     {

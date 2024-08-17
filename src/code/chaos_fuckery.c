@@ -18,27 +18,27 @@ extern u32      gEntranceIndex;
 
 struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_NONE]                    = */ CHAOS_CODE_DEF(0,  0,  false, 0),
-    /* [CHAOS_CODE_LOW_GRAVITY]             = */ CHAOS_CODE_DEF(10, 18, true,  0.08f),
-    /* [CHAOS_CODE_CHANGE_HEALTH]           = */ CHAOS_CODE_DEF(1,  10, false, 0.08f),
-    /* [CHAOS_CODE_CHANGE_RUPEE]            = */ CHAOS_CODE_DEF(0,  0,  true,  0.08f),
+    /* [CHAOS_CODE_LOW_GRAVITY]             = */ CHAOS_CODE_DEF(10, 18, true,  0.025f),
+    /* [CHAOS_CODE_CHANGE_HEALTH]           = */ CHAOS_CODE_DEF(1,  10, false, 0.04f),
+    /* [CHAOS_CODE_CHANGE_RUPEE]            = */ CHAOS_CODE_DEF(0,  0,  true,  0.04f),
     /* [CHAOS_CODE_ACTOR_CHASE]             = */ CHAOS_CODE_DEF(6,  15, false, 0.01f),
     /* [CHAOS_CODE_YEET]                    = */ CHAOS_CODE_DEF(8,  17, true,  0.01f),
     /* [CHAOS_CODE_POKE]                    = */ CHAOS_CODE_DEF(0,  0,  false, 0.015f),
     /* [CHAOS_CODE_MOON_DANCE]              = */ CHAOS_CODE_DEF(5,  30, true,  0.006f),
-    /* [CHAOS_CODE_ONE_HIT_KO]              = */ CHAOS_CODE_DEF(8,  23, false, 0.005f),
+    /* [CHAOS_CODE_ONE_HIT_KO]              = */ CHAOS_CODE_DEF(8,  23, false, 0.006f),
     /* [CHAOS_CODE_RANDOM_KNOCKBACK]        = */ CHAOS_CODE_DEF(8,  15, false, 0.009f),
     /* [CHAOS_CODE_ICE_TRAP]                = */ CHAOS_CODE_DEF(0,  0,  false, 0.01f),
     /* [CHAOS_CODE_TIMER_UP]                = */ CHAOS_CODE_DEF(10, 20, false, 0.009f),
     /* [CHAOS_CODE_SHOCK]                   = */ CHAOS_CODE_DEF(0,  0,  false, 0.015f),
     /* [CHAOS_CODE_EARTHQUAKE]              = */ CHAOS_CODE_DEF(0,  0,  true,  0.06f),
-    /* [CHAOS_CODE_BOMB_ARROWS]             = */ CHAOS_CODE_DEF(15, 25, false, 0.007f),
-    /* [CHAOS_CODE_WEIRD_ARROWS]            = */ CHAOS_CODE_DEF(15, 25, false, 0.007f),
-    /* [CHAOS_CODE_BUCKSHOT_ARROWS]         = */ CHAOS_CODE_DEF(15, 25, false, 0.007f),
+    /* [CHAOS_CODE_BOMB_ARROWS]             = */ CHAOS_CODE_DEF(15, 25, false, 0.009f),
+    /* [CHAOS_CODE_WEIRD_ARROWS]            = */ CHAOS_CODE_DEF(15, 25, false, 0.009f),
+    /* [CHAOS_CODE_BUCKSHOT_ARROWS]         = */ CHAOS_CODE_DEF(15, 25, false, 0.009f),
     /* [CHAOS_CODE_RANDOM_BOMB_TIMER]       = */ CHAOS_CODE_DEF(10, 15, false, 0.01f),
     /* [CHAOS_CODE_LOVELESS_MARRIAGE]       = */ CHAOS_CODE_DEF(0,  0,  false, 0.0065f),
     /* [CHAOS_CODE_WEIRD_UI]                = */ CHAOS_CODE_DEF(8,  15, false, 0.04f),
-    /* [CHAOS_CODE_BEER_GOGGLES]            = */ CHAOS_CODE_DEF(15, 30, true,  0.0095f),
-    /* [CHAOS_CODE_CHANGE_MAGIC]            = */ CHAOS_CODE_DEF(1,  10, true,  0.08f),
+    /* [CHAOS_CODE_BEER_GOGGLES]            = */ CHAOS_CODE_DEF(15, 30, true,  0.012f),
+    /* [CHAOS_CODE_CHANGE_MAGIC]            = */ CHAOS_CODE_DEF(1,  10, true,  0.04f),
     /* [CHAOS_CODE_INVINCIBLE]              = */ CHAOS_CODE_DEF(8,  23, false, 0.005f),
     /* [CHAOS_CODE_SYKE]                    = */ CHAOS_CODE_DEF(0,  0,  false, 0.00005f),
     /* [CHAOS_CODE_DIE]                     = */ CHAOS_CODE_DEF(0,  0,  false, 0.000005f),
@@ -46,7 +46,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_TEXTBOX]                 = */ CHAOS_CODE_DEF(0,   0, false, 0.008f),
     /* [CHAOS_CODE_SLIPPERY_FLOORS]         = */ CHAOS_CODE_DEF(10, 20, false, 0.012f),
     /* [CHAOS_CODE_SLOW_DOWN]               = */ CHAOS_CODE_DEF(5,  12, false, 0.006f),
-    /* [CHAOS_CODE_ENTRANCE_RANDO]          = */ CHAOS_CODE_DEF(5,  15, false, 0.0005f),
+    /* [CHAOS_CODE_ENTRANCE_RANDO]          = */ CHAOS_CODE_DEF(5,  15, false, 0.001f),
     /* [CHAOS_CODE_TERRIBLE_MUSIC]          = */ CHAOS_CODE_DEF(15, 35, true,  0.01f),
     /* [CHAOS_CODE_INCREDIBLE_KNOCKBACK]    = */ CHAOS_CODE_DEF(10, 21, true,  0.008f),
     /* [CHAOS_CODE_RANDOM_SCALING]          = */ CHAOS_CODE_DEF(10, 21, true,  0.007f),
@@ -662,13 +662,12 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         case CHAOS_CODE_DIE:
                         case CHAOS_CODE_ACTOR_CHASE:
                         case CHAOS_CODE_PLAY_OCARINA:
+                        case CHAOS_CODE_OUT_OF_SHAPE:
                             if((player->stateFlags2 & PLAYER_STATE2_80) || (player->stateFlags1 & PLAYER_STATE1_800000) ||
-                                ((player->stateFlags1 & (PLAYER_STATE1_400 | PLAYER_STATE1_800 | PLAYER_STATE1_20000000)) ==
-                                    (PLAYER_STATE1_400 | PLAYER_STATE1_800 | PLAYER_STATE1_20000000)) ||
-                                camera->setting == CAM_SET_BOAT_CRUISE)
+                                (player->stateFlags1 & PLAYER_STATE1_20000000) || camera->setting == CAM_SET_BOAT_CRUISE)
                             {
                                 /* if the player has been grabbed, is mounted on epona, 
-                                riding the boat or opening a chest, don't spawn any of those 
+                                riding the boat or time is stopped, don't spawn any of those 
                                 effects to avoid leaving the player in an inconsistent state */
                                 continue;
                             }
