@@ -46,7 +46,12 @@ u8 sMotionBlurStatus;
 s32 gDbgCamEnabled = false;
 u8 D_801D0D54 = false;
 
-extern struct ChaosContext gChaosContext;  
+u32 gSceneIndex = 109;
+u32 gEntranceIndex = 0;
+u32 gEntranceCount = 0;
+u32 gButtonDown = 0;
+
+extern struct ChaosContext  gChaosContext;  
  
 typedef enum {
     /* 0 */ MOTION_BLUR_OFF,
@@ -933,6 +938,7 @@ extern MessageTableEntry D_801C6B98[];
 void Play_UpdateMain(PlayState* this) {
     Input* input = this->state.input;
     Player *player = GET_PLAYER(this);
+    Camera *camera = Play_GetCamera(this, CAM_ID_MAIN);
     u8 freezeFlashTimer;
     s32 sp5C = false;
     struct ChaosCode *code;
@@ -991,6 +997,13 @@ void Play_UpdateMain(PlayState* this) {
             SEQCMD_RESET_TEMPO(SEQ_PLAYER_BGM_MAIN, 10);
             SEQCMD_RESET_TEMPO(SEQ_PLAYER_BGM_SUB, 10);
         }
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_SKYBOX))
+    {
+        this->skyboxCtx.rot.x += Rand_ZeroOne() * 0.25f;
+        this->skyboxCtx.rot.y += Rand_ZeroOne() * 0.25f;
+        this->skyboxCtx.rot.z += Rand_ZeroOne() * 0.25f;
     }
 
     gSegments[4] = OS_K0_TO_PHYSICAL(this->objectCtx.slots[this->objectCtx.mainKeepSlot].segment);
@@ -1097,23 +1110,31 @@ void Play_UpdateMain(PlayState* this) {
         }
     }
 
-    if(player->stateFlags1 & PLAYER_STATE1_800000)
-    {
-        Chaos_DisableCode(CHAOS_CODE_SYKE);
-        Chaos_DisableCode(CHAOS_CODE_DIE);
-        Chaos_DisableCode(CHAOS_CODE_ICE_TRAP);
-        Chaos_DisableCode(CHAOS_CODE_POKE);
-        Chaos_DisableCode(CHAOS_CODE_SHOCK);
-    }
-    else if(this->csCtx.state == CS_STATE_IDLE)
-    {
-        /* only reactivate codes once link is done unmounting */
-        Chaos_EnableCode(CHAOS_CODE_SYKE);
-        Chaos_EnableCode(CHAOS_CODE_DIE);
-        Chaos_EnableCode(CHAOS_CODE_ICE_TRAP);
-        Chaos_EnableCode(CHAOS_CODE_POKE);
-        Chaos_EnableCode(CHAOS_CODE_SHOCK);
-    }
+    // if((player->stateFlags1 & PLAYER_STATE1_800000) ||
+    //     camera->setting == CAM_SET_BOAT_CRUISE)
+    // {
+    //     Chaos_DisableCode(CHAOS_CODE_POKE);
+    //     Chaos_DisableCode(CHAOS_CODE_RANDOM_KNOCKBACK);
+    //     Chaos_DisableCode(CHAOS_CODE_ICE_TRAP);
+    //     Chaos_DisableCode(CHAOS_CODE_SHOCK);
+    //     Chaos_DisableCode(CHAOS_CODE_LOVELESS_MARRIAGE);
+    //     Chaos_DisableCode(CHAOS_CODE_SYKE);
+    //     Chaos_DisableCode(CHAOS_CODE_DIE);
+    //     Chaos_DisableCode(CHAOS_CODE_ACTOR_CHASE);
+    //     Chaos_DisableCode(CHAOS_CODE_PLAY_OCARINA);
+    // }
+    // else
+    // {
+    //     Chaos_EnableCode(CHAOS_CODE_POKE);
+    //     Chaos_EnableCode(CHAOS_CODE_RANDOM_KNOCKBACK);
+    //     Chaos_EnableCode(CHAOS_CODE_ICE_TRAP);
+    //     Chaos_EnableCode(CHAOS_CODE_SHOCK);
+    //     Chaos_EnableCode(CHAOS_CODE_LOVELESS_MARRIAGE);
+    //     Chaos_EnableCode(CHAOS_CODE_SYKE);
+    //     Chaos_EnableCode(CHAOS_CODE_DIE);
+    //     Chaos_EnableCode(CHAOS_CODE_ACTOR_CHASE);
+    //     Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA);
+    // }
 
     Chaos_UpdateChaos(this);
 
@@ -1132,6 +1153,34 @@ void Play_UpdateMain(PlayState* this) {
 
     if(Chaos_IsCodeActive(CHAOS_CODE_BEER_GOGGLES))
     {  
+        if(gChaosContext.link.beer_goggles_state == CHAOS_BEER_GOGGLES_STATE_NONE)
+        {
+            gChaosContext.link.beer_goggles_state = CHAOS_BEER_GOGGLES_STATE_ACTIVE;
+            SEQCMD_SET_TEMPO(SEQ_PLAYER_AMBIENCE, 40, 80);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_AMBIENCE, 40, 700);
+            SEQCMD_SET_TEMPO(SEQ_PLAYER_BGM_MAIN, 40, 80);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_MAIN, 40, 700);
+            SEQCMD_SET_TEMPO(SEQ_PLAYER_BGM_SUB, 40, 80);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_SUB, 40, 700);
+            SEQCMD_SET_TEMPO(SEQ_PLAYER_FANFARE, 40, 80);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_FANFARE, 40, 700);
+            SEQCMD_SET_TEMPO(SEQ_PLAYER_SFX, 40, 80);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_SFX, 40, 700);
+        }
+        else if(gActiveSeqs[SEQ_PLAYER_BGM_MAIN].tempoTimer == 0)
+        {
+            SEQCMD_SET_TEMPO(SEQ_PLAYER_AMBIENCE, 0, 80);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_AMBIENCE, 0, 700);
+            SEQCMD_SET_TEMPO(SEQ_PLAYER_BGM_MAIN, 0, 80);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_MAIN, 0, 700);
+            SEQCMD_SET_TEMPO(SEQ_PLAYER_BGM_SUB, 0, 80);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_SUB, 0, 700);
+            SEQCMD_SET_TEMPO(SEQ_PLAYER_FANFARE, 0, 80);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_FANFARE, 0, 700);
+            SEQCMD_SET_TEMPO(SEQ_PLAYER_SFX, 0, 80);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_SFX, 0, 700);
+        }
+
         if(gChaosContext.link.beer_alpha < 210)
         {
             gChaosContext.link.beer_alpha += 5;
@@ -1145,6 +1194,20 @@ void Play_UpdateMain(PlayState* this) {
     }
     else if(gChaosContext.link.beer_alpha > 0)
     {
+        if(gChaosContext.link.beer_goggles_state == CHAOS_BEER_GOGGLES_STATE_ACTIVE)
+        {
+            gChaosContext.link.beer_goggles_state = CHAOS_BEER_GOGGLES_STATE_NONE;
+            SEQCMD_RESET_TEMPO(SEQ_PLAYER_AMBIENCE, 20);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_AMBIENCE, 20, 1000.0f);
+            SEQCMD_RESET_TEMPO(SEQ_PLAYER_BGM_MAIN, 20);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_MAIN, 20, 1000.0f);
+            SEQCMD_RESET_TEMPO(SEQ_PLAYER_BGM_SUB, 20);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_SUB, 20, 1000.0f);
+            SEQCMD_RESET_TEMPO(SEQ_PLAYER_FANFARE, 20);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_FANFARE, 20, 1000.0f);
+            SEQCMD_RESET_TEMPO(SEQ_PLAYER_SFX, 20);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_SFX, 20, 1000.0f);
+        }
         gChaosContext.link.beer_alpha -= 5;
         gChaosContext.link.beer_sway.x *= 0.9f;
         gChaosContext.link.beer_sway.y *= 0.9f;
@@ -1161,6 +1224,8 @@ void Play_UpdateMain(PlayState* this) {
         f32 offset_x;
         f32 offset_y;
         f32 alpha_scale = (f32)gChaosContext.link.beer_alpha / 210.0f;
+
+        gSfxBeerGogglesFreq = 0.75f * alpha_scale + (1.0f - alpha_scale);
 
         Play_EnableMotionBlurPriority(gChaosContext.link.beer_alpha);
         Math_Vec3f_DistXYZAndStoreNormDiff(&camera->eye, &camera->at, 1.0f, &forward_vec);
@@ -1202,10 +1267,12 @@ void Play_UpdateMain(PlayState* this) {
     }
     else
     {
+        gChaosContext.link.beer_goggles_state = CHAOS_BEER_GOGGLES_STATE_NONE;
         Play_DisableMotionBlurPriority();
         gChaosContext.link.beer_sway.x = 0;
         gChaosContext.link.beer_sway.y = 0;
         gChaosContext.link.beer_sway.z = 0;
+        gSfxBeerGogglesFreq = 1.0f;
     }
 
     if (!sp5C) {
@@ -1301,9 +1368,10 @@ void Play_PostWorldDraw(PlayState* this) {
 // Something weird going on with the stack of the unused arg0 of `Camera_Update`
 void Play_DrawMain(PlayState* this) {
     GraphicsContext* gfxCtx = this->state.gfxCtx;
+    Input inputs[MAXCONTROLLERS];
     Lights* sp268;
     Vec3f sp25C;
-    Input inputs[MAXCONTROLLERS];
+    
     u8 sp25B = false;
 
     if (R_PAUSE_BG_PRERENDER_STATE >= PAUSE_BG_PRERENDER_UNK4) {
@@ -1614,7 +1682,7 @@ SkipPostWorldDraw:
     }
 
     CLOSE_DISPS(gfxCtx);
-
+    bzero(inputs, sizeof(inputs));
     PadMgr_GetInput(inputs, false);
     Chaos_PrintCodes(this, &inputs[0]);
     
@@ -1801,22 +1869,14 @@ void Play_SpawnScene(PlayState* this, s32 sceneId, s32 spawn) {
     Chaos_EnableCode(CHAOS_CODE_LOW_GRAVITY);
     Chaos_EnableCode(CHAOS_CODE_CHANGE_HEALTH);
     Chaos_EnableCode(CHAOS_CODE_CHANGE_RUPEE);
-    Chaos_EnableCode(CHAOS_CODE_ACTOR_CHASE);
     Chaos_EnableCode(CHAOS_CODE_YEET);
-    Chaos_EnableCode(CHAOS_CODE_POKE);
     Chaos_EnableCode(CHAOS_CODE_MOON_DANCE);
     Chaos_EnableCode(CHAOS_CODE_ONE_HIT_KO);
-    Chaos_EnableCode(CHAOS_CODE_RANDOM_KNOCKBACK);
-    Chaos_EnableCode(CHAOS_CODE_ICE_TRAP);
     Chaos_EnableCode(CHAOS_CODE_TIMER_UP);
-    Chaos_EnableCode(CHAOS_CODE_SHOCK);
     Chaos_EnableCode(CHAOS_CODE_EARTHQUAKE);
-    Chaos_EnableCode(CHAOS_CODE_LOVELESS_MARRIAGE);
     Chaos_EnableCode(CHAOS_CODE_WEIRD_UI);
     Chaos_EnableCode(CHAOS_CODE_BEER_GOGGLES);
     Chaos_EnableCode(CHAOS_CODE_INVINCIBLE);
-    Chaos_EnableCode(CHAOS_CODE_SYKE);
-    Chaos_EnableCode(CHAOS_CODE_DIE);
     Chaos_EnableCode(CHAOS_CODE_TRAP_FLAP);
     // Chaos_EnableCode(CHAOS_CODE_TEXTBOX);
     Chaos_EnableCode(CHAOS_CODE_SLIPPERY_FLOORS);
@@ -1825,6 +1885,31 @@ void Play_SpawnScene(PlayState* this, s32 sceneId, s32 spawn) {
     Chaos_EnableCode(CHAOS_CODE_INCREDIBLE_KNOCKBACK);
     Chaos_EnableCode(CHAOS_CODE_RANDOM_SCALING);
     Chaos_EnableCode(CHAOS_CODE_BIG_BROTHER);
+    Chaos_EnableCode(CHAOS_CODE_OUT_OF_SHAPE);
+    Chaos_EnableCode(CHAOS_CODE_WEIRD_SKYBOX);
+    Chaos_EnableCode(CHAOS_CODE_POKE);
+    Chaos_EnableCode(CHAOS_CODE_RANDOM_KNOCKBACK);
+    Chaos_EnableCode(CHAOS_CODE_ICE_TRAP);
+    Chaos_EnableCode(CHAOS_CODE_SHOCK);
+    Chaos_EnableCode(CHAOS_CODE_LOVELESS_MARRIAGE);
+    Chaos_EnableCode(CHAOS_CODE_SYKE);
+    Chaos_EnableCode(CHAOS_CODE_DIE);
+    Chaos_EnableCode(CHAOS_CODE_ACTOR_CHASE);
+
+    if(gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] == ITEM_OCARINA_OF_TIME)
+    {
+        Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA);
+
+        if(!Map_IsInBossArea(this) && CHECK_WEEKEVENTREG(WEEKEVENTREG_59_04))
+        {
+            /* don't enable entrance rando until the player enters south clock town.
+            Also don't enable it in boss rooms as it could interact badly with the warp 
+            out */
+            Chaos_EnableCode(CHAOS_CODE_ENTRANCE_RANDO);
+            // Chaos_EnableCode(CHAOS_CODE_SINGLE_ACTION_OWL);
+            Chaos_UpdateEntrances(this);
+        }
+    }
 }
 
 void Play_GetScreenPos(PlayState* this, Vec3f* worldPos, Vec3f* screenPos) {
@@ -2129,7 +2214,7 @@ void Play_SetupRespawnPoint(GameState* thisx, s32 respawnMode, s32 playerParams)
     Player* player = GET_PLAYER(this);
 
     if (this->sceneId != SCENE_KAKUSIANA) { // Grottos
-        Play_SetRespawnData(&this->state, respawnMode, ((void)0, gSaveContext.save.entrance), this->roomCtx.curRoom.num,
+        Play_SetRespawnData(&this->state, respawnMode, gSaveContext.save.entrance, this->roomCtx.curRoom.num,
                             playerParams, &player->actor.world.pos, player->actor.shape.rot.y);
     }
 }

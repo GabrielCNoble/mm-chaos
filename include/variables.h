@@ -371,6 +371,7 @@ extern SfxBankEntry* gSfxBanks[7];
 extern u8 gSfxChannelLayout;
 extern Vec3f gSfxDefaultPos;
 extern f32 gSfxDefaultFreqAndVolScale;
+extern f32 gSfxBeerGogglesFreq;
 extern s8 gSfxDefaultReverb;
 extern u8 gAudioSpecId;
 extern u8 gAudioHeapResetState;

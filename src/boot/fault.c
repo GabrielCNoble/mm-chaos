@@ -55,7 +55,7 @@
 FaultMgr* sFaultInstance;
 f32 sFaultTimeTotal; // read but not set anywhere
 
-// data
+// data 
 const char* sCpuExceptions[] = {
     "Interrupt",
     "TLB modification",
@@ -79,6 +79,81 @@ const char* sCpuExceptions[] = {
 
 const char* sFpuExceptions[] = {
     "Unimplemented operation", "Invalid operation", "Division by zero", "Overflow", "Underflow", "Inexact operation",
+};
+
+const char *sRegNames[] = {
+    "z",
+    "at",
+    "v0",
+    "v1",
+    "a0",
+    "a1",
+    "a2",
+    "a3",
+    "t0",
+    "t1",
+    "t2",
+    "t3",
+    "t4",
+    "t5",
+    "t6",
+    "t7",
+    "s0",
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "t8",
+    "t9",
+    "k0",
+    "k1",
+    "gp",
+    "sp",
+    "fp",
+    "ra"
+};
+
+enum FAULT_INST_FORMAT_STRS
+{
+    FAULT_INST_FORMAT_STR_RT_OFFSET_BASE,
+    FAULT_INST_FORMAT_STR_RT_RS_IMMEDIATE,
+    FAULT_INST_FORMAT_STR_RT_RS_SIMMEDIATE,
+    FAULT_INST_FORMAT_STR_RD_RS_RT,
+    FAULT_INST_FORMAT_STR_OP_OFFSET_BASE,
+    FAULT_INST_FORMAT_STR_TARGET,
+    FAULT_INST_FORMAT_STR_RS_RT_OFFSET,
+    FAULT_INST_FORMAT_STR_RS_OFFSET,
+    FAULT_INST_FORMAT_STR_RD_RT_SA,
+    FAULT_INST_FORMAT_STR_RD_RT_RS,
+    FAULT_INST_FORMAT_STR_RS_RT,
+    FAULT_INST_FORMAT_STR_RD,
+    FAULT_INST_FORMAT_STR_RS,
+    FAULT_INST_FORMAT_STR_RT_IMMEDIATE,
+    FAULT_INST_FORMAT_STR_RS_IMMEDIATE,
+    FAULT_INST_FORMAT_STR_RS_RD,
+    FAULT_INST_FORMAT_STR_NONE
+};
+
+const char *sInstructionFormatStrs[] = {
+    /* [FAULT_INST_FORMAT_STR_RT_OFFSET_BASE] = */  "%-05s %s,%s%04x(%s)",
+    /* [FAULT_INST_FORMAT_STR_RT_RS_IMMEDIATE] = */ "%-05s %s, %s, %04x",
+    /* [FAULT_INST_FORMAT_STR_RT_RS_SIMMEDIATE] = */"%-05s %s, %s,%s%04x",
+    /* [FAULT_INST_FORMAT_STR_RD_RS_RT] = */        "%-05s %s, %s, %s",
+    /* [FAULT_INST_FORMAT_STR_OP_OFFSET_BASE] = */  "%-05s %02x,%s%04x(%s)",
+    /* [FAULT_INST_FORMAT_STR_TARGET] = */          "%-05s %08x",
+    /* [FAULT_INST_FORMAT_STR_RS_RT_OFFSET] = */    "%-05s %s, %s,%s%04x",
+    /* [FAULT_INST_FORMAT_STR_RS_OFFSET] = */       "%-05s %s,%s%04x",
+    /* [FAULT_INST_FORMAT_STR_RD_RT_SA] = */        "%-05s %s, %s, %s",
+    /* [FAULT_INST_FORMAT_STR_RD_RT_RS] = */        "%-05s %s, %s, %s",
+    /* [FAULT_INST_FORMAT_STR_RS_RT] = */           "%-05s %s, %s",
+    /* [FAULT_INST_FORMAT_STR_RD] = */              "%-05s %s",
+    /* [FAULT_INST_FORMAT_STR_RS] = */              "%-05s %s",
+    /* [FAULT_INST_FORMAT_STR_RT_IMMEDIATE] = */    "%-05s %s, %04x",
+    /* [FAULT_INST_FORMAT_STR_RS_IMMEDIATE] = */    "%-05s %s, %04x",
+    /* [FAULT_INST_FORMAT_STR_RS_RD] = */           "%-05s %s, %s" 
 };
 
 const char *sOpcodeStrs[] = {
@@ -148,6 +223,79 @@ const char *sOpcodeStrs[] = {
     /* [FAULT_INST_OPCODE_SD] =  */         "SD"
 };
 
+// const char *sOpcodeFormatStrs[] = {
+//     /* [FAULT_INST_CLASS_I] */ "r%02d, r%02d, %04x",
+//     /* [FAULT_INST_CLASS_J] */,
+//     /* [FAULT_INST_CLASS_R] */,
+// };
+
+struct FaultInstInfo sOpcodeInfos[] = {
+    /* [FAULT_INST_OPCODE_SPECIAL] =  */    FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_OPCODE_REGIMM] =  */     FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_OPCODE_J] =  */          FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_TARGET),
+    /* [FAULT_INST_OPCODE_JAL] =  */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_TARGET),
+    /* [FAULT_INST_OPCODE_BEQ] =  */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_RT_OFFSET),
+    /* [FAULT_INST_OPCODE_BNE] =  */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_RT_OFFSET),
+    /* [FAULT_INST_OPCODE_BLEZ] =  */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_OFFSET),
+    /* [FAULT_INST_OPCODE_BGTZ] =  */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_OFFSET),
+    /* [FAULT_INST_OPCODE_ADDI] =  */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_RS_SIMMEDIATE),
+    /* [FAULT_INST_OPCODE_ADDIU] =  */      FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_RS_SIMMEDIATE),
+    /* [FAULT_INST_OPCODE_SLTI] =  */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_RS_SIMMEDIATE),
+    /* [FAULT_INST_OPCODE_SLTIU] =  */      FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_RS_SIMMEDIATE),
+    /* [FAULT_INST_OPCODE_ANDI] =  */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_RS_IMMEDIATE),
+    /* [FAULT_INST_OPCODE_ORI] =  */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_RS_IMMEDIATE),
+    /* [FAULT_INST_OPCODE_XORI] =  */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_RS_IMMEDIATE),
+    /* [FAULT_INST_OPCODE_LUI] =  */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_IMMEDIATE),
+    /* [FAULT_INST_OPCODE_COP0] =  */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_OPCODE_COP1] =  */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_OPCODE_COP2] =  */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_OPCODE_RESERVED0] =  */  FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_OPCODE_BEQL] =  */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_RT_OFFSET),
+    /* [FAULT_INST_OPCODE_BNEL] =  */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_RT_OFFSET),
+    /* [FAULT_INST_OPCODE_BLEZL] =  */      FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_OFFSET),
+    /* [FAULT_INST_OPCODE_BGTZL] =  */      FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_OFFSET),
+    /* [FAULT_INST_OPCODE_DADDI] =  */      FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_RS_SIMMEDIATE),
+    /* [FAULT_INST_OPCODE_DADDIU] =  */     FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_RS_SIMMEDIATE),
+    /* [FAULT_INST_OPCODE_LDL] =  */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_LDR] =  */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_RESERVED1] =  */  FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_OPCODE_RESERVED2] =  */  FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_OPCODE_RESERVED3] =  */  FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_OPCODE_RESERVED4] =  */  FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_OPCODE_LB] =  */         FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_LH] =  */         FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_LWL] =  */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_LW] =  */         FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_LBU] =  */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_LHU] =  */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_LWR] =  */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_LWU] =  */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_SB] =  */         FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_SH] =  */         FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_SWL] =  */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_SW] =  */         FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_SDL] =  */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_SDR] =  */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_SWR] =  */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_CACHE] =  */      FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_OP_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_LL] =  */         FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_LWC1] =  */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_LWC2] =  */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_RESERVED5] =  */  FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_OPCODE_LLD] =  */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_LDC1] =  */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_LDC2] =  */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_LD] =  */         FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_SC] =  */         FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_SWC1] =  */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_SWC2] =  */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_RESERVED6] =  */  FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_OPCODE_SCD] =  */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_SDC1] =  */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_SDC2] =  */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE),
+    /* [FAULT_INST_OPCODE_SD] =  */         FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RT_OFFSET_BASE)
+};
+
 const char *sSpecialStrs[] = {
     /* [FAULT_INST_SPECIAL_SLL] = */        "SLL",
     /* [FAULT_INST_SPECIAL_RESERVED0] = */  "RESERVED0",
@@ -213,6 +361,73 @@ const char *sSpecialStrs[] = {
     /* [FAULT_INST_SPECIAL_RESERVED11] = */ "RESERVED11",
     /* [FAULT_INST_SPECIAL_DSRL32] = */     "DSRL32",
     /* [FAULT_INST_SPECIAL_DSRA32] = */     "DSRA32"
+};
+
+struct FaultInstInfo sSpecialInstrInfo[] = {
+    /* [FAULT_INST_SPECIAL_SLL] = */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RT_SA),
+    /* [FAULT_INST_SPECIAL_RESERVED0] = */  FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_SPECIAL_SRL] = */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RT_SA),
+    /* [FAULT_INST_SPECIAL_SRA] = */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RT_SA),
+    /* [FAULT_INST_SPECIAL_SLLV] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RT_RS),
+    /* [FAULT_INST_SPECIAL_RESERVED1] = */  FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_SPECIAL_SRLV] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RT_RS),
+    /* [FAULT_INST_SPECIAL_SRAV] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RT_RS),
+    /* [FAULT_INST_SPECIAL_JR] = */         FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS),
+    /* [FAULT_INST_SPECIAL_JALR] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_RD),
+    /* [FAULT_INST_SPECIAL_RESERVED2] = */  FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_SPECIAL_RESERVED3] = */  FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_SPECIAL_SYSCALL] = */    FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_SPECIAL_BREAK] = */      FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_SPECIAL_RESERVED4] = */  FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_SPECIAL_SYNC] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_SPECIAL_MFHI] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD),
+    /* [FAULT_INST_SPECIAL_MTHI] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS),
+    /* [FAULT_INST_SPECIAL_MFLO] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD),
+    /* [FAULT_INST_SPECIAL_MTLO] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS),
+    /* [FAULT_INST_SPECIAL_DSLLV] = */      FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RT_RS),
+    /* [FAULT_INST_SPECIAL_RESERVED5] = */  FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_SPECIAL_DSRLV] = */      FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RT_RS),
+    /* [FAULT_INST_SPECIAL_DSRAV] = */      FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RT_RS),
+    /* [FAULT_INST_SPECIAL_MULT] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_RT),
+    /* [FAULT_INST_SPECIAL_MULTU] = */      FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_RT),
+    /* [FAULT_INST_SPECIAL_DIV] = */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_RT),
+    /* [FAULT_INST_SPECIAL_DIVU] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_RT),
+    /* [FAULT_INST_SPECIAL_DMULT] = */      FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_RT),
+    /* [FAULT_INST_SPECIAL_DMULTU] = */     FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_RT),
+    /* [FAULT_INST_SPECIAL_DDIV] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_RT),
+    /* [FAULT_INST_SPECIAL_DDIVU] = */      FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_RT),
+    /* [FAULT_INST_SPECIAL_ADD] = */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RS_RT),
+    /* [FAULT_INST_SPECIAL_ADDU] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RS_RT),
+    /* [FAULT_INST_SPECIAL_SUB] = */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RS_RT),
+    /* [FAULT_INST_SPECIAL_SUBU] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RS_RT),
+    /* [FAULT_INST_SPECIAL_AND] = */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RS_RT),
+    /* [FAULT_INST_SPECIAL_OR] = */         FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RS_RT),
+    /* [FAULT_INST_SPECIAL_XOR] = */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RS_RT),
+    /* [FAULT_INST_SPECIAL_NOR] = */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RS_RT),
+    /* [FAULT_INST_SPECIAL_RESERVED6] = */  FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_SPECIAL_RESERVED7] = */  FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_SPECIAL_SLT] = */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RS_RT),
+    /* [FAULT_INST_SPECIAL_SLTU] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RS_RT),
+    /* [FAULT_INST_SPECIAL_DADD] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RS_RT),
+    /* [FAULT_INST_SPECIAL_DADDU] = */      FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RS_RT),
+    /* [FAULT_INST_SPECIAL_DSUB] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RS_RT),
+    /* [FAULT_INST_SPECIAL_DSUBU] = */      FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RS_RT),
+    /* [FAULT_INST_SPECIAL_TGE] = */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_RT),
+    /* [FAULT_INST_SPECIAL_TGEU] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_RT),
+    /* [FAULT_INST_SPECIAL_TLT] = */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_RT),
+    /* [FAULT_INST_SPECIAL_TLTU] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_RT),
+    /* [FAULT_INST_SPECIAL_TEQ] = */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_RT),
+    /* [FAULT_INST_SPECIAL_RESERVED8] = */  FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_SPECIAL_TNE] = */        FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RS_RT),
+    /* [FAULT_INST_SPECIAL_RESERVED9] = */  FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_SPECIAL_DSLL] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RT_SA),
+    /* [FAULT_INST_SPECIAL_RESERVED10] = */ FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_SPECIAL_DSRL] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RT_SA),
+    /* [FAULT_INST_SPECIAL_DSRA] = */       FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RT_SA),
+    /* [FAULT_INST_SPECIAL_DSLL32] = */     FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RT_SA),
+    /* [FAULT_INST_SPECIAL_RESERVED11] = */ FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_NONE),
+    /* [FAULT_INST_SPECIAL_DSRL32] = */     FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RT_SA),
+    /* [FAULT_INST_SPECIAL_DSRA32] = */     FAULT_INST_INFO_DEF(FAULT_INST_FORMAT_STR_RD_RT_SA)
 };
 
 const char *sRegimmStrs[] = {
@@ -682,7 +897,7 @@ u32 Fault_WaitForInput2(void)
     }
     while(input->press.button == 0);
 
-    return input->press.button;
+    return input->cur.button;
 }
 
 void Fault_WaitForInput(void) {
@@ -1076,10 +1291,208 @@ void Fault_DrawMemDump(uintptr_t pc, uintptr_t sp, uintptr_t cLeftJump, uintptr_
     // sFaultInstance->autoScroll = true;
 }
 
+void Fault_InstructionStr(char *instruction_str, const char *opcode_str, u32 instruction, u32 str_index, u32 pc)
+{
+    switch(str_index)
+    {
+        case FAULT_INST_FORMAT_STR_RT_OFFSET_BASE:
+        {
+            u8 base = (instruction >> 21) & 0x1f;
+            u8 rt = (instruction >> 16) & 0x1f;
+            u16 offset = instruction & 0xffff;
+            u16 sign = offset & 0x8000;
+
+            if(sign)
+            {
+                offset = (~offset) + 1;
+            }
+
+            sprintf(instruction_str, sInstructionFormatStrs[FAULT_INST_FORMAT_STR_RT_OFFSET_BASE], 
+                        opcode_str, sRegNames[rt], (sign ? "-" : " "), offset, sRegNames[base]);   
+        }
+        break;
+
+        case FAULT_INST_FORMAT_STR_RT_RS_IMMEDIATE:
+        {
+            u8 rs = (instruction >> 21) & 0x1f;
+            u8 rt = (instruction >> 16) & 0x1f;
+            u16 offset = instruction & 0xffff;
+
+            sprintf(instruction_str, sInstructionFormatStrs[FAULT_INST_FORMAT_STR_RT_RS_IMMEDIATE], 
+                opcode_str, sRegNames[rt], sRegNames[rs], offset);   
+        }
+        break;
+
+        case FAULT_INST_FORMAT_STR_RT_RS_SIMMEDIATE:
+        {
+            u8 rs = (instruction >> 21) & 0x1f;
+            u8 rt = (instruction >> 16) & 0x1f;
+            u16 offset = instruction & 0xffff;
+            u16 sign = offset & 0x8000;
+
+            if(sign)
+            {
+                offset = (~offset) + 1;
+            }
+
+            sprintf(instruction_str, sInstructionFormatStrs[FAULT_INST_FORMAT_STR_RT_RS_SIMMEDIATE], 
+                opcode_str, sRegNames[rt], sRegNames[rs], (sign ? "-" : " "), offset);   
+        }
+        break;
+
+        case FAULT_INST_FORMAT_STR_RD_RS_RT:
+        {
+            u8 rs = (instruction >> 21) & 0x1f;
+            u8 rt = (instruction >> 16) & 0x1f;
+            u8 rd = (instruction >> 11) & 0x1f;
+            
+            sprintf(instruction_str, sInstructionFormatStrs[FAULT_INST_FORMAT_STR_RD_RS_RT], 
+                opcode_str, sRegNames[rd], sRegNames[rs], sRegNames[rt]);   
+        }
+        break;
+
+        case FAULT_INST_FORMAT_STR_OP_OFFSET_BASE:
+        {
+            u8 base = (instruction >> 21) & 0x1f;
+            u8 op = (instruction >> 16) & 0x1f;
+            u16 offset = instruction & 0xffff;
+            u16 sign = offset & 0x8000;
+
+            if(sign)
+            {
+                offset = (~offset) + 1;
+            }
+
+            sprintf(instruction_str, sInstructionFormatStrs[FAULT_INST_FORMAT_STR_OP_OFFSET_BASE], 
+                        opcode_str, op, (sign ? "-" : " "), offset, sRegNames[base]);   
+        }
+        break;
+
+        case FAULT_INST_FORMAT_STR_TARGET:
+        {
+            u32 target = (pc & 0xc0000000) | ((instruction & 0x3ffffff) << 2);
+            sprintf(instruction_str, sInstructionFormatStrs[FAULT_INST_FORMAT_STR_TARGET], 
+                        opcode_str, target);   
+        }
+        break;
+
+        case FAULT_INST_FORMAT_STR_RS_RT_OFFSET:
+        {
+            u8 rs = (instruction >> 21) & 0x1f;
+            u8 rt = (instruction >> 16) & 0x1f;
+            u16 offset = instruction & 0xffff;
+            u16 sign = offset & 0x8000;
+
+            if(sign)
+            {
+                offset = (~offset) + 1;
+            }
+
+            sprintf(instruction_str, sInstructionFormatStrs[FAULT_INST_FORMAT_STR_RS_RT_OFFSET], 
+                opcode_str, sRegNames[rs], sRegNames[rt], (sign ? "-" : " "), offset);   
+        }
+        break;
+
+        case FAULT_INST_FORMAT_STR_RS_OFFSET:
+        {
+            u8 rs = (instruction >> 21) & 0x1f;
+            u16 offset = instruction & 0xffff;
+            u16 sign = offset & 0x8000;
+
+            if(sign)
+            {
+                offset = (~offset) + 1;
+            }
+
+            sprintf(instruction_str, sInstructionFormatStrs[FAULT_INST_FORMAT_STR_RS_OFFSET], 
+                opcode_str, sRegNames[rs], (sign ? "-" : " "), offset);   
+        }
+        break;
+
+        case FAULT_INST_FORMAT_STR_RS_RT:
+        {
+            u8 rs = (instruction >> 21) & 0x1f;
+            u8 rt = (instruction >> 16) & 0x1f;
+
+            sprintf(instruction_str, sInstructionFormatStrs[FAULT_INST_FORMAT_STR_RS_RT_OFFSET], 
+                opcode_str, sRegNames[rs], sRegNames[rt]);      
+        }
+        break;
+
+        case FAULT_INST_FORMAT_STR_RD_RT_SA:
+        {
+            u8 rt = (instruction >> 16) & 0x1f;
+            u8 rd = (instruction >> 11) & 0x1f;
+            u8 sa = (instruction >> 6) & 0x1f;
+            
+            sprintf(instruction_str, sInstructionFormatStrs[FAULT_INST_FORMAT_STR_RD_RT_SA], 
+                opcode_str, sRegNames[rd], sRegNames[rt], sRegNames[sa]);   
+        }
+        break;
+
+        case FAULT_INST_FORMAT_STR_RT_IMMEDIATE:
+        {
+            u8 rt = (instruction >> 16) & 0x1f;
+            u16 immediate = instruction & 0xffff;
+            
+            sprintf(instruction_str, sInstructionFormatStrs[FAULT_INST_FORMAT_STR_RT_IMMEDIATE], 
+                opcode_str, sRegNames[rt], immediate);   
+        }
+        break;
+
+        case FAULT_INST_FORMAT_STR_RS_IMMEDIATE:
+        {
+            u8 rs = (instruction >> 21) & 0x1f;
+            u16 immediate = instruction & 0xffff;
+            
+            sprintf(instruction_str, sInstructionFormatStrs[FAULT_INST_FORMAT_STR_RS_IMMEDIATE], 
+                opcode_str, sRegNames[rs], immediate);   
+        }
+        break;
+
+        default:
+            __osStrcpy(instruction_str, opcode_str);
+        break;
+
+
+        // case FAULT_INST_FORMAT_STR_RD_RT_RS:
+
+        // break;
+
+        
+
+        // case FAULT_INST_FORMAT_STR_RD:
+
+        // break;
+
+        case FAULT_INST_FORMAT_STR_RS:
+        {
+            u8 rs = (instruction >> 21) & 0x1f;
+            
+            sprintf(instruction_str, sInstructionFormatStrs[FAULT_INST_FORMAT_STR_RS], 
+                opcode_str, sRegNames[rs]);   
+        }
+        break;
+
+        case FAULT_INST_FORMAT_STR_RS_RD:
+        {
+            u8 rs = (instruction >> 21) & 0x1f;
+            u8 rd = (instruction >> 11) & 0x1f;
+            
+            sprintf(instruction_str, sInstructionFormatStrs[FAULT_INST_FORMAT_STR_RS_RD], 
+                opcode_str, sRegNames[rs], sRegNames[rd]);   
+        }
+        break;
+
+
+    }
+}
+
 void Fault_Disasm(OSThread *thread)
 {
     u32 *pc = (u32 *)thread->context.pc;
     u32 button;
+    u32 multiplier = 1;
     char instruction_str[32];
     do
     {    
@@ -1087,20 +1500,35 @@ void Fault_Disasm(OSThread *thread)
 
         Fault_FillScreenBlack();
         FaultDrawer_SetCharPad(-1, 0);
-
         FaultDrawer_Printf("Disasm: %08x\n", pc);
-        FaultDrawer_Printf("    PC    |   INST   |    ASM \n\n");
+
+        FaultDrawer_SetCharPad(-2, 0);
+        FaultDrawer_Printf("   PC   ");
+
+        FaultDrawer_SetCharPad(-1, 0);
+        FaultDrawer_Printf("|");
+
+        FaultDrawer_SetCharPad(-2, 0);
+        FaultDrawer_Printf("  INST  ");
+
+        FaultDrawer_SetCharPad(-1, 0);
+        FaultDrawer_Printf("|");
+
+        FaultDrawer_SetCharPad(-2, 0);
+        FaultDrawer_Printf("        ASM \n\n");
+        // FaultDrawer_Printf("    PC   |   INST   |    ASM \n\n");
         for(line = 0; line < 20; line++)
         {
-            u32 instruction = pc[line];
+            u32 instruction = pc[line]; 
             u32 opcode = (instruction >> FAULT_INST_OPCODE_SHIFT) & FAULT_INST_OPCODE_MASK;
 
             switch(opcode)
             {
                 case FAULT_INST_OPCODE_SPECIAL:
                 {
-                    u32 special_instruction = (instruction >> FAULT_INST_SPECIAL_SHIFT) & FAULT_INST_SPECIAL_MASK;
-                    __osStrcpy(instruction_str, sSpecialStrs[special_instruction]);
+                    u32 special_instruction = instruction & FAULT_INST_SPECIAL_MASK;
+                    Fault_InstructionStr(instruction_str, sSpecialStrs[special_instruction], instruction, sSpecialInstrInfo[special_instruction].format_str, pc);
+                    // __osStrcpy(instruction_str, sSpecialStrs[special_instruction]);
                 }
                 break;
 
@@ -1108,7 +1536,7 @@ void Fault_Disasm(OSThread *thread)
                 {
                     u32 regimm_instruction = (instruction >> FAULT_INST_REGIMM_SHIFT) & FAULT_INST_REGIMM_MASK;
                     __osStrcpy(instruction_str, sRegimmStrs[regimm_instruction]);
-                }
+                } 
                 break;
 
                 case FAULT_INST_OPCODE_COP0:
@@ -1122,7 +1550,8 @@ void Fault_Disasm(OSThread *thread)
                     }
                     else
                     {
-                        u32 cop_instruction = ((instruction >> 13) & 0x7) | ((instruction << 3) & 0x18);
+                        // u32 cop_instruction = ((instruction >> 13) & 0x7) | ((instruction << 3) & 0x18);
+                        u32 cop_instruction = (instruction >> FAULT_INST_COPZRS_SHIFT) & FAULT_INST_COPZRS_MASK;
 
                         if(cop_instruction == FAULT_INST_COPZRS_BC)
                         {
@@ -1138,11 +1567,67 @@ void Fault_Disasm(OSThread *thread)
                 break;
 
                 default:
-                    __osStrcpy(instruction_str, sOpcodeStrs[opcode]);
+                    Fault_InstructionStr(instruction_str, sOpcodeStrs[opcode], instruction, sOpcodeInfos[opcode].format_str, pc);
+                    // switch(sOpcodeInfos[opcode].type)
+                    // {
+                    //     case FAULT_INST_TYPE_LOAD_STORE:
+                    //     {
+                    //         u8 base = (instruction >> 21) & 0x1f;
+                    //         u8 rt = (instruction >> 16) & 0x1f;
+                    //         u16 offset = instruction & 0xffff;
+                    //         u16 sign = offset & 0x8000;
+
+                    //         if(sign)
+                    //         {
+                    //             offset = (~offset) + 1;
+                    //         }
+                            
+                    //         sprintf(instruction_str, sInstructionFormatStrs[FAULT_INST_TYPE_LOAD_STORE], sOpcodeStrs[opcode], rt, (sign ? "-" : " "), offset, base);
+                    //     }
+                    //     break;
+
+                    //     case FAULT_INST_TYPE_COMPUTATIONAL:
+                    //     { 
+                    //         u8 rs = (instruction >> 21) & 0x1f;
+                    //         u8 rt = (instruction >> 16) & 0x1f;
+                    //         u16 offset = instruction & 0xffff;
+                    //         u16 sign = offset & 0x8000;
+
+                    //         if(sign)
+                    //         {
+                    //             offset = (~offset) + 1;
+                    //         }
+
+                    //         sprintf(instruction_str, sInstructionFormatStrs[FAULT_INST_TYPE_COMPUTATIONAL], sOpcodeStrs[opcode], rt, rs, (sign ? "-" : " "), offset);
+                    //     }
+                    //     break;
+                            
+                    //     default:
+                    //         __osStrcpy(instruction_str, sOpcodeStrs[opcode]);
+                    //     break;
+
+                    // }
                 break;
             }
 
-            FaultDrawer_Printf("%08x | %08x |%s%s\n", pc + line, instruction, ((u32)(pc + line) == thread->context.pc) ? "*" : " ", instruction_str);
+            FaultDrawer_SetCharPad(-2, 0);
+            FaultDrawer_Printf("%08x", pc + line);
+
+            FaultDrawer_SetCharPad(-1, 0);
+            FaultDrawer_Printf("|");
+            
+            FaultDrawer_SetCharPad(-2, 0);
+            FaultDrawer_Printf("%08x", instruction);
+
+            FaultDrawer_SetCharPad(-1, 0);
+            FaultDrawer_Printf("|");
+            FaultDrawer_Printf("%s%s\n", ((u32)(pc + line) == thread->context.pc) ? "*" : " ", instruction_str);
+
+            // FaultDrawer_SetCharPad(-2, 0);
+            // FaultDrawer_Printf("%08x | %08x |", pc + line, instruction);
+            // FaultDrawer_SetCharPad(-1, 0);
+            // FaultDrawer_Printf("%s%s\n", ((u32)(pc + line) == thread->context.pc) ? "*" : " ", instruction_str);
+            // FaultDrawer_Printf("%08x | %08x |%s%s\n", pc + line, instruction, ((u32)(pc + line) == thread->context.pc) ? "*" : " ", instruction_str);
         }
 
         button = Fault_WaitForInput2();
@@ -1152,13 +1637,30 @@ void Fault_Disasm(OSThread *thread)
             break;
         }
 
-        if(button == BTN_DUP)
+        multiplier = 1;
+
+
+        if(CHECK_BTN_ALL(button, BTN_A | BTN_B))
         {
-            pc--;
+            multiplier = 1024;
         }
-        else if(button == BTN_DDOWN)
+        else if(CHECK_BTN_ALL(button, BTN_A))
         {
-            pc++;
+            multiplier = 4;
+        }
+        else if(CHECK_BTN_ALL(button, BTN_B))
+        {
+            multiplier = 64;
+        }
+        
+
+        if(CHECK_BTN_ANY(button, BTN_DUP))
+        {
+            pc -= multiplier;
+        }
+        else if(CHECK_BTN_ANY(button, BTN_DDOWN))
+        {
+            pc += multiplier;
         }
     }
     while(true);

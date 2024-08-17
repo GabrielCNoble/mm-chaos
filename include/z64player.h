@@ -465,7 +465,9 @@ typedef enum PlayerFacialExpression {
     /* 12 */ PLAYER_FACE_12,
     /* 13 */ PLAYER_FACE_13,
     /* 14 */ PLAYER_FACE_14,
-    /* 15 */ PLAYER_FACE_15
+    /* 15 */ PLAYER_FACE_15,
+             PLAYER_FACE_HEHE0,
+             PLAYER_FACE_HEHE1
 } PlayerFacialExpression;
 
 typedef enum PlayerLimb {
@@ -769,6 +771,8 @@ typedef enum PlayerCueId {
     /* 0x0F */ PLAYER_CUEID_15,
     /* 0x10 */ PLAYER_CUEID_16,
     /* 0x11 */ PLAYER_CUEID_17,
+
+    /* Link waving animation */
     /* 0x12 */ PLAYER_CUEID_18,
     /* 0x13 */ PLAYER_CUEID_19,
     /* 0x14 */ PLAYER_CUEID_20,
@@ -792,11 +796,13 @@ typedef enum PlayerCueId {
     /* 0x26 */ PLAYER_CUEID_38,
     /* 0x27 */ PLAYER_CUEID_39,
     /* 0x28 */ PLAYER_CUEID_40,
+    /* Link mounted on Epona, walking slowly? */
     /* 0x29 */ PLAYER_CUEID_41,
     /* 0x2A */ PLAYER_CUEID_42,
     /* 0x2B */ PLAYER_CUEID_43,
     /* 0x2C */ PLAYER_CUEID_44,
     /* 0x2D */ PLAYER_CUEID_45,
+    /* Link reply animation? */
     /* 0x2E */ PLAYER_CUEID_46,
     /* 0x2F */ PLAYER_CUEID_47,
     /* 0x30 */ PLAYER_CUEID_48,
@@ -837,8 +843,11 @@ typedef enum PlayerCueId {
     /* 0x53 */ PLAYER_CUEID_83,
     /* 0x54 */ PLAYER_CUEID_84,
     /* 0x55 */ PLAYER_CUEID_85,
+    /* Link sitting, swinging his legs, looking forward */
     /* 0x56 */ PLAYER_CUEID_86,
+    /* Link sitting, swinging his legs, looking side to side*/
     /* 0x57 */ PLAYER_CUEID_87,
+    /* Link sitting, handwaving */
     /* 0x58 */ PLAYER_CUEID_88,
     /* 0x59 */ PLAYER_CUEID_89,
     /* 0x5A */ PLAYER_CUEID_90,
@@ -903,19 +912,19 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_4000000    (1 << 26)
 // Swimming?
 #define PLAYER_STATE1_8000000    (1 << 27)
-// 
+// Player is playing idle animation
 #define PLAYER_STATE1_10000000   (1 << 28)
 // Time is stopped but Link & NPC animations continue
 #define PLAYER_STATE1_20000000   (1 << 29)
 // 
 #define PLAYER_STATE1_40000000   (1 << 30)
-// Related to exit a grotto
+// Related to exit a grotto / captured by grotto?
 #define PLAYER_STATE1_80000000   (1 << 31)
 
 
 // 
 #define PLAYER_STATE2_1          (1 << 0)
-// 
+// In talk range?
 #define PLAYER_STATE2_2          (1 << 1)
 // 
 #define PLAYER_STATE2_4          (1 << 2)
@@ -933,7 +942,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE2_100        (1 << 8)
 // 
 #define PLAYER_STATE2_FORCE_SAND_FLOOR_SOUND (1 << 9)
-// 
+// Sinking?
 #define PLAYER_STATE2_400        (1 << 10)
 // Diving
 #define PLAYER_STATE2_800        (1 << 11)
@@ -953,7 +962,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE2_40000      (1 << 18)
 // Attacking?
 #define PLAYER_STATE2_80000      (1 << 19)
-// 
+// Tatl is hovering around
 #define PLAYER_STATE2_100000     (1 << 20)
 // 
 #define PLAYER_STATE2_200000     (1 << 21)
@@ -969,7 +978,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE2_4000000    (1 << 26)
 // 
 #define PLAYER_STATE2_8000000    (1 << 27)
-// Player health critical?
+// Player health critical? Gasping?
 #define PLAYER_STATE2_10000000   (1 << 28)
 // Disable drawing player
 #define PLAYER_STATE2_20000000   (1 << 29)
@@ -1017,7 +1026,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE3_20000      (1 << 17)
 // Related to form Deku
 #define PLAYER_STATE3_40000      (1 << 18)
-// 
+// Goron ball of spike active?
 #define PLAYER_STATE3_80000      (1 << 19)
 // 
 #define PLAYER_STATE3_100000     (1 << 20)

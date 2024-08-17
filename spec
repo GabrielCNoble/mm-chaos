@@ -576,7 +576,6 @@ beginseg
     include "build/src/code/sys_flashrom.o"
     include "build/asm/code/code_80185F90.text.o" // handwritten
     include "build/src/libultra/flash/osFlash.o"
-    include "build/src/code/chaos_fuckery.o"
     pad_text
     pad_text
     pad_text
@@ -616,6 +615,7 @@ beginseg
     include "build/data/code/gspF3DZEX2.NoN.PosLight.fifo.rodata.o"
     include "build/data/code/gspS2DEX2.fifo.rodata.o"
     include "build/data/code/njpgdspMain.rodata.o"
+    include "build/src/code/chaos_fuckery.o"
 endseg
 
 beginseg

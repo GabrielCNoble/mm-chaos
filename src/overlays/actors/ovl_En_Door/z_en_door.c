@@ -19,7 +19,7 @@
 #include "objects/object_kaizoku_obj/object_kaizoku_obj.h"
 #include "objects/gameplay_field_keep/gameplay_field_keep.h"
 
-#define FLAGS (ACTOR_FLAG_10)
+#define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_NO_CHASE)
 
 #define THIS ((EnDoor*)thisx)
 

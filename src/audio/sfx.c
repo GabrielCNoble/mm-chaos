@@ -76,6 +76,7 @@ Vec3f gSfxDefaultPos = { 0.0f, 0.0f, 0.0f };
 // Reused as either frequency or volume multiplicative scaling factor
 // Does not alter or change frequency or volume
 f32 gSfxDefaultFreqAndVolScale = 1.0f;
+f32 gSfxBeerGogglesFreq = 1.0f;
 s32 D_801DB4B4 = 0; // unused
 
 // Adds no reverb to the existing reverb

@@ -811,7 +811,7 @@ void EnFall_Moon_ChaosStuff(PlayState *play, EnFall *this)
             }
         }
     }
-    else if((code = Chaos_GetCode(CHAOS_CODE_BIG_BROTHER)) != NULL)
+    else if(Chaos_IsCodeActive(CHAOS_CODE_BIG_BROTHER))
     {
         Player *player = GET_PLAYER(play);
         MtxF *moon_transform;
@@ -836,14 +836,30 @@ void EnFall_Moon_ChaosStuff(PlayState *play, EnFall *this)
         yaw_delta = (moon_right_vec.x * moon_player_vec.x + moon_right_vec.y * moon_player_vec.y + moon_right_vec.z * moon_player_vec.z);
         pitch_delta = (moon_up_vec.x * moon_player_vec.x + moon_up_vec.y * moon_player_vec.y + moon_up_vec.z * moon_player_vec.z);
 
-        if(code->data == CHAOS_BIG_BROTHER_STATE_FAST_LOCKED_ON)
+        if(gChaosContext.moon.big_brother_state == CHAOS_BIG_BROTHER_STATE_FAST_LOCKED_ON)
         {
             angle_delta_limit = 0.025f;
         }
 
         if((fabsf(pitch_delta) < angle_delta_limit && fabsf(yaw_delta) < angle_delta_limit))
         {
-            if(gChaosContext.moon.eye_glow == 0.0f)
+            // if(gChaosContext.moon.eye_glow == 0.0f)
+            // {
+            //     u16 moon_screams[] = {
+            //         NA_SE_EN_MOON_SCREAM1,
+            //         NA_SE_EN_MOON_SCREAM2,
+            //         NA_SE_EN_MOON_SCREAM3,
+            //         NA_SE_EN_MOON_SCREAM4
+            //     };
+
+            //     u32 scream_index = Rand_Next() % 4;
+
+            //     gChaosContext.moon.eye_glow = 0.1f;
+            //     Audio_PlaySfx(NA_SE_EV_MOON_EYE_FLASH);
+            //     Audio_PlaySfx(moon_screams[scream_index]);
+            // }
+
+            if(gChaosContext.moon.big_brother_state == CHAOS_BIG_BROTHER_STATE_TRACKING)
             {
                 u16 moon_screams[] = {
                     NA_SE_EN_MOON_SCREAM1,
@@ -853,17 +869,15 @@ void EnFall_Moon_ChaosStuff(PlayState *play, EnFall *this)
                 };
 
                 u32 scream_index = Rand_Next() % 4;
-
-                gChaosContext.moon.eye_glow = 0.1f;
                 Audio_PlaySfx(NA_SE_EV_MOON_EYE_FLASH);
                 Audio_PlaySfx(moon_screams[scream_index]);
             }
 
-            code->data = CHAOS_BIG_BROTHER_STATE_SLOW_LOCKED_ON;
+            gChaosContext.moon.big_brother_state = CHAOS_BIG_BROTHER_STATE_SLOW_LOCKED_ON;
         }
-        else if(code->data != CHAOS_BIG_BROTHER_STATE_TRACKING)
+        else if(gChaosContext.moon.big_brother_state != CHAOS_BIG_BROTHER_STATE_TRACKING)
         {
-            code->data = CHAOS_BIG_BROTHER_STATE_FAST_LOCKED_ON;
+            gChaosContext.moon.big_brother_state = CHAOS_BIG_BROTHER_STATE_FAST_LOCKED_ON;
             rotation_multiplier = 10000;
         }
 
@@ -881,12 +895,28 @@ void EnFall_Moon_ChaosStuff(PlayState *play, EnFall *this)
             this->actor.shape.rot.x = -16384;
         }
 
-        if(gChaosContext.moon.eye_glow > 0.0f && gChaosContext.moon.eye_glow < 1.0f)
+        // if(gChaosContext.moon.eye_glow > 0.0f && gChaosContext.moon.eye_glow < 1.0f)
+        if(gChaosContext.moon.big_brother_state == CHAOS_BIG_BROTHER_STATE_SLOW_LOCKED_ON ||
+           gChaosContext.moon.big_brother_state == CHAOS_BIG_BROTHER_STATE_FAST_LOCKED_ON)
         {
             gChaosContext.moon.eye_glow += 0.05f;
+
+            if(gChaosContext.moon.eye_glow > 1.0f)
+            {
+                gChaosContext.moon.eye_glow = 1.0f;
+            }
         }
 
         this->eyeGlowIntensity = gChaosContext.moon.eye_glow;
+        play->skyboxCtx.rot.y -= 0.05f;
+        play->envCtx.skyboxConfig = 0xd;
+    }
+    else if(gChaosContext.moon.big_brother_state == CHAOS_BIG_BROTHER_STATE_SLOW_LOCKED_ON ||
+            gChaosContext.moon.big_brother_state == CHAOS_BIG_BROTHER_STATE_FAST_LOCKED_ON)
+    {
+        this->eyeGlowIntensity = 0.0f;
+        gChaosContext.moon.eye_glow = 0.0f;
+        gChaosContext.moon.big_brother_state = CHAOS_BIG_BROTHER_STATE_IDLE;
     }
 }
 

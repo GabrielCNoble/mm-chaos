@@ -391,7 +391,7 @@ typedef struct {
     /* 0x0 */ s16 id;
     /* 0x2 */ Vec3s pos;
     /* 0x8 */ Vec3s rot;
-    /* 0xE */ s16 params;
+    /* 0xE */ s16   params;
 } ActorEntry; // size = 0x10
 
 typedef struct {
@@ -609,6 +609,8 @@ typedef enum {
     /* 0xA */ OWL_WARP_ENTRANCE, // Special index for warping to the entrance of a scene
     /* 0xB */ OWL_WARP_MAX
 } OwlWarpId;
+
+#define OWL_WARP_ALL_MASK 0x000003ff 
 
 // Sets cloud visibility on the world map
 typedef enum {

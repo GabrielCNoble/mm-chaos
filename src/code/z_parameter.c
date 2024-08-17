@@ -2792,6 +2792,7 @@ u8 Item_Give(PlayState* play, u8 item) {
 
     } else if (item == ITEM_OCARINA_OF_TIME) {
         INV_CONTENT(ITEM_OCARINA_OF_TIME) = ITEM_OCARINA_OF_TIME;
+        Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA);
         return ITEM_NONE;
 
     } else if (item == ITEM_MAGIC_BEANS) {

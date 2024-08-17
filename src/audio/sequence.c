@@ -428,7 +428,7 @@ void AudioSeq_ProcessSeqCmd(u32 cmd) {
 void AudioSeq_QueueSeqCmd(u32 cmd) {
     sAudioSeqCmds[sSeqCmdWritePos++] = cmd;
 }
-
+ 
 void AudioSeq_ProcessSeqCmds(void) {
     while (sSeqCmdWritePos != sSeqCmdReadPos) {
         AudioSeq_ProcessSeqCmd(sAudioSeqCmds[sSeqCmdReadPos++]);

@@ -2295,7 +2295,9 @@ void Player_PlaySfx(Player* player, u16 sfxId) {
     if (player->currentMask == PLAYER_MASK_GIANT) {
         Audio_PlaySfx_AtPosWithPresetLowFreqAndHighReverb(&player->actor.projectedPos, sfxId);
     } else {
-        AudioSfx_PlaySfx(sfxId, &player->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
+        // AudioSfx_PlaySfx(sfxId, &player->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
+        //                  &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        AudioSfx_PlaySfx(sfxId, &player->actor.projectedPos, 4, &gSfxBeerGogglesFreq,
                          &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
     }
 }
@@ -2506,7 +2508,8 @@ u16 gActorExclusionList[] = {
     ACTOR_EN_DOOR,
     ACTOR_DOOR_ANA,
     ACTOR_DOOR_SHUTTER,
-    ACTOR_EN_HORSE
+    ACTOR_EN_HORSE,
+    ACTOR_EN_HOLL
 };
 
 Actor* Actor_UpdateActor(UpdateActor_Params* params) {
@@ -2518,23 +2521,23 @@ Actor* Actor_UpdateActor(UpdateActor_Params* params) {
         actor->world.pos.y = -25000.0f;
     }
 
-    if(Chaos_IsCodeActive(CHAOS_CODE_ACTOR_CHASE))
+    if(Chaos_IsCodeActive(CHAOS_CODE_ACTOR_CHASE) && !(actor->flags & ACTOR_FLAG_NO_CHASE))
     {
-        u32 chase = true;
-        u32 index;
-        for(index = 0; index < ARRAY_COUNT(gActorExclusionList); index++)
-        {
-            chase &= actor->id != gActorExclusionList[index];
-        }
+        // u32 chase = true;
+        // u32 index;
+        // for(index = 0; index < ARRAY_COUNT(gActorExclusionList); index++)
+        // {
+        //     chase &= actor->id != gActorExclusionList[index];
+        // }
 
         // if(actor->id != ACTOR_PLAYER && actor->id != ACTOR_EN_DOOR && actor->id != ACTOR_DOOR_ANA)
-        if(chase)
-        {
-            Vec3f actor_player_vec;
-            Math_Vec3f_DistXYZAndStoreNormDiff(&actor->world.pos, &params->player->actor.world.pos, 1.0f, &actor_player_vec);
-            Math_Vec3f_Scale(&actor_player_vec, 4.0f);
-            Math_Vec3f_Sum(&actor->world.pos, &actor_player_vec, &actor->world.pos);
-        }
+        // if(chase)
+        // {
+        Vec3f actor_player_vec;
+        Math_Vec3f_DistXYZAndStoreNormDiff(&actor->world.pos, &params->player->actor.world.pos, 1.0f, &actor_player_vec);
+        Math_Vec3f_Scale(&actor_player_vec, 4.0f);
+        Math_Vec3f_Sum(&actor->world.pos, &actor_player_vec, &actor->world.pos);
+        // }
     }
 
     actor->sfxId = 0;
@@ -2730,7 +2733,10 @@ void Actor_UpdateAll(PlayState* play, ActorContext* actorCtx) {
 
 void Actor_Draw(PlayState* play, Actor* actor) {
     Lights* light;
-
+    Player *player = GET_PLAYER(play);
+    Vec3f actor_pos;
+    Vec3f actor_scale;
+    Vec3s actor_rotation;
     if(gChaosContext.hide_actors & 1)
     {
         u32 index;
@@ -2750,6 +2756,39 @@ void Actor_Draw(PlayState* play, Actor* actor) {
 
     OPEN_DISPS(play->state.gfxCtx);
 
+    actor_pos = actor->world.pos;
+    actor_scale = actor->scale;
+    actor_rotation = actor->shape.rot;
+
+    if(player->talkActor == actor && (player->actor.flags & ACTOR_FLAG_TALK_REQUESTED))
+    {
+        if(play->msgCtx.msgMode == MSGMODE_TEXT_DISPLAYING)
+        {
+            /* make the actor the player is talking to wobble like crazy while they're talking */
+            gChaosContext.npc.talk_translation.x = ((Rand_ZeroOne() - 0.5f) / actor_scale.x) * 0.6f;
+            gChaosContext.npc.talk_translation.y = ((Rand_ZeroOne() - 0.5f) / actor_scale.y) * 0.6f;
+            gChaosContext.npc.talk_translation.z = ((Rand_ZeroOne() - 0.5f) / actor_scale.z) * 0.6f;
+            gChaosContext.npc.talk_scale.x = Rand_ZeroOne() * 2.0f;
+            gChaosContext.npc.talk_scale.y = Rand_ZeroOne() * 2.0f;
+            gChaosContext.npc.talk_scale.z = Rand_ZeroOne() * 2.0f;
+            gChaosContext.npc.talk_rotation.x = Rand_S16Offset(-8000, 16000);
+            gChaosContext.npc.talk_rotation.y = Rand_S16Offset(-8000, 16000);   
+            gChaosContext.npc.talk_rotation.z = Rand_S16Offset(-8000, 16000);
+        }
+
+        actor_pos.x += gChaosContext.npc.talk_translation.x;
+        actor_pos.y += gChaosContext.npc.talk_translation.y;
+        actor_pos.z += gChaosContext.npc.talk_translation.z;
+
+        actor_rotation.x += gChaosContext.npc.talk_rotation.x;
+        actor_rotation.y += gChaosContext.npc.talk_rotation.y;
+        actor_rotation.z += gChaosContext.npc.talk_rotation.z;
+
+        actor_scale.x *= gChaosContext.npc.talk_scale.x;
+        actor_scale.y *= gChaosContext.npc.talk_scale.y;
+        actor_scale.z *= gChaosContext.npc.talk_scale.z;
+    }
+
     light = LightContext_NewLights(&play->lightCtx, play->state.gfxCtx);
     if ((actor->flags & ACTOR_FLAG_10000000) && (play->roomCtx.curRoom.enablePosLights || (MREG(93) != 0))) {
         light->enablePosLights = true;
@@ -2759,17 +2798,27 @@ void Actor_Draw(PlayState* play, Actor* actor) {
                    (actor->flags & (ACTOR_FLAG_10000000 | ACTOR_FLAG_400000)) ? NULL : &actor->world.pos, play);
     Lights_Draw(light, play->state.gfxCtx);
 
-    if (actor->flags & ACTOR_FLAG_IGNORE_QUAKE) {
-        Matrix_SetTranslateRotateYXZ(actor->world.pos.x + play->mainCamera.quakeOffset.x,
-                                     actor->world.pos.y +
-                                         ((actor->shape.yOffset * actor->scale.y) + play->mainCamera.quakeOffset.y),
-                                     actor->world.pos.z + play->mainCamera.quakeOffset.z, &actor->shape.rot);
-    } else {
-        Matrix_SetTranslateRotateYXZ(actor->world.pos.x, actor->world.pos.y + (actor->shape.yOffset * actor->scale.y),
-                                     actor->world.pos.z, &actor->shape.rot);
-    }
+    // if (actor->flags & ACTOR_FLAG_IGNORE_QUAKE) {
+    //     Matrix_SetTranslateRotateYXZ(actor->world.pos.x + play->mainCamera.quakeOffset.x,
+    //                                  actor->world.pos.y +
+    //                                      ((actor->shape.yOffset * actor->scale.y) + play->mainCamera.quakeOffset.y),
+    //                                  actor->world.pos.z + play->mainCamera.quakeOffset.z, &actor->shape.rot);
+    // } else {
+    //     Matrix_SetTranslateRotateYXZ(actor->world.pos.x, actor->world.pos.y + (actor->shape.yOffset * actor->scale.y),
+    //                                  actor->world.pos.z, &actor->shape.rot);
+    // }
 
-    Matrix_Scale(actor->scale.x, actor->scale.y, actor->scale.z, MTXMODE_APPLY);
+    // Matrix_Scale(actor->scale.x, actor->scale.y, actor->scale.z, MTXMODE_APPLY);
+
+    if (actor->flags & ACTOR_FLAG_IGNORE_QUAKE) 
+    {
+        actor_pos.y += play->mainCamera.quakeOffset.y;
+    }                            
+
+    Matrix_SetTranslateRotateYXZ(actor_pos.x, actor_pos.y + (actor->shape.yOffset * actor_scale.y), actor_pos.z, &actor_rotation);
+    Matrix_Scale(actor_scale.x, actor_scale.y, actor_scale.z, MTXMODE_APPLY);
+
+
     Actor_SetObjectDependency(play, actor);
 
     gSPSegment(POLY_OPA_DISP++, 0x06, play->objectCtx.slots[actor->objectSlot].segment);

@@ -49,7 +49,7 @@
 
 extern struct ChaosContext gChaosContext; 
 
-void Player_SetTunicColor(Player *this);
+void Player_SetTunicColor(PlayState *play, Player *this);
 void Player_Init(Actor* thisx, PlayState* play);
 void Player_Destroy(Actor* thisx, PlayState* play);
 void Player_Update(Actor* thisx, PlayState* play);
@@ -81,6 +81,7 @@ void func_808484F0(Player* this);
 void func_80838A20(PlayState* play, Player* this);
 void func_80839978(PlayState* play, Player* this);
 void func_80839A10(PlayState* play, Player* this);
+s32 Player_SetAction(PlayState* play, Player* this, PlayerActionFunc actionFunc, s32 arg3);
 
 typedef enum AnimSfxType {
     /*  1 */ ANIMSFX_TYPE_GENERAL = 1,
@@ -117,8 +118,11 @@ typedef struct AnimSfxEntry {
 /* action funcs */
 void Player_Action_0(Player* this, PlayState* play);
 void Player_Action_1(Player* this, PlayState* play);
+/* PLAYER_ACTION_BATTLE_STANCE */
 void Player_Action_2(Player* this, PlayState* play);
+/* PLAYER_ACTION_FOCUSED */
 void Player_Action_3(Player* this, PlayState* play);
+/* PLAYER_ACTION_IDLE */
 void Player_Action_4(Player* this, PlayState* play);
 void Player_Action_5(Player* this, PlayState* play);
 void Player_Action_6(Player* this, PlayState* play);
@@ -128,6 +132,7 @@ void Player_Action_9(Player* this, PlayState* play);
 void Player_Action_10(Player* this, PlayState* play);
 void Player_Action_11(Player* this, PlayState* play);
 void Player_Action_12(Player* this, PlayState* play);
+/* PLAYER_ACTION_RUNNING */
 void Player_Action_13(Player* this, PlayState* play);
 void Player_Action_14(Player* this, PlayState* play);
 void Player_Action_15(Player* this, PlayState* play);
@@ -142,6 +147,7 @@ void Player_Action_22(Player* this, PlayState* play);
 void Player_Action_23(Player* this, PlayState* play);
 /* PLAYER_ACTION_DEATH_STANDING */
 void Player_Action_24(Player* this, PlayState* play);
+/* PLAYER_ACTION_JUMP */
 void Player_Action_25(Player* this, PlayState* play);
 void Player_Action_26(Player* this, PlayState* play);
 void Player_Action_27(Player* this, PlayState* play);
@@ -565,45 +571,46 @@ s32 sPlayerHeldItemButtonIsHeldDown; // Indicates if the button for the current 
 AdjLightSettings D_80862B50;         // backup of lay->envCtx.adjLightSettings
 s32 D_80862B6C;                      // this->skelAnime.moveFlags // sPlayerSkelMoveFlags?
 
+/* Player_IsChangingArea */
 s32 func_8082DA90(PlayState* play) {
     return (play->transitionTrigger != TRANS_TRIGGER_OFF) || (play->transitionMode != TRANS_MODE_OFF);
 }
 
-#define MAX_SCENE_ENTRANCE_TABLE_ENTRIES 110
-
-u8 gSceneExclusion[] = {
-    ENTR_SCENE_THE_MOON,
-    ENTR_SCENE_MOON_LINK_TRIAL,
-    ENTR_SCENE_MOON_ZORA_TRIAL,
-    ENTR_SCENE_MOON_GORON_TRIAL,
-    ENTR_SCENE_MOON_DEKU_TRIAL,
-    ENTR_SCENE_MAJORAS_LAIR
-};
-
-u16 Player_PickRandomEntrance(PlayState *play)
+u32 Player_UpdateOutOfShape(Player *this, PlayState *play)
 {
-    u16 *entrances;
-    u16 scene_index;
-    u16 entrance_index;
-    u8 test_index;
-    SceneEntranceTableEntry *scene_entry;
-
-    do
+    if(Chaos_IsCodeActive(CHAOS_CODE_OUT_OF_SHAPE))
     {
-        scene_index = Rand_Next() % MAX_SCENE_ENTRANCE_TABLE_ENTRIES;
-        scene_entry = Entrance_GetSceneTableEntry(scene_index);
-        for(test_index = 0; test_index < sizeof(gSceneExclusion); test_index++)
+        if(gChaosContext.link.out_of_shape_speed_scale > 0.0f)
         {
-            if(scene_index == gSceneExclusion[test_index])
-            {
-                scene_entry == NULL;
-                break;
-            }
+            gChaosContext.link.out_of_shape_speed_scale *= 0.8f;
+            gChaosContext.link.out_of_shape_state = CHAOS_OUT_OF_SHAPE_STATE_SLOWING_DOWN;
+        }
+
+        if(gChaosContext.link.out_of_shape_speed_scale < 0.1f)
+        {
+            gChaosContext.link.out_of_shape_speed_scale = 0.0f;
+            gChaosContext.link.out_of_shape_state = CHAOS_OUT_OF_SHAPE_STATE_GASPING;
+            return true;
         }
     }
-    while(scene_entry == NULL || scene_entry->tableCount == 0);
-    entrance_index = Rand_Next() % scene_entry->tableCount;
-    return Entrance_Create(scene_index, entrance_index, 0);
+    else
+    {
+        gChaosContext.link.out_of_shape_speed_scale = 1.0f;
+        gChaosContext.link.out_of_shape_state = CHAOS_OUT_OF_SHAPE_STATE_NONE;
+    }
+
+    return false;
+}
+
+u32 Player_IsOutOfShape(Player *this, PlayState *play)
+{
+    if(gChaosContext.link.out_of_shape_state == CHAOS_OUT_OF_SHAPE_STATE_GASPING)
+    {
+        Player_SetAction(play, this, Player_Action_4, 1);
+        return true;
+    }
+
+    return false;
 }
 
 void Player_StopHorizontalMovement(Player* this) {
@@ -2757,6 +2764,7 @@ u8 D_8085C96C[] = {
     0, 0, 1, 1, 2, 2, 2, 2, 10, 10, 10, 10, 10, 10, 3, 3, 4, 4, 8, 8, 5, 5, 6, 6, 7, 7, 9, 9, 11, 11,
 };
 
+/* Player_GetAnimSfx? */
 s32 func_8082ED94(Player* this) {
     PlayerAnimationHeader** entry;
     s32 i;
@@ -5064,6 +5072,30 @@ s32 Player_GetMovementSpeedAndYaw(Player* this, f32* outSpeedTarget, s16* outYaw
     return true;
 }
 
+s32 Player_GetMovementSpeedAndYawUnderTheInfluence(Player* this, f32* outSpeedTarget, s16* outYawTarget, f32 speedMode,
+                                  PlayState* play)
+{
+    u32 result = Player_GetMovementSpeedAndYaw(this, outSpeedTarget, outYawTarget, speedMode, play);
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_OUT_OF_SHAPE))
+    {
+        *outSpeedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_SLOW_DOWN))
+    {
+        *outSpeedTarget *= 0.15f;
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_BEER_GOGGLES) && result)
+    {
+        *outYawTarget += 2500.0f * Math_SinF((Math_SinF(gChaosContext.link.beer_pitch * 0.35f) + Math_SinF(gChaosContext.link.beer_yaw * 0.237f) + 
+            Math_SinF((gChaosContext.link.beer_pitch + gChaosContext.link.beer_yaw) * 0.186)) * 3.14159265f);
+    }
+
+    return result;
+}
+
 typedef enum ActionChangeIndex {
     /* 0x0 */ PLAYER_ACTION_CHG_0,
     /* 0x1 */ PLAYER_ACTION_CHG_1,
@@ -6249,6 +6281,7 @@ void func_808353DC(PlayState* play, Player* this) {
     func_8082E634(play, this, &gPlayerAnim_link_swimer_swim_wait);
 }
 
+/* Player_FellIntoGrotto? */
 s32 func_80835428(PlayState* play, Player* this) {
     if (!func_8082DA90(play) && (this->stateFlags1 & PLAYER_STATE1_80000000)) {
         func_80834104(play, this);
@@ -6292,45 +6325,37 @@ void func_808354A4(PlayState* play, s32 exitIndex, s32 arg2) {
 
     u32 *p = NULL;
     Player *player = GET_PLAYER(play);
-    // u8 is_random_entrance = gChaosContext.entrance.is_last_entrance_rando;
-
-    // if(!gChaosContext.entrance.is_last_entrance_rando)
-    // {
-    //     gChaosContext.entrance.player_drown_count = 0;
-    // }
-
-    // if(Chaos_IsCodeActive(CHAOS_CODE_ENTRANCE_RANDO))
-    // {
-    //     play->nextEntrance = Player_PickRandomEntrance(play);
-    //     gChaosContext.entrance.is_last_entrance_rando = true;
-    // }
-    // else
-    // {
-    //     play->nextEntrance = play->setupExitList[exitIndex];
-    //     is_random_entrance = false;
-    // }
 
     play->nextEntrance = play->setupExitList[exitIndex];
 
     if (play->nextEntrance == 0xFFFF) {
+        /* player is exiting from a grotto */
         gSaveContext.respawnFlag = 4;
         play->nextEntrance = gSaveContext.respawn[RESPAWN_MODE_UNK_3].entrance;
         play->transitionType = TRANS_TYPE_FADE_WHITE;
         gSaveContext.nextTransitionType = TRANS_TYPE_FADE_WHITE;
-    } else if (play->nextEntrance >= 0xFE00) {
-        play->nextEntrance =
-            sReturnEntranceGroupData[sReturnEntranceGroupIndices[play->nextEntrance - 0xFE00] + play->curSpawn];
-
-        Scene_SetExitFade(play);
-    } else {
-        if (arg2) {
-            gSaveContext.respawn[RESPAWN_MODE_DOWN].entrance = play->nextEntrance;
-            func_80169EFC(&play->state);
-            gSaveContext.respawnFlag = -2;
+    } 
+    else 
+    {
+        if(Chaos_IsCodeActive(CHAOS_CODE_ENTRANCE_RANDO))
+        {
+            play->nextEntrance = Chaos_RandomEntrance(play);
         }
 
-        gSaveContext.retainWeatherMode = true;
-        Scene_SetExitFade(play);
+        if (play->nextEntrance >= 0xFE00) {
+            play->nextEntrance =
+                sReturnEntranceGroupData[sReturnEntranceGroupIndices[play->nextEntrance - 0xFE00] + play->curSpawn];
+            Scene_SetExitFade(play);
+        } else {        
+            if (arg2) {
+                gSaveContext.respawn[RESPAWN_MODE_DOWN].entrance = play->nextEntrance;
+                func_80169EFC(&play->state);
+                gSaveContext.respawnFlag = -2;
+            }
+
+            gSaveContext.retainWeatherMode = true;
+            Scene_SetExitFade(play);
+        }
     }
 
     play->transitionTrigger = TRANS_TRIGGER_START;
@@ -6353,13 +6378,11 @@ s32 Player_HandleExitsAndVoids(PlayState* play, Player* this, CollisionPoly* pol
         (this->csAction == PLAYER_CSACTION_NONE) && !(this->stateFlags1 & PLAYER_STATE1_1)) {
         exitIndexPlusOne = 0;
 
-        if (((poly != NULL) &&
-             (exitIndexPlusOne = SurfaceType_GetSceneExitIndex(&play->colCtx, poly, bgId), (exitIndexPlusOne != 0)) &&
-             (((play->sceneId != SCENE_GORONRACE) && (play->sceneId != SCENE_DEKU_KING)) || (exitIndexPlusOne < 3)) &&
-             (((play->sceneId != SCENE_20SICHITAI) && (play->sceneId != SCENE_20SICHITAI2)) ||
-              (exitIndexPlusOne < 0x15)) &&
-             ((play->sceneId != SCENE_11GORONNOSATO) || (exitIndexPlusOne < 6))) ||
-            (func_808340D4(sPlayerFloorType) && (this->floorProperty == FLOOR_PROPERTY_12))) {
+        if ((poly != NULL && (exitIndexPlusOne = SurfaceType_GetSceneExitIndex(&play->colCtx, poly, bgId), (exitIndexPlusOne != 0)) &&
+             ((play->sceneId != SCENE_GORONRACE && play->sceneId != SCENE_DEKU_KING) || exitIndexPlusOne < 3) &&
+             ((play->sceneId != SCENE_20SICHITAI && play->sceneId != SCENE_20SICHITAI2) || exitIndexPlusOne < 0x15) &&
+             (play->sceneId != SCENE_11GORONNOSATO || exitIndexPlusOne < 6)) || 
+             (func_808340D4(sPlayerFloorType) && this->floorProperty == FLOOR_PROPERTY_12)) {
 
             sp34 = this->unk_D68 - (s32)this->actor.world.pos.y;
 
@@ -6383,13 +6406,14 @@ s32 Player_HandleExitsAndVoids(PlayState* play, Player* this, CollisionPoly* pol
                               SurfaceType_GetFloorEffect(&play->colCtx, poly, bgId) == FLOOR_EFFECT_2);
 
                 if ((this->stateFlags1 & PLAYER_STATE1_8000000) && (this->floorProperty == FLOOR_PROPERTY_5)) {
-                    Audio_PlaySfx_2(NA_SE_OC_TUNAMI);
+                    // Audio_PlaySfx_2(NA_SE_OC_TUNAMI);
                     Audio_MuteAllSeqExceptSystemAndOcarina(5);
                     gSaveContext.seqId = (u8)NA_BGM_DISABLED;
                     gSaveContext.ambienceId = AMBIENCE_ID_DISABLED;
                 } else if (!(this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) &&
                            (this->floorProperty == FLOOR_PROPERTY_12)) {
                     Audio_PlaySfx_2(NA_SE_OC_SECRET_WARP_IN);
+                    // Audio_PlaySfx_2(NA_SE_OC_ABYSS);
                 }
 
                 if (this->stateFlags1 & PLAYER_STATE1_800000) {
@@ -6420,9 +6444,9 @@ s32 Player_HandleExitsAndVoids(PlayState* play, Player* this, CollisionPoly* pol
             this->stateFlags1 |= PLAYER_STATE1_1 | PLAYER_STATE1_20000000;
             return true;
         }
+
         if ((this->stateFlags1 & PLAYER_STATE1_8000000) && (this->actor.floorPoly == NULL)) {
-            BgCheck_EntityRaycastFloor7(&play->colCtx, &this->actor.floorPoly, &sp30, &this->actor,
-                                        &this->actor.world.pos);
+            BgCheck_EntityRaycastFloor7(&play->colCtx, &this->actor.floorPoly, &sp30, &this->actor, &this->actor.world.pos);
             if (this->actor.floorPoly == NULL) {
                 func_80169EFC(&play->state);
                 return false;
@@ -6777,8 +6801,7 @@ s32 Player_ActionChange_1(Player* this, PlayState* play) {
                 if ((this->doorType < PLAYER_DOORTYPE_FAKE) && (doorActor->category == ACTORCAT_DOOR) &&
                     ((this->doorType != PLAYER_DOORTYPE_HANDLE) || (ENDOOR_GET_TYPE(doorActor) != ENDOOR_TYPE_7))) {
                     s8 roomNum = play->doorCtx.transitionActorList[DOOR_GET_TRANSITION_ID(doorActor)]
-                                     .sides[(this->doorDirection > 0) ? 0 : 1]
-                                     .room;
+                                     .sides[(this->doorDirection > 0) ? 0 : 1].room;
 
                     if ((roomNum >= 0) && (roomNum != play->roomCtx.curRoom.num)) {
                         Room_StartRoomTransition(play, &play->roomCtx, roomNum);
@@ -6831,14 +6854,18 @@ void func_80836988(Player* this, PlayState* play) {
     }
 }
 
+/* Player_ChooseStandingAction */
 void func_808369F4(Player* this, PlayState* play) {
     PlayerActionFunc actionFunc;
 
     if (func_80123420(this)) {
+        /* Battle stance */
         actionFunc = Player_Action_2;
     } else if (func_80123434(this)) {
+        /* Focused on non-hostile */
         actionFunc = Player_Action_3;
     } else {
+        /* Idle */
         actionFunc = Player_Action_4;
     }
     Player_SetAction(play, this, actionFunc, 1);
@@ -7126,6 +7153,11 @@ s32 func_808373F8(PlayState* play, Player* this, u16 sfxId) {
             speed = 4.0f;
         }
 
+        // if(gChaosContext.link.out_of_shape_state == CHAOS_OUT_OF_SHAPE_STATE_GASPING)
+        // {
+        //     this->remainingHopsCounter = 0;
+        // }
+
         if ((this->actor.depthInWater > 0.0f) && (this->remainingHopsCounter != 0)) {
             this->actor.world.pos.y += this->actor.depthInWater;
             func_80834D50(play, this, anim, speed, NA_SE_NONE);
@@ -7134,6 +7166,7 @@ s32 func_808373F8(PlayState* play, Player* this, u16 sfxId) {
             Player_PlaySfx(this, (NA_SE_PL_DEKUNUTS_JUMP5 + 1 - this->remainingHopsCounter));
             Player_AnimSfx_PlayVoice(this, sfxId);
             this->remainingHopsCounter--;
+
             if (this->remainingHopsCounter == 0) {
                 this->stateFlags2 |= PLAYER_STATE2_80000;
                 func_808373A4(play, this);
@@ -7503,6 +7536,10 @@ void func_8083827C(Player* this, PlayState* play) {
     } else {
         this->fallStartHeight = this->actor.world.pos.y;
         this->remainingHopsCounter = 5;
+        if(gChaosContext.link.out_of_shape_state == CHAOS_OUT_OF_SHAPE_STATE_GASPING)
+        {
+            this->remainingHopsCounter = 0;
+        }
     }
 }
 
@@ -8816,6 +8853,7 @@ void func_8083B930(PlayState* play, Player* this) {
 
 void func_8083BB4C(PlayState* play, Player* this) {
     f32 sp1C = this->actor.depthInWater - this->ageProperties->unk_2C;
+    u32 out_of_shape = false;
 
     if (sp1C < 0.0f) {
         this->underwaterTimer = 0;
@@ -8832,12 +8870,16 @@ void func_8083BB4C(PlayState* play, Player* this) {
         }
     }
 
-    if ((this->actor.parent == NULL) && (Player_Action_33 != this->actionFunc) &&
-        (Player_Action_49 != this->actionFunc) &&
-        ((Player_Action_28 != this->actionFunc) || (this->actor.velocity.y < -2.0f))) {
+    out_of_shape = gChaosContext.link.out_of_shape_state == CHAOS_OUT_OF_SHAPE_STATE_GASPING;
+
+    if (this->actor.parent == NULL && Player_Action_33 != this->actionFunc &&
+        Player_Action_49 != this->actionFunc &&
+        (Player_Action_28 != this->actionFunc || this->actor.velocity.y < -2.0f)) {
         if (this->ageProperties->unk_2C < this->actor.depthInWater) {
-            /* player is beyond swim threshold threshold */
-            if (this->transformation == PLAYER_FORM_GORON) {
+            /* player is beyond swim threshold */
+            if (this->transformation == PLAYER_FORM_GORON || 
+                (out_of_shape && (this->transformation == PLAYER_FORM_HUMAN || 
+                                  this->transformation == PLAYER_FORM_FIERCE_DEITY))) {
                 /* goron sinks like a rock and voids out */
                 func_80834140(play, this, &gPlayerAnim_link_swimer_swim_down);
                 func_808345C8();
@@ -8845,8 +8887,8 @@ void func_8083BB4C(PlayState* play, Player* this) {
                 
             } else if (this->transformation == PLAYER_FORM_DEKU) {
                 /* deku either hops or voids out */
-                if (this->remainingHopsCounter != 0) {
-                    /* hop */
+                if (this->remainingHopsCounter != 0 && !out_of_shape) {
+                    /* start hop */
                     func_808373F8(play, this, NA_SE_VO_LI_AUTO_JUMP);
                 } else {
                     if ((play->sceneId == SCENE_20SICHITAI) && (this->unk_3CF == 0)) {
@@ -9354,6 +9396,8 @@ s32 Player_ActionChange_2(Player* this, PlayState* play) {
                             GetItemEntry* giEntry = &sGetItemTable[-this->getItemId - 1];
                             EnBox* chest = (EnBox*)interactRangeActor;
 
+                            /* open chest? */
+
                             if ((giEntry->itemId != ITEM_NONE) &&
                                 (((Item_CheckObtainability(giEntry->itemId) == ITEM_NONE) &&
                                   (giEntry->field & GIFIELD_40)) ||
@@ -9366,6 +9410,7 @@ s32 Player_ActionChange_2(Player* this, PlayState* play) {
 
                             func_80832558(play, this, func_80837C78);
                             this->stateFlags1 |= (PLAYER_STATE1_400 | PLAYER_STATE1_800 | PLAYER_STATE1_20000000);
+                            // Player_PlaySfx(this, NA_SE_SY_OCARINA_ERROR);
                             func_80838830(this, giEntry->objectId);
 
                             this->actor.world.pos.x =
@@ -9888,12 +9933,19 @@ void Player_ChooseIdleAnim(PlayState* play, Player* this) {
     s32 rand;
     f32 morphFrames;
     s16 endFrame;
+    u32 dont_gasp_form = (this->transformation != PLAYER_FORM_FIERCE_DEITY) && (this->transformation != PLAYER_FORM_HUMAN);
 
-    if (((this->actor.id != ACTOR_PLAYER) && !(healthIsCritical = (this->actor.colChkInfo.health < 0x64))) ||
-        ((this->actor.id == ACTOR_PLAYER) && (((this->lockOnActor != NULL) ||
-           ((this->transformation != PLAYER_FORM_FIERCE_DEITY) && (this->transformation != PLAYER_FORM_HUMAN)) ||
-           (this->currentMask == PLAYER_MASK_SCENTS)) ||
-          (!(healthIsCritical = LifeMeter_IsCritical()) && (this->unk_AA4 = ((this->unk_AA4 + 1) & 1)))))) {
+    // if(Chaos_IsCodeActive(CHAOS_CODE_OUT_OF_SHAPE))
+    // {
+    //     dont_gasp_form = false;
+    // }
+
+    if ((this->actor.id != ACTOR_PLAYER && !(healthIsCritical = (this->actor.colChkInfo.health < 0x64))) ||
+        (this->actor.id == ACTOR_PLAYER && (this->lockOnActor != NULL || dont_gasp_form ||
+           /* ((this->transformation != PLAYER_FORM_FIERCE_DEITY) && (this->transformation != PLAYER_FORM_HUMAN) &&
+           (this->transformation != PLAYER_FORM_GORON)) || */
+           this->currentMask == PLAYER_MASK_SCENTS ||
+          (!(healthIsCritical = LifeMeter_IsCritical()) && (this->unk_AA4 = (this->unk_AA4 + 1) & 1)) ))) {
         this->stateFlags2 &= ~PLAYER_STATE2_10000000;
         anim = func_8082ED20(this);
     } else {
@@ -9924,6 +9976,11 @@ void Player_ChooseIdleAnim(PlayState* play, Player* this) {
                     }
                 }
             }
+
+            // if(Chaos_IsCodeActive(CHAOS_CODE_BEER_GOGGLES))
+            // {
+            //     animIndex = 0;
+            // }
 
             animPtr = &sPlayerIdleAnimations[animIndex][0];
             if (this->modelAnimType != PLAYER_ANIMTYPE_1) {
@@ -10866,34 +10923,30 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
         ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawFeet, this->ageProperties->shadowScale);
     }
 
-    gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_DEKU] = ITEM_MASK_DEKU;
-    gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_GORON] = ITEM_MASK_GORON;
-    gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_DEKU] = ITEM_MASK_DEKU;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_GORON] = ITEM_MASK_GORON;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_BUNNY] = ITEM_MASK_BUNNY;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] = ITEM_OCARINA_OF_TIME;
     // // gSaveContext.save.saveInfo.inventory.items[SLOT_BOW] = ITEM_BOW;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_FIRE] = ITEM_ARROW_FIRE;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_ICE] = ITEM_ARROW_ICE;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_LIGHT] = ITEM_ARROW_LIGHT;
     // // gSaveContext.save.saveInfo.inventory.items[SLOT_BOMBCHU] = ITEM_BOMBCHU;
-    gSaveContext.save.saveInfo.inventory.items[SLOT_BOMB] = ITEM_BOMB;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_BOMB] = ITEM_BOMB;
+    // gSaveContext.save.saveInfo.playerData.health = 4;
     // // gSaveContext.save.saveInfo.playerData.magicLevel = 2;
     // // gSaveContext.save.saveInfo.playerData.magic = 10;
     // // gSaveContext.save.saveInfo.playerData.isMagicAcquired = true;
     // // gSaveContext.save.saveInfo.playerData.isDoubleMagicAcquired = true;
-    // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_SONG_TIME) | (1 << QUEST_SONG_EPONA);
+    // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_SONG_SOARING);
     // gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOW] = 50;
     // gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOMBCHU] = 50;
-    gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOMB] = 50;
+    // gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOMB] = 50;
     // gSaveContext.save.saveInfo.inventory.upgrades |= 3 << gUpgradeShifts[UPG_QUIVER];
     // gSaveContext.save.saveInfo.inventory.upgrades |= 1 << gUpgradeShifts[UPG_BOMB_BAG];
     // gSaveContext.save.saveInfo.inventory.upgrades |= 3 << gUpgradeShifts[UPG_]
-
-    // if(this->transformation == PLAYER_FORM_DEKU && this->remainingHopsCounter == 0 && 
-    //     !(this->actor.bgCheckFlags & BGCHECK_FLAG_))
-    // {
-    //     u32 *blah = NULL;
-    //     *blah = 5;
-    // }
+    // gSaveContext.save.saveInfo.playerData.rupees = 99;
 
     this->subCamId = CAM_ID_NONE;
     Collider_InitAndSetCylinder(play, &this->cylinder, &this->actor, &D_8085C2EC);
@@ -10971,12 +11024,13 @@ Color_RGBA8 D_8085D338 = { 0, 0, 15, 100 };
 Color_RGBA8 D_8085D33C = { 0, 0, 0, 150 };
 Vec3f D_8085D340 = { 0.0f, 50.0f, 0.0f };
 
-struct gPlayerDrawListColorUpdate
+struct PlayerDrawListColorUpdate
 {
     Gfx *draw_list;
     u32  offset;
+};
 
-} gPlayerDrawListColorUpdates[] = {
+struct PlayerDrawListColorUpdate gHumanLinkDrawListColorUpdate[] = {
     { gLinkHumanTorsoDL,            3},
     { gLinkHumanCollarDL,           3},
     { gLinkHumanWaistDL,            3},
@@ -10986,17 +11040,43 @@ struct gPlayerDrawListColorUpdate
     { gLinkHumanRightThighDL,       7},
     { gLinkHumanLeftThighDL,        7},
     { gLinkHumanHeadDL,            81},
-    // { gLinkDekuWaistDL,            12}
+};
+
+struct PlayerDrawListColorUpdate gDekuLinkDrawListColorUpdate[] = {
+    { gLinkDekuWaistDL,            12},
+    { gLinkDekuHeadDL,             12},
+    { gLinkDekuHatDL,              18}
+};
+
+struct PlayerDrawListUpdate
+{
+    struct PlayerDrawListColorUpdate *updates;
+    u32                               update_count;
+
+} gPlayerDrawListUpdates[PLAYER_FORM_MAX] = {
+    /* [PLAYER_FORM_FIERCE_DEITY] = */{NULL, 0},
+    /* [PLAYER_FORM_GORON] = */{NULL, 0},
+    /* [PLAYER_FORM_ZORA]  = */{NULL, 0},
+
+    /* [PLAYER_FORM_DEKU]  = */{
+        /* .updates = */ gDekuLinkDrawListColorUpdate,
+        /* .update_count = */ ARRAY_COUNT(gDekuLinkDrawListColorUpdate)
+    },
+    /* [PLAYER_FORM_HUMAN] = */{
+        /* .updates = */ gHumanLinkDrawListColorUpdate,
+        /* .update_count = */ ARRAY_COUNT(gHumanLinkDrawListColorUpdate)
+    }
 };
 
 extern struct ChaosContext gChaosContext;
 
-void Player_SetTunicColor(Player *this)
+void Player_SetTunicColor(PlayState *play, Player *this)
 {
     u32 update_index;
     Gfx color_gfx[1];
+    struct PlayerDrawListUpdate *player_update = gPlayerDrawListUpdates + this->transformation;
 
-    // if(gChaosContext.update_enabled)
+    if(this->transformation == PLAYER_FORM_DEKU)
     {
         color_gfx[0].words.w0 = (_SHIFTL(G_SETPRIMCOLOR, 24, 8) | _SHIFTL(0, 8, 8) |_SHIFTL(0xff, 0, 8));
         color_gfx[0].words.w1 = (_SHIFTL(gChaosContext.link.tunic_r, 24, 8) | 
@@ -11004,11 +11084,15 @@ void Player_SetTunicColor(Player *this)
                                 _SHIFTL(gChaosContext.link.tunic_b, 8, 8)  |	
                                 _SHIFTL(255, 0, 8));
 
-        for(update_index = 0; update_index < sizeof(gPlayerDrawListColorUpdates) / sizeof(gPlayerDrawListColorUpdates[0]); update_index++)
-        {
-            struct gPlayerDrawListColorUpdate *update = gPlayerDrawListColorUpdates + update_index;
-            ((Gfx *)SEGMENTED_TO_K0(update->draw_list))[update->offset] = color_gfx[0];
-        }
+        ((Gfx *)SEGMENTED_TO_K0(gLinkDekuHatDL))[19] = color_gfx[0];
+        // Actor_SetObjectDependency(play, &this->actor);
+        // for(update_index = 0; update_index < player_update->update_count; update_index++)
+        // {
+        //     struct PlayerDrawListColorUpdate *update = player_update->updates + update_index;
+        //     // gSegments[6] = OS_K0_TO_PHYSICAL(update->draw_list);
+        //     // update->draw_list[update->offset] = color_gfx[0];
+        //     (*(Gfx *)SEGMENTED_TO_K0(&update->draw_list[update->offset])) = color_gfx[0];
+        // }
     }
 }
 
@@ -11262,6 +11346,8 @@ void Player_Init(Actor* thisx, PlayState* play) {
     func_80841A50(play, this);
     this->unk_3CF = 0;
     R_PLAY_FILL_SCREEN_ON = 0;
+
+    // Player_SetTunicColor(play, this);
 }
 
 void func_80842510(s16* arg0) {
@@ -12335,6 +12421,22 @@ s16 gTrapFlapSounds[] = {
     NA_SE_VO_LI_LASH,
     NA_SE_VO_LI_GROAN 
 };
+
+extern u32 gSceneIndex;
+extern u32 gEntranceIndex;
+extern u32 gEntranceCount;
+extern u32 gButtonDown;
+
+u8 gSceneExclusion[] = {
+    ENTR_SCENE_THE_MOON,
+    ENTR_SCENE_MOON_LINK_TRIAL,
+    ENTR_SCENE_MOON_ZORA_TRIAL,
+    ENTR_SCENE_MOON_GORON_TRIAL,
+    ENTR_SCENE_MOON_DEKU_TRIAL,
+    ENTR_SCENE_MAJORAS_LAIR,
+    ENTR_SCENE_CUTSCENE,
+    ENTR_SCENE_CLOCK_TOWER_ROOFTOP
+};
  
 void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     f32 temp_fv0;
@@ -12349,17 +12451,64 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
 
     if(CHECK_BTN_ANY(input->press.button, BTN_L))
     {
-        // gCurrentArrowEffect = (gCurrentArrowEffect + 1) % (sizeof(gArrowEffectTests) / sizeof(gArrowEffectTests)[0]);
-        // Chaos_Init();
-        // for(code_index = 0; code_index < gArrowEffectTests[gCurrentArrowEffect].code_count; code_index++)
-        // {
-        //     Chaos_AddCode(gArrowEffectTests[gCurrentArrowEffect].codes[code_index], 5);
-        // }
-        Chaos_ActivateCode(CHAOS_CODE_BIG_BROTHER, 60);
-        gChaosContext.moon.eye_glow = 0.0f;
-        code = Chaos_GetCode(CHAOS_CODE_BIG_BROTHER);
-        code->data = CHAOS_BIG_BROTHER_STATE_TRACKING;
-        // Item_Give(play, ITEM_BOMB_BAG_20);
+        if(!gButtonDown)
+        {
+            // SceneEntranceTableEntry *scene_entry;
+            // EntranceTableEntry *entrance;
+            // u32 test_index;
+
+            // gEntranceIndex++;
+
+            // if(gEntranceIndex >= gEntranceCount)
+            // {
+            //     do
+            //     {
+            //         gSceneIndex++;
+
+            //         for(test_index = 0; test_index < ARRAY_COUNT(gSceneExclusion); test_index++)
+            //         {
+            //             if(gSceneIndex == gSceneExclusion[test_index])
+            //             {
+            //                 gSceneIndex++;
+            //                 test_index = 0xffffffff;
+            //             }
+            //         }
+
+            //         scene_entry = Entrance_GetSceneTableEntry(gSceneIndex);
+            //     }
+            //     while(scene_entry == NULL || scene_entry->tableCount == 0);
+            //     gEntranceCount = scene_entry->tableCount;
+            //     gEntranceIndex = 0;
+            // }
+            // play->nextEntrance = Entrance_Create(gSceneIndex, gEntranceIndex, 0);
+            // Scene_SetExitFade(play);
+            // play->transitionTrigger = TRANS_TRIGGER_START;
+
+
+            // u32 color = Rand_Next() % 0xffffff;
+            // gChaosContext.link.tunic_r = color;
+            // gChaosContext.link.tunic_g = color >> 8;
+            // gChaosContext.link.tunic_b = color >> 16;
+
+            // Player_SetTunicColor(play, this);
+            // Chaos_ActivateCode(CHAOS_CODE_BEER_GOGGLES, 30);
+            // Chaos_ActivateCode(CHAOS_CODE_OUT_OF_SHAPE, 10);
+            // Chaos_ActivateCode(CHAOS_CODE_PLAY_OCARINA, 0);
+            // Chaos_ActivateCode(CHAOS_CODE_WEIRD_SKYBOX, 19);
+            // Audio_PlaySfx_2(NA_SE_OC_SECRET_WARP_IN);
+
+            // func_80839978(play, this);
+
+            
+
+            gButtonDown = 1;
+        }
+        
+        // Chaos_ActivateCode(CHAOS_CODE_TUNIC_COLOR, 0);
+    }
+    else
+    {
+        gButtonDown = 0;
     }
 
     if(!(this->stateFlags2 & PLAYER_STATE2_80) & !(this->stateFlags1 & PLAYER_STATE1_800000))
@@ -12453,9 +12602,10 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         sPlayerFloorType = FLOOR_TYPE_5;
     }
 
-    if(Chaos_IsCodeActive(CHAOS_CODE_SLOW_DOWN))
+    if(Chaos_IsCodeActive(CHAOS_CODE_PLAY_OCARINA))
     {
-        this->linearVelocity = CLAMP(this->linearVelocity, -2.0f, 2.0f);
+        Player_UseItem(play, this, ITEM_OCARINA_OF_TIME);
+        Chaos_DeactivateCode(CHAOS_CODE_PLAY_OCARINA);
     }
 
     if(Chaos_IsCodeActive(CHAOS_CODE_SYKE))
@@ -12500,6 +12650,18 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
             Audio_PlaySfx(NA_SE_OC_REVENGE);
         }
     }
+
+    Player_UpdateOutOfShape(this, play);
+
+    // if(Player_UpdateOutOfShape(this, play) && this->actionFunc != Player_Action_4 && 
+    //     this->actor.bgCheckFlags & BGCHECKFLAG_GROUND)
+    // {
+    //     // if(this->actionFunc == Player_Action_13 || this->actionFunc == Player_Action_26)
+    //     {
+    //         Player_StopHorizontalMovement(this);
+    //         Player_SetAction(play, this, Player_Action_4, 1);
+    //     }
+    // }
 
     Math_Vec3f_Copy(&this->actor.prevPos, &this->actor.home.pos);
 
@@ -12627,6 +12789,9 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
 
         this->actor.shape.face = ((play->gameplayFrames & 0x20) ? 0 : 3) + this->blinkInfo.eyeTexIndex;
 
+        // this->actor.shape.face = this->blinkInfo.eyeTexIndex + (Rand_Next() % 4);
+        // this->actor.shape.face = Rand_Next() % 0x10;
+
         if (this->currentMask == PLAYER_MASK_BUNNY) {
             Player_UpdateBunnyEars(this);
         }
@@ -12698,8 +12863,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
                                                                      : &gPlayerAnim_link_derth_rebirth));
                     }
                 } else {
-                    if ((this->actor.parent == NULL) &&
-                        (func_8082DA90(play) || (this->unk_D6B != 0) || !func_80834600(this, play))) {
+                    if ((this->actor.parent == NULL) && (func_8082DA90(play) || (this->unk_D6B != 0) || !func_80834600(this, play))) {
                         func_8083827C(this, play);
                     } else {
                         this->fallStartHeight = this->actor.world.pos.y;
@@ -12916,6 +13080,8 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         AnimationContext_SetNextQueue(play);
     }
 
+    // this->actor.shape.face = Rand_Next() % 0x10;
+
     func_801229FC(this);
     Math_Vec3f_Copy(&this->actor.home.pos, &this->actor.world.pos);
 
@@ -12939,6 +13105,8 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         this->unk_AC0 = 0.0f;
     }
     this->actor.shape.yOffset = this->unk_ABC + this->unk_AC0;
+
+    // this->actor.shape.face = Rand_Next() % 0x10;
 }
 
 Vec3f D_8085D41C = { 0.0f, 0.0f, -30.0f };
@@ -13004,6 +13172,18 @@ void Player_Update(Actor* thisx, PlayState* play) {
     MREG(53) = this->actor.world.pos.y;
     MREG(54) = this->actor.world.pos.z;
     MREG(55) = this->actor.world.rot.y;
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_BEER_GOGGLES))
+    {
+        if((play->gameplayFrames & 0x3f) < 15)
+        {
+            this->actor.shape.face = -PLAYER_FACE_HEHE1;
+        }
+        else
+        {
+            this->actor.shape.face = -PLAYER_FACE_HEHE0;
+        }
+    }
 }
 
 void Player_DrawGameplay(PlayState* play, Player* this, s32 lod, Gfx* cullDList,
@@ -13510,6 +13690,7 @@ void func_8084748C(Player* this, f32* speed, f32 speedTarget, s16 yawTarget) {
     Math_ScaledStepToS(&this->currentYaw, yawTarget, 1600); // 1 ESS turn, also one frame of first-person rotation
 }
 
+/* Player_UpdateBoyancy? */
 void func_808475B4(Player* this) {
     f32 sp4;
     f32 temp_fa1;
@@ -14332,7 +14513,9 @@ s32 Player_UpperAction_16(Player* this, PlayState* play) {
     return true;
 }
 
+
 void Player_Action_0(Player* this, PlayState* play) {
+    // gSaveContext.save.saveInfo.playerData.rupees = 0;
     PlayerAnimation_Update(play, &this->skelAnime);
     func_808323C0(this, play->playerCsIds[PLAYER_CS_ID_ITEM_BOTTLE]);
 
@@ -14356,6 +14539,8 @@ void Player_Action_1(Player* this, PlayState* play) {
     this->stateFlags3 |= PLAYER_STATE3_10000000;
     PlayerAnimation_Update(play, &this->skelAnime);
     Player_UpdateUpperBody(this, play);
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 1;
 
     if (R_PLAY_FILL_SCREEN_ON == 0) {
         R_PLAY_FILL_SCREEN_ON = 20;
@@ -14425,10 +14610,24 @@ void Player_Action_1(Player* this, PlayState* play) {
     }
 }
 
+
 void Player_Action_2(Player* this, PlayState* play) {
     f32 speedTarget;
     s16 yawTarget;
     s32 temp_v0;
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 2;
+
+    // if(gChaosContext.link.out_of_shape_state == CHAOS_OUT_OF_SHAPE_STATE_GASPING)
+    // {
+    //     Player_SetAction(play, this, Player_Action_4, 1);
+    //     return;
+    // }
+
+    if(Player_IsOutOfShape(this, play))
+    {
+        return;
+    }
 
     if (this->av2.actionVar2 != 0) {
         if (PlayerAnimation_Update(play, &this->skelAnime)) {
@@ -14452,7 +14651,14 @@ void Player_Action_2(Player* this, PlayState* play) {
         return;
     }
 
-    Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+    // Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+
+    // if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+    // {
+    //     speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+    // }
+
+    Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
 
     temp_v0 = func_8083E404(this, speedTarget, yawTarget);
     if (temp_v0 > 0) {
@@ -14491,6 +14697,19 @@ void Player_Action_3(Player* this, PlayState* play) {
     s16 yawTarget;
     s32 temp_v0;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 3;
+
+    // if(gChaosContext.link.out_of_shape_state == CHAOS_OUT_OF_SHAPE_STATE_GASPING)
+    // {
+    //     Player_SetAction(play, this, Player_Action_4, 1);
+    //     return;
+    // }
+
+    if(Player_IsOutOfShape(this, play))
+    {
+        return;
+    }
+
     if (PlayerAnimation_Update(play, &this->skelAnime)) {
         func_8082E794(this);
         Player_AnimationPlayOnce(play, this, func_8082ED20(this));
@@ -14516,7 +14735,13 @@ void Player_Action_3(Player* this, PlayState* play) {
         return;
     }
 
-    Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+    // Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+    // if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+    // {
+    //     speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+    // }
+
+    Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
 
     temp_v0 = func_8083E514(this, &speedTarget, &yawTarget, play);
     if (temp_v0 > 0) {
@@ -14538,15 +14763,71 @@ void Player_Action_3(Player* this, PlayState* play) {
 }
 
 void Player_Action_4(Player* this, PlayState* play) {
-    s32 temp_v0 = func_8082ED94(this);
+    // s32 temp_v0 = func_8082ED94(this);
+    s32 anim_sfx = func_8082ED94(this);
     s32 animFinished = PlayerAnimation_Update(play, &this->skelAnime);
     f32 speedTarget;
     s16 yawTarget;
     s16 temp_v1_2;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 4;
+
+    if(gChaosContext.link.out_of_shape_state == CHAOS_OUT_OF_SHAPE_STATE_GASPING)
+    {
+        if(this->actor.bgCheckFlags & BGCHECKFLAG_GROUND)
+        {
+            Player_StopHorizontalMovement(this);
+        }
+
+        animFinished |= this->skelAnime.animation != sPlayerIdleAnimations[7][0] && this->skelAnime.animation != sPlayerIdleAnimations[8][0] &&
+                        this->skelAnime.animation != sPlayerIdleAnimations[7][1] && this->skelAnime.animation != sPlayerIdleAnimations[8][1];
+
+        if(animFinished)
+        {
+            PlayerAnimationHeader** animPtr;
+            PlayerAnimationHeader* anim;
+            u32 anim_index;
+            f32 morphFrames;
+            s16 endFrame;
+
+            if (this->unk_AA4 >= 0) {
+                anim_index = 7;
+                this->unk_AA4 = -1;
+            } else {
+                anim_index = 8;
+            }
+
+            animPtr = &sPlayerIdleAnimations[anim_index][0];
+            if (this->modelAnimType != PLAYER_ANIMTYPE_1) {
+                animPtr = &sPlayerIdleAnimations[anim_index][1];
+            }
+            anim = *animPtr;
+
+            endFrame = Animation_GetLastFrame(anim);
+            // if ((this->skelAnime.animation == anim) || (this->skelAnime.animation == &gPlayerAnim_pz_attackAend) ||
+            //     (this->skelAnime.animation == &gPlayerAnim_pz_attackBend) ||
+            //     (this->skelAnime.animation == &gPlayerAnim_pz_attackCend)) {
+            //     morphFrames = 0.0f;
+            // } else {
+            //     morphFrames = -6.0f;
+            // }
+            morphFrames = 6.0f;
+
+            PlayerAnimation_Change(play, &this->skelAnime, anim, 1.4f, 0.0f, endFrame, ANIMMODE_ONCE,
+                                morphFrames);
+        }
+
+        // func_8083C85C(this);
+        if (anim_sfx > 0) {
+            func_8082EEA4(this, anim_sfx - 1);
+        }
+
+        return;
+    }
+
     func_8083C85C(this);
-    if (temp_v0 > 0) {
-        func_8082EEA4(this, temp_v0 - 1);
+    if (anim_sfx > 0) {
+        func_8082EEA4(this, anim_sfx - 1);
     }
 
     if (animFinished ||
@@ -14578,7 +14859,13 @@ void Player_Action_4(Player* this, PlayState* play) {
             return;
         }
 
-        Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_CURVED, play);
+        // Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_CURVED, play);
+        // if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+        // {
+        //     speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+        // }
+
+        Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_CURVED, play);
 
         if (speedTarget != 0.0f) {
             func_8083A844(this, play, yawTarget);
@@ -14607,6 +14894,8 @@ void Player_Action_5(Player* this, PlayState* play) {
     s32 temp_v0_2;
     s32 var_v1;
     f32 var_fv1;
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 5;
 
     this->skelAnime.mode = 0;
     PlayerAnimation_SetUpdateFunction(&this->skelAnime);
@@ -14648,7 +14937,13 @@ void Player_Action_5(Player* this, PlayState* play) {
         return;
     }
 
-    Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+    // Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+    // if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+    // {
+    //     speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+    // }
+
+    Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
 
     temp_v0_2 = func_8083E514(this, &speedTarget, &yawTarget, play);
     if (temp_v0_2 > 0) {
@@ -14686,6 +14981,8 @@ void Player_Action_6(Player* this, PlayState* play) {
     s16 yawTarget;
     s32 sp2C;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 6;
+
     func_8083EE60(this, play);
     if (Player_TryActionChangeList(play, this, sPlayerActionChangeList4, true)) {
         return;
@@ -14697,6 +14994,10 @@ void Player_Action_6(Player* this, PlayState* play) {
     }
 
     Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+    if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+    {
+        speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+    }
 
     sp2C = func_8083E514(this, &speedTarget, &yawTarget, play);
     if (sp2C >= 0) {
@@ -14725,6 +15026,8 @@ void Player_Action_7(Player* this, PlayState* play) {
     f32 speedTarget;
     s16 yawTarget;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 7;
+
     func_80832F24(this);
 
     if (Player_TryActionChangeList(play, this, sPlayerActionChangeList4, true)) {
@@ -14732,6 +15035,10 @@ void Player_Action_7(Player* this, PlayState* play) {
     }
 
     Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+    if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+    {
+        speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+    }
 
     if (this->linearVelocity != 0.0f) {
         return;
@@ -14748,6 +15055,8 @@ void Player_Action_7(Player* this, PlayState* play) {
 void Player_Action_8(Player* this, PlayState* play) {
     s32 animFinished = PlayerAnimation_Update(play, &this->skelAnime);
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 8;
+
     if (Player_TryActionChangeList(play, this, sPlayerActionChangeList4, true)) {
         return;
     }
@@ -14762,6 +15071,8 @@ void Player_Action_9(Player* this, PlayState* play) {
     s16 yawTarget;
     s32 var_v0;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 9;
+
     func_8083F27C(play, this);
     if (Player_TryActionChangeList(play, this, sPlayerActionChangeList5, true)) {
         return;
@@ -14773,6 +15084,10 @@ void Player_Action_9(Player* this, PlayState* play) {
     }
 
     Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+    if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+    {
+        speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+    }
 
     if (func_80123434(this)) {
         var_v0 = func_8083E514(this, &speedTarget, &yawTarget, play);
@@ -14819,6 +15134,8 @@ void Player_Action_10(Player* this, PlayState* play) {
     f32 speedTarget;
     s16 yawTarget;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 10;
+
     PlayerAnimation_Update(play, &this->skelAnime);
     if (Player_IsHoldingTwoHandedWeapon(this)) {
         AnimationContext_SetLoadFrame(play, func_8082ED20(this), 0, this->skelAnime.limbCount,
@@ -14828,6 +15145,10 @@ void Player_Action_10(Player* this, PlayState* play) {
     }
 
     Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_CURVED, play);
+    if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+    {
+        speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+    }
 
     if ((this != GET_PLAYER(play)) && (this->lockOnActor == NULL)) {
         yawTarget = this->actor.home.rot.y;
@@ -14848,6 +15169,8 @@ void Player_Action_10(Player* this, PlayState* play) {
 
 void Player_Action_11(Player* this, PlayState* play) {
     this->stateFlags2 |= PLAYER_STATE2_20;
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 11;
 
     if (this->linearVelocity < 1.0f) {
         this->skelAnime.animation = &gPlayerAnim_clink_normal_okarina_walk;
@@ -14871,6 +15194,10 @@ void Player_Action_11(Player* this, PlayState* play) {
 
         this->linearVelocity = this->unk_B48;
         Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_CURVED, play);
+        if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+        {
+            speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+        }
         sp30 = yawTarget;
 
         if (!func_8083A4A4(this, &speedTarget, &yawTarget, REG(43) / 100.0f)) {
@@ -14894,6 +15221,7 @@ void Player_Action_11(Player* this, PlayState* play) {
 
 void Player_Action_12(Player* this, PlayState* play) {
     this->stateFlags2 |= PLAYER_STATE2_20;
+    // gSaveContext.save.saveInfo.playerData.rupees = 12;
     PlayerAnimation_Update(play, &this->skelAnime);
     func_80832F24(this);
     if (!func_80847880(play, this)) {
@@ -14910,6 +15238,19 @@ void Player_Action_13(Player* this, PlayState* play) {
     f32 speedTarget;
     s16 yawTarget;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 13;
+
+    // if(gChaosContext.link.out_of_shape_state == CHAOS_OUT_OF_SHAPE_STATE_GASPING)
+    // {
+    //     Player_SetAction(play, this, Player_Action_4, 1);
+    //     return;
+    // }
+
+    if(Player_IsOutOfShape(this, play))
+    {
+        return;
+    }
+
     this->stateFlags2 |= PLAYER_STATE2_20;
     func_8083F57C(this, play);
     if (Player_TryActionChangeList(play, this, sPlayerActionChangeList8, true)) {
@@ -14921,11 +15262,17 @@ void Player_Action_13(Player* this, PlayState* play) {
         return;
     }
 
-    Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_CURVED, play);
+    Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_CURVED, play);
+    // if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+    // {
+    //     speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+    // }
 
     if (this->currentMask == PLAYER_MASK_BUNNY) {
         speedTarget *= 1.5f;
     }
+
+    // speedTarget *= 0.1f;
 
     if (!func_8083A4A4(this, &speedTarget, &yawTarget, REG(43) / 100.0f)) {
         func_8083CB58(this, speedTarget, yawTarget);
@@ -14940,6 +15287,8 @@ void Player_Action_14(Player* this, PlayState* play) {
     f32 speedTarget;
     s16 yawTarget;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 14;
+
     this->stateFlags2 |= PLAYER_STATE2_20;
 
     func_8083F57C(this, play);
@@ -14953,6 +15302,10 @@ void Player_Action_14(Player* this, PlayState* play) {
     }
 
     Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+    if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+    {
+        speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+    }
 
     if (!func_8083A4A4(this, &speedTarget, &yawTarget, REG(43) / 100.0f)) {
         if ((func_80123434(this) && (speedTarget != 0) && (func_8083E514(this, &speedTarget, &yawTarget, play) <= 0)) ||
@@ -14973,6 +15326,8 @@ void Player_Action_15(Player* this, PlayState* play) {
     f32 speedTarget;
     s16 yawTarget;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 15;
+
     if (Player_TryActionChangeList(play, this, sPlayerActionChangeList5, true)) {
         return;
     }
@@ -14983,6 +15338,10 @@ void Player_Action_15(Player* this, PlayState* play) {
     }
 
     Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+    if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+    {
+        speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+    }
 
     if ((this->skelAnime.morphWeight == 0.0f) && (this->skelAnime.curFrame > 5.0f)) {
         func_80832F24(this);
@@ -14999,12 +15358,18 @@ void Player_Action_16(Player* this, PlayState* play) {
     f32 speedTarget;
     s16 yawTarget;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 16;
+
     func_80832F24(this);
     if (Player_TryActionChangeList(play, this, sPlayerActionChangeList10, true)) {
         return;
     }
 
     Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+    if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+    {
+        speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+    }
 
     if (this->linearVelocity == 0.0f) {
         this->currentYaw = this->actor.shape.rot.y;
@@ -15017,6 +15382,7 @@ void Player_Action_16(Player* this, PlayState* play) {
 }
 
 void Player_Action_17(Player* this, PlayState* play) {
+    // gSaveContext.save.saveInfo.playerData.rupees = 17;
     if (this->skelAnime.animation == &gPlayerAnim_link_normal_backspace) {
         if (PlayerAnimation_Update(play, &this->skelAnime)) {
             func_8082E794(this);
@@ -15038,6 +15404,19 @@ void Player_Action_17(Player* this, PlayState* play) {
 // Player_Action_Shielding
 void Player_Action_18(Player* this, PlayState* play) {
     func_80832F24(this);
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 18;
+
+    // if(gChaosContext.link.out_of_shape_state == CHAOS_OUT_OF_SHAPE_STATE_GASPING)
+    // {
+    //     Player_SetAction(play, this, Player_Action_4, 1);
+    //     return;
+    // }
+
+    if(Player_IsOutOfShape(this, play))
+    {
+        return;
+    }
 
     if (this->transformation == PLAYER_FORM_GORON) {
         SkelAnime_Update(&this->unk_2C8);
@@ -15144,6 +15523,8 @@ void Player_Action_18(Player* this, PlayState* play) {
 
 void Player_Action_19(Player* this, PlayState* play) {
     func_80832F24(this);
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 19;
     if (this->av1.actionVar1 == 0) {
         D_80862B04 = Player_UpdateUpperBody(this, play);
         if ((Player_UpperAction_3 == this->upperActionFunc) ||
@@ -15171,6 +15552,8 @@ void Player_Action_19(Player* this, PlayState* play) {
 void Player_Action_20(Player* this, PlayState* play) {
     s32 temp_v0;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 20;
+
     func_80832F24(this);
     temp_v0 = func_808331FC(play, this, &this->skelAnime, 16.0f);
     if (temp_v0 != 0) {
@@ -15183,6 +15566,8 @@ void Player_Action_20(Player* this, PlayState* play) {
 void Player_Action_21(Player* this, PlayState* play) {
     this->stateFlags2 |= PLAYER_STATE2_20 | PLAYER_STATE2_40;
     func_808345A8(this);
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 21;
 
     if (!(this->stateFlags1 & PLAYER_STATE1_20000000) && (this->av2.actionVar2 == 0) && (this->unk_B75 != 0)) {
         s16 temp_v0 = this->unk_B76;
@@ -15232,6 +15617,7 @@ void Player_Action_21(Player* this, PlayState* play) {
 
 void Player_Action_22(Player* this, PlayState* play) {
     this->stateFlags2 |= (PLAYER_STATE2_20 | PLAYER_STATE2_40);
+    // gSaveContext.save.saveInfo.playerData.rupees = 22;
     func_808345A8(this);
     func_80832F24(this);
     if (PlayerAnimation_Update(play, &this->skelAnime) && (this->linearVelocity == 0.0f)) {
@@ -15256,6 +15642,7 @@ AnimSfxEntry D_8085D604[] = {
 
 void Player_Action_23(Player* this, PlayState* play) {
     this->stateFlags2 |= PLAYER_STATE2_20;
+    // gSaveContext.save.saveInfo.playerData.rupees = 23;
 
     func_808345A8(this);
     if (this->stateFlags1 & PLAYER_STATE1_20000000) {
@@ -15281,6 +15668,8 @@ AnimSfxEntry D_8085D60C[] = {
 };
 
 void Player_Action_24(Player* this, PlayState* play) {
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 24;
     if ((this->transformation != PLAYER_FORM_GORON) && (this->actor.depthInWater <= 0.0f)) {
         if ((play->roomCtx.curRoom.behaviorType2 == ROOM_BEHAVIOR_TYPE2_HOT) || (sPlayerFloorType == FLOOR_TYPE_9) ||
             ((func_808340AC(sPlayerFloorType) >= 0) &&
@@ -15316,12 +15705,25 @@ void Player_Action_25(Player* this, PlayState* play) {
     s16 yawTarget;
     Actor* heldActor;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 25;
+
+    // if(Player_IsOutOfShape(this, play))
+    // {
+    //     return;
+    // }
+
     if (func_80123420(this)) {
         this->actor.gravity = -1.2f;
     }
 
     if (!(this->actor.bgCheckFlags & BGCHECKFLAG_GROUND)) {
-        Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+        // Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+        // if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+        // {
+        //     speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+        // }
+
+        Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
 
         if (this->stateFlags1 & PLAYER_STATE1_800) {
             heldActor = this->heldActor;
@@ -15412,6 +15814,10 @@ void Player_Action_25(Player* this, PlayState* play) {
     } else {
         func_80837134(play, this);
         Player_UpdateUpperBody(this, play);
+        if(Player_IsOutOfShape(this, play))
+        {
+            return;
+        }
     }
 
     Player_ActionChange_13(this, play);
@@ -15428,6 +15834,8 @@ AnimSfxEntry D_8085D61C[] = {
 // Player_Action_Rolling // Handles bonking too?
 void Player_Action_26(Player* this, PlayState* play) {
     s32 animFinished;
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 26;
 
     this->stateFlags2 |= PLAYER_STATE2_20;
     this->stateFlags3 |= PLAYER_STATE3_8000000;
@@ -15470,7 +15878,13 @@ void Player_Action_26(Player* this, PlayState* play) {
             }
 
             Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_CURVED, play);
+            // Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_CURVED, play);
             speedTarget *= 1.5f;
+
+            // if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+            // {
+            //     speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+            // }
 
             if ((speedTarget < 3.0f) || (this->unk_AE3[this->unk_ADE] != 0)) {
                 speedTarget = 3.0f;
@@ -15491,6 +15905,8 @@ void Player_Action_26(Player* this, PlayState* play) {
 void Player_Action_27(Player* this, PlayState* play) {
     this->stateFlags2 |= PLAYER_STATE2_20;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 27;
+
     if (PlayerAnimation_Update(play, &this->skelAnime)) {
         Player_AnimationPlayLoop(play, this, &gPlayerAnim_link_normal_run_jump_water_fall_wait);
     }
@@ -15508,7 +15924,7 @@ void Player_Action_27(Player* this, PlayState* play) {
 
 void Player_Action_28(Player* this, PlayState* play) {
     this->stateFlags2 |= PLAYER_STATE2_20;
-
+    // gSaveContext.save.saveInfo.playerData.rupees = 28;
     if (PlayerAnimation_Update(play, &this->skelAnime)) {
         func_8082DB60(play, this, &gPlayerAnim_pz_fishswim);
     }
@@ -15535,6 +15951,8 @@ void Player_Action_29(Player* this, PlayState* play) {
     f32 speedTarget;
     s16 yawTarget;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 29;
+
     this->stateFlags2 |= PLAYER_STATE2_20;
 
     if (this->transformation == PLAYER_FORM_ZORA) {
@@ -15549,6 +15967,10 @@ void Player_Action_29(Player* this, PlayState* play) {
         func_8083FCF0(play, this, 6.0f, attackInfoEntry->unk_C, attackInfoEntry->unk_D);
         if (!(this->actor.bgCheckFlags & BGCHECKFLAG_GROUND)) {
             Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+            if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+            {
+                speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+            }
             func_8083CBC4(this, speedTarget, this->currentYaw, 1.0f, 0.05f, 0.1f, 200);
         } else if (func_80836F10(play, this) >= 0) { // Player didn't die because of this fall
             this->meleeWeaponAnimation += 3;
@@ -15564,6 +15986,8 @@ void Player_Action_30(Player* this, PlayState* play) {
     f32 speedTarget;
     s16 yawTarget;
     s32 temp_v0;
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 30;
 
     this->stateFlags1 |= PLAYER_STATE1_1000;
     if (PlayerAnimation_Update(play, &this->skelAnime)) {
@@ -15586,6 +16010,10 @@ void Player_Action_30(Player* this, PlayState* play) {
             }
         } else if (!func_80840CD4(this, play)) {
             Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+            if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+            {
+                speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+            }
             temp_v0 = func_8083E7F8(this, &speedTarget, &yawTarget, play);
             if (temp_v0 > 0) {
                 func_80840DEC(this, play);
@@ -15608,6 +16036,8 @@ void Player_Action_31(Player* this, PlayState* play) {
     s32 pad;
     s32 sp44;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 31;
+
     temp_v0 = this->currentYaw - this->actor.shape.rot.y;
     var_v1 = ABS_ALT(temp_v0);
 
@@ -15628,7 +16058,13 @@ void Player_Action_31(Player* this, PlayState* play) {
                                  this->blendTableBuffer);
     if (!func_8083FE38(this, play) && !func_80840CD4(this, play)) {
         func_80840F34(this);
-        Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+        // Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+        // if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+        // {
+        //     speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+        // }
+
+        Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
 
         temp_v0_2 = func_8083E7F8(this, &speedTarget, &yawTarget, play);
         if (temp_v0_2 < 0) {
@@ -15660,6 +16096,9 @@ void Player_Action_32(Player* this, PlayState* play) {
     f32 sp5C = fabsf(this->linearVelocity);
     f32 var_fa0;
 
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 32;
+
     this->stateFlags1 |= PLAYER_STATE1_1000;
 
     if (sp5C == 0.0f) {
@@ -15688,7 +16127,13 @@ void Player_Action_32(Player* this, PlayState* play) {
         s32 var_v1;
 
         func_80840F34(this);
-        Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+        // Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+        // if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+        // {
+        //     speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+        // }
+
+        Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
         temp_v0 = func_8083E7F8(this, &speedTarget, &yawTarget, play);
         if (temp_v0 > 0) {
             func_80840DEC(this, play);
@@ -15719,6 +16164,8 @@ void Player_Action_33(Player* this, PlayState* play) {
     s32 animFinished;
     f32 frame;
     s32 temp_v0;
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 33;
 
     this->stateFlags2 |= PLAYER_STATE2_20;
     animFinished = PlayerAnimation_Update(play, &this->skelAnime);
@@ -15785,6 +16232,8 @@ void Player_Action_33(Player* this, PlayState* play) {
 void Player_Action_34(Player* this, PlayState* play) {
     s32 temp_v0;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 34;
+
     this->stateFlags2 |= (PLAYER_STATE2_20 | PLAYER_STATE2_40);
     if (this->unk_D58 == func_80837BF8) {
         this->stateFlags2 |= PLAYER_STATE2_1;
@@ -15801,6 +16250,9 @@ void Player_Action_34(Player* this, PlayState* play) {
 }
 
 void Player_Action_35(Player* this, PlayState* play) {
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 35;
+
     if (!Player_ActionChange_13(this, play)) {
         if ((this->stateFlags3 & PLAYER_STATE3_10) && !(this->actor.bgCheckFlags & BGCHECKFLAG_GROUND)) {
             func_80833AA0(this, play);
@@ -15975,6 +16427,8 @@ void Player_Action_36(Player* this, PlayState* play) {
     CollisionPoly* poly;
     s32 bgId;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 36;
+
     this->stateFlags2 |= PLAYER_STATE2_20;
 
     if (DECR(this->av1.actionVar1) == 0) {
@@ -16020,6 +16474,8 @@ void Player_Action_36(Player* this, PlayState* play) {
 void Player_Action_37(Player* this, PlayState* play) {
     func_80832F24(this);
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 37;
+
     if (PlayerAnimation_Update(play, &this->skelAnime)) {
         func_80836988(this, play);
         func_808313F0(this, play);
@@ -16044,6 +16500,8 @@ void Player_Action_37(Player* this, PlayState* play) {
 void Player_Action_38(Player* this, PlayState* play) {
     func_80832F24(this);
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 38;
+
     if (PlayerAnimation_Update(play, &this->skelAnime)) {
         Player_AnimationPlayLoop(play, this, &gPlayerAnim_link_silver_wait);
         this->av2.actionVar2 = 1;
@@ -16065,6 +16523,9 @@ void Player_Action_38(Player* this, PlayState* play) {
 
 // throw held actor (?)
 void Player_Action_39(Player* this, PlayState* play) {
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 39;
+
     if (PlayerAnimation_Update(play, &this->skelAnime)) {
         func_80836988(this, play);
     } else if (PlayerAnimation_OnFrame(&this->skelAnime, 6.0f)) {
@@ -16080,6 +16541,9 @@ void Player_Action_39(Player* this, PlayState* play) {
 }
 
 void Player_Action_40(Player* this, PlayState* play) {
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 40;
+
     if (PlayerAnimation_Update(play, &this->skelAnime)) {
         Player_AnimationPlayLoop(play, this, &gPlayerAnim_link_normal_nocarry_free_wait);
         this->av2.actionVar2 = 15;
@@ -16096,6 +16560,8 @@ void Player_Action_40(Player* this, PlayState* play) {
 // Player_Action_PutDownObject?
 void Player_Action_41(Player* this, PlayState* play) {
     func_80832F24(this);
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 41;
 
     if (PlayerAnimation_Update(play, &this->skelAnime)) {
         func_80836988(this, play);
@@ -16120,6 +16586,8 @@ void Player_Action_42(Player* this, PlayState* play) {
     f32 throw_horizontal_scale = 1.0f;
     f32 throw_vertical_scale = 1.0f;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 42;
+
     if(Chaos_IsCodeActive(CHAOS_CODE_YEET))
     {
         throw_horizontal_scale = 10.0f;
@@ -16130,7 +16598,12 @@ void Player_Action_42(Player* this, PlayState* play) {
 
     if (PlayerAnimation_Update(play, &this->skelAnime) ||
         ((this->skelAnime.curFrame >= 8.0f) &&
-         Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_CURVED, play))) {
+        Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_CURVED, play))) {
+        //  Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_CURVED, play))) {
+        // if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+        // {
+        //     speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+        // }
         func_80836988(this, play);
     } else if (PlayerAnimation_OnFrame(&this->skelAnime, 3.0f)) {
         func_808409A8(play, this, this->linearVelocity + 8.0f * throw_horizontal_scale, 12.0f * throw_vertical_scale);
@@ -16138,6 +16611,9 @@ void Player_Action_42(Player* this, PlayState* play) {
 }
 
 void Player_Action_43(Player* this, PlayState* play) {
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 43;
+
     if (this->stateFlags1 & PLAYER_STATE1_8000000) {
         func_808475B4(this);
         func_8084748C(this, &this->linearVelocity, 0.0f, this->actor.shape.rot.y);
@@ -16180,6 +16656,8 @@ void Player_Action_43(Player* this, PlayState* play) {
 
 void Player_Action_44(Player* this, PlayState* play) {
     this->stateFlags2 |= PLAYER_STATE2_20;
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 44;
 
     func_8083249C(this);
     Player_UpdateUpperBody(this, play);
@@ -16265,11 +16743,18 @@ void Player_Action_45(Player* this, PlayState* play) {
     s16 yawTarget;
     s32 temp_v0;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 45;
+
     this->stateFlags2 |= (PLAYER_STATE2_1 | PLAYER_STATE2_40 | PLAYER_STATE2_100);
     func_8083DEE4(play, this);
 
     if (PlayerAnimation_Update(play, &this->skelAnime) && !func_8083E14C(play, this)) {
-        Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+        // Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+        // if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+        // {
+        //     speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+        // }
+        Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
         temp_v0 = func_8083E758(this, &speedTarget, &yawTarget);
         if (temp_v0 > 0) {
             func_8083E234(this, play);
@@ -16287,6 +16772,8 @@ AnimSfxEntry D_8085D650[] = {
 void Player_Action_46(Player* this, PlayState* play) {
     this->stateFlags2 |= (PLAYER_STATE2_1 | PLAYER_STATE2_40 | PLAYER_STATE2_100);
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 46;
+
     if (func_8082E67C(play, this, &gPlayerAnim_link_normal_pushing)) {
         this->av2.actionVar2 = 1;
     } else if ((this->av2.actionVar2 == 0) && PlayerAnimation_OnFrame(&this->skelAnime, 11.0f)) {
@@ -16301,7 +16788,12 @@ void Player_Action_46(Player* this, PlayState* play) {
         s16 yawTarget;
         s32 temp_v0;
 
-        Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+        // Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+        // if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+        // {
+        //     speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+        // }
+        Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
         temp_v0 = func_8083E758(this, &speedTarget, &yawTarget);
         if (temp_v0 < 0) {
             func_8083E28C(this, play);
@@ -16328,6 +16820,8 @@ Vec3f D_8085D660 = { 0.0f, 268 * 0.1f, -60.0f };
 void Player_Action_47(Player* this, PlayState* play) {
     PlayerAnimationHeader* anim = D_8085BE84[PLAYER_ANIMGROUP_35][this->modelAnimType];
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 47;
+
     this->stateFlags2 |= (PLAYER_STATE2_1 | PLAYER_STATE2_40 | PLAYER_STATE2_100);
 
     if (func_8082E67C(play, this, anim)) {
@@ -16349,7 +16843,14 @@ void Player_Action_47(Player* this, PlayState* play) {
         s16 yawTarget;
         s32 temp_v0;
 
-        Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+        // Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+        // if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+        // {
+        //     speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+        // }
+
+        Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+
 
         temp_v0 = func_8083E758(this, &speedTarget, &yawTarget);
         if (temp_v0 > 0) {
@@ -16387,6 +16888,8 @@ void Player_Action_48(Player* this, PlayState* play) {
     f32 speedTarget;
     s16 yawTarget;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 48;
+
     this->stateFlags2 |= PLAYER_STATE2_40;
 
     if (PlayerAnimation_Update(play, &this->skelAnime)) {
@@ -16414,7 +16917,12 @@ void Player_Action_48(Player* this, PlayState* play) {
 
     Math_ScaledStepToS(&this->actor.shape.rot.y, this->currentYaw, 0x800);
     if (this->av1.actionVar1 != 0) {
-        Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+        // Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+        // if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+        // {
+        //     speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+        // }
+        Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
         if (this->unk_ADF[this->unk_ADE] >= 0) {
             func_808381A0(this,
                           (this->av1.actionVar1 > 0) ? D_8085BE84[PLAYER_ANIMGROUP_37][this->modelAnimType]
@@ -16438,6 +16946,8 @@ void Player_Action_48(Player* this, PlayState* play) {
 
 void Player_Action_49(Player* this, PlayState* play) {
     this->stateFlags2 |= PLAYER_STATE2_40;
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 49;
 
     if (PlayerAnimation_Update(play, &this->skelAnime)) {
         this->currentYaw = this->skelAnime.jointTable[PLAYER_LIMB_WAIST - 1].y + this->actor.shape.rot.y;
@@ -16466,6 +16976,8 @@ void Player_Action_50(Player* this, PlayState* play) {
     DynaPolyActor* dyna;
     PlayerAnimationHeader* anim1;
     PlayerAnimationHeader* anim2;
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 50;
 
     this->fallStartHeight = this->actor.world.pos.y;
 
@@ -16608,6 +17120,8 @@ AnimSfxEntry D_8085D67C[] = {
 void Player_Action_51(Player* this, PlayState* play) {
     s32 temp_v0;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 51;
+
     this->stateFlags2 |= PLAYER_STATE2_40;
 
     temp_v0 = func_808331FC(play, this, &this->skelAnime, 4.0f);
@@ -16712,6 +17226,8 @@ AnimSfxEntry D_8085D6E8[] = {
 
 void Player_Action_52(Player* this, PlayState* play) {
     EnHorse* rideActor = (EnHorse*)this->rideActor;
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 52;
 
     this->stateFlags2 |= PLAYER_STATE2_40;
 
@@ -16894,6 +17410,8 @@ void Player_Action_53(Player* this, PlayState* play) {
     this->stateFlags2 |= PLAYER_STATE2_40;
     func_80847E2C(this, 1.0f, 10.0f);
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 53;
+
     if (PlayerAnimation_Update(play, &this->skelAnime)) {
         Actor* rideActor = this->rideActor;
 
@@ -16922,6 +17440,7 @@ void Player_Action_53(Player* this, PlayState* play) {
     }
 }
 
+/* Player_StartZoraSwimming? */
 s32 func_80850734(PlayState* play, Player* this) {
     if ((this->transformation == PLAYER_FORM_ZORA) && (this->windSpeed == 0.0f) &&
         (this->currentBoots < PLAYER_BOOTS_ZORA_UNDERWATER) && CHECK_BTN_ALL(sPlayerControlInput->cur.button, BTN_A)) {
@@ -16952,6 +17471,8 @@ void Player_Action_54(Player* this, PlayState* play) {
     f32 speedTarget;
     s16 yawTarget;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 54;
+
     this->stateFlags2 |= PLAYER_STATE2_20;
 
     func_8082E67C(play, this, &gPlayerAnim_link_swimer_swim_wait);
@@ -16961,6 +17482,12 @@ void Player_Action_54(Player* this, PlayState* play) {
         this->av2.actionVar2--;
     }
 
+    if(Player_IsOutOfShape(this, play))
+    {
+        this->currentBoots = PLAYER_BOOTS_ZORA_UNDERWATER;
+        return;
+    }
+    
     func_8082F164(this, BTN_R);
 
     if (CHECK_BTN_ALL(sPlayerControlInput->press.button, BTN_A)) {
@@ -16983,7 +17510,7 @@ void Player_Action_54(Player* this, PlayState* play) {
                 Player_AnimSfx_PlayFloorLand(this);
             }
         } else if (!func_80850854(play, this)) {
-            Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+            Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
 
             if (speedTarget != 0.0f) {
                 if ((ABS_ALT(BINANG_SUB(this->actor.shape.rot.y, yawTarget)) > 0x6000) &&
@@ -17005,6 +17532,8 @@ void Player_Action_54(Player* this, PlayState* play) {
 }
 
 void Player_Action_55(Player* this, PlayState* play) {
+    // gSaveContext.save.saveInfo.playerData.rupees = 55;
+
     if (!Player_ActionChange_13(this, play)) {
         this->stateFlags2 |= PLAYER_STATE2_20;
         func_808477D0(play, this, NULL, this->linearVelocity);
@@ -17045,22 +17574,41 @@ void Player_Action_56(Player* this, PlayState* play) {
     s16 sp3E;
     s16 sp3C;
     s16 sp3A;
+    u32 out_of_shape = gChaosContext.link.out_of_shape_state == CHAOS_OUT_OF_SHAPE_STATE_GASPING;
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 56;
+
+    // if(Player_IsOutOfShape(this, play))
+    // {
+    //     this->stateFlags3 &= ~PLAYER_STATE3_8000;
+    //     func_8082DB90(play, this, &gPlayerAnim_pz_swimtowait);
+    //     Player_SetAction(play, this, Player_Action_54, 1);
+    //     this->currentBoots = PLAYER_BOOTS_ZORA_UNDERWATER;
+    //     return;
+    // }
 
     this->stateFlags2 |= PLAYER_STATE2_20;
 
-    func_808475B4(this);
-    func_8082F164(this, BTN_R);
+    if(!out_of_shape)
+    {
+        func_808475B4(this);
+        func_8082F164(this, BTN_R);
 
-    if (Player_TryActionChangeList(play, this, sPlayerActionChangeList11, false)) {
-        return;
+        if (Player_TryActionChangeList(play, this, sPlayerActionChangeList11, false)) {
+            return;
+        }
+
+        if (func_8083B3B4(play, this, sPlayerControlInput)) {
+            return;
+        }
+
+        if (func_80840A30(play, this, &this->linearVelocity, 0.0f)) {
+            return;
+        }
     }
-
-    if (func_8083B3B4(play, this, sPlayerControlInput)) {
-        return;
-    }
-
-    if (func_80840A30(play, this, &this->linearVelocity, 0.0f)) {
-        return;
+    else
+    {
+        sPlayerControlInput->cur.button &= ~BTN_A;
     }
 
     speedTarget = 0.0f;
@@ -17079,7 +17627,12 @@ void Player_Action_56(Player* this, PlayState* play) {
                 func_8082DB60(play, this, &gPlayerAnim_pz_fishswim);
             }
         } else {
-            Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+            // Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+            // if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+            // {
+            //     speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+            // }
+            Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
             Math_ScaledStepToS(&this->currentYaw, yawTarget, 0x640);
 
             if (this->skelAnime.curFrame >= 13.0f) {
@@ -17175,6 +17728,8 @@ void Player_Action_57(Player* this, PlayState* play) {
     s16 sp30;
     s16 var_v0;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 57;
+
     this->stateFlags2 |= PLAYER_STATE2_20;
     func_808475B4(this);
     func_8082F164(this, BTN_R);
@@ -17185,8 +17740,13 @@ void Player_Action_57(Player* this, PlayState* play) {
             speedTarget = this->linearVelocity;
             yawTarget = this->actor.shape.rot.y;
         } else {
-            Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+            // Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+            Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
         }
+        // if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+        // {
+        //     speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+        // }
         sp30 = this->actor.shape.rot.y - yawTarget;
         if (!func_80850734(play, this)) {
             if (func_8082FC24(this) || func_80847ED4(this)) {
@@ -17206,13 +17766,20 @@ void Player_Action_58(Player* this, PlayState* play) {
     f32 speedTarget;
     s16 yawTarget;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 58;
+
     func_808477D0(play, this, sPlayerControlInput, this->linearVelocity);
     func_808475B4(this);
     func_8082F164(this, BTN_R);
 
     if (!Player_TryActionChangeList(play, this, sPlayerActionChangeList11, true) &&
         !func_8083B3B4(play, this, sPlayerControlInput)) {
-        Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+        // Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+        // if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+        // {
+        //     speedTarget *= gChaosContext.link.out_of_shape_speed_scale;
+        // }
+        Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
 
         if (speedTarget == 0.0f) {
             func_808353DC(play, this);
@@ -17227,6 +17794,9 @@ void Player_Action_58(Player* this, PlayState* play) {
 }
 
 void Player_Action_59(Player* this, PlayState* play) {
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 59;
+
     this->stateFlags2 |= PLAYER_STATE2_20;
 
     this->actor.gravity = 0.0f;
@@ -17293,6 +17863,13 @@ void Player_Action_59(Player* this, PlayState* play) {
 void Player_Action_60(Player* this, PlayState* play) {
     this->stateFlags2 |= PLAYER_STATE2_20;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 60;
+
+    if(Player_IsOutOfShape(this, play))
+    {
+        return;
+    }
+
     func_8082F164(this, BTN_R);
     if (((this->stateFlags1 & PLAYER_STATE1_400) || (this->skelAnime.curFrame <= 1.0f) || !func_80850734(play, this)) &&
         PlayerAnimation_Update(play, &this->skelAnime)) {
@@ -17315,6 +17892,8 @@ void Player_Action_60(Player* this, PlayState* play) {
 }
 
 void Player_Action_61(Player* this, PlayState* play) {
+    // gSaveContext.save.saveInfo.playerData.rupees = 61;
+
     func_808475B4(this);
     Math_StepToF(&this->linearVelocity, 0.0f, 0.4f);
     if (PlayerAnimation_Update(play, &this->skelAnime) && (this->linearVelocity < 10.0f)) {
@@ -17323,6 +17902,8 @@ void Player_Action_61(Player* this, PlayState* play) {
 }
 
 void Player_Action_62(Player* this, PlayState* play) {
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 62;
     func_808475B4(this);
     if (PlayerAnimation_Update(play, &this->skelAnime) && (this == GET_PLAYER(play))) {
         func_80840770(play, this);
@@ -17542,6 +18123,9 @@ void func_808525C4(PlayState* play, Player* this) {
 }
 
 void Player_Action_63(Player* this, PlayState* play) {
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 63;
+
     if ((this->unk_AA5 != PLAYER_UNKAA5_4) && ((PlayerAnimation_Update(play, &this->skelAnime) &&
                                                 (this->skelAnime.animation == D_8085D17C[this->transformation])) ||
                                                ((this->skelAnime.mode == 0) && (this->av2.actionVar2 == 0)))) {
@@ -17634,6 +18218,8 @@ void Player_Action_63(Player* this, PlayState* play) {
 }
 
 void Player_Action_64(Player* this, PlayState* play) {
+    // gSaveContext.save.saveInfo.playerData.rupees = 64;
+
     func_80832F24(this);
 
     if (PlayerAnimation_Update(play, &this->skelAnime)) {
@@ -17666,6 +18252,8 @@ AnimSfxEntry D_8085D74C[] = {
 };
 
 void Player_Action_65(Player* this, PlayState* play) {
+    // gSaveContext.save.saveInfo.playerData.rupees = 65;
+
     func_8083249C(this);
 
     if (PlayerAnimation_Update(play, &this->skelAnime)) {
@@ -17764,6 +18352,8 @@ AnimSfxEntry D_8085D75C[] = {
 };
 
 void Player_Action_66(Player* this, PlayState* play) {
+    // gSaveContext.save.saveInfo.playerData.rupees = 66;
+
     if (PlayerAnimation_Update(play, &this->skelAnime)) {
         if (this->av1.actionVar1 == 0) {
             if (DECR(this->av2.actionVar2) == 0) {
@@ -17811,6 +18401,9 @@ u8 D_8085D790[] = {
 };
 
 void Player_Action_67(Player* this, PlayState* play) {
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 67;
+
     func_808323C0(this, play->playerCsIds[PLAYER_CS_ID_ITEM_BOTTLE]);
 
     if (PlayerAnimation_Update(play, &this->skelAnime)) {
@@ -17913,6 +18506,8 @@ struct_8085D798 D_8085D798[] = {
 void Player_Action_68(Player* this, PlayState* play) {
     struct_8085D200* sp24 = &D_8085D200[this->av2.actionVar2];
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 68;
+
     func_80832F24(this);
 
     if (PlayerAnimation_Update(play, &this->skelAnime)) {
@@ -17986,6 +18581,9 @@ void Player_Action_68(Player* this, PlayState* play) {
 Vec3f D_8085D7EC = { 0.0f, 0.0f, 5.0f };
 
 void Player_Action_69(Player* this, PlayState* play) {
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 69;
+
     func_808323C0(this, play->playerCsIds[PLAYER_CS_ID_ITEM_BOTTLE]);
 
     if (PlayerAnimation_Update(play, &this->skelAnime)) {
@@ -18041,6 +18639,8 @@ void Player_Action_70(Player* this, PlayState* play) {
     f32 temp_fv1;
     struct_8085D80C* sp4C;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 70;
+
     D_8085D7F8.z = D_8085D804[this->transformation];
     if (Player_PosVsWallLineTest(play, this, &D_8085D7F8, &sp6C, &sp68, &sp5C)) {
         temp_fv1 = this->actor.world.pos.x - sp5C.x;
@@ -18083,6 +18683,8 @@ AnimSfxEntry D_8085D840[] = {
 void Player_Action_71(Player* this, PlayState* play) {
     this->stateFlags2 |= PLAYER_STATE2_20;
     this->stateFlags3 |= PLAYER_STATE3_4000000;
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 71;
 
     func_8083249C(this);
 
@@ -18139,6 +18741,8 @@ void Player_Action_71(Player* this, PlayState* play) {
 void Player_Action_72(Player* this, PlayState* play) {
     this->stateFlags2 |= (PLAYER_STATE2_20 | PLAYER_STATE2_40);
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 72;
+
     if (PlayerAnimation_Update(play, &this->skelAnime)) {
         Player_AnimationPlayLoop(play, this, &gPlayerAnim_link_normal_re_dead_attack_wait);
     }
@@ -18161,6 +18765,8 @@ void Player_Action_73(Player* this, PlayState* play) {
     s16 downwardSlopeYaw;
     s16 var_v0;
     Vec3f slopeNormal;
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 73;
 
     this->stateFlags2 |= (PLAYER_STATE2_20 | PLAYER_STATE2_40);
     PlayerAnimation_Update(play, &this->skelAnime);
@@ -18216,6 +18822,8 @@ void Player_Action_73(Player* this, PlayState* play) {
 void func_80859CE0(PlayState* play, Player* this, s32 arg2);
 
 void Player_Action_74(Player* this, PlayState* play) {
+    // gSaveContext.save.saveInfo.playerData.rupees = 74;
+
     if ((DECR(this->av2.actionVar2) == 0) && func_808387A0(play, this)) {
         func_80859CE0(play, this, 0);
         Player_SetAction(play, this, Player_Action_97, 0);
@@ -18224,6 +18832,8 @@ void Player_Action_74(Player* this, PlayState* play) {
 }
 
 void Player_Action_75(Player* this, PlayState* play) {
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 75;
     Player_SetAction(play, this, Player_Action_74, 0);
     this->av2.actionVar2 = 0x28;
     Actor_Spawn(&play->actorCtx, play, ACTOR_DEMO_KANKYO, 0.0f, 0.0f, 0.0f, 0, 0, 0, 0x10);
@@ -18232,6 +18842,9 @@ void Player_Action_75(Player* this, PlayState* play) {
 void Player_Cutscene_SetPosAndYawToStart(Player* this, CsCmdActorCue* cue);
 
 void Player_Action_76(Player* this, PlayState* play) {
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 76;
+
     if (sPlayerYDistToFloor < 150.0f) {
         if (PlayerAnimation_Update(play, &this->skelAnime)) {
             if (this->av2.actionVar2 == 0) {
@@ -18260,6 +18873,9 @@ void Player_Action_76(Player* this, PlayState* play) {
 }
 
 void Player_Action_77(Player* this, PlayState* play) {
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 77;
+
     if (this->skelAnime.animation == NULL) {
         this->stateFlags2 |= PLAYER_STATE2_4000;
     } else {
@@ -18296,11 +18912,14 @@ void Player_Action_77(Player* this, PlayState* play) {
 }
 
 void Player_Action_78(Player* this, PlayState* play) {
+    // gSaveContext.save.saveInfo.playerData.rupees = 78;
+
     Player_ActionChange_1(this, play);
 }
 
 void Player_Action_79(Player* this, PlayState* play) {
     this->actor.gravity = -1.0f;
+    // gSaveContext.save.saveInfo.playerData.rupees = 79;
     PlayerAnimation_Update(play, &this->skelAnime);
 
     if (this->actor.velocity.y < 0.0f) {
@@ -18311,6 +18930,7 @@ void Player_Action_79(Player* this, PlayState* play) {
 }
 
 void Player_Action_80(Player* this, PlayState* play) {
+    // gSaveContext.save.saveInfo.playerData.rupees = 80;
     if (play->unk_1887C < 0) {
         play->unk_1887C = 0;
         func_80839ED0(this, play);
@@ -18350,6 +18970,7 @@ void Player_Action_80(Player* this, PlayState* play) {
 }
 
 void Player_Action_81(Player* this, PlayState* play) {
+    // gSaveContext.save.saveInfo.playerData.rupees = 81;
     this->unk_AA5 = PLAYER_UNKAA5_3;
     func_8083868C(play, this);
     PlayerAnimation_Update(play, &this->skelAnime);
@@ -18366,6 +18987,7 @@ void Player_Action_81(Player* this, PlayState* play) {
 }
 
 void Player_Action_82(Player* this, PlayState* play) {
+    // gSaveContext.save.saveInfo.playerData.rupees = 82;
     if (this->av1.actionVar1 >= 0) {
         if (this->av1.actionVar1 < 6) {
             /* wait 6 frames before letting the action continue processing */
@@ -18399,6 +19021,7 @@ void Player_Action_82(Player* this, PlayState* play) {
 }
 
 void Player_Action_83(Player* this, PlayState* play) {
+    // gSaveContext.save.saveInfo.playerData.rupees = 83;
     PlayerAnimation_Update(play, &this->skelAnime);
     func_808345A8(this);
 
@@ -18415,6 +19038,7 @@ void Player_Action_83(Player* this, PlayState* play) {
 
 void Player_Action_84(Player* this, PlayState* play) {
     AttackAnimInfo* attackInfoEntry = &sMeleeAttackAnimInfo[this->meleeWeaponAnimation];
+    // gSaveContext.save.saveInfo.playerData.rupees = 84;
 
     if (this->skelAnime.curFrame < (this->skelAnime.endFrame - 6.0f)) {
         this->stateFlags2 |= PLAYER_STATE2_20;
@@ -18494,6 +19118,7 @@ void Player_Action_84(Player* this, PlayState* play) {
 }
 
 void Player_Action_85(Player* this, PlayState* play) {
+    // gSaveContext.save.saveInfo.playerData.rupees = 85;
     PlayerAnimation_Update(play, &this->skelAnime);
     func_80832F24(this);
 
@@ -18707,6 +19332,8 @@ void Player_Action_86(Player* this, PlayState* play) {
     struct_8085D910* sp4C = D_8085D910;
     s32 sp48 = false;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 86;
+
     func_808323C0(this, play->playerCsIds[PLAYER_CS_ID_MASK_TRANSFORMATION]);
     sPlayerControlInput = play->state.input;
 
@@ -18789,6 +19416,8 @@ void Player_Action_86(Player* this, PlayState* play) {
 void Player_Action_87(Player* this, PlayState* play) {
     Camera_ChangeMode(GET_ACTIVE_CAM(play), (this->prevMask == PLAYER_MASK_NONE) ? CAM_MODE_NORMAL : CAM_MODE_JUMP);
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 87;
+
     if (R_PLAY_FILL_SCREEN_ON != 0) {
         R_PLAY_FILL_SCREEN_ALPHA -= R_PLAY_FILL_SCREEN_ON;
         if (R_PLAY_FILL_SCREEN_ALPHA < 0) {
@@ -18827,6 +19456,7 @@ void Player_Action_87(Player* this, PlayState* play) {
 }
 
 void Player_Action_88(Player* this, PlayState* play) {
+    // gSaveContext.save.saveInfo.playerData.rupees = 88;
     if (this->av2.actionVar2++ > 90) {
         play->msgCtx.ocarinaMode = OCARINA_MODE_END;
         func_8085B384(this, play);
@@ -18838,6 +19468,7 @@ void Player_Action_88(Player* this, PlayState* play) {
 // Giant's Mask
 void Player_Action_89(Player* this, PlayState* play) {
     this->stateFlags2 |= PLAYER_STATE2_40;
+    // gSaveContext.save.saveInfo.playerData.rupees = 89;
 
     func_80855218(play, this, NULL);
     this->av1.actionVar1++;
@@ -18855,6 +19486,8 @@ void Player_Action_89(Player* this, PlayState* play) {
 
 void Player_Action_90(Player* this, PlayState* play) {
     this->stateFlags2 |= PLAYER_STATE2_40;
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 90;
 
     PlayerAnimation_Update(play, &this->skelAnime);
 
@@ -18875,6 +19508,8 @@ void Player_Action_91(Player* this, PlayState* play) {
     s32 pad;
     PlayerAnimationHeader* sp34;
     s32 var_a0;
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 91;
 
     func_808323C0(this, play->playerCsIds[PLAYER_CS_ID_WARP_PAD_MOON]);
     sp3E = BINANG_SUB(this->actor.shape.rot.y, this->actor.world.rot.y);
@@ -18915,6 +19550,8 @@ void Player_Action_91(Player* this, PlayState* play) {
 void Player_Action_92(Player* this, PlayState* play) {
     this->stateFlags2 |= PLAYER_STATE2_20;
 
+    // gSaveContext.save.saveInfo.playerData.rupees = 92;
+
     if (PlayerAnimation_Update(play, &this->skelAnime)) {
         Player_AnimationPlayLoop(play, this, &gPlayerAnim_link_hook_fly_wait);
     }
@@ -18951,6 +19588,7 @@ void func_80855F9C(PlayState* play, Player* this) {
 
     this->stateFlags2 |= PLAYER_STATE2_20;
     Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_CURVED, play);
+
     Math_ScaledStepToS(&this->currentYaw, yawTarget, 0x258);
 }
 
@@ -18996,6 +19634,8 @@ void Player_Action_93(Player* this, PlayState* play) {
     f32 temp_fv0_2;
     s32 sp38;
     s32 var_v1;
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 93;
 
     PlayerAnimation_Update(play, &this->skelAnime);
 
@@ -19181,8 +19821,16 @@ Vec3f D_8085D96C = { 30.0f, 50.0f, 0.0f };
 
 // Flying as Deku?
 void Player_Action_94(Player* this, PlayState* play) {
+    u32 out_of_shape = gChaosContext.link.out_of_shape_state == CHAOS_OUT_OF_SHAPE_STATE_GASPING;
     if ((this->boomerangActor != NULL) && (this->boomerangActor->update == NULL)) {
         this->boomerangActor = NULL;
+    }
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 94;
+
+    if(out_of_shape)
+    {
+        sPlayerControlInput->press.button |= BTN_A;
     }
 
     if (Player_ActionChange_13(this, play)) {
@@ -19195,6 +19843,7 @@ void Player_Action_94(Player* this, PlayState* play) {
     }
 
     if ((this->actor.velocity.y > 0.0f) && (this->stateFlags3 & PLAYER_STATE3_200)) {
+        /* deku shooting out of the flower */
         this->actor.terminalVelocity = -20.0f;
         this->actor.gravity = -5.5f;
         Player_SetCylinderForAttack(this, DMG_DEKU_LAUNCH, 2, 20);
@@ -19208,6 +19857,7 @@ void Player_Action_94(Player* this, PlayState* play) {
     } else if (this->stateFlags3 & PLAYER_STATE3_200) {
         if (this->actor.velocity.y < 0.0f) {
             if (this->av1.actionVar1 < 0) {
+                /* flower timer ran out? */
                 func_80833AA0(this, play);
             } else {
                 PlayerAnimation_Update(play, &this->skelAnime);
@@ -19224,7 +19874,7 @@ void Player_Action_94(Player* this, PlayState* play) {
         this->actor.terminalVelocity = -10.0f;
         this->actor.gravity = -0.5f;
         Player_ResetCylinder(this);
-    } else if (CHECK_BTN_ALL(sPlayerControlInput->press.button, BTN_A)) {
+    } else if (out_of_shape || CHECK_BTN_ALL(sPlayerControlInput->press.button, BTN_A)) {
         func_808355D8(play, this, &gPlayerAnim_pn_kakkufinish);
     } else {
         s16 temp_a0;
@@ -19374,6 +20024,8 @@ void Player_Action_94(Player* this, PlayState* play) {
 // Deku spinning related
 void Player_Action_95(Player* this, PlayState* play) {
     this->stateFlags2 |= PLAYER_STATE2_20 | PLAYER_STATE2_40;
+
+    // gSaveContext.save.saveInfo.playerData.rupees = 95;
 
     PlayerAnimation_Update(play, &this->skelAnime);
     Player_SetCylinderForAttack(this, DMG_DEKU_SPIN, 1, 30);
@@ -19528,6 +20180,13 @@ void func_80857AEC(PlayState* play, Player* this) {
 
 // Goron rolling related
 void Player_Action_96(Player* this, PlayState* play) {
+    // gSaveContext.save.saveInfo.playerData.rupees = 96;
+
+    if(Player_IsOutOfShape(this, play))
+    {
+        return;
+    }
+
     if (Player_TryActionChangeList(play, this, sPlayerActionChangeList12, false)) {
         return;
     }
@@ -19577,7 +20236,7 @@ void Player_Action_96(Player* this, PlayState* play) {
         if (this->unk_B8E != 0) {
             this->unk_B8E--;
         } else {
-            Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+            Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
             speedTarget *= 2.6f;
         }
 
@@ -19877,8 +20536,7 @@ void Player_Action_96(Player* this, PlayState* play) {
 
             Math_ScaledStepToS(&this->unk_B86[0], 0, ABS_ALT(this->av2.actionVar2));
             if ((this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) && (((this->av2.actionVar2 + spD8) * spD8) <= 0)) {
-                spE0 =
-                    Player_GetFloorSfx(this, (this->unk_B86[1] != 0) ? NA_SE_PL_GORON_CHG_ROLL : NA_SE_PL_GORON_ROLL);
+                spE0 = Player_GetFloorSfx(this, (this->unk_B86[1] != 0) ? NA_SE_PL_GORON_CHG_ROLL : NA_SE_PL_GORON_ROLL);
                 Audio_PlaySfx_AtPosWithSyncedFreqAndVolume(&this->actor.projectedPos, spE0, this->unk_B08);
             }
         }
@@ -21115,6 +21773,8 @@ void Player_CsAction_48(PlayState* play, Player* this, CsCmdActorCue* cue) {
 }
 
 void Player_Action_97(Player* this, PlayState* play) {
+    // gSaveContext.save.saveInfo.playerData.rupees = 97;
+
     if (this->csAction != this->prevCsAction) {
         D_80862B6C = this->skelAnime.moveFlags;
         func_8082E794(this);
@@ -21217,6 +21877,18 @@ s32 Player_InflictDamage(PlayState* play, s32 damage) {
 void Player_TalkWithPlayer(PlayState* play, Actor* actor) {
     s32 pad;
     Player* player = GET_PLAYER(play);
+
+    gChaosContext.npc.talk_rotation.x = 0;
+    gChaosContext.npc.talk_rotation.y = 0;
+    gChaosContext.npc.talk_rotation.z = 0;
+
+    gChaosContext.npc.talk_translation.x = 0;
+    gChaosContext.npc.talk_translation.y = 0;
+    gChaosContext.npc.talk_translation.z = 0;
+
+    gChaosContext.npc.talk_scale.x = 1;
+    gChaosContext.npc.talk_scale.y = 1;
+    gChaosContext.npc.talk_scale.z = 1;
 
     func_808323C0(player, CS_ID_GLOBAL_TALK);
     if ((player->talkActor != NULL) || (actor == player->tatlActor) ||

@@ -6,6 +6,7 @@
 
 #include "z_bg_ingate.h"
 #include "objects/object_sichitai_obj/object_sichitai_obj.h"
+#include "chaos_fuckery.h"
 
 #define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_20)
 
@@ -176,6 +177,7 @@ void func_80953F14(BgIngate* this, PlayState* play) {
 void func_80953F8C(BgIngate* this, PlayState* play) {
 }
 
+/* begin ride? */
 void func_80953F9C(BgIngate* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     Camera* mainCam = Play_GetCamera(play, CAM_ID_MAIN);
@@ -280,6 +282,7 @@ void func_809543D4(BgIngate* this, PlayState* play) {
                 break;
             case 0x9E5:
                 if (play->msgCtx.choiceIndex == 0) {
+                    /* player choose to disembark */
                     func_800B7298(play, &this->dyna.actor, PLAYER_CSACTION_END);
                     this->unk160 &= ~0x4;
                     this->actionFunc = func_809541B8;

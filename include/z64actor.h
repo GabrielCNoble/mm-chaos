@@ -448,7 +448,7 @@ typedef struct ActorContext {
     /* 0x254 */ struct EnTorch2* elegyShells[5]; // PLAYER_FORM_MAX
     /* 0x268 */ u8 unk268;
     /* 0x269 */ UNK_TYPE1 pad269[0x3];
-    /* 0x26C */ Input unk_26C; // player input?
+    /* 0x26C */ Input unk_26C; // player input? Kafei input?
 } ActorContext; // size = 0x284
 
 typedef enum {
@@ -485,8 +485,8 @@ typedef enum {
 
 // Allows Tatl to fly over the actor and lock-on it (using the Z-target)
 #define ACTOR_FLAG_TARGETABLE    (1 << 0)
-// Unused
-#define ACTOR_FLAG_2             (1 << 1)
+// Actor won't chase the player
+#define ACTOR_FLAG_NO_CHASE      (1 << 1)
 // Changes the targeting behaviour for unfriendly actors (sound effects, Player's stance, etc)
 #define ACTOR_FLAG_UNFRIENDLY    (1 << 2)
 // Opposite of the UNFRIENDLY flag. It is not checked explictly in the original game.

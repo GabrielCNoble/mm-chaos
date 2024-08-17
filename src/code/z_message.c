@@ -1966,7 +1966,8 @@ void Message_SetupLoadItemIcon(PlayState* play) {
                 msgCtx->msgBufPos += 2;
             } else {
                 msgCtx->msgBufPos += 2;
-                if ((font->msgBuf.schar[msgCtx->msgBufPos] < 0xC8) || (font->msgBuf.schar[msgCtx->msgBufPos] >= 0xD8)) {
+                // if ((font->msgBuf.schar[msgCtx->msgBufPos] < 0xC8) || (font->msgBuf.schar[msgCtx->msgBufPos] >= 0xD8)) {
+                if ((font->msgBuf.schar[msgCtx->msgBufPos] < ITEM_SONG_SONATA) || (font->msgBuf.schar[msgCtx->msgBufPos] >= ITEM_SONG_SONATA)) {
                     msgCtx->itemId = D_801CFF94[(u8)font->msgBuf.schar[msgCtx->msgBufPos]];
                 } else {
                     msgCtx->itemId = 0xFE;

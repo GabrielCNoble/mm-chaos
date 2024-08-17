@@ -9,7 +9,7 @@
 #include "z64quake.h"
 #include "z64rumble.h"
 
-#define FLAGS (ACTOR_FLAG_10)
+#define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_NO_CHASE)
 
 #define THIS ((BgOpenShutter*)thisx)
 

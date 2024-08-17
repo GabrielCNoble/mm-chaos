@@ -507,6 +507,7 @@ s32 Player_InCsMode(PlayState* play) {
     return Player_InBlockingCsMode(play, player) || (player->unk_AA5 == PLAYER_UNKAA5_5);
 }
 
+/* Player_IsTargetingHostile */
 s32 func_80123420(Player* player) {
     return player->stateFlags3 & PLAYER_STATE3_80000000;
 }
@@ -1669,6 +1670,8 @@ PlayerFaceIndices sPlayerFaces[] = {
     { PLAYER_EYES_HALF, PLAYER_MOUTH_TEETH },        // PLAYER_FACE_13
     { PLAYER_EYES_OPEN, PLAYER_MOUTH_ANGRY },        // PLAYER_FACE_14
     { PLAYER_EYES_OPEN, PLAYER_MOUTH_HAPPY },        // PLAYER_FACE_15
+    { PLAYER_EYES_HALF, PLAYER_MOUTH_HAPPY },
+    { PLAYER_EYES_CLOSED, PLAYER_MOUTH_HAPPY },
 };
 
 // Note the correct pointer to pass as the jointTable is the jointTable pointer from the SkelAnime struct, not the
@@ -1684,8 +1687,8 @@ void Player_DrawImpl(PlayState* play, void** skeleton, Vec3s* jointTable, s32 dL
 
     gfx = POLY_OPA_DISP;
 
-    if (eyeIndex < 0) {
-        eyeIndex = sPlayerFaces[face].eyeIndex;
+    if (eyeIndex < 0 || face < 0) {
+        eyeIndex = sPlayerFaces[ABS(face)].eyeIndex;
     }
 
     if (playerForm == PLAYER_FORM_GORON) {
@@ -1698,8 +1701,8 @@ void Player_DrawImpl(PlayState* play, void** skeleton, Vec3s* jointTable, s32 dL
 
     gSPSegment(&gfx[0], 0x08, Lib_SegmentedToVirtual(sPlayerEyesTextures[eyeIndex]));
 
-    if (mouthIndex < 0) {
-        mouthIndex = sPlayerFaces[face].mouthIndex;
+    if (mouthIndex < 0 || face < 0) {
+        mouthIndex = sPlayerFaces[ABS(face)].mouthIndex;
     }
 
     gSPSegment(&gfx[1], 0x09, Lib_SegmentedToVirtual(sPlayerMouthTextures[mouthIndex]));

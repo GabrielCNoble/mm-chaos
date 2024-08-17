@@ -687,7 +687,7 @@ s32 func_8010A0A4(PlayState* play);
 // void Map_GetDungeonAreaIndex(PlayState* play);
 // void Map_IsInDungeonArea(PlayState* play);
 // void Map_GetBossAreaIndex(PlayState* play);
-// void Map_IsInBossArea(PlayState* play);
+s32 Map_IsInBossArea(PlayState* play);
 // void func_8010A238(PlayState* play);
 // void func_8010A2AC(PlayState* play);
 void Minimap_SavePlayerRoomInitInfo(PlayState* play);

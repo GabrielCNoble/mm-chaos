@@ -4143,7 +4143,7 @@ void Audio_PlaySfx_AtPosWithPresetLowFreqAndHighReverb(Vec3f* pos, u16 sfxId) {
 }
 
 void Audio_PlaySfx_AtPos(Vec3f* pos, u16 sfxId) {
-    AudioSfx_PlaySfx(sfxId, pos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+    AudioSfx_PlaySfx(sfxId, pos, 4, &gSfxBeerGogglesFreq, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
 }
 
 void Audio_PlaySfx_MessageDecide(void) {

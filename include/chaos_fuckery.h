@@ -83,11 +83,19 @@ enum CHAOS_CODES
     CHAOS_CODE_RANDOM_SCALING,
     /* moon always faces the player */
     CHAOS_CODE_BIG_BROTHER,
+    /* link randomly slows down and gasps for air */
+    CHAOS_CODE_OUT_OF_SHAPE,
+    /* sets tunic to random color */
+    CHAOS_CODE_TUNIC_COLOR,
+    /* makes skybox rotate randomly */
+    CHAOS_CODE_WEIRD_SKYBOX,
+    /* deactivates a random owl after use */
+    CHAOS_CODE_SINGLE_ACTION_OWL,
+    /* makes the player pull up the ocarina */
+    CHAOS_CODE_PLAY_OCARINA,
     /* enemies explode when killed */
     // CHAOS_CODE_VILETILE_ENEMIES,
 
-    /* sets tunic to random color */
-    // CHAOS_CODE_TUNIC_COLOR,
 
     
     // CHAOS_CODE_SLOW_ANIMATION,
@@ -104,7 +112,6 @@ enum CHAOS_CODES
     // CHAOS_CODE_MOVE_BACKWARDS,
     
     // CHAOS_CODE_MUSIC_SWAP,
-    // CHAOS_CODE_RANDOM_SCALING,
     // CHAOS_CODE_SWAP_HEAL_AND_HURT,
     // CHAOS_CODE_SHOW_SCREENSHOT,
     /* spawn walls of fire around player */
@@ -135,7 +142,6 @@ enum CHAOS_CODES
     // CHAOS_CODE_NO_COLLECTIBLES,
     // CHAOS_CODE_IGNORE_WATER,
     // CHAOS_CODE_ALL_SOUNDS_ARE_PLAYER,
-    // CHAOS_CODE_CHANGE_MAGIC,
     // CHAOS_CODE_INFINITE_HOVER_BOOTS,
     // CHAOS_CODE_BUTTON_SWAP,
     // CHAOS_CODE_MAGIC_ARMOR,
@@ -183,7 +189,11 @@ enum CHAOS_CODES
     // CHAOS_CODE_LIFTOFF,
     /* link randomly slows down and gasps for air */
     // CHAOS_CODE_OUT_OF_SHAPE,
-    
+    /* warps player to majora's lair, then warps them back out */
+    // CHAOS_CODE_FAKE_MAJORAS_LAIR,
+
+    /* link stops and waves/bows at a random direction */
+    // CHAOS_CODE_JUST_THE_WIND,
     
     CHAOS_CODE_LAST
 };
@@ -228,7 +238,7 @@ enum CHAOS_BIG_BROTHER_STATES
     CHAOS_BIG_BROTHER_STATE_TRACKING,
     CHAOS_BIG_BROTHER_STATE_SLOW_LOCKED_ON,
     CHAOS_BIG_BROTHER_STATE_FAST_LOCKED_ON,
-    CHAOS_BIG_BROTHER_STATE_LAST,
+    CHAOS_BIG_BROTHER_STATE_LAST
 };
 
 enum CHAOS_ARROW_EFFECTS
@@ -243,6 +253,23 @@ enum CHAOS_UI_EFFECTS
     CHAOS_UI_EFFECT_SHAKE   = 1,
     CHAOS_UI_EFFECT_BOUNCE  = 1 << 1,
     CHAOS_UI_EFFECT_SPEEN   = 1 << 2
+};
+
+enum CHAOS_BEER_GOGGLES_STATES
+{
+    // CHAOS_BEER_GOGGLES_STATE_JUST_STARTED_RAMPING_UP,
+    CHAOS_BEER_GOGGLES_STATE_RAMPING_UP,
+    CHAOS_BEER_GOGGLES_STATE_ACTIVE,
+    // CHAOS_BEER_GOGGLES_STATE_JUST_STARTED_RAMPING_DOWN,
+    CHAOS_BEER_GOGGLES_STATE_RAMPING_DOWN,
+    CHAOS_BEER_GOGGLES_STATE_NONE
+};
+
+enum CHAOS_OUT_OF_SHAPE_STATES
+{
+    CHAOS_OUT_OF_SHAPE_STATE_SLOWING_DOWN,
+    CHAOS_OUT_OF_SHAPE_STATE_GASPING,
+    CHAOS_OUT_OF_SHAPE_STATE_NONE
 };
 
 #define INVALID_CODE_INDEX      0xff 
@@ -294,11 +321,15 @@ typedef struct ChaosContext
             f32             scale;
             f32             eye_glow;
         };
+
+        u8                  big_brother_state;
         
     } moon;
 
     struct
     {
+        f32                 out_of_shape_speed_scale;
+        // u32                 out_of_shape_state;
         f32                 beer_x_offset;
         f32                 beer_y_offset;
         f32                 beer_pitch;
@@ -309,8 +340,11 @@ typedef struct ChaosContext
         u8                  tunic_r;
         u8                  tunic_g;
         u8                  tunic_b;
+        u8                  out_of_shape_state;
+        u8                  beer_goggles_state;
         u16                 syke_health;
         u8                  syke;
+        // u8                  
     } link;
 
     struct
@@ -321,9 +355,16 @@ typedef struct ChaosContext
 
     struct
     {
-        u8 player_drown_count;
-        u8 is_last_entrance_rando;
+        u8 enabled_scenes[ENTR_SCENE_MAX];
+        u8 enabled_scene_count;
     } entrance;
+
+    struct
+    {
+        Vec3f               talk_translation;
+        Vec3f               talk_scale;
+        Vec3s               talk_rotation;
+    } npc;
     
 } ChaosContext;
 
@@ -371,5 +412,9 @@ void Chaos_DropActorAtIndex(u32 index);
 void Chaos_DropActor(Actor *actor);
 
 void Chaos_ClearActors(void);
+
+u16 Chaos_RandomEntrance(PlayState *play);
+
+void Chaos_UpdateEntrances(PlayState *play);
 
 #endif

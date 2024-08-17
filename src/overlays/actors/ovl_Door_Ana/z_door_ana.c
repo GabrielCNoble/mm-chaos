@@ -7,7 +7,7 @@
 #include "z_door_ana.h"
 #include "objects/gameplay_field_keep/gameplay_field_keep.h"
 
-#define FLAGS (ACTOR_FLAG_2000000)
+#define FLAGS (ACTOR_FLAG_2000000 | ACTOR_FLAG_NO_CHASE)
 
 #define THIS ((DoorAna*)thisx)
 
@@ -154,6 +154,11 @@ void DoorAna_WaitOpen(DoorAna* this, PlayState* play) {
                 }
 
                 play->nextEntrance = sEntrances[destinationIdx];
+
+                // if(Chaos_IsCodeActive(CHAOS_CODE_ENTRANCE_RANDO))
+                // {
+                //     play->nextEntrance = Chaos_RandomEntrance(play);
+                // }
             }
 
             DoorAna_SetupAction(this, DoorAna_GrabLink);

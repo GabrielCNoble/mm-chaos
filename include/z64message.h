@@ -279,7 +279,7 @@ typedef struct MessageContext {
     /* 0x1205A */ UNK_TYPE1 unk12060[0x8];
     /* 0x12068 */ s16 textboxX;
     /* 0x1206A */ s16 textboxY;
-    /* 0x1206C */ s32 unk1206C;
+    /* 0x1206C */ s32 unk1206C; // Ruppe count? Item price?
     /* 0x12070 */ s32 unk12070;
     /* 0x12074 */ s32 unk12074;
     /* 0x12078 */ s32 bankRupeesSelected;
