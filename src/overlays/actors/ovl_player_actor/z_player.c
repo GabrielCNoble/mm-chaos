@@ -4305,7 +4305,7 @@ s32 func_80831194(PlayState* play, Player* this) {
                 } else if (play->unk_1887C != 0) {
                     play->unk_1887C--;
                 } else {
-                    // Inventory_ChangeAmmo(item, -1);
+                    Inventory_ChangeAmmo(item, -1);
                 }
             }
 
@@ -19987,7 +19987,8 @@ void Player_Action_94(Player* this, PlayState* play) {
         }
 
         this->fallStartHeight = this->actor.world.pos.y;
-        Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+        // Player_GetMovementSpeedAndYaw(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+        Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
 
         if (speedTarget == 0.0f) {
             sp68 = 0.1f;

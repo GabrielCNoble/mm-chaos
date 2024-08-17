@@ -41,11 +41,11 @@ void Graph_InitTHGA(TwoHeadGfxArena* arena, Gfx* buffer, s32 size) {
     THGA_Init(arena, buffer, size);
 }
 
-void Graph_SetNextGfxPool(GraphicsContext* gfxCtx) {
+void Graph_SetNextGfxPool(GraphicsContext* gfxCtx) { 
     GfxPool* pool = &gGfxPools[gfxCtx->gfxPoolIdx % 2];
 
     gGfxMasterDL = &pool->master;
-    gSegments[0x0E] = gGfxMasterDL;
+    gSegments[0x0E] = gGfxMasterDL; 
 
     pool->headMagic = GFXPOOL_HEAD_MAGIC;
     pool->tailMagic = GFXPOOL_TAIL_MAGIC;

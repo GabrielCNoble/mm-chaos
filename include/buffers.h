@@ -4,7 +4,7 @@
 #include "z64.h"
 #include "macros.h"
 #include "stack.h"
-
+ 
 
 extern u8 gGfxSPTaskYieldBuffer[OS_YIELD_DATA_SIZE];
 extern STACK(gGfxSPTaskStack, 0x400);

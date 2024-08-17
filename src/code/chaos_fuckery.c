@@ -42,7 +42,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_INVINCIBLE]              = */ CHAOS_CODE_DEF(8,  23, false, 0.005f),
     /* [CHAOS_CODE_SYKE]                    = */ CHAOS_CODE_DEF(0,  0,  false, 0.00005f),
     /* [CHAOS_CODE_DIE]                     = */ CHAOS_CODE_DEF(0,  0,  false, 0.000005f),
-    /* [CHAOS_CODE_TRAP_FLAP]               = */ CHAOS_CODE_DEF(10, 20, true,  0.04f),
+    /* [CHAOS_CODE_TRAP_FLAP]               = */ CHAOS_CODE_DEF(10, 20, true,  0.02f),
     /* [CHAOS_CODE_TEXTBOX]                 = */ CHAOS_CODE_DEF(0,   0, false, 0.008f),
     /* [CHAOS_CODE_SLIPPERY_FLOORS]         = */ CHAOS_CODE_DEF(10, 20, false, 0.012f),
     /* [CHAOS_CODE_SLOW_DOWN]               = */ CHAOS_CODE_DEF(5,  12, false, 0.006f),
@@ -197,7 +197,7 @@ u8 gInsideClockTowerEntrances[] =                   {1, 5};
 u8 gWoodsOfMysteryEntrances[] =                     {0};
 u8 gBombShopEntrances[] =                           {0};
 u8 gGormanTrackEntrances[] =                        {0, 3, 4};
-u8 gGoronRacetrackEntrances[] =                     {0, 1};
+u8 gGoronRacetrackEntrances[] =                     {0};
 u8 gEastClocktownEntrances[] =                      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
 u8 gWestClocktownEntrances[] =                      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 u8 gNorthClocktownEntrances[] =                     {0, 1, 2, 3, 4};
@@ -906,7 +906,7 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
             {
                 struct ChaosCodeSlot *slot = first_slot + slot_index;
                 GfxPrint_SetPos(&gfx_print, 1, y_pos++);
-                GfxPrint_Printf(&gfx_print, "%s", gChaosCodeNames[slot->code]);
+                GfxPrint_Printf(&gfx_print, "%s (%08x - %08x)", gChaosCodeNames[slot->code], slot->range_start, slot->range_end);
                 slot_index++;
             }
         }
@@ -1437,7 +1437,7 @@ void Chaos_UpdateEntrances(PlayState *play)
             }
         }
 
-        if((owl_warps & ~((1 << OWL_WARP_MOUNTAIN_VILLAGE) | (1 << OWL_WARP_SNOWHEAD))) || has_bow)
+        if((owl_warps & ~((1 << OWL_WARP_MOUNTAIN_VILLAGE) | (1 << OWL_WARP_SNOWHEAD))) || (has_bow && has_bomb))
         {
             /* path to mountain village is blocked by ice traps, which require the bow to be cleard. 
             To get back from it, it'll be necessary to either break them or warp out */
