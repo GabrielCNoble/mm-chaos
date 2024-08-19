@@ -59,6 +59,123 @@ typedef enum {
     /* 2 */ MOTION_BLUR_PROCESS
 } MotionBlurStatus;
 
+// u16 gLowGravityExclusionList[] = {
+//     ENTRANCE(ODOLWAS_LAIR, 0),
+//     ENTRANCE(IGOS_DU_IKANAS_LAIR, 0),
+    // ENTRANCE(PIRATES_FORTRESS_INTERIOR, 0),
+    // ENTRANCE(PIRATES_FORTRESS_INTERIOR, 1),
+    // ENTRANCE(PIRATES_FORTRESS_INTERIOR, 2),
+// };
+
+u8 gCanBePushedAroundCodes[] = {
+    CHAOS_CODE_POKE,
+    CHAOS_CODE_RANDOM_KNOCKBACK,
+    CHAOS_CODE_ICE_TRAP,
+    CHAOS_CODE_SHOCK,
+    CHAOS_CODE_LOVELESS_MARRIAGE,
+    CHAOS_CODE_SYKE,
+    CHAOS_CODE_DIE,
+    CHAOS_CODE_ACTOR_CHASE,
+    CHAOS_CODE_OUT_OF_SHAPE
+};
+
+void Play_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
+{
+    u32 index;
+    u32 scene_index;
+    Player *player = GET_PLAYER(this);
+    Camera *camera = Play_GetCamera(this, CAM_ID_MAIN);
+    u32 has_ocarina = gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] == ITEM_OCARINA_OF_TIME;
+    u32 can_be_pushed_around = !(player->stateFlags2 & PLAYER_STATE2_80) && 
+                        !(player->stateFlags1 & (PLAYER_STATE1_800000 | PLAYER_STATE1_20000000)) &&
+                        camera->setting != CAM_SET_BOAT_CRUISE;
+    
+    Chaos_ClearEnabledCodes();
+    Chaos_EnableCode(CHAOS_CODE_YEET);
+    Chaos_EnableCode(CHAOS_CODE_MOON_DANCE);
+    Chaos_EnableCode(CHAOS_CODE_ONE_HIT_KO);
+    Chaos_EnableCode(CHAOS_CODE_TIMER_UP);
+    Chaos_EnableCode(CHAOS_CODE_EARTHQUAKE);
+    Chaos_EnableCode(CHAOS_CODE_WEIRD_UI);
+    Chaos_EnableCode(CHAOS_CODE_BEER_GOGGLES);
+    Chaos_EnableCode(CHAOS_CODE_INVINCIBLE);
+    Chaos_EnableCode(CHAOS_CODE_TRAP_FLAP);
+    Chaos_EnableCode(CHAOS_CODE_SLIPPERY_FLOORS);
+    Chaos_EnableCode(CHAOS_CODE_SLOW_DOWN);
+    Chaos_EnableCode(CHAOS_CODE_TERRIBLE_MUSIC);
+    Chaos_EnableCode(CHAOS_CODE_INCREDIBLE_KNOCKBACK);
+    Chaos_EnableCode(CHAOS_CODE_RANDOM_SCALING);
+    Chaos_EnableCode(CHAOS_CODE_BIG_BROTHER);
+    Chaos_EnableCode(CHAOS_CODE_WEIRD_SKYBOX);
+
+    Chaos_EnableCode(CHAOS_CODE_CHANGE_HEALTH);
+    Chaos_EnableCode(CHAOS_CODE_CHANGE_RUPEE);
+    if(gSaveContext.save.saveInfo.playerData.isMagicAcquired)
+    {
+        Chaos_EnableCode(CHAOS_CODE_CHANGE_MAGIC);
+    }
+
+    if(gSaveContext.save.saveInfo.inventory.items[SLOT_BOW] == ITEM_BOW)
+    {
+        Chaos_EnableCode(CHAOS_CODE_BOMB_ARROWS);
+        Chaos_EnableCode(CHAOS_CODE_BUCKSHOT_ARROWS);
+        Chaos_EnableCode(CHAOS_CODE_WEIRD_ARROWS);
+    }
+
+    if(gSaveContext.save.saveInfo.inventory.items[SLOT_BOMB] == ITEM_BOMB ||
+       gSaveContext.save.saveInfo.inventory.items[SLOT_BOMBCHU] == ITEM_BOMBCHU)
+    {
+        Chaos_EnableCode(CHAOS_CODE_RANDOM_BOMB_TIMER);
+    }
+ 
+    if(can_be_pushed_around)
+    {
+        /* if the player has been grabbed, is mounted on epona, 
+        riding the boat or time is stopped, don't spawn any of those 
+        effects to avoid leaving the player in an inconsistent state */
+        Chaos_EnableCode(CHAOS_CODE_POKE);
+        Chaos_EnableCode(CHAOS_CODE_RANDOM_KNOCKBACK);
+        Chaos_EnableCode(CHAOS_CODE_ICE_TRAP);
+        Chaos_EnableCode(CHAOS_CODE_SHOCK);
+        Chaos_EnableCode(CHAOS_CODE_LOVELESS_MARRIAGE);
+        Chaos_EnableCode(CHAOS_CODE_SYKE);
+        Chaos_EnableCode(CHAOS_CODE_DIE);
+        Chaos_EnableCode(CHAOS_CODE_ACTOR_CHASE);
+        Chaos_EnableCode(CHAOS_CODE_OUT_OF_SHAPE);
+
+        if(has_ocarina)
+        {
+            Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA);
+        }
+    }
+
+    scene_index = gSaveContext.save.entrance >> 9;
+    if(scene_index != ENTR_SCENE_ODOLWAS_LAIR && scene_index != ENTR_SCENE_IGOS_DU_IKANAS_LAIR &&
+       scene_index != ENTR_SCENE_PIRATES_FORTRESS_INTERIOR || (scene_index == ENTR_SCENE_PIRATES_FORTRESS_INTERIOR &&
+       this->roomCtx.curRoom.num != 0 && this->roomCtx.curRoom.num != 1 && this->roomCtx.curRoom.num != 2))
+    {
+        /* some bosses jump around and may fall out of bounds of low gravity is active */
+        Chaos_EnableCode(CHAOS_CODE_LOW_GRAVITY);
+    }
+    else
+    {
+        Chaos_DeactivateCode(CHAOS_CODE_LOW_GRAVITY);
+    }
+
+    if(has_ocarina)
+    {
+        if(!Map_IsInBossArea(this) && CHECK_WEEKEVENTREG(WEEKEVENTREG_59_04))
+        {
+            /* don't enable entrance rando until the player enters south clock town.
+            Also don't enable it in boss rooms as it could interact badly with the warp 
+            out */
+            Chaos_EnableCode(CHAOS_CODE_ENTRANCE_RANDO);
+            // Chaos_EnableCode(CHAOS_CODE_SINGLE_ACTION_OWL);
+            Chaos_UpdateEntrances(this);
+        }
+    }
+}
+
 void Play_DrawMotionBlur(PlayState* this) {
     GraphicsContext* gfxCtx = this->state.gfxCtx;
     s32 alpha;
@@ -1110,32 +1227,7 @@ void Play_UpdateMain(PlayState* this) {
         }
     }
 
-    // if((player->stateFlags1 & PLAYER_STATE1_800000) ||
-    //     camera->setting == CAM_SET_BOAT_CRUISE)
-    // {
-    //     Chaos_DisableCode(CHAOS_CODE_POKE);
-    //     Chaos_DisableCode(CHAOS_CODE_RANDOM_KNOCKBACK);
-    //     Chaos_DisableCode(CHAOS_CODE_ICE_TRAP);
-    //     Chaos_DisableCode(CHAOS_CODE_SHOCK);
-    //     Chaos_DisableCode(CHAOS_CODE_LOVELESS_MARRIAGE);
-    //     Chaos_DisableCode(CHAOS_CODE_SYKE);
-    //     Chaos_DisableCode(CHAOS_CODE_DIE);
-    //     Chaos_DisableCode(CHAOS_CODE_ACTOR_CHASE);
-    //     Chaos_DisableCode(CHAOS_CODE_PLAY_OCARINA);
-    // }
-    // else
-    // {
-    //     Chaos_EnableCode(CHAOS_CODE_POKE);
-    //     Chaos_EnableCode(CHAOS_CODE_RANDOM_KNOCKBACK);
-    //     Chaos_EnableCode(CHAOS_CODE_ICE_TRAP);
-    //     Chaos_EnableCode(CHAOS_CODE_SHOCK);
-    //     Chaos_EnableCode(CHAOS_CODE_LOVELESS_MARRIAGE);
-    //     Chaos_EnableCode(CHAOS_CODE_SYKE);
-    //     Chaos_EnableCode(CHAOS_CODE_DIE);
-    //     Chaos_EnableCode(CHAOS_CODE_ACTOR_CHASE);
-    //     Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA);
-    // }
-
+    Play_UpdateEnabledChaosEffectsAndEntrances(this);
     Chaos_UpdateChaos(this);
 
     if (!sp5C || gDbgCamEnabled) {  
@@ -1851,9 +1943,18 @@ void Play_InitScene(PlayState* this, s32 spawn) {
     Play_InitEnvironment(this, this->skyboxId);
 }
 
+// u16 gLowGravityExclusionList[] = {
+//     ENTRANCE(ODOLWAS_LAIR, 0),
+//     ENTRANCE(IGOS_DU_IKANAS_LAIR, 0),
+//     ENTRANCE(PIRATES_FORTRESS_INTERIOR, 0),
+//     ENTRANCE(PIRATES_FORTRESS_INTERIOR, 1),
+//     ENTRANCE(PIRATES_FORTRESS_INTERIOR, 2),
+// };
+
 void Play_SpawnScene(PlayState* this, s32 sceneId, s32 spawn) {
     s32 pad;
     SceneTableEntry* scene = &gSceneTable[sceneId];
+    u32 index;
 
     scene->unk_D = 0;
     this->loadedScene = scene;
@@ -1865,59 +1966,64 @@ void Play_SpawnScene(PlayState* this, s32 sceneId, s32 spawn) {
     Play_InitScene(this, spawn);
     Room_AllocateAndLoad(this, &this->roomCtx);
 
-    Chaos_ClearEnabledCodes();
-    // Chaos_EnableCode(CHAOS_CODE_LOW_GRAVITY);
-    Chaos_EnableCode(CHAOS_CODE_CHANGE_HEALTH);
-    Chaos_EnableCode(CHAOS_CODE_CHANGE_RUPEE);
-    Chaos_EnableCode(CHAOS_CODE_YEET);
-    Chaos_EnableCode(CHAOS_CODE_MOON_DANCE);
-    Chaos_EnableCode(CHAOS_CODE_ONE_HIT_KO);
-    Chaos_EnableCode(CHAOS_CODE_TIMER_UP);
-    Chaos_EnableCode(CHAOS_CODE_EARTHQUAKE);
-    Chaos_EnableCode(CHAOS_CODE_WEIRD_UI);
-    Chaos_EnableCode(CHAOS_CODE_BEER_GOGGLES);
-    Chaos_EnableCode(CHAOS_CODE_INVINCIBLE);
-    Chaos_EnableCode(CHAOS_CODE_TRAP_FLAP);
-    // Chaos_EnableCode(CHAOS_CODE_TEXTBOX);
-    Chaos_EnableCode(CHAOS_CODE_SLIPPERY_FLOORS);
-    Chaos_EnableCode(CHAOS_CODE_SLOW_DOWN);
-    Chaos_EnableCode(CHAOS_CODE_TERRIBLE_MUSIC);
-    Chaos_EnableCode(CHAOS_CODE_INCREDIBLE_KNOCKBACK);
-    Chaos_EnableCode(CHAOS_CODE_RANDOM_SCALING);
-    Chaos_EnableCode(CHAOS_CODE_BIG_BROTHER);
-    Chaos_EnableCode(CHAOS_CODE_OUT_OF_SHAPE);
-    Chaos_EnableCode(CHAOS_CODE_WEIRD_SKYBOX);
-    Chaos_EnableCode(CHAOS_CODE_POKE);
-    Chaos_EnableCode(CHAOS_CODE_RANDOM_KNOCKBACK);
-    Chaos_EnableCode(CHAOS_CODE_ICE_TRAP);
-    Chaos_EnableCode(CHAOS_CODE_SHOCK);
-    Chaos_EnableCode(CHAOS_CODE_LOVELESS_MARRIAGE);
-    Chaos_EnableCode(CHAOS_CODE_SYKE);
-    Chaos_EnableCode(CHAOS_CODE_DIE);
-    Chaos_EnableCode(CHAOS_CODE_ACTOR_CHASE);
+    // Chaos_ClearEnabledCodes();
+    // Chaos_EnableCode(CHAOS_CODE_CHANGE_HEALTH);
+    // Chaos_EnableCode(CHAOS_CODE_CHANGE_RUPEE);
+    // Chaos_EnableCode(CHAOS_CODE_YEET);
+    // Chaos_EnableCode(CHAOS_CODE_MOON_DANCE);
+    // Chaos_EnableCode(CHAOS_CODE_ONE_HIT_KO);
+    // Chaos_EnableCode(CHAOS_CODE_TIMER_UP);
+    // Chaos_EnableCode(CHAOS_CODE_EARTHQUAKE);
+    // Chaos_EnableCode(CHAOS_CODE_WEIRD_UI);
+    // Chaos_EnableCode(CHAOS_CODE_BEER_GOGGLES);
+    // Chaos_EnableCode(CHAOS_CODE_INVINCIBLE);
+    // Chaos_EnableCode(CHAOS_CODE_TRAP_FLAP);
+    // Chaos_EnableCode(CHAOS_CODE_SLIPPERY_FLOORS);
+    // Chaos_EnableCode(CHAOS_CODE_SLOW_DOWN);
+    // Chaos_EnableCode(CHAOS_CODE_TERRIBLE_MUSIC);
+    // Chaos_EnableCode(CHAOS_CODE_INCREDIBLE_KNOCKBACK);
+    // Chaos_EnableCode(CHAOS_CODE_RANDOM_SCALING);
+    // Chaos_EnableCode(CHAOS_CODE_BIG_BROTHER);
+    // Chaos_EnableCode(CHAOS_CODE_OUT_OF_SHAPE);
+    // Chaos_EnableCode(CHAOS_CODE_WEIRD_SKYBOX);
+    // Chaos_EnableCode(CHAOS_CODE_POKE);
+    // Chaos_EnableCode(CHAOS_CODE_RANDOM_KNOCKBACK);
+    // Chaos_EnableCode(CHAOS_CODE_ICE_TRAP);
+    // Chaos_EnableCode(CHAOS_CODE_SHOCK);
+    // Chaos_EnableCode(CHAOS_CODE_LOVELESS_MARRIAGE);
+    // Chaos_EnableCode(CHAOS_CODE_SYKE);
+    // Chaos_EnableCode(CHAOS_CODE_DIE);
+    // Chaos_EnableCode(CHAOS_CODE_ACTOR_CHASE);
 
-    if(gSaveContext.save.entrance != ENTRANCE(ODOLWAS_LAIR, 0))
-    {
-        /* odolwa can fall out of bounds if he jumps when low gravity is enabled, 
-        essentially forcing the player to warp to the start of the dungeon, so don't
-        enable it if we're fighting him. */
-        Chaos_EnableCode(CHAOS_CODE_LOW_GRAVITY);
-    }
+    // for(index = 0; index < ARRAY_COUNT(gLowGravityExclusionList); index++)
+    // {
+    //     if(gSaveContext.save.entrance == gLowGravityExclusionList[index])
+    //     {
+    //         break;
+    //     }
+    // }
 
-    if(gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] == ITEM_OCARINA_OF_TIME)
-    {
-        Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA);
+    // if(index == ARRAY_COUNT(gLowGravityExclusionList))
+    // {
+    //     /* some bosses jump around a lot and can fall out of bounds if low gravity is
+    //     enabled. To avoid softlocks, don't enable it when in their scenes */
+    //     Chaos_EnableCode(CHAOS_CODE_LOW_GRAVITY);
+    // }
 
-        if(!Map_IsInBossArea(this) && CHECK_WEEKEVENTREG(WEEKEVENTREG_59_04))
-        {
-            /* don't enable entrance rando until the player enters south clock town.
-            Also don't enable it in boss rooms as it could interact badly with the warp 
-            out */
-            Chaos_EnableCode(CHAOS_CODE_ENTRANCE_RANDO);
-            // Chaos_EnableCode(CHAOS_CODE_SINGLE_ACTION_OWL);
-            Chaos_UpdateEntrances(this);
-        }
-    }
+    // if(gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] == ITEM_OCARINA_OF_TIME)
+    // {
+    //     Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA);
+
+    //     if(!Map_IsInBossArea(this) && CHECK_WEEKEVENTREG(WEEKEVENTREG_59_04))
+    //     {
+    //         /* don't enable entrance rando until the player enters south clock town.
+    //         Also don't enable it in boss rooms as it could interact badly with the warp 
+    //         out */
+    //         Chaos_EnableCode(CHAOS_CODE_ENTRANCE_RANDO);
+    //         // Chaos_EnableCode(CHAOS_CODE_SINGLE_ACTION_OWL);
+    //         Chaos_UpdateEntrances(this);
+    //     }
+    // }
 }
 
 void Play_GetScreenPos(PlayState* this, Vec3f* worldPos, Vec3f* screenPos) {

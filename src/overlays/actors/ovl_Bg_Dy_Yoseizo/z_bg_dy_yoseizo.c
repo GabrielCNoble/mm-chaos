@@ -325,7 +325,7 @@ void func_80A0B35C(BgDyYoseizo* this, PlayState* play) {
                     if (gSaveContext.save.saveInfo.playerData.isMagicAcquired != true) {
                         gSaveContext.save.saveInfo.playerData.isMagicAcquired = true;
                         gSaveContext.magicFillTarget = MAGIC_NORMAL_METER;
-                        Chaos_EnableCode(CHAOS_CODE_CHANGE_MAGIC);
+                        // Chaos_EnableCode(CHAOS_CODE_CHANGE_MAGIC);
                     }
                     break;
 

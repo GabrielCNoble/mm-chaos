@@ -31,16 +31,16 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_TIMER_UP]                = */ CHAOS_CODE_DEF(10, 20, false, 0.009f),
     /* [CHAOS_CODE_SHOCK]                   = */ CHAOS_CODE_DEF(0,  0,  false, 0.015f),
     /* [CHAOS_CODE_EARTHQUAKE]              = */ CHAOS_CODE_DEF(0,  0,  true,  0.06f),
-    /* [CHAOS_CODE_BOMB_ARROWS]             = */ CHAOS_CODE_DEF(15, 25, false, 0.009f),
-    /* [CHAOS_CODE_WEIRD_ARROWS]            = */ CHAOS_CODE_DEF(15, 25, false, 0.009f),
-    /* [CHAOS_CODE_BUCKSHOT_ARROWS]         = */ CHAOS_CODE_DEF(15, 25, false, 0.009f),
+    /* [CHAOS_CODE_BOMB_ARROWS]             = */ CHAOS_CODE_DEF(15, 25, true,  0.02f),
+    /* [CHAOS_CODE_WEIRD_ARROWS]            = */ CHAOS_CODE_DEF(15, 25, true,  0.02f),
+    /* [CHAOS_CODE_BUCKSHOT_ARROWS]         = */ CHAOS_CODE_DEF(15, 25, true,  0.02f),
     /* [CHAOS_CODE_RANDOM_BOMB_TIMER]       = */ CHAOS_CODE_DEF(10, 15, false, 0.01f),
     /* [CHAOS_CODE_LOVELESS_MARRIAGE]       = */ CHAOS_CODE_DEF(0,  0,  false, 0.0065f),
     /* [CHAOS_CODE_WEIRD_UI]                = */ CHAOS_CODE_DEF(8,  15, false, 0.04f),
     /* [CHAOS_CODE_BEER_GOGGLES]            = */ CHAOS_CODE_DEF(15, 30, true,  0.012f),
     /* [CHAOS_CODE_CHANGE_MAGIC]            = */ CHAOS_CODE_DEF(1,  10, true,  0.04f),
     /* [CHAOS_CODE_INVINCIBLE]              = */ CHAOS_CODE_DEF(8,  23, false, 0.005f),
-    /* [CHAOS_CODE_SYKE]                    = */ CHAOS_CODE_DEF(0,  0,  false, 0.00005f),
+    /* [CHAOS_CODE_SYKE]                    = */ CHAOS_CODE_DEF(0,  0,  false, 0.00007f),
     /* [CHAOS_CODE_DIE]                     = */ CHAOS_CODE_DEF(0,  0,  false, 0.000005f),
     /* [CHAOS_CODE_TRAP_FLAP]               = */ CHAOS_CODE_DEF(10, 20, true,  0.02f),
     /* [CHAOS_CODE_TEXTBOX]                 = */ CHAOS_CODE_DEF(0,   0, false, 0.008f),
@@ -50,7 +50,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_TERRIBLE_MUSIC]          = */ CHAOS_CODE_DEF(15, 35, true,  0.01f),
     /* [CHAOS_CODE_INCREDIBLE_KNOCKBACK]    = */ CHAOS_CODE_DEF(10, 21, true,  0.008f),
     /* [CHAOS_CODE_RANDOM_SCALING]          = */ CHAOS_CODE_DEF(10, 21, true,  0.007f),
-    /* [CHAOS_CODE_BIG_BROTHER]             = */ CHAOS_CODE_DEF(25, 70, true,  0.006f),
+    /* [CHAOS_CODE_BIG_BROTHER]             = */ CHAOS_CODE_DEF(25, 70, true,  0.002f),
     /* [CHAOS_CODE_OUT_OF_SHAPE]            = */ CHAOS_CODE_DEF(5, 12,  false, 0.006f),
     /* [CHAOS_CODE_TUNIC_COLOR]             = */ CHAOS_CODE_DEF(0, 0,   false, 0.006f),
     /* [CHAOS_CODE_WEIRD_SKYBOX]            = */ CHAOS_CODE_DEF(10, 15, true,  0.006f),
@@ -905,8 +905,12 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
             while(slot_index < display_effect_count)
             {
                 struct ChaosCodeSlot *slot = first_slot + slot_index;
-                GfxPrint_SetPos(&gfx_print, 1, y_pos++);
-                GfxPrint_Printf(&gfx_print, "%s (%08x - %08x)", gChaosCodeNames[slot->code], slot->range_start, slot->range_end);
+                f32 probability = ((f32)(slot->range_end - slot->range_start) / (f32)0xffffffff) * 100.0f;
+                GfxPrint_SetColor(&gfx_print, 255, 255, Chaos_IsCodeActive(slot->code) ? 0 : 255, 255);
+                GfxPrint_SetPos(&gfx_print, 1, y_pos);
+                GfxPrint_Printf(&gfx_print, "%s", gChaosCodeNames[slot->code]);
+                GfxPrint_SetPos(&gfx_print, 22, y_pos++);
+                GfxPrint_Printf(&gfx_print, "(%.4f%%)", probability);
                 slot_index++;
             }
         }
@@ -1027,13 +1031,16 @@ struct ChaosCode *Chaos_GetCode(u8 code)
 
 void Chaos_EnableCode(u8 code)
 {
+    u32 same_as_previous_index = false;
     if(!Chaos_IsCodeEnabled(code))
     {
         u32 index = gChaosContext.enabled_code_count;
         gChaosContext.enabled_code_count++;
+
+        gChaosContext.need_update_distribution |= gChaosContext.enabled_codes[index].code != code;
         gChaosContext.enabled_codes[index].code = code;
         gChaosContext.enabled_code_indices[code] = index;
-        gChaosContext.need_update_distribution = true;
+        // gChaosContext.need_update_distribution = true;
     }
 }
 
@@ -1078,6 +1085,7 @@ void Chaos_UpdateCodeDistribution(void)
     u32 index;
     f32 probability_scale = 0.0f;
     u64 prev_end = 0;
+    u64 range_fract = 0x00000000ffffffff;
 
     if(gChaosContext.enabled_code_count > 0)
     {
@@ -1087,12 +1095,14 @@ void Chaos_UpdateCodeDistribution(void)
         }
 
         probability_scale = 1.0f / probability_scale;
+        range_fract *= probability_scale;
 
         for(index = 0; index < gChaosContext.enabled_code_count; index++)
         {
             struct ChaosCodeSlot *code_slot = gChaosContext.enabled_codes + index;
             struct ChaosCodeDef *code_def = gChaosCodeDefs + code_slot->code;
-            u64 next_range_end = prev_end + 0x00000000ffffffff * code_def->probability * probability_scale;
+            // u64 next_range_end = prev_end + 0x00000000ffffffff * code_def->probability * probability_scale;
+            u64 next_range_end = prev_end + range_fract * code_def->probability;
             if(next_range_end > 0xffffffff)
             {
                 next_range_end = 0xffffffff;
@@ -1102,6 +1112,8 @@ void Chaos_UpdateCodeDistribution(void)
             code_slot->range_end = (u32)next_range_end;
             prev_end = next_range_end;
         }
+
+        gChaosContext.enabled_codes[gChaosContext.enabled_code_count - 1].range_end = 0xffffffff;
     }
 }
 

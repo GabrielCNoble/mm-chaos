@@ -10935,6 +10935,7 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     // // gSaveContext.save.saveInfo.inventory.items[SLOT_BOMBCHU] = ITEM_BOMBCHU;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_BOMB] = ITEM_BOMB;
     // gSaveContext.save.saveInfo.playerData.health = 4;
+    SET_EQUIP_VALUE(EQUIP_TYPE_SHIELD, ITEM_SHIELD_MIRROR - ITEM_SHIELD_HERO + EQUIP_VALUE_SHIELD_HERO);
     // // gSaveContext.save.saveInfo.playerData.magicLevel = 2;
     // // gSaveContext.save.saveInfo.playerData.magic = 10;
     // // gSaveContext.save.saveInfo.playerData.isMagicAcquired = true;
@@ -10955,23 +10956,23 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     Collider_InitAndSetQuad(play, &this->meleeWeaponQuads[1], &this->actor, &D_8085C344);
     Collider_InitAndSetQuad(play, &this->shieldQuad, &this->actor, &D_8085C394);
 
-    if(gSaveContext.save.saveInfo.playerData.isMagicAcquired)
-    {
-        Chaos_EnableCode(CHAOS_CODE_CHANGE_MAGIC);
-    }
+    // if(gSaveContext.save.saveInfo.playerData.isMagicAcquired)
+    // {
+    //     Chaos_EnableCode(CHAOS_CODE_CHANGE_MAGIC);
+    // }
 
-    if(gSaveContext.save.saveInfo.inventory.items[SLOT_BOW] == ITEM_BOW)
-    {
-        Chaos_EnableCode(CHAOS_CODE_BOMB_ARROWS);
-        Chaos_EnableCode(CHAOS_CODE_BUCKSHOT_ARROWS);
-        Chaos_EnableCode(CHAOS_CODE_WEIRD_ARROWS);
-    }
+    // if(gSaveContext.save.saveInfo.inventory.items[SLOT_BOW] == ITEM_BOW)
+    // {
+    //     Chaos_EnableCode(CHAOS_CODE_BOMB_ARROWS);
+    //     Chaos_EnableCode(CHAOS_CODE_BUCKSHOT_ARROWS);
+    //     Chaos_EnableCode(CHAOS_CODE_WEIRD_ARROWS);
+    // }
 
-    if(gSaveContext.save.saveInfo.inventory.items[SLOT_BOMB] == ITEM_BOMB ||
-       gSaveContext.save.saveInfo.inventory.items[SLOT_BOMBCHU] == ITEM_BOMBCHU)
-    {
-        Chaos_EnableCode(CHAOS_CODE_RANDOM_BOMB_TIMER);
-    }
+    // if(gSaveContext.save.saveInfo.inventory.items[SLOT_BOMB] == ITEM_BOMB ||
+    //    gSaveContext.save.saveInfo.inventory.items[SLOT_BOMBCHU] == ITEM_BOMBCHU)
+    // {
+    //     Chaos_EnableCode(CHAOS_CODE_RANDOM_BOMB_TIMER);
+    // }
 
     // Player_SetTunicColor(this);
 }
@@ -12449,67 +12450,80 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     // Gfx *draw_list;
     Gfx color_gfx[1];
 
-    if(CHECK_BTN_ANY(input->press.button, BTN_L))
-    {
-        if(!gButtonDown)
-        {
-            // SceneEntranceTableEntry *scene_entry;
-            // EntranceTableEntry *entrance;
-            // u32 test_index;
+    // if(CHECK_BTN_ANY(input->press.button, BTN_L))
+    // {
+    //     if(!gButtonDown)
+    //     {
+    //         // SceneEntranceTableEntry *scene_entry;
+    //         // EntranceTableEntry *entrance;
+    //         // u32 test_index;
 
-            // gEntranceIndex++;
+    //         // gEntranceIndex++;
 
-            // if(gEntranceIndex >= gEntranceCount)
-            // {
-            //     do
-            //     {
-            //         gSceneIndex++;
+    //         // if(gEntranceIndex >= gEntranceCount)
+    //         // {
+    //         //     do
+    //         //     {
+    //         //         gSceneIndex++;
 
-            //         for(test_index = 0; test_index < ARRAY_COUNT(gSceneExclusion); test_index++)
-            //         {
-            //             if(gSceneIndex == gSceneExclusion[test_index])
-            //             {
-            //                 gSceneIndex++;
-            //                 test_index = 0xffffffff;
-            //             }
-            //         }
+    //         //         for(test_index = 0; test_index < ARRAY_COUNT(gSceneExclusion); test_index++)
+    //         //         {
+    //         //             if(gSceneIndex == gSceneExclusion[test_index])
+    //         //             {
+    //         //                 gSceneIndex++;
+    //         //                 test_index = 0xffffffff;
+    //         //             }
+    //         //         }
 
-            //         scene_entry = Entrance_GetSceneTableEntry(gSceneIndex);
-            //     }
-            //     while(scene_entry == NULL || scene_entry->tableCount == 0);
-            //     gEntranceCount = scene_entry->tableCount;
-            //     gEntranceIndex = 0;
-            // }
-            // play->nextEntrance = Entrance_Create(gSceneIndex, gEntranceIndex, 0);
-            // Scene_SetExitFade(play);
-            // play->transitionTrigger = TRANS_TRIGGER_START;
+    //         //         scene_entry = Entrance_GetSceneTableEntry(gSceneIndex);
+    //         //     }
+    //         //     while(scene_entry == NULL || scene_entry->tableCount == 0);
+    //         //     gEntranceCount = scene_entry->tableCount;
+    //         //     gEntranceIndex = 0;
+    //         // }
+    //         // play->nextEntrance = Entrance_Create(gSceneIndex, gEntranceIndex, 0);
+    //         // Scene_SetExitFade(play);
+    //         // play->transitionTrigger = TRANS_TRIGGER_START;
 
 
-            // u32 color = Rand_Next() % 0xffffff;
-            // gChaosContext.link.tunic_r = color;
-            // gChaosContext.link.tunic_g = color >> 8;
-            // gChaosContext.link.tunic_b = color >> 16;
+    //         // u32 color = Rand_Next() % 0xffffff;
+    //         // gChaosContext.link.tunic_r = color;
+    //         // gChaosContext.link.tunic_g = color >> 8;
+    //         // gChaosContext.link.tunic_b = color >> 16;
 
-            // Player_SetTunicColor(play, this);
-            // Chaos_ActivateCode(CHAOS_CODE_BEER_GOGGLES, 30);
-            // Chaos_ActivateCode(CHAOS_CODE_OUT_OF_SHAPE, 10);
-            // Chaos_ActivateCode(CHAOS_CODE_PLAY_OCARINA, 0);
-            // Chaos_ActivateCode(CHAOS_CODE_WEIRD_SKYBOX, 19);
-            // Audio_PlaySfx_2(NA_SE_OC_SECRET_WARP_IN);
+    //         // Player_SetTunicColor(play, this);
+    //         // Chaos_ActivateCode(CHAOS_CODE_BEER_GOGGLES, 30);
+    //         // Chaos_ActivateCode(CHAOS_CODE_OUT_OF_SHAPE, 10);
+    //         // Chaos_ActivateCode(CHAOS_CODE_PLAY_OCARINA, 0);
+    //         // Chaos_ActivateCode(CHAOS_CODE_WEIRD_SKYBOX, 19);
+    //         // Audio_PlaySfx_2(NA_SE_OC_SECRET_WARP_IN);
 
-            // func_80839978(play, this);
+    //         // func_80839978(play, this);
 
             
 
-            gButtonDown = 1;
-        }
+    //         gButtonDown = 1;
+    //     }
         
-        // Chaos_ActivateCode(CHAOS_CODE_TUNIC_COLOR, 0);
-    }
-    else
+    //     // Chaos_ActivateCode(CHAOS_CODE_TUNIC_COLOR, 0);
+    // }
+    // else
+    // {
+    //     gButtonDown = 0;
+    // }
+
+    if(CHECK_BTN_ANY(input->press.button, BTN_L))
     {
-        gButtonDown = 0;
+        // play->nextEntrance = Entrance_Create(gSceneIndex, gEntranceIndex, 0);
+        play->nextEntrance = ENTRANCE(PIRATES_FORTRESS_INTERIOR, 7);
+        Scene_SetExitFade(play);
+        play->transitionTrigger = TRANS_TRIGGER_START;
     }
+
+    // if(CHECK_BTN_ANY(input->press.button, BTN_R))
+    // {
+    //     Chaos_ActivateCode(CHAOS_CODE_ACTOR_CHASE, 15);
+    // }
 
     if(!(this->stateFlags2 & PLAYER_STATE2_80) & !(this->stateFlags1 & PLAYER_STATE1_800000))
     {
@@ -12546,6 +12560,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
                 code->data = 2 + Rand_Next() % 160;
             }
         }
+        
     }
 
     code = Chaos_GetCode(CHAOS_CODE_TRAP_FLAP);
@@ -12587,7 +12602,8 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         
         while(rupee_change == 0)
         {
-            rupee_change = ((Rand_Next() % max_rupee) << 1) - max_rupee;
+            // rupee_change = ((Rand_Next() % max_rupee) << 1) - max_rupee;
+            rupee_change = Rand_S16Offset(-max_rupee, max_rupee << 1);
             if(gSaveContext.save.saveInfo.playerData.rupees + rupee_change < 0)
             {
                 rupee_change = -gSaveContext.save.saveInfo.playerData.rupees;

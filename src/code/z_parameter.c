@@ -2585,9 +2585,9 @@ u8 Item_Give(PlayState* play, u8 item) {
         }
 
     } else if ((item == ITEM_QUIVER_30) || (item == ITEM_BOW)) {
-        Chaos_EnableCode(CHAOS_CODE_BOMB_ARROWS);
-        Chaos_EnableCode(CHAOS_CODE_BUCKSHOT_ARROWS);
-        Chaos_EnableCode(CHAOS_CODE_WEIRD_ARROWS);
+        // Chaos_EnableCode(CHAOS_CODE_BOMB_ARROWS);
+        // Chaos_EnableCode(CHAOS_CODE_BUCKSHOT_ARROWS);
+        // Chaos_EnableCode(CHAOS_CODE_WEIRD_ARROWS);
         if (CUR_UPG_VALUE(UPG_QUIVER) == 0) {
             Inventory_ChangeUpgrade(UPG_QUIVER, 1);
             INV_CONTENT(ITEM_BOW) = ITEM_BOW;
@@ -2613,7 +2613,7 @@ u8 Item_Give(PlayState* play, u8 item) {
         return ITEM_NONE;
 
     } else if (item == ITEM_BOMB_BAG_20) {
-        Chaos_EnableCode(CHAOS_CODE_RANDOM_BOMB_TIMER);
+        // Chaos_EnableCode(CHAOS_CODE_RANDOM_BOMB_TIMER);
         if (CUR_UPG_VALUE(UPG_BOMB_BAG) == 0) {
             Inventory_ChangeUpgrade(UPG_BOMB_BAG, 1);
             INV_CONTENT(ITEM_BOMB) = ITEM_BOMB;
@@ -2628,14 +2628,14 @@ u8 Item_Give(PlayState* play, u8 item) {
         }
 
     } else if (item == ITEM_BOMB_BAG_30) {
-        Chaos_EnableCode(CHAOS_CODE_RANDOM_BOMB_TIMER);
+        // Chaos_EnableCode(CHAOS_CODE_RANDOM_BOMB_TIMER);
         Inventory_ChangeUpgrade(UPG_BOMB_BAG, 2);
         INV_CONTENT(ITEM_BOMB) = ITEM_BOMB;
         AMMO(ITEM_BOMB) = CAPACITY(UPG_BOMB_BAG, 2);
         return ITEM_NONE;
 
     } else if (item == ITEM_BOMB_BAG_40) {
-        Chaos_EnableCode(CHAOS_CODE_RANDOM_BOMB_TIMER);
+        // Chaos_EnableCode(CHAOS_CODE_RANDOM_BOMB_TIMER);
         Inventory_ChangeUpgrade(UPG_BOMB_BAG, 3);
         INV_CONTENT(ITEM_BOMB) = ITEM_BOMB;
         AMMO(ITEM_BOMB) = CAPACITY(UPG_BOMB_BAG, 3);
@@ -2755,7 +2755,7 @@ u8 Item_Give(PlayState* play, u8 item) {
         return ITEM_NONE;
 
     } else if (item == ITEM_BOMBCHU) {
-        Chaos_EnableCode(CHAOS_CODE_RANDOM_BOMB_TIMER);
+        // Chaos_EnableCode(CHAOS_CODE_RANDOM_BOMB_TIMER);
         if (INV_CONTENT(ITEM_BOMBCHU) != ITEM_BOMBCHU) {
             INV_CONTENT(ITEM_BOMBCHU) = ITEM_BOMBCHU;
             AMMO(ITEM_BOMBCHU) = 10;
@@ -2792,7 +2792,7 @@ u8 Item_Give(PlayState* play, u8 item) {
 
     } else if (item == ITEM_OCARINA_OF_TIME) {
         INV_CONTENT(ITEM_OCARINA_OF_TIME) = ITEM_OCARINA_OF_TIME;
-        Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA);
+        // Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA);
         return ITEM_NONE;
 
     } else if (item == ITEM_MAGIC_BEANS) {
