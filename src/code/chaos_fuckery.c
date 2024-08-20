@@ -2,6 +2,7 @@
 #include "functions.h"
 #include "regs.h"
 #include "gfxprint.h"
+#include "gfxalloc.h"
 #include "variables.h"
 #include "z64.h"
 #include "z64cutscene.h"
@@ -830,7 +831,7 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
         gDPPipeSync(OVERLAY_DISP++);
 
         polyOpa = POLY_OPA_DISP;
-        gfx = Graph_GfxPlusOne(polyOpa);
+        gfx = Gfx_Open(polyOpa);
         gSPDisplayList(OVERLAY_DISP++, gfx);
 
         GfxPrint_Init(&gfx_print);
@@ -956,7 +957,7 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
         gfx = GfxPrint_Close(&gfx_print);
         GfxPrint_Destroy(&gfx_print);
         gSPEndDisplayList(gfx++);
-        Graph_BranchDlist(polyOpa, gfx);
+        Gfx_Close(polyOpa, gfx);
         POLY_OPA_DISP = gfx;
         CLOSE_DISPS(gfxCtx);
     }

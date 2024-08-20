@@ -14,23 +14,21 @@
  * - RisingDebris: The debris that rises from the ground as the moon is crashing.
  * - FireRing: The ring of fire that expands outward when the moon is almost done crashing.
  */
- 
+
 #include "z_en_fall.h"
 #include "overlays/actors/ovl_En_Clear_Tag/z_en_clear_tag.h"
 #include "objects/object_fall/object_fall.h"
 #include "objects/object_fall2/object_fall2.h"
 #include "objects/object_lodmoon/object_lodmoon.h"
 #include "objects/object_moonston/object_moonston.h"
-#include "chaos_fuckery.h" 
- 
+#include "chaos_fuckery.h"
+
 #define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_20)
 
 #define THIS ((EnFall*)thisx)
 
 #define FLAG_FIRE_BALL_INTENSIFIES (1 << 0)
 #define FLAG_FIRE_RING_APPEARS (1 << 1)
-
-extern ChaosContext gChaosContext;  
 
 void EnFall_Init(Actor* thisx, PlayState* play);
 void EnFall_Destroy(Actor* thisx, PlayState* play);
@@ -56,6 +54,8 @@ void EnFall_RisingDebris_Draw(Actor* thisx, PlayState* play);
 void EnFall_FireRing_Draw(Actor* thisx, PlayState* play);
 void EnFall_MoonsTear_Draw(Actor* thisx, PlayState* play);
 
+extern struct ChaosContext gChaosContext;
+
 typedef struct {
     /* 0x00 */ u8 modelIndex;
     /* 0x04 */ Vec3f pos;
@@ -79,13 +79,12 @@ ActorInit En_Fall_InitVars = {
     /**/ NULL,
 };
 
-
 /**
  * Sets the scale of the moon depending on the current day. On the Final Day,
  * it also moves the moon closer to the ground depending on the current time.
  */
 void EnFall_Moon_AdjustScaleAndPosition(EnFall* this, PlayState* play) {
-    u16 currentTime = gSaveContext.save.time;
+    u16 currentTime = CURRENT_TIME;
     u16 dayStartTime = this->dayStartTime;
     f32 finalDayRelativeHeight;
 
@@ -288,7 +287,7 @@ void EnFall_Setup(EnFall* this, PlayState* play) {
                 this->actor.draw = NULL;
                 this->actionFunc = EnFall_MoonsTear_Fall;
                 Actor_SetScale(&this->actor, 0.02f);
-                if (!(play->actorCtx.flags & ACTORCTX_FLAG_1)) {
+                if (!(play->actorCtx.flags & ACTORCTX_FLAG_TELESCOPE_ON)) {
                     Actor_Kill(&this->actor);
                 }
                 moon = EnFall_MoonsTear_GetTerminaFieldMoon(play);
@@ -509,7 +508,7 @@ void EnFall_Moon_PerformDefaultActions(EnFall* this, PlayState* play) {
         currentDay = CURRENT_DAY;
         if ((u16)this->currentDay != (u32)currentDay) {
             this->currentDay = currentDay;
-            this->dayStartTime = gSaveContext.save.time;
+            this->dayStartTime = CURRENT_TIME;
         }
         EnFall_Moon_AdjustScaleAndPosition(this, play);
     }
@@ -932,6 +931,7 @@ void EnFall_Moon_Draw(Actor* thisx, PlayState* play) {
     s32 primColor;
 
     OPEN_DISPS(play->state.gfxCtx);
+
     Gfx_SetupDL25_Opa(play->state.gfxCtx);
 
     EnFall_Moon_ChaosStuff(play, this);
@@ -945,7 +945,7 @@ void EnFall_Moon_Draw(Actor* thisx, PlayState* play) {
     gSPDisplayList(POLY_OPA_DISP++, gMoonDL);
 
     CLOSE_DISPS(play->state.gfxCtx);
-} 
+}
 
 void EnFall_OpenMouthMoon_Draw(Actor* thisx, PlayState* play) {
     EnFall* this = THIS;
@@ -963,7 +963,7 @@ void EnFall_OpenMouthMoon_Draw(Actor* thisx, PlayState* play) {
     gSPDisplayList(POLY_OPA_DISP++, gOpenMouthMoonDL);
 
     CLOSE_DISPS(play->state.gfxCtx);
-}  
+}
 
 void EnFall_LodMoon_Draw(Actor* thisx, PlayState* play) {
     s32 pad;

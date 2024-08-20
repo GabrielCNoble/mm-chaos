@@ -6,7 +6,6 @@
 
 #include "overlays/actors/ovl_Obj_Bean/z_obj_bean.h"
 #include "z_en_mushi2.h"
-#include "objects/gameplay_keep/gameplay_keep.h"
 
 #define FLAGS (ACTOR_FLAG_10)
 
@@ -129,14 +128,15 @@ s32 func_80A68860(EnMushi2* this, PlayState* play) {
     s32 sp40;
     CollisionPoly* sp3C;
     f32 temp_f0 = BgCheck_EntityRaycastFloor5(&play->colCtx, &sp3C, &sp40, &this->actor, &this->actor.world.pos);
-    WaterBox* sp34;
+    WaterBox* waterBox;
     f32 sp30;
 
     if ((temp_f0 > (BGCHECK_Y_MIN + 1)) && ((this->actor.world.pos.y - 150.0f) < temp_f0)) {
         return true;
     }
 
-    return WaterBox_GetSurface1_2(play, &play->colCtx, this->actor.world.pos.x, this->actor.world.pos.z, &sp30, &sp34);
+    return WaterBox_GetSurface1_2(play, &play->colCtx, this->actor.world.pos.x, this->actor.world.pos.z, &sp30,
+                                  &waterBox);
 }
 
 s32 func_80A68910(EnMushi2* this, PlayState* play) {
@@ -154,8 +154,8 @@ s32 func_80A68910(EnMushi2* this, PlayState* play) {
             params = OBJBEAN_GET_C000(bean);
             if (((params == ENOBJBEAN_GET_C000_1) || (params == ENOBJBEAN_GET_C000_2)) &&
                 (bean->room == this->actor.room)) {
-                temp_f0 = Math3D_XZDistanceSquared(this->actor.world.pos.x, this->actor.world.pos.z, bean->world.pos.x,
-                                                   bean->world.pos.z);
+                temp_f0 = Math3D_Dist2DSq(this->actor.world.pos.x, this->actor.world.pos.z, bean->world.pos.x,
+                                          bean->world.pos.z);
                 temp_f2 = bean->world.pos.y - this->actor.world.pos.y;
                 if ((temp_f0 < minDistSq) && (temp_f2 < 100.0f) && (temp_f2 > -50.0f)) {
                     ret = true;
@@ -200,7 +200,7 @@ void func_80A68B6C(EnMushi2* this) {
     }
 }
 
-s32 func_80A68BA0(EnMushi2* this) {
+bool func_80A68BA0(EnMushi2* this) {
     return (D_80A6B994 > 3) && this->unk_34C == NULL;
 }
 
@@ -237,7 +237,7 @@ s32 func_80A68CE4(Vec3f* arg0, Vec3f* arg1, f32 arg2) {
     f32 temp_f2;
 
     Math_Vec3f_Diff(arg1, arg0, &sp34);
-    temp_f0 = Math3D_LengthSquared(&sp34);
+    temp_f0 = Math3D_Vec3fMagnitudeSq(&sp34);
     temp_f2 = arg2 + 0.01f;
     if (temp_f0 <= SQ(temp_f2)) {
         Math_Vec3f_Copy(arg0, arg1);
@@ -269,9 +269,9 @@ s32 func_80A68DD4(EnMushi2* this, PlayState* play) {
         player = GET_PLAYER(play);
         sp2E = BINANG_ROT180(this->actor.yawTowardsPlayer);
         sp24 = Math_SinS(sp2E);
-        if (Math3D_XZDistanceSquared((sp24 * 16.0f) + player->actor.world.pos.x,
-                                     (Math_CosS(sp2E) * 16.0f) + player->actor.world.pos.z, this->actor.world.pos.x,
-                                     this->actor.world.pos.z) < SQ(20.0f)) {
+        if (Math3D_Dist2DSq((sp24 * 16.0f) + player->actor.world.pos.x,
+                            (Math_CosS(sp2E) * 16.0f) + player->actor.world.pos.z, this->actor.world.pos.x,
+                            this->actor.world.pos.z) < SQ(20.0f)) {
             return true;
         }
     }
@@ -411,8 +411,8 @@ s32 func_80A691EC(EnMushi2* this, CollisionPoly* floorPoly, f32 arg2) {
         sp30 = 1;
     }
 
-    Math3D_CrossProduct(&this->unk_310, &sp4C, &sp40);
-    Math3D_CrossProduct(&sp4C, &sp40, &sp64);
+    Math3D_Vec3f_Cross(&this->unk_310, &sp4C, &sp40);
+    Math3D_Vec3f_Cross(&sp4C, &sp40, &sp64);
 
     if (func_80A68C5C(&sp64, &sp58) && func_80A68C5C(&sp40, &sp34)) {
         Math_Vec3f_Copy(&this->unk_31C, &sp4C);
@@ -529,7 +529,7 @@ void func_80A697C4(EnMushi2* this, PlayState* play) {
     s32 bgId = this->polyBgId;
 
     if (!(this->unk_30C & (0x10 | 0x4))) {
-        WaterBox* sp30;
+        WaterBox* waterBox;
         f32 sp2C;
 
         this->unk_30C &= ~(0x40 | 0x8 | 0x2);
@@ -538,7 +538,7 @@ void func_80A697C4(EnMushi2* this, PlayState* play) {
         }
 
         if (WaterBox_GetSurface1_2(play, &play->colCtx, this->actor.world.pos.x, this->actor.world.pos.z, &sp2C,
-                                   &sp30)) {
+                                   &waterBox)) {
             this->actor.depthInWater = sp2C - this->actor.world.pos.y;
             if (this->actor.depthInWater >= 1.0f) {
                 this->unk_30C |= 0x20;
@@ -578,7 +578,7 @@ void func_80A697C4(EnMushi2* this, PlayState* play) {
 
 s32 func_80A699E4(EnMushi2* this, PlayState* play) {
     s32 pad;
-    WaterBox* sp40;
+    WaterBox* waterBox;
     f32 sp3C;
 
     if (this->unk_328.y < 0.0f) {
@@ -586,7 +586,7 @@ s32 func_80A699E4(EnMushi2* this, PlayState* play) {
         f32 y = (2.0f * this->unk_328.y) + this->actor.world.pos.y;
         f32 z = (2.0f * this->unk_328.z) + this->actor.world.pos.z;
 
-        if (WaterBox_GetSurface1_2(play, &play->colCtx, x, z, &sp3C, &sp40) && (y <= sp3C)) {
+        if (WaterBox_GetSurface1_2(play, &play->colCtx, x, z, &sp3C, &waterBox) && (y <= sp3C)) {
             return true;
         }
     }
@@ -606,15 +606,13 @@ void func_80A69ADC(Actor* thisx) {
     s32 pad2;
 
     if (this->unk_358 < 1.0f) {
-        sp44 = Math3D_SignedDistanceFromPlane(
-            this->unk_310.x, this->unk_310.y, this->unk_310.z,
-            func_80A69AA8(this->unk_310.x, this->unk_310.y, this->unk_310.z, &this->actor.world.pos),
-            &bean->dyna.actor.world.pos);
-        sp40 = Math3D_SignedDistanceFromPlane(
-            this->unk_328.x, this->unk_328.y, this->unk_328.z,
-            func_80A69AA8(this->unk_328.x, this->unk_328.y, this->unk_328.z, &this->actor.world.pos),
-            &bean->dyna.actor.world.pos);
-        sp3C = Math3D_XZLength(sp44, sp40);
+        sp44 = Math3D_PlaneF(this->unk_310.x, this->unk_310.y, this->unk_310.z,
+                             func_80A69AA8(this->unk_310.x, this->unk_310.y, this->unk_310.z, &this->actor.world.pos),
+                             &bean->dyna.actor.world.pos);
+        sp40 = Math3D_PlaneF(this->unk_328.x, this->unk_328.y, this->unk_328.z,
+                             func_80A69AA8(this->unk_328.x, this->unk_328.y, this->unk_328.z, &this->actor.world.pos),
+                             &bean->dyna.actor.world.pos);
+        sp3C = Math3D_Dist1D(sp44, sp40);
 
         if (fabsf(sp3C) > 0.1f) {
             this->unk_360 = (Rand_ZeroOne() * 3000.0f * (this->unk_358 - 1.0f)) + (((sp40 / sp3C) - 1.0f) * -1500.0f);
@@ -624,7 +622,7 @@ void func_80A69ADC(Actor* thisx) {
             } else {
                 this->unk_366 = ((s32)Rand_Next() > 0) ? 2000 : -2000;
             }
-            this->unk_366 += (s16)(((Rand_ZeroOne() * (1.0f - this->unk_358)) - 0.5f) * 0x400);
+            this->unk_366 += TRUNCF_BINANG(((Rand_ZeroOne() * (1.0f - this->unk_358)) - 0.5f) * 0x400);
         } else {
             this->unk_360 = 0.0f;
             this->unk_364 = -0x8000;
@@ -652,15 +650,13 @@ void func_80A69D3C(EnMushi2* this) {
     f32 sp38;
 
     if ((this->unk_34C != NULL) && (this->unk_358 > 0.999f)) {
-        sp40 = Math3D_SignedDistanceFromPlane(
-            this->unk_310.x, this->unk_310.y, this->unk_310.z,
-            func_80A69AA8(this->unk_310.x, this->unk_310.y, this->unk_310.z, &this->actor.world.pos),
-            &this->unk_34C->dyna.actor.world.pos);
-        sp3C = Math3D_SignedDistanceFromPlane(
-            this->unk_328.x, this->unk_328.y, this->unk_328.z,
-            func_80A69AA8(this->unk_328.x, this->unk_328.y, this->unk_328.z, &this->actor.world.pos),
-            &this->unk_34C->dyna.actor.world.pos);
-        sp38 = Math3D_XZLengthSquared(sp40, sp3C);
+        sp40 = Math3D_PlaneF(this->unk_310.x, this->unk_310.y, this->unk_310.z,
+                             func_80A69AA8(this->unk_310.x, this->unk_310.y, this->unk_310.z, &this->actor.world.pos),
+                             &this->unk_34C->dyna.actor.world.pos);
+        sp3C = Math3D_PlaneF(this->unk_328.x, this->unk_328.y, this->unk_328.z,
+                             func_80A69AA8(this->unk_328.x, this->unk_328.y, this->unk_328.z, &this->actor.world.pos),
+                             &this->unk_34C->dyna.actor.world.pos);
+        sp38 = Math3D_Dist1DSq(sp40, sp3C);
 
         if (fabsf(sp38) > 0.010000001f) {
             s16 temp_v0 = Math_Atan2S_XY(sp3C, sp40);
@@ -680,7 +676,7 @@ void func_80A69D3C(EnMushi2* this) {
     }
 }
 
-s32 func_80A69EE4(EnMushi2* this, PlayState* play) {
+s32 EnMushi2_IsUnderwater(EnMushi2* this, PlayState* play) {
     s32 pad;
     WaterBox* waterBox;
     f32 waterSurface;
@@ -755,13 +751,13 @@ void EnMushi2_Init(Actor* thisx, PlayState* play) {
     this->actor.world.rot.y = this->actor.shape.rot.y;
     func_80A68F24(this);
     SkelAnime_Init(play, &this->skelAnime, &gameplay_keep_Skel_0527A0, &gameplay_keep_Anim_05140C, this->jointTable,
-                   this->morphTable, 24);
+                   this->morphTable, BUG_LIMB_MAX);
     Animation_Change(&this->skelAnime, &gameplay_keep_Anim_05140C, 1.0f, 0.0f, 0.0f, ANIMMODE_LOOP_INTERP, 0.0f);
     Collider_InitJntSph(play, &this->collider);
     Collider_SetJntSph(play, &this->collider, &this->actor, &sJntSphInit, this->colliderElements);
     func_80A68808(this);
     this->actor.colChkInfo.mass = 30;
-    sp3C = func_80A69EE4(this, play);
+    sp3C = EnMushi2_IsUnderwater(this, play);
 
     if ((sp3C == 0) && func_80A68860(this, play) && func_80A68910(this, play) &&
         (ENMUSHI2_GET_3(&this->actor) == ENMUSHI2_0)) {
@@ -1033,7 +1029,7 @@ void func_80A6AE7C(EnMushi2* this, PlayState* play) {
     this->actor.shape.rot.y += 0xC8;
     this->actor.speed += (Rand_ZeroOne() - 0.5f) * 0.16f;
     this->actor.speed *= 0.9f;
-    this->actor.world.rot.y += (s16)((Rand_ZeroOne() - 0.5f) * 2000.0f);
+    this->actor.world.rot.y += TRUNCF_BINANG((Rand_ZeroOne() - 0.5f) * 2000.0f);
     this->actor.gravity = -0.04f - (Rand_ZeroOne() * 0.02f);
     this->actor.velocity.y *= 0.95f;
     Actor_MoveWithGravity(&this->actor);

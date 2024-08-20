@@ -118,16 +118,16 @@ void func_80AC4C18(BgIcefloe* this) {
 }
 
 void func_80AC4C34(BgIcefloe* this, PlayState* play) {
-    WaterBox* water;
+    WaterBox* waterBox;
 
     this->timer--;
     if ((this->timer == 0) ||
         !WaterBox_GetSurface1_2(play, &play->colCtx, this->dyna.actor.world.pos.x, this->dyna.actor.world.pos.z,
-                                &this->dyna.actor.home.pos.y, &water)) {
+                                &this->dyna.actor.home.pos.y, &waterBox)) {
         func_80AC4CF0(this);
     } else {
         this->dyna.actor.world.pos.y =
-            (Math_SinF(this->timer * (M_PI / 30.0f)) * 3.0f) + (this->dyna.actor.home.pos.y + 10.0f);
+            (Math_SinF(this->timer * (M_PIf / 30)) * 3.0f) + (this->dyna.actor.home.pos.y + 10.0f);
     }
 }
 

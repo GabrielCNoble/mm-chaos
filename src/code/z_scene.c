@@ -1,7 +1,4 @@
 #include "global.h"
-#include "fault.h"
-
-FaultClient gObjectFaultClient;
 
 /**
  * Spawn an object file of a specified ID that will persist through room changes.
@@ -21,15 +18,16 @@ s32 Object_SpawnPersistent(ObjectContext* objectCtx, s16 id) {
     objectCtx->slots[objectCtx->numEntries].id = id;
     size = gObjectTable[id].vromEnd - gObjectTable[id].vromStart;
 
+    //! FAKE:
     if (1) {}
 
     if (size != 0) {
-        DmaMgr_SendRequest0(objectCtx->slots[objectCtx->numEntries].segment, gObjectTable[id].vromStart, size);
+        DmaMgr_RequestSync(objectCtx->slots[objectCtx->numEntries].segment, gObjectTable[id].vromStart, size);
     }
 
     if (objectCtx->numEntries < ARRAY_COUNT(objectCtx->slots) - 1) {
         objectCtx->slots[objectCtx->numEntries + 1].segment =
-            ALIGN16((u32)objectCtx->slots[objectCtx->numEntries].segment + size);
+            (void*)ALIGN16((uintptr_t)objectCtx->slots[objectCtx->numEntries].segment + size);
     }
 
     objectCtx->numEntries++;
@@ -38,30 +36,11 @@ s32 Object_SpawnPersistent(ObjectContext* objectCtx, s16 id) {
     return objectCtx->numEntries - 1;
 }
 
-void Object_FaultClient(void *arg0, void *arg1)
-{
-    u32 object_index;
-    ObjectContext *context = (ObjectContext *)arg0;
-
-    FaultDrawer_SetCharPad(-2, 0);
-
-    FaultDrawer_Printf("object table\n");
-    FaultDrawer_Printf(" ID  | Segment  |   VROM   |   DRAM   \n");
-
-    for(object_index = 0; object_index < context->numEntries; object_index++)
-    {
-        ObjectEntry *entry = context->slots + object_index;
-        FaultDrawer_Printf("%04d | %08x | %08x | %08x\n", entry->id, entry->segment, entry->dmaReq.vromAddr, entry->dmaReq.dramAddr);
-    }
-}
-
 void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
     PlayState* play = (PlayState*)gameState;
     s32 pad;
     u32 spaceSize;
     s32 i;
-
-    Fault_AddClient(&gObjectFaultClient, Object_FaultClient, objectCtx, NULL);
 
     if (play->sceneId == SCENE_CLOCKTOWER || play->sceneId == SCENE_TOWN || play->sceneId == SCENE_BACKTOWN ||
         play->sceneId == SCENE_ICHIBA) {
@@ -78,45 +57,16 @@ void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
     objectCtx->numPersistentEntries = 0;
     objectCtx->mainKeepSlot = 0;
     objectCtx->subKeepSlot = 0;
-    // objectCtx->request_count = 0;
-    // objectCtx->next_free_request = 0;
-    // objectCtx->next_pending_request = 0;
 
     // clang-format off
-    for (i = 0; i < ARRAY_COUNT(objectCtx->slots); i++) 
-    { 
-        objectCtx->slots[i].id = 0; 
-        // objectCtx->slots[i].request_index = MAX_OBJ_REQUESTS;
-    }
+    for (i = 0; i < ARRAY_COUNT(objectCtx->slots); i++) { objectCtx->slots[i].id = 0; }
     // clang-format on
 
     objectCtx->spaceStart = objectCtx->slots[0].segment = THA_AllocTailAlign16(&gameState->tha, spaceSize);
     objectCtx->spaceEnd = (void*)((u32)objectCtx->spaceStart + spaceSize);
     objectCtx->mainKeepSlot = Object_SpawnPersistent(objectCtx, GAMEPLAY_KEEP);
-    /* keep like-like always loaded */
-    Object_SpawnPersistent(objectCtx, OBJECT_RR);
 
-    gSegments[4] = OS_K0_TO_PHYSICAL(objectCtx->slots[objectCtx->mainKeepSlot].segment);
-}
-
-s16 Object_RequestLoad(ObjectContext *context, ObjectEntry *entry, void *vram_start, uintptr_t vrom_start, size_t size)
-{
-    s16 request_index = MAX_OBJ_REQUESTS;
-    // ObjectRequest *object_request;
-    // if(context->request_count < MAX_OBJ_REQUESTS)
-    // {
-    //     request_index = context->next_free_request;
-    //     context->request_count++;
-    //     context->next_free_request = (context->next_free_request + 1) & (MAX_OBJ_REQUESTS - 1);
-
-    //     object_request = context->requests + request_index;
-    //     object_request->slot_index = entry - &context->slots[0];
-    //     // entry->request_index = request_index;
-    //     osCreateMesgQueue(&object_request->load_queue, &object_request->load_msg, 1);
-    //     DmaMgr_SendRequestImpl(&entry->dmaReq, vram_start, vrom_start, size, 0, &object_request->load_queue, NULL);
-    // }
-
-    return request_index;
+    gSegments[0x04] = OS_K0_TO_PHYSICAL(objectCtx->slots[objectCtx->mainKeepSlot].segment);
 }
 
 void Object_UpdateEntries(ObjectContext* objectCtx) {
@@ -124,61 +74,6 @@ void Object_UpdateEntries(ObjectContext* objectCtx) {
     ObjectEntry* entry = &objectCtx->slots[0];
     RomFile* objectFile;
     size_t size;
-
-    // do
-    // {
-    //     u32 request_count = objectCtx->request_count;
-
-    //     for(i = 0; i < request_count; i++)
-    //     {
-    //         ObjectRequest *request = objectCtx->requests + objectCtx->next_pending_request;
-            
-    //         if(!osRecvMesg(&request->load_queue, NULL, OS_MESG_NOBLOCK))
-    //         {
-    //             ObjectEntry *pending_entry = objectCtx->slots + request->slot_index;
-    //             pending_entry->id = -pending_entry->id;
-    //             // pending_entry->request_index = MAX_OBJ_REQUESTS;
-    //             objectCtx->request_count--;
-    //             objectCtx->next_pending_request = (objectCtx->next_pending_request + 1) & (MAX_OBJ_REQUESTS - 1);
-
-
-                
-    //             // if(objectCtx->request_count > MAX_OBJ_REQUESTS)
-    //             // {
-    //             //     Fault_AddHungupAndCrash("SHIT's FUCKED", 146);
-    //             // }
-    //         }
-    //         else
-    //         {
-    //             break;
-    //         }
-    //     }
-
-    //     for (i = 0; i < objectCtx->numEntries; i++)
-    //     {
-    //         ObjectEntry *entry = &objectCtx->slots[i];
-    //         if(entry->id < 0)
-    //         {
-    //             s32 id = -entry->id;
-
-    //             if(entry->dmaReq.vromAddr == 0)
-    //             {
-    //                 objectFile = &gObjectTable[id];
-    //                 size = objectFile->vromEnd - objectFile->vromStart;
-
-    //                 if(size == 0) 
-    //                 {
-    //                     entry->id = 0;
-    //                 } 
-    //                 else if(Object_RequestLoad(objectCtx, entry, entry->segment, objectFile->vromStart, size) == MAX_OBJ_REQUESTS)
-    //                 {
-    //                     break;
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
-    // while(objectCtx->request_count > 0);
 
     for (i = 0; i < objectCtx->numEntries; i++) {
         if (entry->id < 0) {
@@ -192,8 +87,8 @@ void Object_UpdateEntries(ObjectContext* objectCtx) {
                     entry->id = 0;
                 } else {
                     osCreateMesgQueue(&entry->loadQueue, &entry->loadMsg, 1);
-                    DmaMgr_SendRequestImpl(&entry->dmaReq, entry->segment, objectFile->vromStart, size, 0,
-                                           &entry->loadQueue, NULL);
+                    DmaMgr_RequestAsync(&entry->dmaReq, entry->segment, objectFile->vromStart, size, 0,
+                                        &entry->loadQueue, NULL);
                 }
             } else if (!osRecvMesg(&entry->loadQueue, NULL, OS_MESG_NOBLOCK)) {
                 entry->id = id;
@@ -213,7 +108,7 @@ s32 Object_GetSlot(ObjectContext* objectCtx, s16 objectId) {
         }
     }
 
-    return -1;
+    return OBJECT_SLOT_NONE;
 }
 
 s32 Object_IsLoaded(ObjectContext* objectCtx, s32 slot) {
@@ -237,11 +132,10 @@ void Object_LoadAll(ObjectContext* objectCtx) {
             continue;
         }
 
-        DmaMgr_SendRequest0(objectCtx->slots[i].segment, gObjectTable[id].vromStart, vromSize);
+        DmaMgr_RequestSync(objectCtx->slots[i].segment, gObjectTable[id].vromStart, vromSize);
     }
 }
 
-/* Object_AddObjectToEntry */
 void* func_8012F73C(ObjectContext* objectCtx, s32 slot, s16 id) {
     u32 addr;
     uintptr_t vromSize;
@@ -249,7 +143,6 @@ void* func_8012F73C(ObjectContext* objectCtx, s32 slot, s16 id) {
 
     objectCtx->slots[slot].id = -id;
     objectCtx->slots[slot].dmaReq.vromAddr = 0;
-    // objectCtx->slots[slot].request_index = MAX_OBJ_REQUESTS;
 
     fileTableEntry = &gObjectTable[id];
     vromSize = fileTableEntry->vromEnd - fileTableEntry->vromStart;
@@ -340,9 +233,9 @@ void Scene_CommandEntranceList(PlayState* play, SceneCmd* cmd) {
 void Scene_CommandSpecialFiles(PlayState* play, SceneCmd* cmd) {
     // @note These quest hint files are identical to OoT's.
     // They are not relevant in this game and the system to process these scripts has been removed.
-    static RomFile naviQuestHintFiles[2] = {
-        { SEGMENT_ROM_START(elf_message_field), SEGMENT_ROM_END(elf_message_field) },
-        { SEGMENT_ROM_START(elf_message_ydan), SEGMENT_ROM_END(elf_message_ydan) },
+    static RomFile sNaviQuestHintFiles[2] = {
+        ROM_FILE(elf_message_field),
+        ROM_FILE(elf_message_ydan),
     };
 
     if (cmd->specialFiles.subKeepId != 0) {
@@ -352,7 +245,7 @@ void Scene_CommandSpecialFiles(PlayState* play, SceneCmd* cmd) {
     }
 
     if (cmd->specialFiles.naviQuestHintFileId != NAVI_QUEST_HINTS_NONE) {
-        play->naviQuestHints = Play_LoadFile(play, &naviQuestHintFiles[cmd->specialFiles.naviQuestHintFileId - 1]);
+        play->naviQuestHints = Play_LoadFile(play, &sNaviQuestHintFiles[cmd->specialFiles.naviQuestHintFileId - 1]);
     }
 }
 
@@ -373,11 +266,9 @@ void Scene_CommandMesh(PlayState* play, SceneCmd* cmd) {
 
 // SceneTableEntry Header Command 0x0B:  Object List
 void Scene_CommandObjectList(PlayState* play, SceneCmd* cmd) {
-    // s32 i;
-    s32 non_persistent_entry_index;
+    s32 i;
     s32 j;
-    // s32 k;
-    s32 object_list_entry_index;
+    s32 k;
     ObjectEntry* firstObject;
     ObjectEntry* entry;
     ObjectEntry* invalidatedEntry;
@@ -385,63 +276,45 @@ void Scene_CommandObjectList(PlayState* play, SceneCmd* cmd) {
     void* nextPtr;
 
     objectEntry = Lib_SegmentedToVirtual(cmd->objectList.segment);
-    // k = 0;
-    // i = play->objectCtx.numPersistentEntries;
-    object_list_entry_index = 0;
-    non_persistent_entry_index = play->objectCtx.numPersistentEntries;
-    // entry = &play->objectCtx.slots[i];
-    entry = &play->objectCtx.slots[non_persistent_entry_index];
+    k = 0;
+    i = play->objectCtx.numPersistentEntries;
+    entry = &play->objectCtx.slots[i];
     firstObject = &play->objectCtx.slots[0];
 
-    
-    // while (i < play->objectCtx.numEntries) {
-    /* look for the first non-persistent entry that doesn't match the object list */
-    while (non_persistent_entry_index < play->objectCtx.numEntries) {
+    while (i < play->objectCtx.numEntries) {
         if (entry->id != *objectEntry) {
-            // invalidatedEntry = &play->objectCtx.slots[i];
-            /* entry doesn't match */
-            invalidatedEntry = &play->objectCtx.slots[non_persistent_entry_index];
+            invalidatedEntry = &play->objectCtx.slots[i];
 
-            /* so nuke everything after it */
-            for (j = non_persistent_entry_index; j < play->objectCtx.numEntries; j++) {
+            for (j = i; j < play->objectCtx.numEntries; j++) {
                 invalidatedEntry->id = 0;
-                // invalidatedEntry->request_index = MAX_OBJ_REQUESTS;
                 invalidatedEntry++;
             }
 
-            // play->objectCtx.numEntries = i;
-            play->objectCtx.numEntries = non_persistent_entry_index;
+            play->objectCtx.numEntries = i;
             Actor_KillAllWithMissingObject(play, &play->actorCtx);
 
             continue;
         }
-        // i++
-        // k++;
-        non_persistent_entry_index++;
-        object_list_entry_index++;
+
+        i++;
+        k++;
         objectEntry++;
         entry++;
     }
 
-    while (object_list_entry_index < cmd->objectList.num) {
-        // nextPtr = func_8012F73C(&play->objectCtx, i, *objectEntry);
-        nextPtr = func_8012F73C(&play->objectCtx, non_persistent_entry_index, *objectEntry);
+    while (k < cmd->objectList.num) {
+        nextPtr = func_8012F73C(&play->objectCtx, i, *objectEntry);
 
-        // if (i < ARRAY_COUNT(play->objectCtx.slots) - 1) {
-        if (non_persistent_entry_index < ARRAY_COUNT(play->objectCtx.slots) - 1) {
-            // firstObject[i + 1].segment = nextPtr;
-            firstObject[non_persistent_entry_index + 1].segment = nextPtr;
+        if (i < ARRAY_COUNT(play->objectCtx.slots) - 1) {
+            firstObject[i + 1].segment = nextPtr;
         }
 
-        // i++;
-        // k++;
-        non_persistent_entry_index++;
-        object_list_entry_index++;
+        i++;
+        k++;
         objectEntry++;
     }
 
-    // play->objectCtx.numEntries = i;
-    play->objectCtx.numEntries = non_persistent_entry_index;
+    play->objectCtx.numEntries = i;
 }
 
 // SceneTableEntry Header Command 0x0C: Light List
@@ -461,15 +334,15 @@ void Scene_CommandPathList(PlayState* play, SceneCmd* cmd) {
 }
 
 // SceneTableEntry Header Command 0x0E: Transition Actor List
-void Scene_CommandTransiActorList(PlayState* play, SceneCmd* cmd) {
-    play->doorCtx.numTransitionActors = cmd->transiActorList.num;
-    play->doorCtx.transitionActorList = Lib_SegmentedToVirtual(cmd->transiActorList.segment);
-    func_80105818(play, play->doorCtx.numTransitionActors, play->doorCtx.transitionActorList);
+void Scene_CommandTransitionActorList(PlayState* play, SceneCmd* cmd) {
+    play->transitionActors.count = cmd->transitionActorList.num;
+    play->transitionActors.list = Lib_SegmentedToVirtual(cmd->transitionActorList.segment);
+    MapDisp_InitTransitionActorData(play, play->transitionActors.count, play->transitionActors.list);
 }
 
 // Init function for the transition system.
-void Door_InitContext(GameState* state, DoorContext* doorCtx) {
-    doorCtx->numTransitionActors = 0;
+void Scene_ResetTransitionActorList(GameState* state, TransitionActorList* transitionActors) {
+    transitionActors->count = 0;
 }
 
 // SceneTableEntry Header Command 0x0F: Environment Light Settings List
@@ -483,23 +356,23 @@ void Scene_CommandEnvLightSettings(PlayState* play, SceneCmd* cmd) {
  * These later are stored in segment 0x06, and used in maps.
  */
 void Scene_LoadAreaTextures(PlayState* play, s32 fileIndex) {
-    static RomFile sceneTextureFiles[9] = {
-        { 0, 0 }, // Default
-        { SEGMENT_ROM_START(scene_texture_01), SEGMENT_ROM_END(scene_texture_01) },
-        { SEGMENT_ROM_START(scene_texture_02), SEGMENT_ROM_END(scene_texture_02) },
-        { SEGMENT_ROM_START(scene_texture_03), SEGMENT_ROM_END(scene_texture_03) },
-        { SEGMENT_ROM_START(scene_texture_04), SEGMENT_ROM_END(scene_texture_04) },
-        { SEGMENT_ROM_START(scene_texture_05), SEGMENT_ROM_END(scene_texture_05) },
-        { SEGMENT_ROM_START(scene_texture_06), SEGMENT_ROM_END(scene_texture_06) },
-        { SEGMENT_ROM_START(scene_texture_07), SEGMENT_ROM_END(scene_texture_07) },
-        { SEGMENT_ROM_START(scene_texture_08), SEGMENT_ROM_END(scene_texture_08) },
+    static RomFile sSceneTextureFiles[9] = {
+        ROM_FILE_UNSET, // Default
+        ROM_FILE(scene_texture_01),
+        ROM_FILE(scene_texture_02),
+        ROM_FILE(scene_texture_03),
+        ROM_FILE(scene_texture_04),
+        ROM_FILE(scene_texture_05),
+        ROM_FILE(scene_texture_06),
+        ROM_FILE(scene_texture_07),
+        ROM_FILE(scene_texture_08),
     };
-    uintptr_t vromStart = sceneTextureFiles[fileIndex].vromStart;
-    size_t size = sceneTextureFiles[fileIndex].vromEnd - vromStart;
+    uintptr_t vromStart = sSceneTextureFiles[fileIndex].vromStart;
+    size_t size = sSceneTextureFiles[fileIndex].vromEnd - vromStart;
 
     if (size != 0) {
         play->roomCtx.unk74 = THA_AllocTailAlign16(&play->state.tha, size);
-        DmaMgr_SendRequest0(play->roomCtx.unk74, vromStart, size);
+        DmaMgr_RequestSync(play->roomCtx.unk74, vromStart, size);
     }
 }
 
@@ -539,12 +412,12 @@ void Scene_CommandTimeSettings(PlayState* play, SceneCmd* cmd) {
         R_TIME_SPEED = play->envCtx.sceneTimeSpeed;
     }
 
-    play->envCtx.sunPos.x = -(Math_SinS(((void)0, gSaveContext.save.time) - CLOCK_TIME(12, 0)) * 120.0f) * 25.0f;
-    play->envCtx.sunPos.y = (Math_CosS(((void)0, gSaveContext.save.time) - CLOCK_TIME(12, 0)) * 120.0f) * 25.0f;
-    play->envCtx.sunPos.z = (Math_CosS(((void)0, gSaveContext.save.time) - CLOCK_TIME(12, 0)) * 20.0f) * 25.0f;
+    play->envCtx.sunPos.x = -(Math_SinS(CURRENT_TIME - CLOCK_TIME(12, 0)) * 120.0f) * 25.0f;
+    play->envCtx.sunPos.y = (Math_CosS(CURRENT_TIME - CLOCK_TIME(12, 0)) * 120.0f) * 25.0f;
+    play->envCtx.sunPos.z = (Math_CosS(CURRENT_TIME - CLOCK_TIME(12, 0)) * 20.0f) * 25.0f;
 
     if ((play->envCtx.sceneTimeSpeed == 0) && (gSaveContext.save.cutsceneIndex < 0xFFF0)) {
-        gSaveContext.skyboxTime = gSaveContext.save.time;
+        gSaveContext.skyboxTime = CURRENT_TIME;
 
         if ((gSaveContext.skyboxTime >= CLOCK_TIME(4, 0)) && (gSaveContext.skyboxTime < CLOCK_TIME(6, 30))) {
             gSaveContext.skyboxTime = CLOCK_TIME(5, 0);
@@ -579,10 +452,10 @@ void Scene_CommandExitList(PlayState* play, SceneCmd* cmd) {
 void Scene_Command09(PlayState* play, SceneCmd* cmd) {
 }
 
-// SceneTableEntry Header Command 0x15: Sound Settings=
+// SceneTableEntry Header Command 0x15: Sound Settings
 void Scene_CommandSoundSettings(PlayState* play, SceneCmd* cmd) {
-    play->sequenceCtx.seqId = cmd->soundSettings.seqId;
-    play->sequenceCtx.ambienceId = cmd->soundSettings.ambienceId;
+    play->sceneSequences.seqId = cmd->soundSettings.seqId;
+    play->sceneSequences.ambienceId = cmd->soundSettings.ambienceId;
 
     if (gSaveContext.seqId == (u8)NA_BGM_DISABLED ||
         AudioSeq_GetActiveSeqId(SEQ_PLAYER_BGM_MAIN) == NA_BGM_FINAL_HOURS) {
@@ -595,7 +468,7 @@ void Scene_CommandEchoSetting(PlayState* play, SceneCmd* cmd) {
     play->roomCtx.curRoom.echo = cmd->echoSettings.echo;
 }
 
-// SceneTableEntry Header Command 0x18: Alternate Header List=
+// SceneTableEntry Header Command 0x18: Alternate Header List
 void Scene_CommandAltHeaderList(PlayState* play, SceneCmd* cmd) {
     SceneCmd** altHeaderList;
     SceneCmd* altHeader;
@@ -622,19 +495,19 @@ void Scene_CommandCutsceneList(PlayState* play, SceneCmd* cmd) {
     CutsceneManager_Init(play, Lib_SegmentedToVirtual(cmd->cutsceneList.segment), cmd->cutsceneList.num);
 }
 
-// SceneTableEntry Header Command 0x1C: Mini Maps
-void Scene_CommandMiniMap(PlayState* play, SceneCmd* cmd) {
-    func_80104CF4(play);
-    func_8010549C(play, cmd->minimapSettings.segment);
+// SceneTableEntry Header Command 0x1C: Map Data
+void Scene_CommandMapData(PlayState* play, SceneCmd* cmd) {
+    MapDisp_Init(play);
+    MapDisp_InitMapData(play, cmd->mapData.segment);
 }
 
 // SceneTableEntry Header Command 0x1D: Undefined
 void Scene_Command1D(PlayState* play, SceneCmd* cmd) {
 }
 
-// SceneTableEntry Header Command 0x1E: Minimap Compass Icon Info
-void Scene_CommandMiniMapCompassInfo(PlayState* play, SceneCmd* cmd) {
-    func_8010565C(play, cmd->minimapChests.num, cmd->minimapChests.segment);
+// SceneTableEntry Header Command 0x1E: Map Data Chests
+void Scene_CommandMapDataChests(PlayState* play, SceneCmd* cmd) {
+    MapDisp_InitChestData(play, cmd->mapDataChests.num, cmd->mapDataChests.segment);
 }
 
 // SceneTableEntry Header Command 0x19: Sets Region Visited Flag
@@ -692,7 +565,7 @@ void (*sSceneCmdHandlers[SCENE_CMD_MAX])(PlayState*, SceneCmd*) = {
     Scene_CommandObjectList,           // SCENE_CMD_ID_OBJECT_LIST
     Scene_CommandLightList,            // SCENE_CMD_ID_LIGHT_LIST
     Scene_CommandPathList,             // SCENE_CMD_ID_PATH_LIST
-    Scene_CommandTransiActorList,      // SCENE_CMD_ID_TRANSI_ACTOR_LIST
+    Scene_CommandTransitionActorList,  // SCENE_CMD_ID_TRANSI_ACTOR_LIST
     Scene_CommandEnvLightSettings,     // SCENE_CMD_ID_ENV_LIGHT_SETTINGS
     Scene_CommandTimeSettings,         // SCENE_CMD_ID_TIME_SETTINGS
     Scene_CommandSkyboxSettings,       // SCENE_CMD_ID_SKYBOX_SETTINGS
@@ -706,9 +579,9 @@ void (*sSceneCmdHandlers[SCENE_CMD_MAX])(PlayState*, SceneCmd*) = {
     Scene_CommandSetRegionVisitedFlag, // SCENE_CMD_ID_SET_REGION_VISITED
     Scene_CommandAnimatedMaterials,    // SCENE_CMD_ID_ANIMATED_MATERIAL_LIST
     Scene_CommandCutsceneList,         // SCENE_CMD_ID_ACTOR_CUTSCENE_LIST
-    Scene_CommandMiniMap,              // SCENE_CMD_ID_MINIMAP_INFO
+    Scene_CommandMapData,              // SCENE_CMD_ID_MAP_DATA
     Scene_Command1D,                   // SCENE_CMD_ID_UNUSED_1D
-    Scene_CommandMiniMapCompassInfo,   // SCENE_CMD_ID_MINIMAP_COMPASS_ICON_INFO
+    Scene_CommandMapDataChests,        // SCENE_CMD_ID_MAP_DATA_CHESTS
 };
 
 /**
@@ -716,8 +589,6 @@ void (*sSceneCmdHandlers[SCENE_CMD_MAX])(PlayState*, SceneCmd*) = {
  */
 s32 Scene_ExecuteCommands(PlayState* play, SceneCmd* sceneCmd) {
     u32 cmdId;
-
-    Chaos_ClearActors();
 
     while (true) {
         cmdId = sceneCmd->base.code;

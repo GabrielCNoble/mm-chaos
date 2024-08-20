@@ -6,7 +6,6 @@
 
 #include "z_en_tite.h"
 #include "overlays/actors/ovl_En_Clear_Tag/z_en_clear_tag.h"
-#include "objects/object_tite/object_tite.h"
 
 #define FLAGS (ACTOR_FLAG_TARGETABLE | ACTOR_FLAG_UNFRIENDLY | ACTOR_FLAG_200)
 
@@ -132,17 +131,15 @@ static InitChainEntry sInitChain[] = {
     ICHAIN_F32_DIV1000(gravity, -1000, ICHAIN_STOP),
 };
 
-static s32 D_80896B60 = 0;
-static Vec3f D_80896B64 = { 0.0f, 0.3f, 0.0f };
-
 void EnTite_Init(Actor* thisx, PlayState* play) {
+    static s32 sTexturesDesegmented = false;
     EnTite* this = THIS;
     s32 i;
     s32 j;
 
     Actor_ProcessInitChain(&this->actor, sInitChain);
     SkelAnime_Init(play, &this->skelAnime, &object_tite_Skel_003A20, &object_tite_Anim_0012E4, this->jointTable,
-                   this->morphTable, 25);
+                   this->morphTable, OBJECT_TITE_LIMB_MAX);
     ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 60.0f);
     Actor_SetFocus(&this->actor, 20.0f);
     CollisionCheck_SetInfo(&this->actor.colChkInfo, &sDamageTable, &sColChkInfoInit);
@@ -151,13 +148,13 @@ void EnTite_Init(Actor* thisx, PlayState* play) {
     this->updBgCheckInfoFlags =
         UPDBGCHECKINFO_FLAG_1 | UPDBGCHECKINFO_FLAG_4 | UPDBGCHECKINFO_FLAG_8 | UPDBGCHECKINFO_FLAG_10;
 
-    if (!D_80896B60) {
+    if (!sTexturesDesegmented) {
         for (i = 0; i < ARRAY_COUNT(D_80896B24); i++) {
             for (j = 0; j < ARRAY_COUNT(D_80896B24[0]); j++) {
                 D_80896B24[i][j] = Lib_SegmentedToVirtual(D_80896B24[i][j]);
             }
         }
-        D_80896B60 = true;
+        sTexturesDesegmented = true;
     }
 
     if (this->actor.params == ENTITE_MINUS_3) {
@@ -236,7 +233,8 @@ void func_80893B70(EnTite* this) {
 }
 
 void func_80893BCC(EnTite* this, PlayState* play) {
-    Vec3f sp7C;
+    static Vec3f sAccel = { 0.0f, 0.3f, 0.0f };
+    Vec3f pos;
     s32 i;
     s32 j;
 
@@ -254,10 +252,10 @@ void func_80893BCC(EnTite* this, PlayState* play) {
             for (i = ENTITE_BODYPART_5; i < ENTITE_BODYPART_MAX; i++) {
                 for (j = 0; j < 2; j++) {
                     bodyPartPos = &this->bodyPartsPos[i];
-                    sp7C.x = bodyPartPos->x + Rand_CenteredFloat(1.0f);
-                    sp7C.y = bodyPartPos->y + Rand_CenteredFloat(1.0f);
-                    sp7C.z = bodyPartPos->z + Rand_CenteredFloat(1.0f);
-                    func_800B0DE0(play, &sp7C, &gZeroVec3f, &D_80896B64, &D_80896B3C, &D_80896B40,
+                    pos.x = bodyPartPos->x + Rand_CenteredFloat(1.0f);
+                    pos.y = bodyPartPos->y + Rand_CenteredFloat(1.0f);
+                    pos.z = bodyPartPos->z + Rand_CenteredFloat(1.0f);
+                    func_800B0DE0(play, &pos, &gZeroVec3f, &sAccel, &D_80896B3C, &D_80896B40,
                                   (s32)Rand_ZeroFloat(16.0f) + 80, 15);
                 }
             }
@@ -318,7 +316,7 @@ void func_80894024(EnTite* this, PlayState* play) {
         func_8089408C(this, play);
     } else {
         func_80893B70(this);
-        Math_ScaledStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 1000);
+        Math_ScaledStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 0x3E8);
         this->actor.world.rot.y = this->actor.shape.rot.y;
     }
 }
@@ -411,7 +409,7 @@ void func_80894454(EnTite* this, PlayState* play) {
             func_80893A9C(this, play);
         }
     } else {
-        Math_ScaledStepToS(&this->actor.world.rot.y, this->actor.yawTowardsPlayer, 1500);
+        Math_ScaledStepToS(&this->actor.world.rot.y, this->actor.yawTowardsPlayer, 0x5DC);
         func_80893B70(this);
     }
 }
@@ -452,7 +450,7 @@ void func_80894638(EnTite* this, PlayState* play) {
         temp_v1 = (s32)(temp_v0 * (1.0f / 42.0f)) - 10;
     }
 
-    this->actor.shape.rot.y = this->actor.shape.rot.y + (temp_v1 * 2);
+    this->actor.shape.rot.y += temp_v1 * 2;
     this->actor.world.rot.y = this->actor.shape.rot.y;
     this->skelAnime.playSpeed = temp_v1 * 0.01f;
     SkelAnime_Update(&this->skelAnime);
@@ -518,7 +516,7 @@ void func_80894910(EnTite* this, PlayState* play) {
          (func_80893ADC(this) && (this->actor.depthInWater > 0.0f))) &&
         (this->actor.velocity.y <= 0.0f)) {
         this->actor.speed = 0.0f;
-        Math_ScaledStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 4000);
+        Math_ScaledStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 0xFA0);
         this->actor.world.rot.y = this->actor.shape.rot.y;
 
         if (func_80893ADC(this)) {
@@ -537,7 +535,7 @@ void func_80894910(EnTite* this, PlayState* play) {
             func_8089484C(this);
         }
     } else {
-        Math_ScaledStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 1000);
+        Math_ScaledStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 0x3E8);
     }
 }
 
@@ -701,7 +699,7 @@ void func_808952EC(EnTite* this) {
 }
 
 void func_80895424(EnTite* this, PlayState* play) {
-    Math_ScaledStepToS(&this->actor.shape.rot.z, -0x8000, 4000);
+    Math_ScaledStepToS(&this->actor.shape.rot.z, -0x8000, 0xFA0);
     if (this->unk_2B8 != 0) {
         this->unk_2B8--;
     } else {
@@ -714,7 +712,7 @@ void func_80895424(EnTite* this, PlayState* play) {
     if (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) {
         this->collider.base.acFlags |= AC_ON;
         if (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND_TOUCH) {
-            Actor_SpawnFloorDustRing(play, &this->actor, &this->actor.world.pos, 20.0f, 11, 4.0f, 0, 0, 0);
+            Actor_SpawnFloorDustRing(play, &this->actor, &this->actor.world.pos, 20.0f, 11, 4.0f, 0, 0, false);
             Actor_PlaySfx(&this->actor, NA_SE_EN_EYEGOLE_ATTACK);
         }
 
@@ -738,7 +736,7 @@ void func_808955E4(EnTite* this) {
 }
 
 void func_80895640(EnTite* this, PlayState* play) {
-    Math_ScaledStepToS(&this->actor.shape.rot.z, 0, 4000);
+    Math_ScaledStepToS(&this->actor.shape.rot.z, 0, 0xFA0);
     SkelAnime_Update(&this->skelAnime);
     if (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) {
         this->collider.base.acFlags |= AC_ON;
@@ -803,7 +801,7 @@ void func_80895738(EnTite* this, PlayState* play) {
             func_80893A9C(this, play);
         }
     }
-    this->actor.shape.rot.y += (s16)(this->actor.speed * 768.0f);
+    this->actor.shape.rot.y += TRUNCF_BINANG(this->actor.speed * 768.0f);
 }
 
 void func_8089595C(EnTite* this, PlayState* play) {
@@ -909,9 +907,9 @@ void func_80895E28(EnTite* this, PlayState* play) {
     SkelAnime_Update(&this->skelAnime);
     this->actor.shape.rot.y += 0x1E00;
 
-    sp44.x = (Math_SinS(this->actor.shape.rot.y) * 25.0f) + this->actor.world.pos.x;
+    sp44.x = this->actor.world.pos.x + Math_SinS(this->actor.shape.rot.y) * 25.0f;
     sp44.y = this->actor.world.pos.y + 15.0f;
-    sp44.z = (Math_CosS(this->actor.shape.rot.y) * 25.0f) + this->actor.world.pos.z;
+    sp44.z = this->actor.world.pos.z + Math_CosS(this->actor.shape.rot.y) * 25.0f;
 
     sp36 = BINANG_SUB(this->actor.shape.rot.y, 0x4000);
 
@@ -1073,9 +1071,9 @@ void EnTite_Update(Actor* thisx, PlayState* play) {
                 this->actor.shape.rot.z = BINANG_ROT180(this->actor.shape.rot.z);
             }
         } else {
-            Math_ScaledStepToS(&this->actor.shape.rot.x, 0, 1000);
+            Math_ScaledStepToS(&this->actor.shape.rot.x, 0, 0x3E8);
             if (this->unk_2B9 == 0) {
-                Math_ScaledStepToS(&this->actor.shape.rot.z, 0, 1000);
+                Math_ScaledStepToS(&this->actor.shape.rot.z, 0, 0x3E8);
                 if (this->actor.shape.yOffset > 0.0f) {
                     this->actor.shape.yOffset -= 400.0f;
                 }
@@ -1188,7 +1186,7 @@ void EnTite_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot
             Matrix_MultZero(&this->bodyPartsPos[sLimbToBodyParts2[limbIndex]]);
         }
 
-        if (limbIndex == 24) {
+        if (limbIndex == OBJECT_TITE_LIMB_18) {
             this->unk_2BA = -1;
         }
     } else if (sLimbToBodyParts2[limbIndex] != BODYPART_NONE) {

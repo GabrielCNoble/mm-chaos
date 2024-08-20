@@ -4,7 +4,6 @@
  * Description: Keaton grass
  */
 
-#include "prevent_bss_reordering.h"
 #include "z_en_kusa2.h"
 #include "objects/gameplay_field_keep/gameplay_field_keep.h"
 #include "objects/gameplay_keep/gameplay_keep.h"
@@ -86,7 +85,7 @@ static ColliderCylinderInit sCylinderInit = {
     { 6, 44, 0, { 0, 0, 0 } },
 };
 
-u8 D_80A5EAEC = 1;
+u8 D_80A5EAEC = true;
 s16 D_80A5EAF0 = 0;
 Vec3s D_80A5EAF4 = { 0, 0, 0 };
 Vec3s D_80A5EAFC = { 0, 0, 0 };
@@ -338,8 +337,8 @@ void func_80A5BDB0(EnKusa2* this, PlayState* play) {
     sp50.y = this->actor.world.pos.y + this->actor.depthInWater;
 
     for (phi_s0 = 0, i = 0; i < 4; i++, phi_s0 += 0x4000) {
-        sp50.x = (Math_SinS((s32)(Rand_ZeroOne() * 7200.0f) + phi_s0) * 15.0f) + this->actor.world.pos.x;
-        sp50.z = (Math_CosS((s32)(Rand_ZeroOne() * 7200.0f) + phi_s0) * 15.0f) + this->actor.world.pos.z;
+        sp50.x = this->actor.world.pos.x + (Math_SinS((s32)(Rand_ZeroOne() * 7200.0f) + phi_s0) * 15.0f);
+        sp50.z = this->actor.world.pos.z + (Math_CosS((s32)(Rand_ZeroOne() * 7200.0f) + phi_s0) * 15.0f);
         EffectSsGSplash_Spawn(play, &sp50, NULL, NULL, 0, 190);
     }
 
@@ -411,7 +410,9 @@ EnKusa2UnkBssSubStruct2* func_80A5C0B8(EnKusa2UnkBssStruct* arg0) {
     for (i = 1; i < ARRAY_COUNT(D_80A5F1C0.unk_0480); i++) {
         if (phi_v1->unk_2C > arg0->unk_0480[i].unk_2C) {
             phi_v1 = &arg0->unk_0480[i];
+            //! FAKE:
             if (1) {}
+
             if (phi_v1->unk_2C <= 0) {
                 break;
             }
@@ -514,7 +515,7 @@ void func_80A5C410(EnKusa2UnkBssStruct* arg0, EnKusa2UnkBssSubStruct2* arg1, Vec
             s32 phi_s2 = true;
 
             Math_Vec3f_Diff(&arg1->unk_04, &s->unk_00, &sp98);
-            temp_f0 = Math3D_LengthSquared(&sp98);
+            temp_f0 = Math3D_Vec3fMagnitudeSq(&sp98);
 
             phi_v0 = false;
             if (temp_f0 <= s->unk_4C) {
@@ -575,7 +576,7 @@ void func_80A5C70C(EnKusa2UnkBssSubStruct* arg0) {
 }
 
 void func_80A5C718(EnKusa2UnkBssSubStruct* arg0) {
-    Math_ScaledStepToS(&arg0->unk_20, arg0->unk_22, 1200);
+    Math_ScaledStepToS(&arg0->unk_20, arg0->unk_22, 0x4B0);
 
     if ((arg0->unk_1C > 0.0f) && (Rand_ZeroOne() < 0.05f)) {
         arg0->unk_1C = -arg0->unk_1C;
@@ -864,10 +865,10 @@ void EnKusa2_Init(Actor* thisx, PlayState* play) {
         this->actor.update = func_80A5E604;
         this->actor.draw = NULL;
         this->actor.flags |= ACTOR_FLAG_20;
-        func_800BC154(play, &play->actorCtx, &this->actor, 1);
+        Actor_ChangeCategory(play, &play->actorCtx, &this->actor, ACTORCAT_BG);
         this->unk_1BE = 0;
-        if (D_80A5EAEC != 0) {
-            D_80A5EAEC = 0;
+        if (D_80A5EAEC) {
+            D_80A5EAEC = false;
             D_80A60900 = play->gameplayFrames;
             func_80A5CAD4(&D_80A5F1C0);
             D_80A60B08 = Rand_Next() >> 0x10;
@@ -921,7 +922,7 @@ void func_80A5D62C(EnKusa2* this, PlayState* play) {
     if (this->unk_1BE != 0) {
         func_80A5B490(this, play);
         func_80A5D754(this);
-    } else if (Math3D_XZLengthSquared(this->actor.projectedPos.x, this->actor.projectedPos.z) < SQ(1600.0f)) {
+    } else if (Math3D_Dist1DSq(this->actor.projectedPos.x, this->actor.projectedPos.z) < SQ(1600.0f)) {
         func_80A5B160(this, play);
         func_80A5D6B0(this);
     }
@@ -936,7 +937,7 @@ void func_80A5D6C4(EnKusa2* this, PlayState* play) {
     if (this->unk_1BE != 0) {
         func_80A5B490(this, play);
         func_80A5D754(this);
-    } else if (Math3D_XZLengthSquared(this->actor.projectedPos.x, this->actor.projectedPos.z) > SQ(1750.0f)) {
+    } else if (Math3D_Dist1DSq(this->actor.projectedPos.x, this->actor.projectedPos.z) > SQ(1750.0f)) {
         func_80A5B334(this, play);
         func_80A5D618(this);
     }

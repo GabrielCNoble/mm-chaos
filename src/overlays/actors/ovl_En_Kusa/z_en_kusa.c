@@ -23,7 +23,7 @@ void EnKusa_DropCollectible(EnKusa* this, PlayState* play);
 void EnKusa_UpdateVelY(EnKusa* this);
 void EnKusa_RandScaleVecToZero(Vec3f* vec, f32 scaleFactor);
 void EnKusa_SetScaleSmall(EnKusa* this);
-s32 EnKusa_GetWaterBox(EnKusa* this, PlayState* play);
+s32 EnKusa_IsUnderwater(EnKusa* this, PlayState* play);
 void EnKusa_SetupWaitObject(EnKusa* this);
 void EnKusa_WaitObject(EnKusa* this, PlayState* play);
 void EnKusa_WaitForInteract(EnKusa* this, PlayState* play);
@@ -337,15 +337,15 @@ void EnKusa_SpawnBugs(EnKusa* this, PlayState* play) {
     }
 }
 
-s32 EnKusa_GetWaterBox(EnKusa* this, PlayState* play) {
+s32 EnKusa_IsUnderwater(EnKusa* this, PlayState* play) {
     s32 pad;
     WaterBox* waterBox;
-    f32 ySurface;
+    f32 waterSurface;
     s32 bgId;
 
-    if (WaterBox_GetSurfaceImpl(play, &play->colCtx, this->actor.world.pos.x, this->actor.world.pos.z, &ySurface,
+    if (WaterBox_GetSurfaceImpl(play, &play->colCtx, this->actor.world.pos.x, this->actor.world.pos.z, &waterSurface,
                                 &waterBox, &bgId) &&
-        (this->actor.world.pos.y < ySurface)) {
+        (this->actor.world.pos.y < waterSurface)) {
         return true;
     }
     return false;
@@ -389,7 +389,7 @@ void EnKusa_Init(Actor* thisx, PlayState* play) {
         Actor_Kill(&this->actor);
         return;
     }
-    if (EnKusa_GetWaterBox(this, play)) {
+    if (EnKusa_IsUnderwater(this, play)) {
         this->isInWater |= 1;
     }
 
@@ -581,9 +581,9 @@ void EnKusa_Fall(EnKusa* this, PlayState* play) {
             contactPos.y = this->actor.world.pos.y + this->actor.depthInWater;
             for (angleOffset = 0, i = 0; i < 4; i++, angleOffset += 0x4000) {
                 contactPos.x =
-                    (Math_SinS((s32)(Rand_ZeroOne() * 7200.0f) + angleOffset) * 15.0f) + this->actor.world.pos.x;
+                    this->actor.world.pos.x + (Math_SinS((s32)(Rand_ZeroOne() * 7200.0f) + angleOffset) * 15.0f);
                 contactPos.z =
-                    (Math_CosS((s32)(Rand_ZeroOne() * 7200.0f) + angleOffset) * 15.0f) + this->actor.world.pos.z;
+                    this->actor.world.pos.z + (Math_CosS((s32)(Rand_ZeroOne() * 7200.0f) + angleOffset) * 15.0f);
                 EffectSsGSplash_Spawn(play, &contactPos, NULL, NULL, 0, 190);
             }
             contactPos.x = this->actor.world.pos.x;

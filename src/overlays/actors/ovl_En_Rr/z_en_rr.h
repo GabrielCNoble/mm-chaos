@@ -8,10 +8,10 @@ struct EnRr;
 typedef void (*EnRrActionFunc)(struct EnRr*, PlayState*);
 
 typedef enum {
-    /* 0 */ LIKE_LIKE_PARAM_0, // weak like-like
+    /* 0 */ LIKE_LIKE_PARAM_0,
     /* 1 */ LIKE_LIKE_PARAM_1,
-    /* 2 */ LIKE_LIKE_PARAM_2, // stationary like-like
-    /* 3 */ LIKE_LIKE_PARAM_3  // big like-like
+    /* 2 */ LIKE_LIKE_PARAM_2,
+    /* 3 */ LIKE_LIKE_PARAM_3
 } LikeLikeParam;
 
 typedef enum LikeLikeBodyPart {
@@ -38,9 +38,8 @@ typedef enum LikeLikeBodyPart {
     /* 20 */ LIKE_LIKE_BODYPART_MAX
 } LikeLikeBodyPart;
 
-/* like-like segment info? */
 typedef struct {
-    /* 0x00 */ f32 unk_00; // y-offset? 
+    /* 0x00 */ f32 unk_00;
     /* 0x04 */ f32 unk_04;
     /* 0x08 */ f32 unk_08;
     /* 0x0C */ f32 unk_0C;
@@ -48,7 +47,7 @@ typedef struct {
     /* 0x14 */ s16 unk_14;
     /* 0x16 */ s16 unk_16;
     /* 0x18 */ s16 unk_18;
-    /* 0x1A */ Vec3s unk_1A; // segment rotation?
+    /* 0x1A */ Vec3s unk_1A;
 } EnRrStruct; // size = 0x20
 
 typedef struct EnRr {
@@ -58,11 +57,11 @@ typedef struct EnRr {
     /* 0x194 */ ColliderCylinder collider2;
     /* 0x1E0 */ u8 drawDmgEffType;
     /* 0x1E1 */ u8 unk_1E1;
-    /* 0x1E2 */ u8 unk_1E2;  // stole shield
+    /* 0x1E2 */ u8 unk_1E2;
     /* 0x1E4 */ s16 unk_1E4;
     /* 0x1E6 */ s16 unk_1E6;
-    /* 0x1E8 */ s16 unk_1E8; // texture scroll?
-    /* 0x1EA */ s16 unk_1EA; // chew timer
+    /* 0x1E8 */ s16 unk_1E8;
+    /* 0x1EA */ s16 unk_1EA;
     /* 0x1EC */ s16 unk_1EC;
     /* 0x1EE */ s16 unk_1EE;
     /* 0x1F0 */ s16 unk_1F0;
@@ -84,7 +83,7 @@ typedef struct EnRr {
     /* 0x224 */ f32 drawDmgEffFrozenSteamScale;
     /* 0x228 */ Vec3f unk_228;
     /* 0x234 */ Vec3f bodyPartsPos[LIKE_LIKE_BODYPART_MAX];
-    /* 0x324 */ EnRrStruct unk_324[5]; // segment info?
+    /* 0x324 */ EnRrStruct unk_324[5];
 } EnRr; // size = 0x3C4
 
 #endif // Z_EN_RR_H

@@ -10,7 +10,6 @@
 #include "CIC6105.h"
 #include "overlays/gamestates/ovl_opening/z_opening.h"
 #include "misc/nintendo_rogo_static/nintendo_rogo_static.h"
-// #include "gfxprint.h"
 
 void ConsoleLogo_UpdateCounters(ConsoleLogoState* this) {
     if ((this->coverAlpha == 0) && (this->visibleDuration != 0)) {
@@ -63,8 +62,6 @@ void ConsoleLogo_Draw(GameState* thisx) {
     Vec3f object;
     Vec3f eye;
     s32 pad[2];
-    GfxPrint gfx_print;
-    
 
     OPEN_DISPS(this->state.gfxCtx);
 
@@ -81,12 +78,12 @@ void ConsoleLogo_Draw(GameState* thisx) {
     eye.z = 1119.0837f;
 
     Hilite_DrawOpa(&object, &eye, &lightDir, this->state.gfxCtx);
-
+ 
     gSPSetLights1(POLY_OPA_DISP++, sTitleLights);
 
     ConsoleLogo_RenderView(this, 0.0f, 150.0f, 300.0f);
     Gfx_SetupDL25_Opa(this->state.gfxCtx);
-    Matrix_Translate(-53.0f + Rand_S16Offset(-10, 20), -5.0f + Rand_S16Offset(-10, 20), 0.0f, MTXMODE_NEW);
+    Matrix_Translate(-53.0f + Rand_S16Offset(-15, 30), -5.0f + Rand_S16Offset(-15, 30), 0.0f, MTXMODE_NEW);
     Matrix_Scale(1.8f, 1.8f, 1.8f, MTXMODE_APPLY);
     Matrix_RotateZYX(0, sTitleRotation, 0, MTXMODE_APPLY);
 
@@ -115,19 +112,12 @@ void ConsoleLogo_Draw(GameState* thisx) {
 
         gDPSetTileSize(POLY_OPA_DISP++, 1, this->uls, (this->ult & 0x7F) - idx * 4, 0, 0);
         gSPTextureRectangle(POLY_OPA_DISP++, (97 << 2) + title_x, (y << 2) + title_y, ((97 + 192) << 2) + title_x, 
-                ((y + 2) << 2) + title_y, G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
+            ((y + 2) << 2) + title_y, G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
     }
 
-    Environment_FillScreen(this->state.gfxCtx, 0, 0, 0, this->coverAlpha, 2);
+    Environment_FillScreen(this->state.gfxCtx, 0, 0, 0, this->coverAlpha, FILL_SCREEN_XLU);
 
     sTitleRotation += 3600;
-
-    // // OPEN_DISPS(play->state.gfxCtx);
-    // GfxPrint_Open(&gfx_print, POLY_XLU_DISP);
-    // GfxPrint_SetPosPx(&gfx_print, 10, 10);
-    // GfxPrint_SetColor(&gfx_print, 0xff, 0xff, 0xff, 0xff);
-    // GfxPrint_PrintString(&gfx_print, "SHIT");
-    // // CLOSE_DISPS(playe->state.gfxCtx);
 
     CLOSE_DISPS(this->state.gfxCtx);
 }
@@ -168,7 +158,7 @@ void ConsoleLogo_Init(GameState* thisx) {
     uintptr_t segmentSize = SEGMENT_ROM_SIZE(nintendo_rogo_static);
 
     this->staticSegment = THA_AllocTailAlign16(&this->state.tha, segmentSize);
-    DmaMgr_SendRequest0(this->staticSegment, SEGMENT_ROM_START(nintendo_rogo_static), segmentSize);
+    DmaMgr_RequestSync(this->staticSegment, SEGMENT_ROM_START(nintendo_rogo_static), segmentSize);
 
     GameState_SetFramerateDivisor(&this->state, 1);
     Matrix_Init(&this->state);

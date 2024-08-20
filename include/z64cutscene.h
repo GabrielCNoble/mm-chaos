@@ -4,6 +4,13 @@
 #include "ultra64.h"
 #include "unk.h"
 
+#include "color.h"
+
+#include "z64math.h"
+
+struct Actor;
+struct Camera;
+struct PlayState;
 
 typedef union {
     struct {
@@ -599,10 +606,6 @@ typedef struct {
     /* 0x7 */ u8 spawnFlags; // See `CS_SPAWN_FLAG_`
 } CutsceneScriptEntry; // size = 0x8
 
-// ZAPD compatibility typedefs
-// TODO: Remove when ZAPD adds support for them
-typedef CutsceneScriptEntry CutsceneEntry;
-
 typedef struct {
     /* 0x00 */ u8 scriptListCount;
     /* 0x04 */ CutsceneData* script;
@@ -631,13 +634,11 @@ typedef struct {
     /* 0x0C */ s16 hudVisibility; 
     /* 0x0E */ u8 endCam;
     /* 0x0F */ u8 letterboxSize;
-} ActorCutscene; // size = 0x10
-// TODO: rename `ActorCutscene` to `CutsceneEntry` once ZAPD uses `CutsceneScriptEntry`
-// typedef CutsceneEntry ActorCutscene;
+} CutsceneEntry; // size = 0x10
 
 typedef enum {
     /*   -1 */ CS_ID_NONE = -1,
-    // CsId's 0 - 119 are sceneLayer-specific and index `ActorCutscene`
+    // CsId's 0 - 119 are sceneLayer-specific and index `CutsceneEntry`
     /* 0x78 */ CS_ID_GLOBAL_78 = 120,
     /* 0x79 */ CS_ID_GLOBAL_79,
     /* 0x7A */ CS_ID_GLOBAL_7A,
@@ -737,18 +738,21 @@ typedef struct {
     /* 0xA */ s16 relativeTo; // see `CutsceneCamRelativeTo`
 } CsCmdCamPoint; // size = 0xC
 
-typedef enum {
-    /* 0 */ CS_CAM_INTERP_0,
-    /* 1 */ CS_CAM_INTERP_1,
-    /* 2 */ CS_CAM_INTERP_2,
-    /* 3 */ CS_CAM_INTERP_3,
-    /* 4 */ CS_CAM_INTERP_4,
-    /* 5 */ CS_CAM_INTERP_5,
-    /* 6 */ CS_CAM_INTERP_6,
-    /* 7 */ CS_CAM_INTERP_7
+typedef enum CutsceneCamInterpType {
+    /* 0 */ CS_CAM_INTERP_NONE, // values do not change.
+    // values 1-3 only uses a single point from the cmd
+    /* 1 */ CS_CAM_INTERP_SET, // values immediately set to cmd values.
+    /* 2 */ CS_CAM_INTERP_LINEAR, // Lerp to the target position
+    /* 3 */ CS_CAM_INTERP_SCALE, // Step to the target position in increments scaled by the remaining distance
+    // values 4-5 uses multiple points from the cmd
+    /* 4 */ CS_CAM_INTERP_MP_CUBIC, // cubic multi-point (identical to SM64/OoT)
+    /* 5 */ CS_CAM_INTERP_MP_QUAD, // quadratic multi-point
+    // value 6 only uses a single point from the cmd
+    /* 6 */ CS_CAM_INTERP_GEO, // does VecGeo calculations using fov
+    /* 7 */ CS_CAM_INTERP_OFF // interpolation is not processed.
 } CutsceneCamInterpType;
 
-typedef enum {
+typedef enum CutsceneCamRelativeTo {
     /* 0 */ CS_CAM_REL_0,
     /* 1 */ CS_CAM_REL_1,
     /* 2 */ CS_CAM_REL_2,
@@ -757,28 +761,26 @@ typedef enum {
     /* 5 */ CS_CAM_REL_5
 } CutsceneCamRelativeTo;
 
-
 // Roll and Fov Data
-typedef struct {
-    /* 0x0 */ s16 unused0; // unused
+typedef struct CsCmdCamMisc {
+    /* 0x0 */ s16 unused0; // used only in the unused interp function
     /* 0x2 */ s16 roll;
     /* 0x4 */ s16 fov;
     /* 0x6 */ s16 unused1; // unused
 } CsCmdCamMisc; // size = 0x8
 
-typedef struct {
-    /* 0x00 */ Vec3f unk_00;
-    /* 0x0C */ Vec3f unk_0C;
-    /* 0x18 */ f32 unk_18;
-    /* 0x1C */ f32 unk_1C;
-    /* 0x2A */ f32 unk_20;
-    /* 0x24 */ s16 unk_24;
-    /* 0x26 */ s16 unk_26;
-    /* 0x28 */ s16 unk_28;
+typedef struct CutsceneCameraInterp {
+    /* 0x00 */ Vec3f curPos;
+    /* 0x0C */ Vec3f initPos;
+    /* 0x18 */ f32 initFov;
+    /* 0x1C */ f32 initRoll;
+    /* 0x2A */ f32 unk_20; // position adjustment based on fov?
+    /* 0x24 */ s16 curFrame;
+    /* 0x26 */ s16 waypoint;
+    /* 0x28 */ s16 duration;
     /* 0x2A */ s16 numEntries;
     /* 0x1E */ u8 curPoint;
-    /* 0x2D */ u8 unk_2D;
-    /* 0x2E */ UNK_TYPE1 unk_2E[2];
+    /* 0x2D */ u8 type; // See `CutsceneCamInterpType`
 } CutsceneCameraInterp; // size = 0x30
 
 typedef struct CutsceneCamera {
@@ -794,15 +796,15 @@ typedef struct CutsceneCamera {
     /* 0x70 */ CsCmdCamPoint* atCmd;
     /* 0x74 */ CsCmdCamPoint* eyeCmd;
     /* 0x78 */ CsCmdCamMisc* miscCmd;
-    /* 0x7C */ Camera* camera;
+    /* 0x7C */ struct Camera* camera;
 } CutsceneCamera; // size = 0x80
 
 typedef enum {
-    /* 0 */ CS_CAM_STATE_UPDATE_ALL, // Update spline and next spline timer
-    /* 0 */ CS_CAM_STATE_UPDATE_SPLINE, // Update spline, do not advance next spline timer
-    /* 0 */ CS_CAM_STATE_PAUSE, // No updates
-    /* 0 */ CS_CAM_STATE_DONE_SPLINE, // Finished the current spline, ready for the next one
-    /* 0 */ CS_CAM_STATE_DONE = 999 // Finished all the splines.
+    /*   0 */ CS_CAM_STATE_UPDATE_ALL, // Update spline and next spline timer
+    /*   1 */ CS_CAM_STATE_UPDATE_SPLINE, // Update spline, do not advance next spline timer
+    /*   2 */ CS_CAM_STATE_PAUSE, // No updates
+    /*   3 */ CS_CAM_STATE_DONE_SPLINE, // Finished the current spline, ready for the next one
+    /* 999 */ CS_CAM_STATE_DONE = 999 // Finished all the splines.
 } CutsceneCameraState;
 
 // OoT Remnant
@@ -816,37 +818,37 @@ void Cutscene_UpdateScripted(struct PlayState* play, CutsceneContext* csCtx);
 void Cutscene_HandleEntranceTriggers(struct PlayState* play);
 void func_800EDDB0(struct PlayState* play);
 void Cutscene_StartScripted(struct PlayState* play, u8 scriptIndex);
-void Cutscene_ActorTranslate(Actor* actor, struct PlayState* play, s32 cueChannel);
-void Cutscene_ActorTranslateAndYaw(Actor* actor, struct PlayState* play, s32 cueChannel);
-void Cutscene_ActorTranslateAndYawSmooth(Actor* actor, struct PlayState* play, s32 cueChannel);
-void Cutscene_ActorTranslateXZAndYawSmooth(Actor* actor, struct PlayState* play, s32 cueChannel);
+void Cutscene_ActorTranslate(struct Actor* actor, struct PlayState* play, s32 cueChannel);
+void Cutscene_ActorTranslateAndYaw(struct Actor* actor, struct PlayState* play, s32 cueChannel);
+void Cutscene_ActorTranslateAndYawSmooth(struct Actor* actor, struct PlayState* play, s32 cueChannel);
+void Cutscene_ActorTranslateXZAndYawSmooth(struct Actor* actor, struct PlayState* play, s32 cueChannel);
 s32 Cutscene_GetSceneLayer(struct PlayState* play);
 s32 Cutscene_GetCueChannel(struct PlayState* play, u16 cueType);
 s32 Cutscene_IsCueInChannel(struct PlayState* play, u16 cueType);
 u8 Cutscene_IsPlaying(struct PlayState* play);
 
-void CutsceneManager_Init(struct PlayState* play, ActorCutscene* cutsceneList, s16 numEntries);
-void CutsceneManager_StoreCamera(Camera* camera);
+void CutsceneManager_Init(struct PlayState* play, CutsceneEntry* cutsceneList, s16 numEntries);
+void CutsceneManager_StoreCamera(struct Camera* camera);
 void CutsceneManager_ClearWaiting(void);
 s16 CutsceneManager_Update(void);
 void CutsceneManager_Queue(s16 csId);
 s16 CutsceneManager_IsNext(s16 csId);
-s16 CutsceneManager_StartWithPlayerCs(s16 csId, Actor* actor);
-s16 CutsceneManager_StartWithPlayerCsAndSetFlag(s16 csId, Actor* actor);
-s16 CutsceneManager_Start(s16 csId, Actor* actor);
+s16 CutsceneManager_StartWithPlayerCs(s16 csId, struct Actor* actor);
+s16 CutsceneManager_StartWithPlayerCsAndSetFlag(s16 csId, struct Actor* actor);
+s16 CutsceneManager_Start(s16 csId, struct Actor* actor);
 s16 CutsceneManager_Stop(s16 csId);
 s16 CutsceneManager_GetCurrentCsId(void);
-ActorCutscene* CutsceneManager_GetCutsceneEntry(s16 csId);
+CutsceneEntry* CutsceneManager_GetCutsceneEntry(s16 csId);
 s16 CutsceneManager_GetAdditionalCsId(s16 csId);
 s16 CutsceneManager_GetLength(s16 csId);
 s16 CutsceneManager_GetCutsceneScriptIndex(s16 csId);
 s16 CutsceneManager_GetCutsceneCustomValue(s16 csId);
 s16 CutsceneManager_GetCurrentSubCamId(s16 csId);
 s16 CutsceneManager_FindEntranceCsId(void);
-s32 func_800F22C4(s16 csId, Actor* actor);
+s32 func_800F22C4(s16 csId, struct Actor* actor);
 void CutsceneManager_SetReturnCamera(s16 camId);
 
-s32 CutsceneCamera_Init(Camera* camera, CutsceneCamera* csCamera);
+s32 CutsceneCamera_Init(struct Camera* camera, CutsceneCamera* csCamera);
 s32 CutsceneCamera_UpdateSplines(u8* script, CutsceneCamera* csCamera);
 void CutsceneCamera_SetState(s16 state);
 void CutsceneCamera_Reset(void);

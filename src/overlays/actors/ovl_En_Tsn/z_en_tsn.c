@@ -61,10 +61,6 @@ static ColliderCylinderInit sCylinderInit = {
     { 30, 40, 0, { 0, 0, 0 } },
 };
 
-Vec3f D_80AE11BC = { 0.0f, 0.0f, 0.0f };
-
-TexturePtr D_80AE11C8[] = { object_tsn_Tex_0073B8, object_tsn_Tex_0085B8 };
-
 EnTsn* func_80ADFCA0(PlayState* play) {
     Actor* npc = play->actorCtx.actorLists[ACTORCAT_NPC].first;
 
@@ -101,6 +97,9 @@ void func_80ADFCEC(EnTsn* this, PlayState* play) {
                 this->actor.textId = 0x108A;
             }
             break;
+
+        default:
+            break;
     }
 
     if (CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_GREAT_BAY_TEMPLE)) {
@@ -117,8 +116,11 @@ void func_80ADFCEC(EnTsn* this, PlayState* play) {
 
     if (this->unk_1D8 == NULL) {
         Actor_Kill(&this->actor);
-    } else if ((ENTSN_GET_F(&this->actor)) == ENTSN_F_1) {
-        func_800BC154(play, &play->actorCtx, &this->actor, 6);
+        return;
+    }
+
+    if ((ENTSN_GET_F(&this->actor)) == ENTSN_F_1) {
+        Actor_ChangeCategory(play, &play->actorCtx, &this->actor, ACTORCAT_PROP);
     }
 }
 
@@ -194,7 +196,7 @@ void func_80AE0010(EnTsn* this, PlayState* play) {
             break;
     }
 
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_5) && Message_ShouldAdvance(play)) {
+    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_EVENT) && Message_ShouldAdvance(play)) {
         switch (play->msgCtx.currentTextId) {
             case 0x107F:
             case 0x1081:
@@ -268,7 +270,7 @@ void func_80AE0010(EnTsn* this, PlayState* play) {
 }
 
 void func_80AE0304(EnTsn* this, PlayState* play) {
-    if (Actor_ProcessTalkRequest(&this->actor, &play->state)) {
+    if (Actor_TalkOfferAccepted(&this->actor, &play->state)) {
         this->actionFunc = func_80AE0010;
         this->unk_220 |= 1;
         if (this->actor.textId == 0) {
@@ -314,7 +316,7 @@ void func_80AE04FC(EnTsn* this, PlayState* play) {
     PlayerItemAction itemAction;
     Player* player = GET_PLAYER(play);
 
-    if (Message_GetState(&play->msgCtx) == TEXT_STATE_16) {
+    if (Message_GetState(&play->msgCtx) == TEXT_STATE_PAUSE_MENU) {
         itemAction = func_80123810(play);
 
         if (itemAction != PLAYER_IA_NONE) {
@@ -386,7 +388,7 @@ void func_80AE0704(EnTsn* this, PlayState* play) {
         case TEXT_STATE_CLOSING:
             break;
 
-        case TEXT_STATE_5:
+        case TEXT_STATE_EVENT:
             if (Message_ShouldAdvance(play)) {
                 switch (play->msgCtx.currentTextId) {
                     case 0x106E:
@@ -434,7 +436,7 @@ void func_80AE0704(EnTsn* this, PlayState* play) {
                             this->unk_220 &= ~2;
                             this->actor.focus.pos = this->actor.world.pos;
                             CutsceneManager_Stop(this->actor.csId);
-                            this->actor.flags &= ~ACTOR_FLAG_TALK_REQUESTED;
+                            this->actor.flags &= ~ACTOR_FLAG_TALK;
                             REMOVE_QUEST_ITEM(QUEST_PICTOGRAPH);
                         } else {
                             Message_ContinueTextbox(play, 0x10A8);
@@ -458,7 +460,7 @@ void func_80AE0704(EnTsn* this, PlayState* play) {
                     case 0x10A8:
                         Animation_MorphToLoop(&this->unk_1D8->skelAnime, &object_tsn_Anim_0092FC, -10.0f);
                         func_80AE0698(this, play);
-                        this->actor.flags &= ~ACTOR_FLAG_TALK_REQUESTED;
+                        this->actor.flags &= ~ACTOR_FLAG_TALK;
                         this->actionFunc = func_80AE04C4;
                         break;
 
@@ -498,11 +500,17 @@ void func_80AE0704(EnTsn* this, PlayState* play) {
 
                     case 0x10A9:
                         func_80AE0698(this, play);
-                        this->actor.flags &= ~ACTOR_FLAG_TALK_REQUESTED;
+                        this->actor.flags &= ~ACTOR_FLAG_TALK;
                         this->actionFunc = func_80AE04C4;
+                        break;
+
+                    default:
                         break;
                 }
             }
+            break;
+
+        default:
             break;
     }
 
@@ -530,7 +538,7 @@ void func_80AE0704(EnTsn* this, PlayState* play) {
 }
 
 void func_80AE0C88(EnTsn* this, PlayState* play) {
-    if (Actor_ProcessTalkRequest(&this->actor, &play->state)) {
+    if (Actor_TalkOfferAccepted(&this->actor, &play->state)) {
         this->actionFunc = func_80AE0704;
         if ((this->actor.textId == 0x108A) || (this->actor.textId == 0x1091)) {
             this->unk_220 |= 4;
@@ -542,7 +550,7 @@ void func_80AE0C88(EnTsn* this, PlayState* play) {
 }
 
 void func_80AE0D10(EnTsn* this, PlayState* play) {
-    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_5) && Message_ShouldAdvance(play)) {
+    if ((Message_GetState(&play->msgCtx) == TEXT_STATE_EVENT) && Message_ShouldAdvance(play)) {
         Message_CloseTextbox(play);
         this->actionFunc = func_80AE0D78;
         CutsceneManager_Stop(this->actor.csId);
@@ -550,7 +558,7 @@ void func_80AE0D10(EnTsn* this, PlayState* play) {
 }
 
 void func_80AE0D78(EnTsn* this, PlayState* play) {
-    if (Actor_ProcessTalkRequest(&this->actor, &play->state)) {
+    if (Actor_TalkOfferAccepted(&this->actor, &play->state)) {
         this->actionFunc = func_80AE0D10;
         this->unk_220 |= 4;
     } else if (this->actor.isLockedOn) {
@@ -571,12 +579,12 @@ void EnTsn_Update(Actor* thisx, PlayState* play) {
     SkelAnime_Update(&this->skelAnime);
 
     if (this->unk_220 & 1) {
-        Actor_TrackPlayer(play, &this->actor, &this->unk_222, &this->unk_228, this->actor.focus.pos);
+        Actor_TrackPlayer(play, &this->actor, &this->headRot, &this->torsoRot, this->actor.focus.pos);
     } else {
-        Math_SmoothStepToS(&this->unk_222.x, 0, 6, 0x1838, 0x64);
-        Math_SmoothStepToS(&this->unk_222.y, 0, 6, 0x1838, 0x64);
-        Math_SmoothStepToS(&this->unk_228.x, 0, 6, 0x1838, 0x64);
-        Math_SmoothStepToS(&this->unk_228.y, 0, 6, 0x1838, 0x64);
+        Math_SmoothStepToS(&this->headRot.x, 0, 6, 0x1838, 0x64);
+        Math_SmoothStepToS(&this->headRot.y, 0, 6, 0x1838, 0x64);
+        Math_SmoothStepToS(&this->torsoRot.x, 0, 6, 0x1838, 0x64);
+        Math_SmoothStepToS(&this->torsoRot.y, 0, 6, 0x1838, 0x64);
     }
 
     if (DECR(this->unk_230) == 0) {
@@ -598,15 +606,15 @@ void func_80AE0F84(Actor* thisx, PlayState* play) {
 
 s32 EnTsn_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, Actor* thisx) {
     EnTsn* this = THIS;
-    s16 shifted = this->unk_222.x >> 1;
+    s16 shifted = this->headRot.x >> 1;
 
-    if (limbIndex == 15) {
-        rot->x += this->unk_222.y;
+    if (limbIndex == OBJECT_TSN_LIMB_0F) {
+        rot->x += this->headRot.y;
         rot->z += shifted;
     }
 
-    if (limbIndex == 8) {
-        rot->x += this->unk_228.y;
+    if (limbIndex == OBJECT_TSN_LIMB_08) {
+        rot->x += this->torsoRot.y;
         rot->z += shifted;
     }
     return false;
@@ -614,14 +622,15 @@ s32 EnTsn_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* p
 
 void EnTsn_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, Actor* thisx) {
     EnTsn* this = THIS;
-    Vec3f sp18 = D_80AE11BC;
+    Vec3f zeroVec = { 0.0f, 0.0f, 0.0f };
 
-    if (limbIndex == 15) {
-        Matrix_MultVec3f(&sp18, &this->actor.focus.pos);
+    if (limbIndex == OBJECT_TSN_LIMB_0F) {
+        Matrix_MultVec3f(&zeroVec, &this->actor.focus.pos);
     }
 }
 
 void EnTsn_Draw(Actor* thisx, PlayState* play) {
+    static TexturePtr D_80AE11C8[] = { object_tsn_Tex_0073B8, object_tsn_Tex_0085B8 };
     s32 pad;
     EnTsn* this = THIS;
 

@@ -93,8 +93,8 @@ void func_80ACB7F4(ObjAqua* this, PlayState* play) {
 
     effectPos.y = this->actor.floorHeight;
     for (i = 0; i < 4; i++) {
-        effectPos.x = (this->actor.world.pos.x + Math_SinS((s32)(Rand_ZeroOne() * 7200.0f) + angleOffset) * 8.0f);
-        effectPos.z = (this->actor.world.pos.z + Math_CosS((s32)(Rand_ZeroOne() * 7200.0f) + angleOffset) * 8.0f);
+        effectPos.x = this->actor.world.pos.x + Math_SinS((s32)(Rand_ZeroOne() * 7200.0f) + angleOffset) * 8.0f;
+        effectPos.z = this->actor.world.pos.z + Math_CosS((s32)(Rand_ZeroOne() * 7200.0f) + angleOffset) * 8.0f;
         EffectSsGSplash_Spawn(play, &effectPos, NULL, NULL, 0, 120);
         angleOffset += 0x4000;
     }
@@ -106,15 +106,15 @@ void func_80ACB7F4(ObjAqua* this, PlayState* play) {
 void func_80ACB940(ObjAqua* this, PlayState* play) {
     s32 pad;
     Vec3f effectPos;
-    Vec3f effectVel;
+    Vec3f effectVelocity;
 
-    effectVel.x = Rand_ZeroOne() - 0.5f;
-    effectVel.y = 2.0f;
-    effectVel.z = Rand_ZeroOne() - 0.5f;
-    effectPos.x = this->actor.world.pos.x + (effectVel.x * 40.0f);
+    effectVelocity.x = Rand_ZeroOne() - 0.5f;
+    effectVelocity.y = 2.0f;
+    effectVelocity.z = Rand_ZeroOne() - 0.5f;
+    effectPos.x = this->actor.world.pos.x + (effectVelocity.x * 40.0f);
     effectPos.y = this->actor.world.pos.y;
-    effectPos.z = this->actor.world.pos.z + (effectVel.z * 40.0f);
-    EffectSsIceSmoke_Spawn(play, &effectPos, &effectVel, &gZeroVec3f, (s32)(Rand_ZeroOne() * 24.0f) + 70);
+    effectPos.z = this->actor.world.pos.z + (effectVelocity.z * 40.0f);
+    EffectSsIceSmoke_Spawn(play, &effectPos, &effectVelocity, &gZeroVec3f, (s32)(Rand_ZeroOne() * 24.0f) + 70);
 }
 
 void func_80ACBA10(ObjAqua* this) {
@@ -126,15 +126,15 @@ void func_80ACBA10(ObjAqua* this) {
     Matrix_MtxFToYXZRot(&sp2C, &this->actor.shape.rot, false);
 }
 
-s32 func_80ACBA60(ObjAqua* this, PlayState* play) {
+s32 ObjAqua_IsUnderwater(ObjAqua* this, PlayState* play) {
     s32 pad;
     WaterBox* waterBox;
-    f32 ySurface;
+    f32 waterSurface;
     s32 bgId;
 
-    if (WaterBox_GetSurfaceImpl(play, &play->colCtx, this->actor.world.pos.x, this->actor.world.pos.z, &ySurface,
+    if (WaterBox_GetSurfaceImpl(play, &play->colCtx, this->actor.world.pos.x, this->actor.world.pos.z, &waterSurface,
                                 &waterBox, &bgId) &&
-        (this->actor.world.pos.y < ySurface)) {
+        (this->actor.world.pos.y < waterSurface)) {
         return true;
     }
     return false;
@@ -157,7 +157,7 @@ void ObjAqua_Init(Actor* thisx, PlayState* play) {
 
     this->actor.shape.shadowAlpha = 140;
     this->alpha = 255;
-    if (func_80ACBA60(this, play)) {
+    if (ObjAqua_IsUnderwater(this, play)) {
         for (i = 0; i < 8; i++) {
             EffectSsBubble_Spawn(play, &this->actor.world.pos, -4.0f, 4.0f, 4.0f, (Rand_ZeroOne() * 0.09f) + 0.03f);
         }
@@ -247,7 +247,7 @@ void ObjAqua_Update(Actor* thisx, PlayState* play) {
         this->counter--;
     }
     this->actionFunc(this, play);
-    if (this->actor.update) {
+    if (this->actor.update != NULL) {
         if (this->actionFunc == func_80ACBC8C) {
             Math_Vec3f_StepTo(&this->actor.scale, &D_80ACC308, 0.00006f);
         } else if (this->actionFunc == func_80ACBD48) {

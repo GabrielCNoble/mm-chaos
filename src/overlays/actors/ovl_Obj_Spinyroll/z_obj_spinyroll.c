@@ -254,7 +254,7 @@ s32 func_80A1DEB8(ObjSpinyroll* this) {
 
     Math_Vec3f_Diff(&this->unk_4AC[sp30], &this->dyna.actor.world.pos, &sp24);
 
-    return Math3D_LengthSquared(&sp24) < (SQ(this->dyna.actor.speed) + 0.05f);
+    return Math3D_Vec3fMagnitudeSq(&sp24) < (SQ(this->dyna.actor.speed) + 0.05f);
 }
 
 void func_80A1DFA0(ObjSpinyroll* this) {
@@ -475,7 +475,7 @@ void ObjSpinyroll_Init(Actor* thisx, PlayState* play) {
     Collider_InitTris(play, &this->collider);
     Collider_SetTris(play, &this->collider, &this->dyna.actor, &sTrisInit, this->colliderElements);
 
-    if (OBJSPINYROLL_GET_7F(&this->dyna.actor) == OBJSPINYROLL_GET_7F_7F) {
+    if (OBJSPINYROLL_GET_PATH_INDEX(&this->dyna.actor) == OBJSPINYROLL_PATH_INDEX_NONE) {
         func_80A1E9C4(this);
         return;
     }
@@ -484,7 +484,7 @@ void ObjSpinyroll_Init(Actor* thisx, PlayState* play) {
     func_80A1DFA0(this);
     this->unk_4A4 = D_80A1F1C4[OBJSPINYROLL_GET_380(thisx)];
 
-    path = &play->setupPathList[OBJSPINYROLL_GET_7F(&this->dyna.actor)];
+    path = &play->setupPathList[OBJSPINYROLL_GET_PATH_INDEX(&this->dyna.actor)];
     points = Lib_SegmentedToVirtual(path->points);
 
     sp34 = &points[0];

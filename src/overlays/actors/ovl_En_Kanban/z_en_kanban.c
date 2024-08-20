@@ -184,7 +184,7 @@ void func_80954BE8(EnKanban* this, PlayState* play) {
         if (this->msgTimer == 0) {
             yaw = this->actor.yawTowardsPlayer - this->actor.shape.rot.y;
             if (ABS_ALT(yaw) < 0x2800) {
-                if (Actor_ProcessTalkRequest(&this->actor, &play->state)) {
+                if (Actor_TalkOfferAccepted(&this->actor, &play->state)) {
                     this->msgFlag = true;
                 } else {
                     Actor_OfferTalk(&this->actor, play, 68.0f);
@@ -535,7 +535,7 @@ void EnKanban_Update(Actor* thisx, PlayState* play) {
                             this->actor.velocity.y = 0.0f;
                         } else {
                             this->actor.velocity.y *= -0.3f;
-                            this->actor.world.rot.y += (s16)(s32)Rand_CenteredFloat(0x4000);
+                            this->actor.world.rot.y += TRUNCF_BINANG(Rand_CenteredFloat(0x4000));
                         }
                         bounced = true;
                     } else {
@@ -908,14 +908,14 @@ static Gfx* sDisplayLists[] = {
 #include "z_en_kanban_gfx.c"
 
 static f32 sCutAngles[] = {
-    /* CUT_POST   */ 0.50f * M_PI,
-    /* CUT_VERT_L */ 0.00f * M_PI,
-    /* CUT_HORIZ  */ 0.50f * M_PI,
-    /* CUT_DIAG_L */ 0.66f * M_PI,
-    /* CUT_DIAG_R */ 0.34f * M_PI,
-    /* CUT_VERT_R */ 0.00f * M_PI,
-    /*            */ 0.00f * M_PI,
-    /*            */ 0.00f * M_PI,
+    /* CUT_POST   */ 0.50f * M_PIf,
+    /* CUT_VERT_L */ 0.00f * M_PIf,
+    /* CUT_HORIZ  */ 0.50f * M_PIf,
+    /* CUT_DIAG_L */ 0.66f * M_PIf,
+    /* CUT_DIAG_R */ 0.34f * M_PIf,
+    /* CUT_VERT_R */ 0.00f * M_PIf,
+    /*            */ 0.00f * M_PIf,
+    /*            */ 0.00f * M_PIf,
 };
 
 #include "overlays/ovl_En_Kanban/ovl_En_Kanban.c"
@@ -998,7 +998,7 @@ void EnKanban_Draw(Actor* thisx, PlayState* play) {
 
     if ((this->actor.projectedPos.z <= 400.0f) && (this->actor.projectedPos.z > 0.0f) &&
         (this->actor.floorHeight > -3000.0f) && ((this->bounceX != 0) || (this->bounceZ != 0))) {
-        u16 dayTime = gSaveContext.save.time;
+        u16 dayTime = CURRENT_TIME;
         f32 shadowAlpha;
 
         if (dayTime >= CLOCK_TIME(12, 0)) {
@@ -1025,7 +1025,7 @@ void EnKanban_Draw(Actor* thisx, PlayState* play) {
         Matrix_Scale(this->actor.scale.x, 0.0f, this->actor.scale.z, MTXMODE_APPLY);
 
         if (this->actionState == ENKANBAN_SIGN) {
-            Matrix_RotateXFApply(-M_PI / 5);
+            Matrix_RotateXFApply(-M_PIf / 5);
         }
 
         Matrix_RotateYS(this->actor.shape.rot.y, MTXMODE_APPLY);

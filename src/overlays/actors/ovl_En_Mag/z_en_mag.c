@@ -5,6 +5,9 @@
  */
 
 #include "z_en_mag.h"
+
+#include "gfxalloc.h"
+
 #include "objects/object_mag/object_mag.h"
 
 #define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_20)
@@ -423,6 +426,9 @@ void EnMag_Update(Actor* thisx, PlayState* play) {
                         this->state = MAG_STATE_POST_DISPLAY;
                     }
                     break;
+
+                default:
+                    break;
             }
 
             // Appear fully immediately if called during fade-in states.
@@ -556,7 +562,7 @@ void EnMag_DrawImageRGBA32(Gfx** gfxp, s16 centerX, s16 centerY, TexturePtr sour
 
     Gfx_SetupDL56_Ptr(&gfx);
 
-    curTexture = source;
+    curTexture = (uintptr_t)source;
     rectLeft = centerX - (width / 2);
     rectTop = centerY - (height / 2);
     textureHeight = TMEM_SIZE / (width << 2);
@@ -676,7 +682,7 @@ void EnMag_DrawCharTexture(Gfx** gfxp, TexturePtr texture, s32 rectLeft, s32 rec
  * POLY_OPA_DISP, but is used by OVERLAY_DISP.
  */
 void EnMag_DrawInner(Actor* thisx, PlayState* play, Gfx** gfxp) {
-    static u8 pressStartFontIndices[] = {
+    static u8 sPressStartFontIndices[] = {
         0x19, 0x1B, 0x0E, 0x1C, 0x1C, 0x1C, 0x1D, 0x0A, 0x1B, 0x1D,
     }; // Indices into this->font.fontBuf
     static TexturePtr sAppearEffectMaskTextures[] = {
@@ -910,8 +916,8 @@ void EnMag_DrawInner(Actor* thisx, PlayState* play, Gfx** gfxp) {
         gDPSetPrimColor(gfx++, 0, 0, 0, 0, 0, sTextAlpha);
 
         rectLeft = PRESS_START_LEFT + 1;
-        for (i = 0; i < ARRAY_COUNT(pressStartFontIndices); i++) {
-            EnMag_DrawCharTexture(&gfx, font->fontBuf + pressStartFontIndices[i] * FONT_CHAR_TEX_SIZE, rectLeft,
+        for (i = 0; i < ARRAY_COUNT(sPressStartFontIndices); i++) {
+            EnMag_DrawCharTexture(&gfx, font->fontBuf + sPressStartFontIndices[i] * FONT_CHAR_TEX_SIZE, rectLeft,
                                   PRESS_START_TOP + 1);
 
             rectLeft += PRESS_START_CHAR_SPACING;
@@ -925,8 +931,8 @@ void EnMag_DrawInner(Actor* thisx, PlayState* play, Gfx** gfxp) {
         gDPSetPrimColor(gfx++, 0, 0, 255, 30, 30, sTextAlpha);
 
         rectLeft = PRESS_START_LEFT;
-        for (i = 0; i < ARRAY_COUNT(pressStartFontIndices); i++) {
-            EnMag_DrawCharTexture(&gfx, font->fontBuf + pressStartFontIndices[i] * FONT_CHAR_TEX_SIZE, rectLeft,
+        for (i = 0; i < ARRAY_COUNT(sPressStartFontIndices); i++) {
+            EnMag_DrawCharTexture(&gfx, font->fontBuf + sPressStartFontIndices[i] * FONT_CHAR_TEX_SIZE, rectLeft,
                                   PRESS_START_TOP);
             rectLeft += PRESS_START_CHAR_SPACING;
             if (i == 4) {
@@ -961,13 +967,13 @@ void EnMag_Draw(Actor* thisx, PlayState* play) {
     OPEN_DISPS(play->state.gfxCtx);
 
     gfxRef = POLY_OPA_DISP;
-    gfx = Graph_GfxPlusOne(gfxRef);
+    gfx = Gfx_Open(gfxRef);
     gSPDisplayList(OVERLAY_DISP++, gfx);
 
     EnMag_DrawInner(thisx, play, &gfx);
 
     gSPEndDisplayList(gfx++);
-    Graph_BranchDlist(gfxRef, gfx);
+    Gfx_Close(gfxRef, gfx);
     POLY_OPA_DISP = gfx;
 
     CLOSE_DISPS(play->state.gfxCtx);

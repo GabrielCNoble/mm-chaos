@@ -143,11 +143,9 @@ typedef enum {
  * @note 2000 will double the frequency (raise an octave), 500 will halve the frequency (lower an octave).
  *       Cannot be used with `SEQCMD_SET_CHANNEL_FREQ` as they will overwrite one another.
  */
-#define SEQCMD_SET_SEQPLAYER_FREQ_CMD_VALUE(seqPlayerIndex, duration, freqScale)                                        \
-    (SEQCMD_OP_SET_SEQPLAYER_FREQ << 28) | (u32)((seqPlayerIndex) << 24) | ((u32)((duration) << 16)) | (u16)(freqScale) \
-
-#define SEQCMD_SET_SEQPLAYER_FREQ(seqPlayerIndex, duration, freqScale)                              \
-    AudioSeq_QueueSeqCmd(SEQCMD_SET_SEQPLAYER_FREQ_CMD_VALUE(seqPlayerIndex, duration, freqScale))
+#define SEQCMD_SET_SEQPLAYER_FREQ(seqPlayerIndex, duration, freqScale)                          \
+    AudioSeq_QueueSeqCmd((SEQCMD_OP_SET_SEQPLAYER_FREQ << 28) | (u32)((seqPlayerIndex) << 24) | \
+                         ((u32)((duration) << 16)) | (u16)(freqScale))
 
 /**
  * Scale the frequency of a specific channel on a given seqPlayer over a specified duration
@@ -242,12 +240,9 @@ typedef enum {
  *
  * @note the absolute tempo is constrained to a maximum of 300
  */
-#define SEQCMD_SET_TEMPO_CMD_VALUE(seqPlayerIndex, duration, tempoTarget)                           \
-    ((SEQCMD_OP_TEMPO_CMD << 28) | (SEQCMD_SUB_OP_TEMPO_SET << 12) |                                 \
-                         ((u8)(seqPlayerIndex) << 24) | ((u8)(duration) << 16) | (u8)(tempoTarget))
-
 #define SEQCMD_SET_TEMPO(seqPlayerIndex, duration, tempoTarget)                          \
-    AudioSeq_QueueSeqCmd(SEQCMD_SET_TEMPO_CMD_VALUE(seqPlayerIndex, duration, tempoTarget))
+    AudioSeq_QueueSeqCmd((SEQCMD_OP_TEMPO_CMD << 28) | (SEQCMD_SUB_OP_TEMPO_SET << 12) | \
+                         ((u8)(seqPlayerIndex) << 24) | ((u8)(duration) << 16) | (u8)(tempoTarget))
 
 /**
  * Increase the tempo of a sequence by a relative value on a given seqPlayer over a specified duration

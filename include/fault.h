@@ -2,12 +2,13 @@
 #define FAULT_H
 
 #include "ultra64.h"
-#include "unk.h"
-#include "libc/stdarg.h"
-#include "libc/stdint.h"
-#include "PR/controller.h"
+
+#include "stdarg.h"
+#include "stdint.h"
+
 #include "padmgr.h"
 #include "stack.h"
+#include "unk.h"
 
 // These are the same as the 3-bit ansi color codes
 #define FAULT_COLOR_BLACK      0
@@ -345,25 +346,6 @@ enum FAULT_INST_CP0
     FAULT_INST_CP0_RESERVED56,
     FAULT_INST_CP0_RESERVED57
 };
-
-// enum FAULT_INST_CLASSES
-// {
-//     FAULT_INST_CLASS_I = 0,
-//     FAULT_INST_CLASS_J,
-//     FAULT_INST_CLASS_R,
-//     FAULT_INST_CLASS_NONE,
-// };
-
-// enum FAULT_INST_TYPES
-// {
-//     FAULT_INST_TYPE_LOAD_STORE = 0,
-//     FAULT_INST_TYPE_COMPUTATIONAL,
-//     FAULT_INST_TYPE_JUMP_BRANCH,
-//     FAULT_INST_TYPE_SPECIAL,
-//     FAULT_INST_TYPE_COPROCESSOR,
-//     FAULT_INST_TYPE_SYSTEM_CTRL_COP,
-//     FAULT_INST_TYPE_NONE
-// };
 
 struct FaultInstInfo
 {

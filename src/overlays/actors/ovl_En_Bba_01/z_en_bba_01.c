@@ -5,8 +5,8 @@
  *
  * Note: This actor was probably written with OOT's object_bba's skeleton in mind, and so this actor is very bugged.
  *
- * The main offender is that gBbaSkel has 18 limbs, while the system used (EnHy) expects 16 (see @bug in FinishInit
- * below).
+ * The main offender is that gBombShopLadySkel has 18 limbs, while the system used (EnHy) expects 16 (see @bug in
+ * FinishInit below).
  *
  * The draw functions also use different limbs than expected, which results in, for example, EnBba01's right arm and bag
  * following the player instead of her head and torso.
@@ -130,7 +130,7 @@ void EnBba01_UpdateModel(EnBba01* this, PlayState* play) {
 s32 EnBba01_TestIsTalking(EnBba01* this, PlayState* play) {
     s32 isTalking = false;
 
-    if (Actor_ProcessTalkRequest(&this->enHy.actor, &play->state)) {
+    if (Actor_TalkOfferAccepted(&this->enHy.actor, &play->state)) {
         isTalking = true;
         this->enHy.textId = 0x10B9; // Invalid textId, produces empty textbox
         this->enHy.prevTrackTarget = this->enHy.trackTarget;
@@ -143,21 +143,22 @@ s32 EnBba01_TestIsTalking(EnBba01* this, PlayState* play) {
 }
 
 s32 func_809CC270(EnBba01* this, PlayState* play) {
-    s16 x;
-    s16 y;
+    s16 screenPosX;
+    s16 screenPosY;
 
-    Actor_GetScreenPos(play, &this->enHy.actor, &x, &y);
+    Actor_GetScreenPos(play, &this->enHy.actor, &screenPosX, &screenPosY);
     //! @bug: Both x and y conditionals are always true, || should be an &&
-    if (!this->enHy.waitingOnInit && ((x >= 0) || (x < SCREEN_WIDTH)) && ((y >= 0) || (y < SCREEN_HEIGHT))) {
+    if (!this->enHy.waitingOnInit && ((screenPosX >= 0) || (screenPosX < SCREEN_WIDTH)) &&
+        ((screenPosY >= 0) || (screenPosY < SCREEN_HEIGHT))) {
         Actor_OfferTalkExchangeEquiCylinder(&this->enHy.actor, play, 30.0f, PLAYER_IA_MAGIC_BEANS);
     }
     return true;
 }
 
 void EnBba01_FinishInit(EnHy* this, PlayState* play) {
-    //! @bug: gBbaSkel does not match EnHy's skeleton assumptions.
-    //! Since gBbaSkel has more limbs than expected, joint and morph tables will overflow
-    if (EnHy_Init(this, play, &gBbaSkel, ENHY_ANIM_BBA_6)) {
+    //! @bug: gBombShopLadySkel does not match EnHy's skeleton assumptions.
+    //! Since gBombShopLadySkel has more limbs than expected, joint and morph tables will overflow
+    if (EnHy_Init(this, play, &gBombShopLadySkel, ENHY_ANIM_BBA_6)) {
         this->actor.flags |= ACTOR_FLAG_TARGETABLE;
         this->actor.draw = EnBba01_Draw;
         this->waitingOnInit = false;
@@ -186,7 +187,7 @@ void EnBba01_Talk(EnHy* this, PlayState* play) {
     Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 4, 0xFA0, 1);
 
     talkState = Message_GetState(&play->msgCtx);
-    this->inMsgState3 = (talkState == TEXT_STATE_3) ? true : false;
+    this->msgFading = (talkState == TEXT_STATE_FADING) ? true : false;
 
     switch (talkState) {
         case TEXT_STATE_NONE:
@@ -261,35 +262,37 @@ s32 EnBba01_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f*
         Matrix_MultVec3f(&zeroVec, &this->enHy.bodyPartsPos[bodyPartIndex]);
     }
 
-    if (limbIndex == BBA_LIMB_RIGHT_LOWER_ARM_ROOT) {
+    if (limbIndex == BOMB_SHOP_LADY_LIMB_RIGHT_LOWER_ARM_ROOT) {
         OPEN_DISPS(play->state.gfxCtx);
 
         gSPSegment(POLY_OPA_DISP++, 0x06, play->objectCtx.slots[this->enHy.headObjectSlot].segment);
-        gSegments[6] = OS_K0_TO_PHYSICAL(play->objectCtx.slots[this->enHy.headObjectSlot].segment);
-        gSegments[6] = OS_K0_TO_PHYSICAL(play->objectCtx.slots[this->enHy.skelLowerObjectSlot].segment);
+        gSegments[0x06] = OS_K0_TO_PHYSICAL(play->objectCtx.slots[this->enHy.headObjectSlot].segment);
+        gSegments[0x06] = OS_K0_TO_PHYSICAL(play->objectCtx.slots[this->enHy.skelLowerObjectSlot].segment);
 
         CLOSE_DISPS(play->state.gfxCtx);
     }
 
-    if (limbIndex == BBA_LIMB_RIGHT_LOWER_ARM_ROOT) {
+    if (limbIndex == BOMB_SHOP_LADY_LIMB_RIGHT_LOWER_ARM_ROOT) {
         Matrix_Translate(1500.0f, 0.0f, 0.0f, MTXMODE_APPLY);
         Matrix_RotateXS(this->enHy.headRot.y, MTXMODE_APPLY);
         Matrix_RotateZS(-this->enHy.headRot.x, MTXMODE_APPLY);
         Matrix_Translate(-1500.0f, 0.0f, 0.0f, MTXMODE_APPLY);
     }
 
-    if (limbIndex == BBA_LIMB_BAG) {
+    if (limbIndex == BOMB_SHOP_LADY_LIMB_BAG) {
         Matrix_RotateXS(-this->enHy.torsoRot.y, MTXMODE_APPLY);
         Matrix_RotateZS(-this->enHy.torsoRot.x, MTXMODE_APPLY);
     }
 
-    if ((limbIndex == BBA_LIMB_RIGHT_LOWER_ARM_ROOT) && this->enHy.inMsgState3 && ((play->state.frames % 2) == 0)) {
+    if ((limbIndex == BOMB_SHOP_LADY_LIMB_RIGHT_LOWER_ARM_ROOT) && this->enHy.msgFading &&
+        ((play->state.frames % 2) == 0)) {
         Matrix_Translate(40.0f, 0.0f, 0.0f, MTXMODE_APPLY);
     }
 
-    if ((limbIndex == BBA_LIMB_BAG) || (limbIndex == BBA_LIMB_TORSO) || (limbIndex == BBA_LIMB_LEFT_FOREARM)) {
-        rot->y += (s16)(Math_SinS(this->enHy.fidgetTableY[limbIndex]) * 200.0f);
-        rot->z += (s16)(Math_CosS(this->enHy.fidgetTableZ[limbIndex]) * 200.0f);
+    if ((limbIndex == BOMB_SHOP_LADY_LIMB_BAG) || (limbIndex == BOMB_SHOP_LADY_LIMB_TORSO) ||
+        (limbIndex == BOMB_SHOP_LADY_LIMB_LEFT_FOREARM)) {
+        rot->y += TRUNCF_BINANG(Math_SinS(this->enHy.fidgetTableY[limbIndex]) * 200.0f);
+        rot->z += TRUNCF_BINANG(Math_CosS(this->enHy.fidgetTableZ[limbIndex]) * 200.0f);
     }
 
     return false;
@@ -300,7 +303,7 @@ void EnBba01_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* ro
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     Vec3f zeroVec = { 0.0f, 0.0f, 0.0f };
 
-    if (limbIndex == BBA_LIMB_HEAD) {
+    if (limbIndex == BOMB_SHOP_LADY_LIMB_HEAD) {
         OPEN_DISPS(play->state.gfxCtx);
 
         gSPSegment(POLY_OPA_DISP++, 0x06, play->objectCtx.slots[this->enHy.skelUpperObjectSlot].segment);
@@ -309,7 +312,7 @@ void EnBba01_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* ro
         CLOSE_DISPS(play->state.gfxCtx);
     }
 
-    if (limbIndex == BBA_LIMB_RIGHT_LOWER_ARM_ROOT) {
+    if (limbIndex == BOMB_SHOP_LADY_LIMB_RIGHT_LOWER_ARM_ROOT) {
         Matrix_MultVec3f(&zeroVec, &this->enHy.actor.focus.pos);
     }
 }

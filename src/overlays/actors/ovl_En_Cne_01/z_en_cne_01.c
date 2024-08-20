@@ -122,7 +122,7 @@ void EnCne01_UpdateModel(EnCne01* this, PlayState* play) {
 s32 EnCne01_TestIsTalking(EnCne01* this, PlayState* play) {
     s32 isTalking = false;
 
-    if (Actor_ProcessTalkRequest(&this->enHy.actor, &play->state)) {
+    if (Actor_TalkOfferAccepted(&this->enHy.actor, &play->state)) {
         isTalking = true;
         this->enHy.textId = 0x10B9; // Invalid textId, produces empty textbox
         this->enHy.prevTrackTarget = this->enHy.trackTarget;
@@ -135,19 +135,20 @@ s32 EnCne01_TestIsTalking(EnCne01* this, PlayState* play) {
 }
 
 s32 func_809CB4A0(EnCne01* this, PlayState* play) {
-    s16 x;
-    s16 y;
+    s16 screenPosX;
+    s16 screenPosY;
 
-    Actor_GetScreenPos(play, &this->enHy.actor, &x, &y);
+    Actor_GetScreenPos(play, &this->enHy.actor, &screenPosX, &screenPosY);
     //! @bug: Both x and y conditionals are always true, || should be an &&
-    if (!this->enHy.waitingOnInit && ((x >= 0) || (x < SCREEN_WIDTH)) && ((y >= 0) || (y < SCREEN_HEIGHT))) {
+    if (!this->enHy.waitingOnInit && ((screenPosX >= 0) || (screenPosX < SCREEN_WIDTH)) &&
+        ((screenPosY >= 0) || (screenPosY < SCREEN_HEIGHT))) {
         Actor_OfferTalkExchangeEquiCylinder(&this->enHy.actor, play, 30.0f, PLAYER_IA_MAGIC_BEANS);
     }
     return true;
 }
 
 void EnCne01_FinishInit(EnHy* this, PlayState* play) {
-    if (EnHy_Init(this, play, &gCneSkel, ENHY_ANIM_OS_ANIME_11)) {
+    if (EnHy_Init(this, play, &gHylianYoungWomanSkel, ENHY_ANIM_OS_ANIME_11)) {
         this->actor.flags |= ACTOR_FLAG_TARGETABLE;
         this->actor.draw = EnCne01_Draw;
         this->waitingOnInit = false;
@@ -176,7 +177,7 @@ void EnCne01_Talk(EnHy* this, PlayState* play) {
     Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 4, 0xFA0, 1);
 
     talkState = Message_GetState(&play->msgCtx);
-    this->inMsgState3 = (talkState == TEXT_STATE_3) ? true : false;
+    this->msgFading = (talkState == TEXT_STATE_FADING) ? true : false;
 
     switch (talkState) {
         case TEXT_STATE_NONE:
@@ -251,36 +252,36 @@ s32 EnCne01_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f*
         Matrix_MultVec3f(&zeroVec, &this->enHy.bodyPartsPos[bodyPartIndex]);
     }
 
-    if (limbIndex == CNE_LIMB_HEAD) {
+    if (limbIndex == HYLIAN_YOUNG_WOMAN_LIMB_HEAD) {
         OPEN_DISPS(play->state.gfxCtx);
 
         gSPSegment(POLY_OPA_DISP++, 0x06, play->objectCtx.slots[this->enHy.headObjectSlot].segment);
-        gSegments[6] = OS_K0_TO_PHYSICAL(play->objectCtx.slots[this->enHy.headObjectSlot].segment);
-        *dList = gCneHeadBrownHairDL;
-        gSegments[6] = OS_K0_TO_PHYSICAL(play->objectCtx.slots[this->enHy.skelLowerObjectSlot].segment);
+        gSegments[0x06] = OS_K0_TO_PHYSICAL(play->objectCtx.slots[this->enHy.headObjectSlot].segment);
+        *dList = gHylianYoungWomanHeadBrownHairDL;
+        gSegments[0x06] = OS_K0_TO_PHYSICAL(play->objectCtx.slots[this->enHy.skelLowerObjectSlot].segment);
 
         CLOSE_DISPS(play->state.gfxCtx);
     }
-    if (limbIndex == CNE_LIMB_HEAD) {
+    if (limbIndex == HYLIAN_YOUNG_WOMAN_LIMB_HEAD) {
         Matrix_Translate(1500.0f, 0.0f, 0.0f, MTXMODE_APPLY);
         Matrix_RotateXS(this->enHy.headRot.y, MTXMODE_APPLY);
         Matrix_RotateZS(-this->enHy.headRot.x, MTXMODE_APPLY);
         Matrix_Translate(-1500.0f, 0.0f, 0.0f, MTXMODE_APPLY);
     }
 
-    if (limbIndex == CNE_LIMB_TORSO) {
+    if (limbIndex == HYLIAN_YOUNG_WOMAN_LIMB_TORSO) {
         Matrix_RotateXS(-this->enHy.torsoRot.y, MTXMODE_APPLY);
         Matrix_RotateZS(-this->enHy.torsoRot.x, MTXMODE_APPLY);
     }
 
-    if ((limbIndex == CNE_LIMB_HEAD) && this->enHy.inMsgState3 && ((play->state.frames % 2) == 0)) {
+    if ((limbIndex == HYLIAN_YOUNG_WOMAN_LIMB_HEAD) && this->enHy.msgFading && ((play->state.frames % 2) == 0)) {
         Matrix_Translate(40.0f, 0.0f, 0.0f, MTXMODE_APPLY);
     }
 
-    if ((limbIndex == CNE_LIMB_TORSO) || (limbIndex == CNE_LIMB_LEFT_UPPER_ARM) ||
-        (limbIndex == CNE_LIMB_RIGHT_UPPER_ARM)) {
-        rot->y += (s16)(Math_SinS(this->enHy.fidgetTableY[limbIndex]) * 200.0f);
-        rot->z += (s16)(Math_CosS(this->enHy.fidgetTableZ[limbIndex]) * 200.0f);
+    if ((limbIndex == HYLIAN_YOUNG_WOMAN_LIMB_TORSO) || (limbIndex == HYLIAN_YOUNG_WOMAN_LIMB_LEFT_UPPER_ARM) ||
+        (limbIndex == HYLIAN_YOUNG_WOMAN_LIMB_RIGHT_UPPER_ARM)) {
+        rot->y += TRUNCF_BINANG(Math_SinS(this->enHy.fidgetTableY[limbIndex]) * 200.0f);
+        rot->z += TRUNCF_BINANG(Math_CosS(this->enHy.fidgetTableZ[limbIndex]) * 200.0f);
     }
 
     return false;
@@ -291,7 +292,7 @@ void EnCne01_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* ro
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     Vec3f zeroVec = { 0.0f, 0.0f, 0.0f };
 
-    if (limbIndex == CNE_LIMB_RIGHT_FOOT) {
+    if (limbIndex == HYLIAN_YOUNG_WOMAN_LIMB_RIGHT_FOOT) {
         OPEN_DISPS(play->state.gfxCtx);
 
         gSPSegment(POLY_OPA_DISP++, 0x06, play->objectCtx.slots[this->enHy.skelUpperObjectSlot].segment);
@@ -300,7 +301,7 @@ void EnCne01_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* ro
         CLOSE_DISPS(play->state.gfxCtx);
     }
 
-    if (limbIndex == CNE_LIMB_HEAD) {
+    if (limbIndex == HYLIAN_YOUNG_WOMAN_LIMB_HEAD) {
         Matrix_MultVec3f(&zeroVec, &this->enHy.actor.focus.pos);
     }
 }

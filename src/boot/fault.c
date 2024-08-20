@@ -39,23 +39,24 @@
  * DPad-Up may be pressed to enable sending fault pages over osSyncPrintf as well as displaying them on-screen.
  * DPad-Down disables sending fault pages over osSyncPrintf.
  */
-
-#include "fault_internal.h"
 #include "fault.h"
-#include "prevent_bss_reordering.h"
-#include "prevent_bss_reordering2.h"
-#include "vt.h"
+#include "fault_internal.h"
+
+#include "libc64/sleep.h"
+#include "libc64/sprintf.h"
 #include "PR/osint.h"
+
+#include "macros.h"
+#include "main.h"
+#include "vt.h"
 #include "stackcheck.h"
 #include "z64thread.h"
-#include "main.h"
-#include "macros.h"
-#include "global.h"
+#include "libc/string.h"
 
 FaultMgr* sFaultInstance;
 f32 sFaultTimeTotal; // read but not set anywhere
 
-// data 
+// data
 const char* sCpuExceptions[] = {
     "Interrupt",
     "TLB modification",
@@ -585,10 +586,10 @@ const char *sCp0Strs[] = {
     /* [FAULT_INST_CP0_RESERVED57] = */     "RESERVED57"
 };
 
-void Fault_SleepImpl(u32 duration) {
-    OSTime value = (duration * OS_CPU_COUNTER) / 1000ULL;
+void Fault_SleepImpl(u32 msec) {
+    OSTime value = (msec * OS_CPU_COUNTER) / 1000ULL;
 
-    Sleep_Cycles(value);
+    csleep(value);
 }
 
 /**
@@ -763,17 +764,6 @@ void Fault_RemoveAddrConvClient(FaultAddrConvClient* client) {
 
     while (iter) {
         if (iter == client) {
-            // if (lastIter != NULL) {
-            //     lastIter->next = client->next;
-            // } else {
-            //     sFaultInstance->addrConvClients = client;
-            //     if (sFaultInstance->addrConvClients) {
-            //         sFaultInstance->addrConvClients = client->next;
-            //     } else {
-            //         listIsEmpty = true;
-            //     }
-            // }
-            // break;
             if(client->prev != NULL)
             {
                 client->prev->next = client->next;
@@ -929,9 +919,9 @@ void Fault_DrawCornerRec(u16 color) {
 
 void Fault_PrintFReg(s32 index, f32* value) {
     u32 raw = *(u32*)value;
-    s32 v0 = ((raw & 0x7F800000) >> 0x17) - 0x7F;
+    s32 exp = ((raw & 0x7F800000) >> 0x17) - 0x7F;
 
-    if ((v0 >= -0x7E && v0 < 0x80) || raw == 0) {
+    if (((exp > -0x7F) && (exp <= 0x7F)) || (raw == 0)) {
         FaultDrawer_Printf("F%02d:%14.7e ", index, *value);
     } else {
         // Print subnormal floats as their IEEE-754 hex representation
@@ -939,20 +929,20 @@ void Fault_PrintFReg(s32 index, f32* value) {
     }
 }
 
-void Fault_LogFReg(s32 idx, f32* value) {
+void Fault_LogFReg(s32 index, f32* value) {
     u32 raw = *(u32*)value;
-    s32 v0 = ((raw & 0x7F800000) >> 0x17) - 0x7F;
+    s32 exp = ((raw & 0x7F800000) >> 0x17) - 0x7F;
 
-    if ((v0 >= -0x7E && v0 < 0x80) || raw == 0) {
-        osSyncPrintf("F%02d:%14.7e ", idx, *value);
+    if (((exp > -0x7F) && (exp <= 0x7F)) || (raw == 0)) {
+        osSyncPrintf("F%02d:%14.7e ", index, *value);
     } else {
-        osSyncPrintf("F%02d:  %08x(16) ", idx, *(u32*)value);
+        osSyncPrintf("F%02d:  %08x(16) ", index, *(u32*)value);
     }
 }
 
-void Fault_PrintFPCR(u32 value) {
+void Fault_PrintFPCSR(u32 value) {
     s32 i;
-    u32 flag = 0x20000;
+    u32 flag = FPCSR_CE;
 
     FaultDrawer_Printf("FPCSR:%08xH ", value);
 
@@ -970,7 +960,7 @@ void Fault_PrintFPCR(u32 value) {
 
 void Fault_LogFPCSR(u32 value) {
     s32 i;
-    u32 flag = 0x20000;
+    u32 flag = FPCSR_CE;
 
     osSyncPrintf("FPCSR:%08xH  ", value);
     for (i = 0; i < ARRAY_COUNT(sFpuExceptions); i++) {
@@ -982,15 +972,17 @@ void Fault_LogFPCSR(u32 value) {
     }
 }
 
+#define EXC(code) (EXC_##code >> CAUSE_EXCSHIFT)
+
 void Fault_PrintThreadContext(OSThread* thread) {
     __OSThreadContext* threadCtx;
-    s16 causeStrIdx = _SHIFTR((u32)thread->context.cause, 2, 5);
+    s16 causeStrIndex = _SHIFTR((u32)thread->context.cause, 2, 5);
 
-    if (causeStrIdx == 23) { // Watchpoint
-        causeStrIdx = 16;
+    if (causeStrIndex == EXC(WATCH)) { // Watchpoint
+        causeStrIndex = 16;
     }
-    if (causeStrIdx == 31) { // Virtual coherency on data
-        causeStrIdx = 17;
+    if (causeStrIndex == EXC(VCED)) { // Virtual coherency on data
+        causeStrIndex = 17;
     }
 
     FaultDrawer_FillScreen();
@@ -998,7 +990,7 @@ void Fault_PrintThreadContext(OSThread* thread) {
     FaultDrawer_SetCursor(22, 20);
 
     threadCtx = &thread->context;
-    FaultDrawer_Printf("THREAD:%d (%d:%s)\n", thread->id, causeStrIdx, sCpuExceptions[causeStrIdx]);
+    FaultDrawer_Printf("THREAD:%d (%d:%s)\n", thread->id, causeStrIndex, sCpuExceptions[causeStrIndex]);
     FaultDrawer_SetCharPad(-1, 0);
 
     FaultDrawer_Printf("PC:%08xH SR:%08xH VA:%08xH\n", (u32)threadCtx->pc, (u32)threadCtx->sr,
@@ -1014,7 +1006,7 @@ void Fault_PrintThreadContext(OSThread* thread) {
     FaultDrawer_Printf("T9:%08xH GP:%08xH SP:%08xH\n", (u32)threadCtx->t9, (u32)threadCtx->gp, (u32)threadCtx->sp);
     FaultDrawer_Printf("S8:%08xH RA:%08xH LO:%08xH\n\n", (u32)threadCtx->s8, (u32)threadCtx->ra, (u32)threadCtx->lo);
 
-    Fault_PrintFPCR(threadCtx->fpcsr);
+    Fault_PrintFPCSR(threadCtx->fpcsr);
     FaultDrawer_Printf("\n");
     Fault_PrintFReg(0, &threadCtx->fp0.f.f_even);
     Fault_PrintFReg(2, &threadCtx->fp2.f.f_even);
@@ -1049,18 +1041,18 @@ void Fault_PrintThreadContext(OSThread* thread) {
 
 void osSyncPrintfThreadContext(OSThread* thread) {
     __OSThreadContext* threadCtx;
-    s16 causeStrIdx = _SHIFTR((u32)thread->context.cause, 2, 5);
+    s16 causeStrIndex = _SHIFTR((u32)thread->context.cause, 2, 5);
 
-    if (causeStrIdx == 23) { // Watchpoint
-        causeStrIdx = 16;
+    if (causeStrIndex == EXC(WATCH)) { // Watchpoint
+        causeStrIndex = 16;
     }
-    if (causeStrIdx == 31) { // Virtual coherency on data
-        causeStrIdx = 17;
+    if (causeStrIndex == EXC(VCED)) { // Virtual coherency on data
+        causeStrIndex = 17;
     }
 
     threadCtx = &thread->context;
     osSyncPrintf("\n");
-    osSyncPrintf("THREAD ID:%d (%d:%s)\n", thread->id, causeStrIdx, sCpuExceptions[causeStrIdx]);
+    osSyncPrintf("THREAD ID:%d (%d:%s)\n", thread->id, causeStrIndex, sCpuExceptions[causeStrIndex]);
 
     osSyncPrintf("PC:%08xH   SR:%08xH   VA:%08xH\n", (u32)threadCtx->pc, (u32)threadCtx->sr, (u32)threadCtx->badvaddr);
     osSyncPrintf("AT:%08xH   V0:%08xH   V1:%08xH\n", (u32)threadCtx->at, (u32)threadCtx->v0, (u32)threadCtx->v1);
@@ -1109,7 +1101,8 @@ void osSyncPrintfThreadContext(OSThread* thread) {
 OSThread* Fault_FindFaultedThread(void) {
     OSThread* iter = __osGetActiveQueue();
 
-    while (iter->priority != OS_PRIORITY_THREADTAIL) {
+    // -1 indicates the end of the thread queue
+    while (iter->priority != -1) {
         if ((iter->priority > OS_PRIORITY_IDLE) && (iter->priority < OS_PRIORITY_APPMAX) &&
             (iter->flags & (OS_FLAG_CPU_BREAK | OS_FLAG_FAULT))) {
             return iter;
@@ -1125,7 +1118,7 @@ void Fault_Wait5Seconds(void) {
 
     do {
         Fault_Sleep(1000 / 60);
-    } while ((osGetTime() - start) <= OS_SEC_TO_CYCLES(5));
+    } while ((osGetTime() - start) <= OS_USEC_TO_CYCLES(5 * 1000 * 1000));
 
     sFaultInstance->autoScroll = true;
 }
@@ -1451,7 +1444,7 @@ void Fault_InstructionStr(char *instruction_str, const char *opcode_str, u32 ins
         break;
 
         default:
-            __osStrcpy(instruction_str, opcode_str);
+            strcpy(instruction_str, opcode_str);
         break;
 
 
@@ -1527,7 +1520,7 @@ void Fault_Disasm(OSThread *thread)
                 case FAULT_INST_OPCODE_SPECIAL:
                 {
                     u32 special_instruction = instruction & FAULT_INST_SPECIAL_MASK;
-                    Fault_InstructionStr(instruction_str, sSpecialStrs[special_instruction], instruction, sSpecialInstrInfo[special_instruction].format_str, pc);
+                    Fault_InstructionStr(instruction_str, sSpecialStrs[special_instruction], instruction, sSpecialInstrInfo[special_instruction].format_str, (u32)pc);
                     // __osStrcpy(instruction_str, sSpecialStrs[special_instruction]);
                 }
                 break;
@@ -1535,7 +1528,7 @@ void Fault_Disasm(OSThread *thread)
                 case FAULT_INST_OPCODE_REGIMM: 
                 {
                     u32 regimm_instruction = (instruction >> FAULT_INST_REGIMM_SHIFT) & FAULT_INST_REGIMM_MASK;
-                    __osStrcpy(instruction_str, sRegimmStrs[regimm_instruction]);
+                    strcpy(instruction_str, sRegimmStrs[regimm_instruction]);
                 } 
                 break;
 
@@ -1546,7 +1539,7 @@ void Fault_Disasm(OSThread *thread)
                     if(instruction & FAULT_INST_CO_FLAG)
                     {
                         u32 cp0_instruction = (instruction >> FAULT_INST_CP0_SHIFT) & FAULT_INST_CP0_MASK;
-                        __osStrcpy(instruction_str, sCp0Strs[cp0_instruction]);
+                        strcpy(instruction_str, sCp0Strs[cp0_instruction]);
                     }
                     else
                     {
@@ -1556,57 +1549,18 @@ void Fault_Disasm(OSThread *thread)
                         if(cop_instruction == FAULT_INST_COPZRS_BC)
                         {
                             u32 bc_instruction = (instruction >> FAULT_INST_COPZRT_SHIFT) & FAULT_INST_COPZRT_MASK;
-                            __osStrcpy(instruction_str, sCopzrtStrs[bc_instruction]);
+                            strcpy(instruction_str, sCopzrtStrs[bc_instruction]);
                         }
                         else
                         {
-                            __osStrcpy(instruction_str, sCopzrsStrs[cop_instruction]);
+                            strcpy(instruction_str, sCopzrsStrs[cop_instruction]);
                         }
                     }
                 }
                 break;
 
                 default:
-                    Fault_InstructionStr(instruction_str, sOpcodeStrs[opcode], instruction, sOpcodeInfos[opcode].format_str, pc);
-                    // switch(sOpcodeInfos[opcode].type)
-                    // {
-                    //     case FAULT_INST_TYPE_LOAD_STORE:
-                    //     {
-                    //         u8 base = (instruction >> 21) & 0x1f;
-                    //         u8 rt = (instruction >> 16) & 0x1f;
-                    //         u16 offset = instruction & 0xffff;
-                    //         u16 sign = offset & 0x8000;
-
-                    //         if(sign)
-                    //         {
-                    //             offset = (~offset) + 1;
-                    //         }
-                            
-                    //         sprintf(instruction_str, sInstructionFormatStrs[FAULT_INST_TYPE_LOAD_STORE], sOpcodeStrs[opcode], rt, (sign ? "-" : " "), offset, base);
-                    //     }
-                    //     break;
-
-                    //     case FAULT_INST_TYPE_COMPUTATIONAL:
-                    //     { 
-                    //         u8 rs = (instruction >> 21) & 0x1f;
-                    //         u8 rt = (instruction >> 16) & 0x1f;
-                    //         u16 offset = instruction & 0xffff;
-                    //         u16 sign = offset & 0x8000;
-
-                    //         if(sign)
-                    //         {
-                    //             offset = (~offset) + 1;
-                    //         }
-
-                    //         sprintf(instruction_str, sInstructionFormatStrs[FAULT_INST_TYPE_COMPUTATIONAL], sOpcodeStrs[opcode], rt, rs, (sign ? "-" : " "), offset);
-                    //     }
-                    //     break;
-                            
-                    //     default:
-                    //         __osStrcpy(instruction_str, sOpcodeStrs[opcode]);
-                    //     break;
-
-                    // }
+                    Fault_InstructionStr(instruction_str, sOpcodeStrs[opcode], instruction, sOpcodeInfos[opcode].format_str, (u32)pc);
                 break;
             }
 
@@ -1782,7 +1736,7 @@ void Fault_DrawStackTrace(OSThread* thread, u32 flags) {
     FaultDrawer_DrawText(36, 24, "SP       PC       (VPC)");
 
     for (line = 1; (line < 22) && (((ra != 0) || (sp != 0)) && (pc != (uintptr_t)__osCleanupThread)); line++) {
-        FaultDrawer_DrawText(0x24, line * 8 + 24, "%08x %08x", sp, pc);
+        FaultDrawer_DrawText(36, line * 8 + 24, "%08x %08x", sp, pc);
 
         if (flags & 1) {
             // Try to convert the relocated program counter to the corresponding unrelocated virtual address
@@ -1904,44 +1858,43 @@ void Fault_ProcessClients(u32 button) {
     }
 }
 
-void Fault_SetOptionsFromController3(void) {
-    static u32 faultCustomOptions;
+void Fault_SetOptions(void) {
+    static u32 sFaultCustomOptions;
     Input* input3 = &sFaultInstance->inputs[3];
-    u32 pad;
+    s32 pad;
     uintptr_t pc;
     uintptr_t ra;
     uintptr_t sp;
 
-    // BTN_RESET is the "neutral reset". Corresponds to holding L+R and pressing S
     if (CHECK_BTN_ALL(input3->press.button, BTN_RESET)) {
-        faultCustomOptions = !faultCustomOptions;
+        sFaultCustomOptions = !sFaultCustomOptions;
     }
 
-    if (faultCustomOptions) {
+    if (sFaultCustomOptions) {
         pc = gGraphThread.context.pc;
         ra = gGraphThread.context.ra;
         sp = gGraphThread.context.sp;
         if (CHECK_BTN_ALL(input3->cur.button, BTN_R)) {
-            static u32 faultCopyToLog;
+            static u32 sFaultCopyToLog;
 
-            faultCopyToLog = !faultCopyToLog;
-            FaultDrawer_SetOsSyncPrintfEnabled(faultCopyToLog);
+            sFaultCopyToLog = !sFaultCopyToLog;
+            FaultDrawer_SetOsSyncPrintfEnabled(sFaultCopyToLog);
         }
         if (CHECK_BTN_ALL(input3->cur.button, BTN_A)) {
             osSyncPrintf("GRAPH PC=%08x RA=%08x STACK=%08x\n", pc, ra, sp);
         }
         if (CHECK_BTN_ALL(input3->cur.button, BTN_B)) {
-            FaultDrawer_SetDrawerFrameBuffer(osViGetNextFramebuffer(), 0x140, 0xF0);
-            Fault_DrawRec(0, 0xD7, 0x140, 9, 1);
+            FaultDrawer_SetDrawerFrameBuffer(osViGetNextFramebuffer(), SCREEN_WIDTH, SCREEN_HEIGHT);
+            Fault_DrawRec(0, 215, 320, 9, 1);
             FaultDrawer_SetCharPad(-2, 0);
-            FaultDrawer_DrawText(0x20, 0xD8, "GRAPH PC %08x RA %08x SP %08x", pc, ra, sp);
+            FaultDrawer_DrawText(32, 216, "GRAPH PC %08x RA %08x SP %08x", pc, ra, sp);
         }
     }
 }
 
 void Fault_UpdatePad(void) {
     Fault_UpdatePadImpl();
-    Fault_SetOptionsFromController3();
+    Fault_SetOptions();
 }
 
 #define FAULT_MSG_CPU_BREAK ((OSMesg)1)
@@ -2161,9 +2114,4 @@ void Fault_AddHungupAndCrash(const char* file, s32 line) {
 
     sprintf(msg, "HungUp %s:%d", file, line);
     Fault_AddHungupAndCrashImpl(msg, NULL);
-}
-
-void Fault_DbgBrk()
-{
-    osSendMesg(&sFaultInstance->queue, FAULT_MSG_CPU_BREAK, OS_MESG_NOBLOCK);
 }

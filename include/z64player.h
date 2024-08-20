@@ -4,8 +4,12 @@
 #include "alignment.h"
 #include "PR/os.h"
 #include "z64actor.h"
+#include "z64interface.h"
+#include "z64item.h"
+#include "z64light.h"
 
 struct Player;
+struct PlayState;
 
 typedef enum PlayerShield {
     /* 0 */ PLAYER_SHIELD_NONE,
@@ -317,6 +321,13 @@ typedef enum PlayerDoorType {
     /*  5 */ PLAYER_DOORTYPE_PROXIMITY
 } PlayerDoorType;
 
+// Some player animations are played at this reduced speed, for reasons yet unclear.
+// Perhaps to compress animation data?
+// This is called "adjusted" for now.
+// z_en_horse also has many instances of this adjusted speed
+#define PLAYER_ANIM_ADJUSTED_SPEED (2.0f / 3.0f)
+#define PLAYER_ANIM_NORMAL_SPEED   (3.0f / 3.0f)
+
 typedef enum PlayerAnimType {
     /* 0 */ PLAYER_ANIMTYPE_DEFAULT, // DEFAULT
     /* 1 */ PLAYER_ANIMTYPE_1,
@@ -328,50 +339,50 @@ typedef enum PlayerAnimType {
 } PlayerAnimType;
 
 typedef enum PlayerAnimGroup {
-    /*  0 */ PLAYER_ANIMGROUP_0, // STANDING_IDLE
-    /*  1 */ PLAYER_ANIMGROUP_1, // WALKING
-    /*  2 */ PLAYER_ANIMGROUP_2, // RUNNING
-    /*  3 */ PLAYER_ANIMGROUP_3,
-    /*  4 */ PLAYER_ANIMGROUP_4,
-    /*  5 */ PLAYER_ANIMGROUP_5, // Z-Targeting ?
-    /*  6 */ PLAYER_ANIMGROUP_6, // Start or finishing some animation
-    /*  7 */ PLAYER_ANIMGROUP_7, // DRAW_MELEE_WEAPON
-    /*  8 */ PLAYER_ANIMGROUP_8, // OPEN_DOOR_LEFT_FIERCE_DEITY
-    /*  9 */ PLAYER_ANIMGROUP_9, // OPEN_DOOR_LEFT_HUMAN
-    /* 10 */ PLAYER_ANIMGROUP_10, // OPEN_DOOR_RIGHT_FIERCE_DEITY
-    /* 11 */ PLAYER_ANIMGROUP_11, // OPEN_DOOR_RIGHT_HUMAN
-    /* 12 */ PLAYER_ANIMGROUP_12, // GRABBING
-    /* 13 */ PLAYER_ANIMGROUP_13, // FALLING/LANDING?
-    /* 14 */ PLAYER_ANIMGROUP_14, // landing from short distances?
-    /* 15 */ PLAYER_ANIMGROUP_15, // ROLLING
-    /* 16 */ PLAYER_ANIMGROUP_16, // BONK/BONKING
-    /* 17 */ PLAYER_ANIMGROUP_17,
-    /* 18 */ PLAYER_ANIMGROUP_18,
-    /* 19 */ PLAYER_ANIMGROUP_19, // START_SHIELDING
-    /* 20 */ PLAYER_ANIMGROUP_20, // SHIELDING
-    /* 21 */ PLAYER_ANIMGROUP_21, // STOP_SHIELDING/END_SHIELDING
-    /* 22 */ PLAYER_ANIMGROUP_22, // SLOW_SIDE_WALK?
-    /* 23 */ PLAYER_ANIMGROUP_23, // SIDE_WALK
-    /* 24 */ PLAYER_ANIMGROUP_24, // SIDE_WALK_RIGHT
-    /* 25 */ PLAYER_ANIMGROUP_25,
-    /* 26 */ PLAYER_ANIMGROUP_26,
-    /* 27 */ PLAYER_ANIMGROUP_27,
-    /* 28 */ PLAYER_ANIMGROUP_28, // THROWING
-    /* 29 */ PLAYER_ANIMGROUP_29, // PUT_DOWN_OBJECT?
-    /* 30 */ PLAYER_ANIMGROUP_30, // back walking slow?
-    /* 31 */ PLAYER_ANIMGROUP_31,
-    /* 32 */ PLAYER_ANIMGROUP_32,
-    /* 33 */ PLAYER_ANIMGROUP_33,
-    /* 34 */ PLAYER_ANIMGROUP_34, // PULLING_START
-    /* 35 */ PLAYER_ANIMGROUP_35, // PULLING
-    /* 36 */ PLAYER_ANIMGROUP_36, // PULLING_END
-    /* 37 */ PLAYER_ANIMGROUP_37, // climbing from a ledge?
-    /* 38 */ PLAYER_ANIMGROUP_38, // ledge
-    /* 39 */ PLAYER_ANIMGROUP_39, // ledge
-    /* 40 */ PLAYER_ANIMGROUP_40, // climbing from a ledge
-    /* 41 */ PLAYER_ANIMGROUP_41,
-    /* 42 */ PLAYER_ANIMGROUP_42,
-    /* 43 */ PLAYER_ANIMGROUP_43,
+    /*  0 */ PLAYER_ANIMGROUP_wait, // STANDING_IDLE
+    /*  1 */ PLAYER_ANIMGROUP_walk, // WALKING
+    /*  2 */ PLAYER_ANIMGROUP_run, // RUNNING
+    /*  3 */ PLAYER_ANIMGROUP_damage_run,
+    /*  4 */ PLAYER_ANIMGROUP_waitL,
+    /*  5 */ PLAYER_ANIMGROUP_waitR, // Z-Targeting ?
+    /*  6 */ PLAYER_ANIMGROUP_wait2waitR, // Start or finishing some animation
+    /*  7 */ PLAYER_ANIMGROUP_normal2fighter, // DRAW_MELEE_WEAPON
+    /*  8 */ PLAYER_ANIMGROUP_doorA_free, // OPEN_DOOR_LEFT_FIERCE_DEITY
+    /*  9 */ PLAYER_ANIMGROUP_doorA, // OPEN_DOOR_LEFT_HUMAN
+    /* 10 */ PLAYER_ANIMGROUP_doorB_free, // OPEN_DOOR_RIGHT_FIERCE_DEITY
+    /* 11 */ PLAYER_ANIMGROUP_doorB, // OPEN_DOOR_RIGHT_HUMAN
+    /* 12 */ PLAYER_ANIMGROUP_carryB, // GRABBING
+    /* 13 */ PLAYER_ANIMGROUP_landing, // FALLING/LANDING?
+    /* 14 */ PLAYER_ANIMGROUP_short_landing, // landing from short distances?
+    /* 15 */ PLAYER_ANIMGROUP_landing_roll, // ROLLING
+    /* 16 */ PLAYER_ANIMGROUP_hip_down, // BONK/BONKING
+    /* 17 */ PLAYER_ANIMGROUP_walk_endL,
+    /* 18 */ PLAYER_ANIMGROUP_walk_endR,
+    /* 19 */ PLAYER_ANIMGROUP_defense, // START_SHIELDING
+    /* 20 */ PLAYER_ANIMGROUP_defense_wait, // SHIELDING
+    /* 21 */ PLAYER_ANIMGROUP_defense_end, // STOP_SHIELDING/END_SHIELDING
+    /* 22 */ PLAYER_ANIMGROUP_side_walk, // SLOW_SIDE_WALK?
+    /* 23 */ PLAYER_ANIMGROUP_side_walkL, // SIDE_WALK
+    /* 24 */ PLAYER_ANIMGROUP_side_walkR, // SIDE_WALK_RIGHT
+    /* 25 */ PLAYER_ANIMGROUP_45_turn,
+    /* 26 */ PLAYER_ANIMGROUP_waitL2wait,
+    /* 27 */ PLAYER_ANIMGROUP_waitR2wait,
+    /* 28 */ PLAYER_ANIMGROUP_throw, // THROWING
+    /* 29 */ PLAYER_ANIMGROUP_put, // PUT_DOWN_OBJECT?
+    /* 30 */ PLAYER_ANIMGROUP_back_walk, // back walking slow?
+    /* 31 */ PLAYER_ANIMGROUP_check,
+    /* 32 */ PLAYER_ANIMGROUP_check_wait,
+    /* 33 */ PLAYER_ANIMGROUP_check_end,
+    /* 34 */ PLAYER_ANIMGROUP_pull_start, // PULLING_START
+    /* 35 */ PLAYER_ANIMGROUP_pulling, // PULLING
+    /* 36 */ PLAYER_ANIMGROUP_pull_end, // PULLING_END
+    /* 37 */ PLAYER_ANIMGROUP_fall_up, // climbing from a ledge?
+    /* 38 */ PLAYER_ANIMGROUP_jump_climb_hold, // ledge
+    /* 39 */ PLAYER_ANIMGROUP_jump_climb_wait, // ledge
+    /* 40 */ PLAYER_ANIMGROUP_jump_climb_up, // climbing from a ledge
+    /* 41 */ PLAYER_ANIMGROUP_down_slope_slip_end,
+    /* 42 */ PLAYER_ANIMGROUP_up_slope_slip_end,
+    /* 43 */ PLAYER_ANIMGROUP_nwait,
     /* 44 */ PLAYER_ANIMGROUP_MAX
 } PlayerAnimGroup;
 
@@ -543,6 +554,9 @@ typedef enum PlayerLedgeClimbType {
 
 #define LEDGE_DIST_MAX 399.96002f
 
+// TODO: less dumb name
+#define SFX_VOICE_BANK_SIZE 0x20
+
 typedef struct PlayerAgeProperties {
     /* 0x00 */ f32 ceilingCheckHeight;
     /* 0x04 */ f32 shadowScale;
@@ -555,7 +569,7 @@ typedef struct PlayerAgeProperties {
     /* 0x20 */ f32 unk_20; // unused?
     /* 0x24 */ f32 unk_24; // water stuff // depthInWater
     /* 0x28 */ f32 unk_28; // water stuff // depthInWater
-    /* 0x2C */ f32 unk_2C; // swim threshold? // water stuff // depthInWater
+    /* 0x2C */ f32 unk_2C; // water stuff // depthInWater
     /* 0x30 */ f32 unk_30; // water stuff // depthInWater
     /* 0x34 */ f32 unk_34; // height?
     /* 0x38 */ f32 wallCheckRadius;
@@ -600,15 +614,14 @@ typedef struct {
     /* 0x04 */ struct_80122D44_arg1_unk_04 unk_04[4];
 } struct_80122D44_arg1; // size >= 0x114
 
-typedef struct struct_80122744_arg1 {
-    /* 0x0 */ s8 unk_00;
-    /* 0x1 */ s8 unk_01;
-    /* 0x2 */ s8 unk_02;
-    /* 0x3 */ s8 unk_03;
-    /* 0x4 */ Vec3s* unk_04;
-} struct_80122744_arg1; // size = 0x8
+typedef struct PlayerOverrideInputEntry {
+    /* 0x0 */ s8 numPoints;
+    /* 0x1 */ s8 curPoint;
+    /* 0x4 */ Vec3s* targetPosList;
+} PlayerOverrideInputEntry; // size = 0x8
 
 typedef enum PlayerCsAction {
+    /*   -1 */ PLAYER_CSACTION_NEG1 = -1, // Specific to Kafei, any negative number works
     /* 0x00 */ PLAYER_CSACTION_NONE,
     /* 0x01 */ PLAYER_CSACTION_1,
     /* 0x02 */ PLAYER_CSACTION_2,
@@ -771,8 +784,6 @@ typedef enum PlayerCueId {
     /* 0x0F */ PLAYER_CUEID_15,
     /* 0x10 */ PLAYER_CUEID_16,
     /* 0x11 */ PLAYER_CUEID_17,
-
-    /* Link waving animation */
     /* 0x12 */ PLAYER_CUEID_18,
     /* 0x13 */ PLAYER_CUEID_19,
     /* 0x14 */ PLAYER_CUEID_20,
@@ -796,13 +807,11 @@ typedef enum PlayerCueId {
     /* 0x26 */ PLAYER_CUEID_38,
     /* 0x27 */ PLAYER_CUEID_39,
     /* 0x28 */ PLAYER_CUEID_40,
-    /* Link mounted on Epona, walking slowly? */
     /* 0x29 */ PLAYER_CUEID_41,
     /* 0x2A */ PLAYER_CUEID_42,
     /* 0x2B */ PLAYER_CUEID_43,
     /* 0x2C */ PLAYER_CUEID_44,
     /* 0x2D */ PLAYER_CUEID_45,
-    /* Link reply animation? */
     /* 0x2E */ PLAYER_CUEID_46,
     /* 0x2F */ PLAYER_CUEID_47,
     /* 0x30 */ PLAYER_CUEID_48,
@@ -843,11 +852,8 @@ typedef enum PlayerCueId {
     /* 0x53 */ PLAYER_CUEID_83,
     /* 0x54 */ PLAYER_CUEID_84,
     /* 0x55 */ PLAYER_CUEID_85,
-    /* Link sitting, swinging his legs, looking forward */
     /* 0x56 */ PLAYER_CUEID_86,
-    /* Link sitting, swinging his legs, looking side to side*/
     /* 0x57 */ PLAYER_CUEID_87,
-    /* Link sitting, handwaving */
     /* 0x58 */ PLAYER_CUEID_88,
     /* 0x59 */ PLAYER_CUEID_89,
     /* 0x5A */ PLAYER_CUEID_90,
@@ -870,7 +876,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_20         (1 << 5)
 // 
 #define PLAYER_STATE1_40         (1 << 6)
-// Player dead
+// 
 #define PLAYER_STATE1_80         (1 << 7)
 // 
 #define PLAYER_STATE1_100        (1 << 8)
@@ -896,13 +902,13 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_40000      (1 << 18)
 // 
 #define PLAYER_STATE1_80000      (1 << 19)
-// First person?
+// 
 #define PLAYER_STATE1_100000     (1 << 20)
 // 
 #define PLAYER_STATE1_200000     (1 << 21)
-// Player is shielding
+// 
 #define PLAYER_STATE1_400000     (1 << 22)
-// Mounted on Epona?
+// 
 #define PLAYER_STATE1_800000     (1 << 23)
 // 
 #define PLAYER_STATE1_1000000    (1 << 24)
@@ -912,19 +918,19 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_4000000    (1 << 26)
 // Swimming?
 #define PLAYER_STATE1_8000000    (1 << 27)
-// Player is playing idle animation
+// 
 #define PLAYER_STATE1_10000000   (1 << 28)
 // Time is stopped but Link & NPC animations continue
 #define PLAYER_STATE1_20000000   (1 << 29)
 // 
 #define PLAYER_STATE1_40000000   (1 << 30)
-// Related to exit a grotto / captured by grotto?
+// Related to exit a grotto
 #define PLAYER_STATE1_80000000   (1 << 31)
 
 
 // 
 #define PLAYER_STATE2_1          (1 << 0)
-// In talk range?
+// 
 #define PLAYER_STATE2_2          (1 << 1)
 // 
 #define PLAYER_STATE2_4          (1 << 2)
@@ -936,13 +942,13 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE2_20         (1 << 5)
 // 
 #define PLAYER_STATE2_40         (1 << 6)
-// player grabbed?
+// 
 #define PLAYER_STATE2_80         (1 << 7)
 // 
 #define PLAYER_STATE2_100        (1 << 8)
 // 
 #define PLAYER_STATE2_FORCE_SAND_FLOOR_SOUND (1 << 9)
-// Sinking?
+// 
 #define PLAYER_STATE2_400        (1 << 10)
 // Diving
 #define PLAYER_STATE2_800        (1 << 11)
@@ -960,9 +966,9 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE2_20000      (1 << 17)
 // 
 #define PLAYER_STATE2_40000      (1 << 18)
-// Attacking?
+// 
 #define PLAYER_STATE2_80000      (1 << 19)
-// Tatl is hovering around
+// 
 #define PLAYER_STATE2_100000     (1 << 20)
 // 
 #define PLAYER_STATE2_200000     (1 << 21)
@@ -974,11 +980,11 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE2_1000000    (1 << 24)
 // 
 #define PLAYER_STATE2_2000000    (1 << 25)
-// Draw player wobble reflection
+// 
 #define PLAYER_STATE2_4000000    (1 << 26)
 // 
 #define PLAYER_STATE2_8000000    (1 << 27)
-// Player health critical? Gasping?
+// 
 #define PLAYER_STATE2_10000000   (1 << 28)
 // Disable drawing player
 #define PLAYER_STATE2_20000000   (1 << 29)
@@ -1026,7 +1032,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE3_20000      (1 << 17)
 // Related to form Deku
 #define PLAYER_STATE3_40000      (1 << 18)
-// Goron ball of spike active?
+// 
 #define PLAYER_STATE3_80000      (1 << 19)
 // 
 #define PLAYER_STATE3_100000     (1 << 20)
@@ -1058,22 +1064,23 @@ typedef enum PlayerCueId {
 #define PLAYER_GET_INITMODE(thisx) (((thisx)->params & 0xF00) >> 8)
 
 typedef enum PlayerInitMode {
-    /* 0x0 */ PLAYER_INITMODE_0,
-    /* 0x1 */ PLAYER_INITMODE_1, // Spawning after pulling/putting-back Master sword // OoT leftover
-    /* 0x2 */ PLAYER_INITMODE_2,
-    /* 0x3 */ PLAYER_INITMODE_3,
-    /* 0x4 */ PLAYER_INITMODE_4,
-    /* 0x5 */ PLAYER_INITMODE_5,
-    /* 0x6 */ PLAYER_INITMODE_6,
-    /* 0x7 */ PLAYER_INITMODE_7,
-    /* 0x8 */ PLAYER_INITMODE_8,
-    /* 0x9 */ PLAYER_INITMODE_9,
-    /* 0xA */ PLAYER_INITMODE_A,
-    /* 0xB */ PLAYER_INITMODE_B,
-    /* 0xC */ PLAYER_INITMODE_TELESCOPE,
-    /* 0xD */ PLAYER_INITMODE_D,
-    /* 0xE */ PLAYER_INITMODE_E,
-    /* 0xF */ PLAYER_INITMODE_F
+    /*  0x0 */ PLAYER_INITMODE_0,
+    /*  0x1 */ PLAYER_INITMODE_1, // Spawning after pulling/putting-back Master sword // OoT leftover
+    /*  0x2 */ PLAYER_INITMODE_2,
+    /*  0x3 */ PLAYER_INITMODE_3,
+    /*  0x4 */ PLAYER_INITMODE_4,
+    /*  0x5 */ PLAYER_INITMODE_5,
+    /*  0x6 */ PLAYER_INITMODE_6,
+    /*  0x7 */ PLAYER_INITMODE_7,
+    /*  0x8 */ PLAYER_INITMODE_8,
+    /*  0x9 */ PLAYER_INITMODE_9,
+    /*  0xA */ PLAYER_INITMODE_A,
+    /*  0xB */ PLAYER_INITMODE_B,
+    /*  0xC */ PLAYER_INITMODE_TELESCOPE,
+    /*  0xD */ PLAYER_INITMODE_D,
+    /*  0xE */ PLAYER_INITMODE_E,
+    /*  0xF */ PLAYER_INITMODE_F,
+    /* 0x10 */ PLAYER_INITMODE_MAX // Must not exceed 0x10 as `PLAYER_GET_INITMODE` is limited to a nibble in player params
 } PlayerInitMode;
 
 #define PLAYER_PARAMS(startBgCamIndex, initMode) ((startBgCamIndex & 0xFF) | ((initMode & 0xF) << 8))
@@ -1154,7 +1161,7 @@ typedef struct Player {
     /* 0x395 */ u8 prevCsAction; // PlayerCsAction enum
     /* 0x396 */ u8 cueId; // PlayerCueId enum
     /* 0x397 */ u8 unk_397; // PlayerDoorType enum
-    /* 0x398 */ Actor* csActor;
+    /* 0x398 */ Actor* csActor; // Actor involved in a `csAction`. Typically the actor that invoked the cutscene.
     /* 0x39C */ UNK_TYPE1 unk_39C[0x4];
     /* 0x3A0 */ Vec3f unk_3A0;
     /* 0x3AC */ Vec3f unk_3AC;
@@ -1189,7 +1196,7 @@ typedef struct Player {
     /* 0x9C8 */ u8 morphTableUpperBuffer[PLAYER_LIMB_BUF_SIZE];
     /* 0xA68 */ PlayerAgeProperties* ageProperties; // repurposed as "transformation properties"?
     /* 0xA6C */ u32 stateFlags1;
-    /* 0xA70 */ u32 stateFlags2; // Current player form draw flags?
+    /* 0xA70 */ u32 stateFlags2;
     /* 0xA74 */ u32 stateFlags3;
     /* 0xA78 */ Actor* unk_A78;
     /* 0xA7C */ Actor* boomerangActor;
@@ -1206,14 +1213,14 @@ typedef struct Player {
     /* 0xAA0 */ f32 closestSecretDistSq; // Used to augment `secretRumbleCharge`. Cleared every frame
     /* 0xAA4 */ s8 unk_AA4;
     /* 0xAA5 */ u8 unk_AA5; // PlayerUnkAA5 enum
-    /* 0xAA6 */ u16 unk_AA6; // flags of some kind (player limb angle reset ignore flags)
+    /* 0xAA6 */ u16 unk_AA6; // flags of some kind
     /* 0xAA8 */ s16 unk_AA8;
     /* 0xAAA */ s16 unk_AAA;
     /* 0xAAC */ Vec3s headLimbRot;
     /* 0xAB2 */ Vec3s upperLimbRot;
     /* 0xAB8 */ f32 unk_AB8;
     /* 0xABC */ f32 unk_ABC;
-    /* 0xAC0 */ f32 unk_AC0; // Walk speed based on floor slope?
+    /* 0xAC0 */ f32 unk_AC0;
     /* 0xAC4 */ PlayerUpperActionFunc upperActionFunc; // Upper body/item action functions
     /* 0xAC8 */ f32 skelAnimeUpperBlendWeight;
     /* 0xACC */ s16 unk_ACC;
@@ -1230,13 +1237,10 @@ typedef struct Player {
     /* 0xADE */ u8 unk_ADE;
     /* 0xADF */ s8 unk_ADF[4]; // Circular buffer used for testing for triggering a quickspin
     /* 0xAE3 */ s8 unk_AE3[4]; // Circular buffer used for ?
-    /* 0xAE7 */ union {
-        s8 iceTrapHaltCounter; // Used when the player is trapped in ice.
-        s8 revivePlayer; // Used to flag the player should be revived
+    /* 0xAE7 */ union { 
         s8 actionVar1;
     } av1; // "Action Variable 1": context dependent variable that has different meanings depending on what action is currently running
     /* 0xAE8 */ union { 
-        s16 inputMashAccumulator;
         s16 actionVar2;
     } av2; // "Action Variable 2": context dependent variable that has different meanings depending on what action is currently running
     /* 0xAEC */ f32 unk_AEC;
@@ -1269,7 +1273,7 @@ typedef struct Player {
     /* 0xB5E */ u8 unk_B5E;
     /* 0xB5F */ u8 unk_B5F;
     /* 0xB60 */ u16 blastMaskTimer;
-    /* 0xB62 */ s16 unk_B62; // Zora magic shield active?
+    /* 0xB62 */ s16 unk_B62;
     /* 0xB64 */ u8 unk_B64;
     /* 0xB65 */ u8 shockTimer;
     /* 0xB66 */ u8 unk_B66;
@@ -1280,11 +1284,11 @@ typedef struct Player {
     /* 0xB6E */ s16 floorPitchAlt; // the calculation for this value is bugged and doesn't represent anything meaningful
     /* 0xB70 */ s16 unk_B70;
     /* 0xB72 */ u16 floorSfxOffset;
-    /* 0xB74 */ u8 unk_B74;  // hit damage?
-    /* 0xB75 */ u8 unk_B75;  // hit type?
-    /* 0xB76 */ s16 unk_B76; // hit angle?
-    /* 0xB78 */ f32 unk_B78; // hit speed?
-    /* 0xB7C */ f32 unk_B7C; // hit y velocity?
+    /* 0xB74 */ u8 unk_B74;
+    /* 0xB75 */ u8 unk_B75;
+    /* 0xB76 */ s16 unk_B76;
+    /* 0xB78 */ f32 unk_B78;
+    /* 0xB7C */ f32 unk_B7C;
     /* 0xB80 */ f32 pushedSpeed; // Pushing player, examples include water currents, floor conveyors, climbing sloped surfaces
     /* 0xB84 */ s16 pushedYaw; // Yaw of direction in which player is being pushed
     /* 0xB86 */ s16 unk_B86[2]; // unknown length
@@ -1315,5 +1319,123 @@ typedef struct Player {
     /* 0xD6B */ u8 unk_D6B;
     /* 0xD6C */ Vec3f unk_D6C; // previous body part 0 position
 } Player; // size = 0xD78
+
+// z_player_call.c functions
+
+void PlayerCall_Init(Actor* thisx, struct PlayState* play);
+void PlayerCall_Destroy(Actor* thisx, struct PlayState* play);
+void PlayerCall_Update(Actor* thisx, struct PlayState* play);
+void PlayerCall_Draw(Actor* thisx, struct PlayState* play);
+
+// z_actor.c functions
+
+f32 Player_GetHeight(Player* player);
+f32 Player_GetRunSpeedLimit(Player* player);
+bool func_800B7118(Player* player);
+bool func_800B7128(Player* player);
+bool func_800B715C(struct PlayState* play);
+void Player_SetCameraHorseSetting(struct PlayState* play, Player* player);
+void Player_MountHorse(struct PlayState* play, Player* player, Actor* horse);
+s32 Player_SetCsAction(struct PlayState* play, Actor* csActor, u8 csAction);
+s32 Player_SetCsActionWithHaltedActors(struct PlayState* play, Actor* csActor, u8 csAction);
+
+s32 Player_IsFacingActor(Actor* actor, s16 maxAngleDiff, struct PlayState* play);
+
+PlayerItemAction Player_GetExchangeItemAction(struct PlayState* play);
+
+void func_800B8D10(struct PlayState* play, Actor* actor, f32 arg2, s16 arg3, f32 arg4, u32 arg5, u32 arg6);
+void func_800B8D50(struct PlayState* play, Actor* actor, f32 arg2, s16 yaw, f32 arg4, u32 arg5);
+void func_800B8D98(struct PlayState* play, Actor* actor, f32 arg2, s16 arg3, f32 arg4);
+void func_800B8DD4(struct PlayState* play, Actor* actor, f32 arg2, s16 arg3, f32 arg4, u32 arg5);
+void func_800B8E1C(struct PlayState* play, Actor* actor, f32 arg2, s16 arg3, f32 arg4);
+void Player_PlaySfx(Player* player, u16 sfxId);
+
+// z_player_lib.c functions
+
+s32 func_801226E0(struct PlayState* play, s32 arg1);
+s32 Player_InitOverrideInput(struct PlayState* play, PlayerOverrideInputEntry* inputEntry, u32 numPoints, Vec3s* targetPosList);
+s32 Player_UpdateOverrideInput(struct PlayState* play, PlayerOverrideInputEntry* inputEntry, f32 distXZRange);
+void func_80122868(struct PlayState* play, Player* player);
+void func_801229A0(struct PlayState* play, Player* player);
+void func_801229EC(Actor* thisx, struct PlayState* play);
+void func_801229FC(Player* player);
+void func_80122BA4(struct PlayState* play, struct_80122D44_arg1* arg1, s32 arg2, s32 alpha);
+void func_80122C20(struct PlayState* play, struct_80122D44_arg1* arg1);
+void func_80122D44(struct PlayState* play, struct_80122D44_arg1* arg1);
+u8 Player_MaskIdToItemId(s32 maskIdMinusOne);
+s32 Player_GetCurMaskItemId(struct PlayState* play);
+void func_80122F28(Player* player);
+bool func_80122F9C(struct PlayState* play);
+bool func_80122FCC(struct PlayState* play);
+void func_8012300C(struct PlayState* play, s32 arg1);
+void func_8012301C(Actor* thisx, struct PlayState* play2);
+void func_80123140(struct PlayState* play, Player* player);
+bool Player_InBlockingCsMode(struct PlayState* play, Player* player);
+bool Player_InCsMode(struct PlayState* play);
+bool func_80123420(Player* player);
+bool func_80123434(Player* player);
+bool func_80123448(struct PlayState* play);
+bool Player_IsGoronOrDeku(Player* player);
+bool func_801234D4(struct PlayState* play);
+bool func_80123590(struct PlayState* play, Actor* actor);
+ItemId Player_GetItemOnButton(struct PlayState* play, Player* player, EquipSlot slot);
+PlayerItemAction func_80123810(struct PlayState* play);
+PlayerModelGroup Player_ActionToModelGroup(Player* player, PlayerItemAction itemAction);
+void Player_SetModelsForHoldingShield(Player* player);
+void Player_SetModels(Player* player, PlayerModelGroup modelGroup);
+void Player_SetModelGroup(Player* player, PlayerModelGroup modelGroup);
+void func_80123C58(Player* player);
+void Player_SetEquipmentData(struct PlayState* play, Player* player);
+void Player_UpdateBottleHeld(struct PlayState* play, Player* player, ItemId itemId, PlayerItemAction itemAction);
+void Player_Untarget(Player* player);
+void func_80123DC0(Player* player);
+void func_80123E90(struct PlayState* play, Actor* actor);
+s32 Player_SetBButtonAmmo(struct PlayState* play, s32 ammo);
+bool Player_IsBurningStickInRange(struct PlayState* play, Vec3f* pos, f32 xzRange, f32 yRange);
+u8 Player_GetStrength(void);
+PlayerMask Player_GetMask(struct PlayState* play);
+void Player_RemoveMask(struct PlayState* play);
+bool Player_HasMirrorShieldEquipped(struct PlayState* play);
+bool Player_IsHoldingMirrorShield(struct PlayState* play);
+bool Player_IsHoldingHookshot(Player* player);
+bool func_801240DC(Player* player);
+PlayerBButtonSword Player_BButtonSwordFromIA(Player* player, PlayerItemAction itemAction);
+PlayerBButtonSword Player_GetHeldBButtonSword(Player* player);
+PlayerMeleeWeapon Player_MeleeWeaponFromIA(PlayerItemAction itemAction);
+PlayerMeleeWeapon Player_GetMeleeWeaponHeld(Player* player);
+s32 Player_IsHoldingTwoHandedWeapon(Player* player);
+PlayerBottle Player_BottleFromIA(Player* player, PlayerItemAction itemAction);
+PlayerBottle Player_GetBottleHeld(Player* Player);
+PlayerExplosive Player_ExplosiveFromIA(Player* player, PlayerItemAction itemAction);
+PlayerExplosive Player_GetExplosiveHeld(Player* player);
+PlayerSword Player_SwordFromIA(Player* player, PlayerItemAction itemAction);
+bool func_801242B4(Player* player);
+s32 Player_GetEnvironmentalHazard(struct PlayState* play);
+void Player_UpdateBunnyEars(Player* player);
+void func_80124618(struct_80124618 arg0[], f32 curFrame, Vec3f* arg2);
+void Player_DrawImpl(struct PlayState* play, void** skeleton, Vec3s* jointTable, s32 dListCount, s32 lod, PlayerTransformation playerForm, s32 boots, s32 face, OverrideLimbDrawFlex overrideLimbDraw, PostLimbDrawFlex postLimbDraw, Actor* actor);
+void func_80125318(Vec3f* arg0, Vec3s* arg1);
+void Player_DrawZoraShield(struct PlayState* play, Player* player);
+void func_80125500(struct PlayState* play, Player* player, s32 limbIndex, Vec3f* pos, Vec3s* rot);
+s32 Player_OverrideLimbDrawGameplayDefault(struct PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, Actor* actor);
+s32 Player_OverrideLimbDrawGameplayFirstPerson(struct PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, Actor* actor);
+s32 Player_OverrideLimbDrawGameplayCrawling(struct PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, Actor* thisx);
+s32 func_80126440(struct PlayState* play, ColliderQuad* collider, WeaponInfo* weaponInfo, Vec3f* newTip, Vec3f* newBase);
+void Player_DrawGetItem(struct PlayState* play, Player* player);
+void func_80126B8C(struct PlayState* play, Player* player);
+s32 func_80127438(struct PlayState* play, Player* player, s32 currentMask);
+s32 func_80128640(struct PlayState* play, Player* player, Gfx* dList);
+void Player_SetFeetPos(struct PlayState* play, Player* player, s32 limbIndex);
+void Player_PostLimbDrawGameplay(struct PlayState* play, s32 limbIndex, Gfx** dList1, Gfx** dList2, Vec3s* rot, Actor* actor);
+
+extern FlexSkeletonHeader* gPlayerSkeletons[PLAYER_FORM_MAX];
+extern PlayerModelIndices gPlayerModelTypes[];
+extern struct_80124618 D_801C03A0[];
+extern struct_80124618 D_801C0490[];
+extern Gfx gCullBackDList[];
+extern Gfx gCullFrontDList[];
+
+// object_table.c
+extern s16 gPlayerFormObjectIds[PLAYER_FORM_MAX];
 
 #endif

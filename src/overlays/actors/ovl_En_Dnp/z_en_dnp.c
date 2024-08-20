@@ -126,8 +126,22 @@ static AnimationInfoS sAnimationInfo[DEKU_PRINCESS_ANIM_MAX] = {
     { &gDekuPrincessGlareLoopAnim, 1.0f, 0, -1, ANIMMODE_LOOP, -4 },         // DEKU_PRINCESS_ANIM_GLARE_LOOP
 };
 
-static s32 D_80B3DE58[] = {
-    0x00172000, 0x0D040005, 0x0E09670C, 0x100E0968, 0x0C100E09, 0x6F0C0F09, 0x700C1000,
+static MsgScript sMsgScript[] = {
+    /* 0x0000 0x05 */ MSCRIPT_CMD_CHECK_WEEK_EVENT_REG(WEEKEVENTREG_23_20, 0x0012 - 0x0005),
+    /* 0x0005 0x03 */ MSCRIPT_CMD_CHECK_HUMAN(0x000D - 0x0008),
+    /* 0x0008 0x03 */ MSCRIPT_CMD_BEGIN_TEXT(0x0967),
+    /* 0x000B 0x01 */ MSCRIPT_CMD_AWAIT_TEXT(),
+    /* 0x000C 0x01 */ MSCRIPT_CMD_DONE(),
+
+    /* 0x000D 0x03 */ MSCRIPT_CMD_BEGIN_TEXT(0x0968),
+    /* 0x0010 0x01 */ MSCRIPT_CMD_AWAIT_TEXT(),
+    /* 0x0011 0x01 */ MSCRIPT_CMD_DONE(),
+
+    /* 0x0012 0x03 */ MSCRIPT_CMD_BEGIN_TEXT(0x096F),
+    /* 0x0015 0x01 */ MSCRIPT_CMD_AWAIT_TEXT(),
+    /* 0x0016 0x03 */ MSCRIPT_CMD_CONTINUE_TEXT(0x0970),
+    /* 0x0019 0x01 */ MSCRIPT_CMD_AWAIT_TEXT(),
+    /* 0x001A 0x01 */ MSCRIPT_CMD_DONE(),
 };
 
 s32 func_80B3CA20(EnDnp* this) {
@@ -212,7 +226,7 @@ s32 func_80B3CDA4(EnDnp* this, PlayState* play) {
 
     temp_s0 = CLAMP(temp_s0, -0x3FFC, 0x3FFC);
 
-    Math_SmoothStepToS(&this->unk_332, temp_s0, 3, 0x2AA8, 0x1);
+    Math_SmoothStepToS(&this->unk_332, temp_s0, 3, 0x2AA8, 1);
     sp30 = player->actor.world.pos;
     sp30.y = player->bodyPartsPos[PLAYER_BODYPART_HEAD].y + 3.0f;
     sp3C = this->actor.world.pos;
@@ -222,7 +236,7 @@ s32 func_80B3CDA4(EnDnp* this, PlayState* play) {
     //! FAKE
     if (1) {}
 
-    Math_SmoothStepToS(&this->unk_330, pitch, 3, 0x2AA8, 0x1);
+    Math_SmoothStepToS(&this->unk_330, pitch, 3, 0x2AA8, 1);
 
     return 1;
 }
@@ -248,7 +262,7 @@ s32 func_80B3CF60(EnDnp* this, PlayState* play) {
     s32 ret = false;
 
     if (((this->unk_322 & SUBS_OFFER_MODE_MASK) != SUBS_OFFER_MODE_NONE) &&
-        Actor_ProcessTalkRequest(&this->actor, &play->state)) {
+        Actor_TalkOfferAccepted(&this->actor, &play->state)) {
         SubS_SetOfferMode(&this->unk_322, SUBS_OFFER_MODE_NONE, SUBS_OFFER_MODE_MASK);
         this->unk_322 |= 8;
         this->actionFunc = func_80B3D3F8;
@@ -356,7 +370,7 @@ void func_80B3D338(EnDnp* this, PlayState* play) {
     }
 
     if (this->unk_32E == 0) {
-        if (Actor_ProcessTalkRequest(&this->actor, &play->state)) {
+        if (Actor_TalkOfferAccepted(&this->actor, &play->state)) {
             this->unk_32E = 1;
         } else {
             this->actor.textId = 0x971;
@@ -367,7 +381,7 @@ void func_80B3D338(EnDnp* this, PlayState* play) {
 }
 
 void func_80B3D3F8(EnDnp* this, PlayState* play) {
-    if (func_8010BF58(&this->actor, play, D_80B3DE58, NULL, &this->unk_328)) {
+    if (MsgEvent_RunScript(&this->actor, play, sMsgScript, NULL, &this->msgScriptPos)) {
         SubS_SetOfferMode(&this->unk_322, SUBS_OFFER_MODE_ONSCREEN, SUBS_OFFER_MODE_MASK);
         this->unk_322 &= ~8;
         this->actionFunc = func_80B3D2D4;
@@ -487,8 +501,8 @@ s32 func_80B3D974(s16 arg0, s16 arg1, Vec3f* arg2, Vec3s* arg3, s32 arg4, s32 ar
     Matrix_Get(&sp2C);
     Matrix_MtxFToYXZRot(&sp2C, &sp6C, false);
     *arg2 = sp74;
-    if (arg4 == 0) {
-        if (arg5 != 0) {
+    if (!arg4) {
+        if (arg5) {
             sp6C.z = arg0;
             sp6C.y = arg1;
         }
@@ -509,17 +523,18 @@ void EnDnp_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot,
 
 void EnDnp_TransformLimbDraw(PlayState* play, s32 limbIndex, Actor* thisx) {
     EnDnp* this = THIS;
-    s32 phi_v1 = 1;
+    s32 phi_v1;
     s32 phi_v0;
 
     if (this->unk_322 & 0x10) {
-        phi_v0 = 0;
+        phi_v1 = true;
+        phi_v0 = false;
     } else {
-        phi_v1 = 0;
+        phi_v1 = false;
         if (this->unk_322 & 0x40) {
-            phi_v0 = 1;
+            phi_v0 = true;
         } else {
-            phi_v0 = 0;
+            phi_v0 = false;
         }
     }
 

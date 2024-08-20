@@ -2693,11 +2693,6 @@ EntranceTableEntry* Entrance_GetTableEntry(u16 entrance) {
     return &tableEntry[entranceIndex & 0xF];
 }
 
-SceneEntranceTableEntry *Entrance_GetSceneTableEntry(u16 scene)
-{
-    return sSceneEntranceTable + scene;
-}
-
 /**
  * Returns the scene index from a given entrance index.
  */

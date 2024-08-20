@@ -1,4 +1,11 @@
-#include "global.h"
+#include "z64lib.h"
+#include "ichain.h"
+
+#include "libc64/qrand.h"
+
+#include "main.h"
+#include "sfx.h"
+#include "z64game.h"
 
 void* Lib_MemCpy(void* dest, void* src, size_t size) {
     bcopy(src, dest, size);
@@ -11,7 +18,7 @@ void* Lib_MemSet(void* buffer, s32 value, size_t size) {
     s32 i;
 
     if (value == 0) {
-        bzero(buffer, (u32)size);
+        bzero(buffer, size);
 
         return buffer;
     }
@@ -24,11 +31,11 @@ void* Lib_MemSet(void* buffer, s32 value, size_t size) {
 }
 
 f32 Math_CosS(s16 angle) {
-    return coss(angle) * SHT_MINV;
+    return coss(angle) * (1.0f / SHRT_MAX);
 }
 
 f32 Math_SinS(s16 angle) {
-    return sins(angle) * SHT_MINV;
+    return sins(angle) * (1.0f / SHRT_MAX);
 }
 
 s32 Math_StepToIImpl(s32 start, s32 target, s32 step) {
@@ -68,7 +75,7 @@ s32 Math_ScaledStepToS(s16* pValue, s16 target, s16 step) {
             step = -step;
         }
 
-        *pValue += (s16)(step * f0);
+        *pValue += TRUNCF_BINANG(step * f0);
 
         if (((s16)(*pValue - target) * step) >= 0) {
             *pValue = target;
@@ -445,7 +452,7 @@ void (*sInitChainHandlers[])(u8* ptr, InitChainEntry* ichain) = {
     IChain_Apply_Vec3f, IChain_Apply_Vec3fdiv1000, IChain_Apply_Vec3s,
 };
 
-void Actor_ProcessInitChain(Actor* actor, InitChainEntry* ichain) {
+void Actor_ProcessInitChain(struct Actor* actor, InitChainEntry* ichain) {
     do {
         sInitChainHandlers[ichain->type]((u8*)actor, ichain);
     } while ((ichain++)->cont);
@@ -663,15 +670,15 @@ void Lib_Vec3f_TranslateAndRotateY(Vec3f* translation, s16 rotAngle, Vec3f* src,
     dst->z = translation->z + (src->z * cos - src->x * sin);
 }
 
-void Color_RGB8_Lerp(Color_RGB8* a, Color_RGB8* b, f32 t, Color_RGB8* dst) {
+void Color_RGB8_Lerp(Color_RGB8* from, Color_RGB8* to, f32 lerp, Color_RGB8* dst) {
     f32 aF;
 
-    aF = a->r;
-    dst->r = aF + (b->r - aF) * t;
-    aF = a->g;
-    dst->g = aF + (b->g - aF) * t;
-    aF = a->b;
-    dst->b = aF + (b->b - aF) * t;
+    aF = from->r;
+    dst->r = aF + (to->r - aF) * lerp;
+    aF = from->g;
+    dst->g = aF + (to->g - aF) * lerp;
+    aF = from->b;
+    dst->b = aF + (to->b - aF) * lerp;
 }
 
 f32 Math_Vec3f_StepTo(Vec3f* start, Vec3f* target, f32 speed) {
@@ -683,10 +690,10 @@ f32 Math_Vec3f_StepTo(Vec3f* start, Vec3f* target, f32 speed) {
     f0 = Math3D_Vec3fMagnitude(&diff);
     if (speed < f0) {
         f2 = speed / f0;
-        f0 = f0 - speed;
-        start->x = start->x + f2 * diff.x;
-        start->y = start->y + f2 * diff.y;
-        start->z = start->z + f2 * diff.z;
+        f0 -= speed;
+        start->x += f2 * diff.x;
+        start->y += f2 * diff.y;
+        start->z += f2 * diff.z;
     } else {
         Math_Vec3f_Copy(start, target);
         f0 = 0.0f;
@@ -715,11 +722,11 @@ void* Lib_SegmentedToVirtualNull(void* ptr) {
  * the NULL virtual address being 0x00000000 and not 0x80000000. Used by transition overlays, which store their
  * addresses in 24-bit fields.
  */
-void* Lib_VirtualToPhysical(void* ptr) {
+uintptr_t Lib_VirtualToPhysical(void* ptr) {
     if (ptr == NULL) {
-        return NULL;
+        return 0;
     } else {
-        return (void*)OS_K0_TO_PHYSICAL(ptr);
+        return OS_K0_TO_PHYSICAL(ptr);
     }
 }
 
@@ -728,8 +735,8 @@ void* Lib_VirtualToPhysical(void* ptr) {
  * the NULL virtual address being 0x00000000 and not 0x80000000. Used by transition overlays, which store their
  * addresses in 24-bit fields.
  */
-void* Lib_PhysicalToVirtual(void* ptr) {
-    if (ptr == NULL) {
+void* Lib_PhysicalToVirtual(uintptr_t ptr) {
+    if (ptr == 0) {
         return NULL;
     } else {
         return OS_PHYSICAL_TO_K0(ptr);

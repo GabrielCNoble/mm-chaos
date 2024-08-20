@@ -141,11 +141,11 @@ void EnRr_Init(Actor* thisx, PlayState* play) {
         this->actor.scale.y = 0.022499999f;
         this->actor.scale.x = 0.028499998f;
         this->actor.scale.z = 0.028499998f;
-        this->collider1.dim.radius = this->collider1.dim.radius * 1.5f;
-        this->collider1.dim.height = this->collider1.dim.height * 1.5f;
-        this->collider2.dim.radius = this->collider2.dim.radius * 1.5f;
-        this->collider2.dim.height = this->collider2.dim.height * 1.5f;
-        this->collider2.dim.yShift = this->collider2.dim.yShift * 1.5f;
+        this->collider1.dim.radius *= 1.5f;
+        this->collider1.dim.height *= 1.5f;
+        this->collider2.dim.radius *= 1.5f;
+        this->collider2.dim.height *= 1.5f;
+        this->collider2.dim.yShift *= 1.5f;
     }
 
     Collider_UpdateCylinder(&this->actor, &this->collider2);
@@ -214,7 +214,6 @@ void func_808FA19C(EnRr* this, PlayState* play) {
     }
 }
 
-/* EnRr_SetMoveSpeed */
 void func_808FA238(EnRr* this, f32 arg1) {
     this->actor.speed = arg1;
     Actor_PlaySfx(&this->actor, NA_SE_EN_LIKE_WALK);
@@ -264,7 +263,6 @@ void func_808FA344(EnRr* this) {
     }
 }
 
-/* EnRr_BeginGobblePlayer */
 void func_808FA3F8(EnRr* this, Player* player) {
     s32 i;
 
@@ -292,17 +290,12 @@ void func_808FA3F8(EnRr* this, Player* player) {
     Actor_PlaySfx(&this->actor, NA_SE_EN_SUISEN_DRINK);
 }
 
-/* EnRr_SpitPlayer */
 void func_808FA4F4(EnRr* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
-    // u32 sp38;
-    u32 player_damage;
-    // s32 sp34;
-    s32 shield_stolen;
-    // f32 sp30;
-    f32 player_throw_xz_speed;
-    // f32 sp2C;
-    f32 player_throw_y_velocity;
+    u32 sp38;
+    s32 sp34;
+    f32 sp30;
+    f32 sp2C;
 
     if (player->stateFlags2 & PLAYER_STATE2_80) {
         player->actor.parent = NULL;
@@ -315,30 +308,30 @@ void func_808FA4F4(EnRr* this, PlayState* play) {
 
         if (((this->unk_1E2 == 0) && (GET_PLAYER_FORM == PLAYER_FORM_HUMAN)) &&
             (GET_CUR_EQUIP_VALUE(EQUIP_TYPE_SHIELD) == EQUIP_VALUE_SHIELD_HERO)) {
-            shield_stolen = true;
+            sp34 = true;
             this->unk_1E2 = Inventory_DeleteEquipment(play, EQUIP_VALUE_SHIELD_HERO);
         } else {
-            shield_stolen = false;
+            sp34 = false;
         }
 
-        if (shield_stolen && (Message_GetState(&play->msgCtx) == TEXT_STATE_NONE)) {
+        if (sp34 && (Message_GetState(&play->msgCtx) == TEXT_STATE_NONE)) {
             Message_StartTextbox(play, 0xF6, NULL);
         }
 
         if (this->actor.params == LIKE_LIKE_PARAM_0) {
-            player_damage = 8;
+            sp38 = 8;
         } else {
-            player_damage = 16;
+            sp38 = 16;
         }
 
-        player_throw_xz_speed = this->actor.scale.x * 210.52632f;
-        player_throw_y_velocity = this->actor.scale.x * 631.579f;
+        sp30 = this->actor.scale.x * 210.52632f;
+        sp2C = this->actor.scale.x * 631.579f;
 
-        player->actor.world.pos.x += player_throw_xz_speed * Math_SinS(this->actor.shape.rot.y);
-        player->actor.world.pos.y += player_throw_y_velocity;
-        player->actor.world.pos.z += player_throw_xz_speed * Math_CosS(this->actor.shape.rot.y);
+        player->actor.world.pos.x += sp30 * Math_SinS(this->actor.shape.rot.y);
+        player->actor.world.pos.y += sp2C;
+        player->actor.world.pos.z += sp30 * Math_CosS(this->actor.shape.rot.y);
 
-        func_800B8D50(play, &this->actor, player_throw_xz_speed, this->actor.shape.rot.y, player_throw_y_velocity, player_damage);
+        func_800B8D50(play, &this->actor, sp30, this->actor.shape.rot.y, sp2C, sp38);
         Actor_PlaySfx(&this->actor, NA_SE_EN_SUISEN_THROW);
     }
 }
@@ -574,11 +567,10 @@ void func_808FAE50(EnRr* this, PlayState* play) {
     }
 }
 
-/* EnRr_Action_SeekPlayer */
 void func_808FAF94(EnRr* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 10, 500, 0);
+    Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 10, 0x1F4, 0);
     this->actor.world.rot.y = this->actor.shape.rot.y;
     if ((this->unk_1E6 == 0) && !(player->stateFlags2 & PLAYER_STATE2_80) &&
         (Player_GetMask(play) != PLAYER_MASK_STONE) &&
@@ -590,7 +582,7 @@ void func_808FAF94(EnRr* this, PlayState* play) {
 }
 
 void func_808FB088(EnRr* this, PlayState* play) {
-    Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 10, 500, 0);
+    Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 10, 0x1F4, 0);
     this->actor.world.rot.y = this->actor.shape.rot.y;
     if (Player_GetMask(play) == PLAYER_MASK_STONE) {
         func_808FA344(this);
@@ -633,10 +625,12 @@ void func_808FB088(EnRr* this, PlayState* play) {
                 func_808FA344(this);
             }
             break;
+
+        default:
+            break;
     }
 }
 
-/* EnRr_Action_GobblePlayer */
 void func_808FB1C0(EnRr* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
@@ -652,7 +646,6 @@ void func_808FB1C0(EnRr* this, PlayState* play) {
     if (this->unk_1EA == 0) {
         func_808FA7AC(this);
     } else {
-        /* smootly move the player into the mouth of the like-like */
         Math_StepToF(&player->actor.world.pos.x, this->unk_228.x, 30.0f);
         Math_StepToF(&player->actor.world.pos.y, this->unk_228.y + this->unk_218, 30.0f);
         Math_StepToF(&player->actor.world.pos.z, this->unk_228.z, 30.0f);
@@ -660,7 +653,6 @@ void func_808FB1C0(EnRr* this, PlayState* play) {
     }
 }
 
-/* EnRr_Action_ChewPlayer */
 void func_808FB2C0(EnRr* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
@@ -752,7 +744,7 @@ void func_808FB680(EnRr* this, PlayState* play) {
     if (this->unk_1E6 == 0) {
         this->actionFunc = func_808FAF94;
     } else {
-        Math_SmoothStepToS(&this->actor.shape.rot.y, BINANG_ROT180(this->actor.yawTowardsPlayer), 10, 1000, 0);
+        Math_SmoothStepToS(&this->actor.shape.rot.y, BINANG_ROT180(this->actor.yawTowardsPlayer), 10, 0x3E8, 0);
         this->actor.world.rot.y = this->actor.shape.rot.y;
         if (this->actor.speed == 0.0f) {
             func_808FA238(this, 2.0f);
@@ -865,8 +857,8 @@ void EnRr_Update(Actor* thisx, PlayState* play) {
 
         for (i = 0; i < ARRAY_COUNT(this->unk_324); i++) {
             ptr = &this->unk_324[i];
-            Math_SmoothStepToS(&ptr->unk_1A.x, ptr->unk_14, 5, this->unk_210 * 1000.0f, 0);
-            Math_SmoothStepToS(&ptr->unk_1A.z, ptr->unk_18, 5, this->unk_210 * 1000.0f, 0);
+            Math_SmoothStepToS(&ptr->unk_1A.x, ptr->unk_14, 5, this->unk_210 * 0x3E8, 0);
+            Math_SmoothStepToS(&ptr->unk_1A.z, ptr->unk_18, 5, this->unk_210 * 0x3E8, 0);
             Math_StepToF(&ptr->unk_08, ptr->unk_0C, this->unk_210 * 0.2f);
             Math_StepToF(&ptr->unk_00, ptr->unk_04, this->unk_210 * 300.0f);
         }
@@ -949,9 +941,9 @@ void EnRr_Draw(Actor* thisx, PlayState* play2) {
     }
 
     Matrix_MultZero(&this->unk_228);
-    this->collider2.dim.pos.x = ((this->unk_228.x - spA4.x) * 0.85f) + spA4.x;
-    this->collider2.dim.pos.y = ((this->unk_228.y - spA4.y) * 0.85f) + spA4.y;
-    this->collider2.dim.pos.z = ((this->unk_228.z - spA4.z) * 0.85f) + spA4.z;
+    this->collider2.dim.pos.x = LERPIMP(spA4.x, this->unk_228.x, 0.85f);
+    this->collider2.dim.pos.y = LERPIMP(spA4.y, this->unk_228.y, 0.85f);
+    this->collider2.dim.pos.z = LERPIMP(spA4.z, this->unk_228.z, 0.85f);
 
     gSPDisplayList(POLY_OPA_DISP++, gLikeLikeDL);
 

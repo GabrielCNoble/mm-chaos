@@ -691,7 +691,7 @@ void func_80B047C0(ObjSnowball* this, PlayState* play) {
 
                 sp84 = this->unk_20C * 60.0f * 0.9f;
                 if (sp88.y > 0.0f) {
-                    if (Math3D_AngleBetweenVectors(&D_80B04FD8, &sp88, &sp7C)) {
+                    if (Math3D_CosOut(&D_80B04FD8, &sp88, &sp7C)) {
                         phi_f2 = 1.0f;
                     } else {
                         phi_f2 = 1.0f - SQ(sp7C);
@@ -760,7 +760,7 @@ void ObjSnowball_Update(Actor* thisx, PlayState* play) {
                 this->actor.flags &= ~ACTOR_FLAG_10;
                 this->unk_211 = 0;
             }
-        } else if (Actor_ProcessTalkRequest(&this->actor, &play->state)) {
+        } else if (Actor_TalkOfferAccepted(&this->actor, &play->state)) {
             this->actor.flags |= ACTOR_FLAG_10;
             this->unk_211 = 1;
         } else if (this->actor.isLockedOn) {

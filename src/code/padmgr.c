@@ -31,10 +31,16 @@
  * done while waiting for this operation to complete.
  */
 
-#include "global.h"
-#include "PR/controller.h"
+#include "padmgr.h"
+
+#include "libc64/sprintf.h"
 #include "PR/os_motor.h"
+
 #include "fault.h"
+#include "macros.h"
+#include "main.h"
+#include "z64math.h"
+#include "z64voice.h"
 
 extern FaultMgr gFaultMgr;
 
@@ -527,7 +533,7 @@ void PadMgr_InitVoice(void) {
             } else {
                 sPadMgrInstance->ctrlrType[i] = PADMGR_CONT_VOICE;
                 sVoiceInitStatus = VOICE_INIT_SUCCESS;
-                func_801A4EB0();
+                AudioVoice_Noop();
             }
         }
     }
@@ -732,7 +738,7 @@ void PadMgr_GetInput2(Input* inputs, s32 gameRequest) {
     PadMgr_UnlockPadData();
 }
 
-void PadMgr_ThreadEntry() {
+void PadMgr_ThreadEntry(void) {
     s16* interruptMsg = NULL;
     s32 actionBits;
     s32 exit;
@@ -796,6 +802,6 @@ void PadMgr_Init(OSMesgQueue* siEvtQ, IrqMgr* irqMgr, OSId threadId, OSPri pri, 
     osContSetCh(sPadMgrInstance->nControllers);
     PadMgr_ReleaseSerialEventQueue(siEvtQ);
 
-    osCreateThread(&sPadMgrInstance->thread, threadId, PadMgr_ThreadEntry, sPadMgrInstance, stack, pri);
+    osCreateThread(&sPadMgrInstance->thread, threadId, (void*)PadMgr_ThreadEntry, sPadMgrInstance, stack, pri);
     osStartThread(&sPadMgrInstance->thread);
 }

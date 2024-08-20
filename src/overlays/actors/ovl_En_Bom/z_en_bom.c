@@ -8,6 +8,7 @@
 #include "z64rumble.h"
 #include "overlays/actors/ovl_En_Clear_Tag/z_en_clear_tag.h"
 #include "objects/gameplay_keep/gameplay_keep.h"
+#include "chaos_fuckery.h"
 
 #define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_20)
 
@@ -293,7 +294,7 @@ void EnBom_Move(EnBom* this, PlayState* play) {
                 temp = BINANG_ROT180(temp);
             }
             Math_ScaledStepToS(&this->actor.shape.rot.y, temp, this->actor.speed * 100.0f);
-            this->unk_1FA += (s16)(this->actor.speed * 800.0f);
+            this->unk_1FA += TRUNCF_BINANG(this->actor.speed * 800.0f);
         }
 
         if (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND_TOUCH) {
@@ -302,7 +303,7 @@ void EnBom_Move(EnBom* this, PlayState* play) {
                 if ((floorType == FLOOR_TYPE_4) || (floorType == FLOOR_TYPE_14) || (floorType == FLOOR_TYPE_15)) {
                     this->actor.velocity.y = 0.0f;
                 } else {
-                    this->actor.velocity.y = this->actor.velocity.y * sp58->z;
+                    this->actor.velocity.y *= sp58->z;
                 }
                 this->actor.bgCheckFlags &= ~BGCHECKFLAG_GROUND;
             }
@@ -332,7 +333,7 @@ void EnBom_WaitForRelease(EnBom* this, PlayState* play) {
             gSaveContext.powderKegTimer = this->timer;
         }
     }
-    Math_ScaledStepToS(&this->unk_1FA, 0, 2000);
+    Math_ScaledStepToS(&this->unk_1FA, 0, 0x7D0);
 }
 
 void EnBom_Explode(EnBom* this, PlayState* play) {
@@ -398,10 +399,10 @@ void EnBom_Explode(EnBom* this, PlayState* play) {
     }
 
     if ((this->timer & 1) == 0) {
-        spCC = Rand_ZeroFloat(M_PI);
+        spCC = Rand_ZeroFloat(M_PIf);
 
         for (i = 0; i < 15; i++) {
-            Matrix_RotateYF(((2.0f * (i * M_PI)) / 15.0f) + spCC, MTXMODE_NEW);
+            Matrix_RotateYF(((2.0f * (i * M_PIf)) / 15.0f) + spCC, MTXMODE_NEW);
             Matrix_MultVecZ((10 - this->timer) * 300.0f * 0.1f, &spC0);
             spB4.x = this->actor.world.pos.x + spC0.x;
             spB4.y = this->actor.world.pos.y + 500.0f;
@@ -693,7 +694,7 @@ void func_80872648(PlayState* play, Vec3f* arg1) {
         fuseSegmentPtr->rotX = 0x4000;
     }
 }
-/* EnBom_UpdateKegFuse */
+
 void func_808726DC(PlayState* play, Vec3f* arg1, Vec3f* arg2, Vec3f* arg3, s32 arg4) {
     s32 i;
     f32 temp_f20;
