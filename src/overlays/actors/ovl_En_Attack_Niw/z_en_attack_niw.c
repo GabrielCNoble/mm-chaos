@@ -399,13 +399,36 @@ void EnAttackNiw_Update(Actor* thisx, PlayState* play) {
 
     label:
 
+        // if (this->actor.xyzDistToPlayerSq < SQ(viewOffset)) {
+        //     parent = (EnNiw*)this->actor.parent;
+        //     if ((this->actor.parent->update != NULL) && (this->actor.parent != NULL) && (parent != NULL) &&
+        //         (parent->unkAttackNiwTimer == 0) && (player->invincibilityTimer == 0)) {
+        //         // this updates some player values based on what we pass, need player decomp to know what this is doing
+
+        //         /* tackle player */
+        //         func_800B8D50(play, &this->actor, 2.0f, this->actor.world.rot.y, 0.0f, 
+        //             (this->actor.params == ATTACK_NIW_REGULAR) ? 0x10 : 0);
+        //         parent->unkAttackNiwTimer = 70;
+        //     }
+        // }
+
         if (this->actor.xyzDistToPlayerSq < SQ(viewOffset)) {
             parent = (EnNiw*)this->actor.parent;
-            if ((this->actor.parent->update != NULL) && (this->actor.parent != NULL) && (parent != NULL) &&
-                (parent->unkAttackNiwTimer == 0) && (player->invincibilityTimer == 0)) {
-                // this updates some player values based on what we pass, need player decomp to know what this is doing
-                func_800B8D50(play, &this->actor, 2.0f, this->actor.world.rot.y, 0.0f, 0x10);
-                parent->unkAttackNiwTimer = 70;
+            if ((parent != NULL) && (this->actor.parent->update != NULL) && (this->actor.parent != NULL))
+            {
+                if(parent->niwType == NIW_TYPE_CHAOS)
+                {
+                    if(parent->unkAttackNiwTimer == 0)
+                    {
+                        func_800B8D50(play, &this->actor, 2.0f, this->actor.world.rot.y, 0.0f, 0);
+                        parent->unkAttackNiwTimer = Rand_S16Offset(15, 55);
+                    }
+                }
+                else if((parent->unkAttackNiwTimer == 0) && (player->invincibilityTimer == 0))
+                {
+                    func_800B8D50(play, &this->actor, 2.0f, this->actor.world.rot.y, 0.0f, 0x10);    
+                    parent->unkAttackNiwTimer = 70;
+                }
             }
         }
 

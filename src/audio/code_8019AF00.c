@@ -4107,7 +4107,9 @@ void AudioSfx_ResetSfxChannelState(void) {
 }
 
 void Audio_PlaySfx(u16 sfxId) {
-    AudioSfx_PlaySfx(sfxId, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
+    // AudioSfx_PlaySfx(sfxId, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
+    //                  &gSfxDefaultReverb);
+    AudioSfx_PlaySfx(sfxId, &gSfxDefaultPos, 4, &gSfxBeerGogglesFreq, &gSfxDefaultFreqAndVolScale,
                      &gSfxDefaultReverb);
     if (sfxId == NA_SE_OC_TELOP_IMPACT) {
         Audio_SetSequenceMode(SEQ_MODE_DEFAULT);
@@ -4115,7 +4117,9 @@ void Audio_PlaySfx(u16 sfxId) {
 }
 
 void Audio_PlaySfx_2(u16 sfxId) {
-    AudioSfx_PlaySfx(sfxId, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
+    // AudioSfx_PlaySfx(sfxId, &gSfxDefaultPos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
+    //                  &gSfxDefaultReverb);
+    AudioSfx_PlaySfx(sfxId, &gSfxDefaultPos, 4, &gSfxBeerGogglesFreq, &gSfxDefaultFreqAndVolScale,
                      &gSfxDefaultReverb);
 }
 
@@ -4127,7 +4131,8 @@ void Audio_PlaySfx_AtPosWithPresetLowFreqAndHighReverb(Vec3f* pos, u16 sfxId) {
 }
 
 void Audio_PlaySfx_AtPos(Vec3f* pos, u16 sfxId) {
-    AudioSfx_PlaySfx(sfxId, pos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+    // AudioSfx_PlaySfx(sfxId, pos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+    AudioSfx_PlaySfx(sfxId, pos, 4, &gSfxBeerGogglesFreq, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
 }
 
 void Audio_PlaySfx_MessageDecide(void) {
@@ -4215,9 +4220,12 @@ void AudioSfx_ProcessSfxSettings(void) {
  */
 void Audio_PlaySfx_Underwater(Vec3f* pos, u16 sfxId) {
     if ((sfxId == NA_SE_EN_KONB_JUMP_OLD) || (sfxId == NA_SE_EN_KONB_SINK_OLD)) {
-        AudioSfx_PlaySfx(sfxId, pos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        // AudioSfx_PlaySfx(sfxId, pos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        AudioSfx_PlaySfx(sfxId, pos, 4, &gSfxBeerGogglesFreq, &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
     } else {
-        AudioSfx_PlaySfx(sfxId, pos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
+        // AudioSfx_PlaySfx(sfxId, pos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
+        //                  &gUnderwaterSfxReverbAdd);
+        AudioSfx_PlaySfx(sfxId, pos, 4, &gSfxBeerGogglesFreq, &gSfxDefaultFreqAndVolScale,
                          &gUnderwaterSfxReverbAdd);
     }
 }
@@ -4342,7 +4350,9 @@ void Audio_PlaySfx_GiantsMask(Vec3f* pos, u16 sfxId) {
 void Audio_PlaySfx_Randomized(Vec3f* pos, u16 baseSfxId, u8 randLim) {
     u8 offset = AudioThread_NextRandom() % randLim;
 
-    AudioSfx_PlaySfx(baseSfxId + offset, pos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
+    // AudioSfx_PlaySfx(baseSfxId + offset, pos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
+    //                  &gSfxDefaultReverb);
+    AudioSfx_PlaySfx(baseSfxId + offset, pos, 4, &gSfxBeerGogglesFreq, &gSfxDefaultFreqAndVolScale,
                      &gSfxDefaultReverb);
 }
 
@@ -4352,7 +4362,7 @@ void Audio_PlaySfx_Randomized(Vec3f* pos, u16 baseSfxId, u8 randLim) {
 void Audio_PlaySfx_SwordCharge(Vec3f* pos, u8 chargeLevel) {
     chargeLevel %= 4U;
     if (chargeLevel != sPrevChargeLevel) {
-        sCurChargeLevelSfxFreq = sChargeLevelsSfxFreq[chargeLevel];
+        sCurChargeLevelSfxFreq = sChargeLevelsSfxFreq[chargeLevel] * gSfxBeerGogglesFreq;
         switch (chargeLevel) {
             case 1:
                 AudioSfx_PlaySfx(NA_SE_PL_SWORD_CHARGE, pos, 4, &sCurChargeLevelSfxFreq, &gSfxDefaultFreqAndVolScale,
@@ -4387,6 +4397,8 @@ void Audio_PlaySfx_AtPosWithFreqAndVolume(Vec3f* pos, u16 sfxId, f32 freqScale, 
         } else {
             *freqScaleAdj = freqScale;
         }
+
+        *freqScaleAdj *= gSfxBeerGogglesFreq;
 
         if (*freqScaleAdj > 0.5f) {
             AudioSfx_PlaySfx(sfxId, pos, 4, freqScaleAdj, volume, &gSfxDefaultReverb);

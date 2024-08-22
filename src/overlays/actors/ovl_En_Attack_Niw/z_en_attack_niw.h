@@ -56,5 +56,6 @@ typedef struct EnAttackNiw {
 
 
 #define ATTACK_NIW_REGULAR  0    // spawned by EnNiw
+#define ATTACK_NIW_CHAOS 1
 
 #endif // Z_EN_ATTACK_NIW_H

@@ -384,6 +384,7 @@ void func_8012300C(PlayState* play, s32 arg1) {
 }
 
 // Update function
+/* Player_LoadNextPlayerForm */
 void func_8012301C(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
     Player* this = (Player*)thisx;

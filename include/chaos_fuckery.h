@@ -93,6 +93,13 @@ enum CHAOS_CODES
     CHAOS_CODE_SINGLE_ACTION_OWL,
     /* makes the player pull up the ocarina */
     CHAOS_CODE_PLAY_OCARINA,
+    /* link stops and sneezes */
+    CHAOS_CODE_SNEEZE,
+    /* link randomly becomes fierce deity */
+    CHAOS_CODE_RANDO_FIERCE_DEITY,
+    /* spawn chicken swarm */
+    CHAOS_CODE_CHICKEN_ARISE,
+
     /* enemies explode when killed */
     // CHAOS_CODE_VILETILE_ENEMIES,
 
@@ -272,6 +279,13 @@ enum CHAOS_OUT_OF_SHAPE_STATES
     CHAOS_OUT_OF_SHAPE_STATE_NONE
 };
 
+enum CHAOS_SNEEZE_STATES
+{
+    CHAOS_SNEEZE_STATE_SLOWING_DOWN,
+    CHAOS_SNEEZE_STATE_SNEEZE,
+    CHAOS_SNEEZE_STATE_NONE,
+};
+
 #define INVALID_CODE_INDEX      0xff 
 #define MAX_CHAOS_TIMER         8
 #define MIN_CHAOS_TIMER         2
@@ -328,22 +342,27 @@ typedef struct ChaosContext
 
     struct
     {
-        f32                 out_of_shape_speed_scale;
-        // u32                 out_of_shape_state;
-        f32                 beer_x_offset;
-        f32                 beer_y_offset;
-        f32                 beer_pitch;
-        f32                 beer_yaw;
-        f32                 beer_roll;
-        Vec3f               beer_sway;
-        u8                  beer_alpha;
-        u8                  tunic_r;
-        u8                  tunic_g;
-        u8                  tunic_b;
-        u8                  out_of_shape_state;
-        u8                  beer_goggles_state;
-        u16                 syke_health;
-        u8                  syke;
+        PlayerAnimationHeader * cur_animation;
+        f32                     cur_animation_frame;
+        f32                     cur_animation_play_speed;
+        u32                     cur_animation_mode;
+
+        f32                     out_of_shape_speed_scale;
+        f32                     sneeze_speed_scale;
+        f32                     beer_x_offset;
+        f32                     beer_y_offset;
+        f32                     beer_pitch;
+        f32                     beer_yaw;
+        f32                     beer_roll;
+        Vec3f                   beer_sway;
+        u8                      beer_alpha;
+        u8                      tunic_r;
+        u8                      tunic_g;
+        u8                      tunic_b;
+        // u8                      out_of_shape_state;
+        u8                      beer_goggles_state;
+        u16                     syke_health;
+        u8                      syke;
         // u8                  
     } link;
 
@@ -365,6 +384,19 @@ typedef struct ChaosContext
         Vec3f               talk_scale;
         Vec3s               talk_rotation;
     } npc;
+
+    // struct
+    // {
+    //     s8 life_meter_offset[20][2];
+    //     s8 magic_container_offset[2][2];
+    //     s8 rupee_counter_offest[2][3];
+    //     s8 rupee_icon_offset[2];
+    //     s8 cbutton_offset[8][2];
+    //     s8 bbutton_offset[2][2];
+    //     s8 abutton_offset[2][2];
+    //     s8 start_button_offset[2][2];
+    //     s8 clock_offset[18][2];
+    // } ui;
     
 } ChaosContext;
 
@@ -404,6 +436,8 @@ void Chaos_UpdateCodeDistribution(void);
 u8 Chaos_CanUpdateChaos(struct PlayState *play);
 
 Actor *Chaos_SpawnActor(ActorContext *context, PlayState *play, s16 actor_id, f32 pos_x, f32 pos_y, f32 pos_z, s16 rot_x, s16 rot_y, s16 rot_z, s32 params);
+
+Actor* Chaos_SpawnAsChild(ActorContext* context, Actor* parent, PlayState* play, s16 actor_id, f32 pos_x, f32 pos_y, f32 pos_z, s16 rot_x, s16 rot_y, s16 rot_z, s32 params);
 
 void Chaos_KillActorAtIndex(u32 index);
 

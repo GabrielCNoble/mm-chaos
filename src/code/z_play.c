@@ -38,6 +38,8 @@ u8 sMotionBlurStatus;
 #include "chaos_fuckery.h"
 #include "libc/math.h"
 
+#include "overlays/actors/ovl_En_Niw/z_en_niw.h"
+
 s32 gDbgCamEnabled = false;
 u8 D_801D0D54 = false;
 
@@ -124,6 +126,7 @@ void Play_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
         Chaos_EnableCode(CHAOS_CODE_DIE);
         Chaos_EnableCode(CHAOS_CODE_ACTOR_CHASE);
         Chaos_EnableCode(CHAOS_CODE_OUT_OF_SHAPE);
+        Chaos_EnableCode(CHAOS_CODE_CHICKEN_ARISE);
 
         if(has_ocarina)
         {
@@ -1044,6 +1047,31 @@ void Play_UpdateMain(PlayState* this) {
             player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z,
             0, 0, 0, 0);
     }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_CHICKEN_ARISE))
+    {
+        Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_NIW, 
+            player->actor.world.pos.x, player->actor.world.pos.y, player->actor.world.pos.z, 0, 0, 0, NIW_TYPE_CHAOS);
+    }
+
+    
+
+    // if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    // {
+    //     u32 index;
+
+    //     for(index = 0; index < ARRAY_COUNT(gChaosContext.ui.life_meter_offset); index++)
+    //     {
+    //         gChaosContext.ui.life_meter_offset[index][0] = Rand_S16Offset(-16, 32);
+    //         gChaosContext.ui.life_meter_offset[index][1] = Rand_S16Offset(-16, 32);
+    //     }
+
+    //     for(index = 0; index < ARRAY_COUNT(gChaosContext.ui.cbutton_offset); index++)
+    //     {
+    //         gChaosContext.ui.cbutton_offset[index][0] = Rand_S16Offset(-16, 32);
+    //         gChaosContext.ui.cbutton_offset[index][1] = Rand_S16Offset(-16, 32);
+    //     }
+    // }
 
     // if(Chaos_IsCodeActive(CHAOS_CODE_TEXTBOX))
     // {

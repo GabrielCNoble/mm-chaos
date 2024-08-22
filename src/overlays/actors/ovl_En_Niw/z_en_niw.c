@@ -6,6 +6,7 @@
 
 #include "z_en_niw.h"
 #include "overlays/actors/ovl_En_Attack_Niw/z_en_attack_niw.h"
+#include "chaos_fuckery.h"
 
 #define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_800000)
 
@@ -28,6 +29,7 @@ void EnNiw_Held(EnNiw* this, PlayState* play);
 void EnNiw_UpdateFeather(EnNiw* this, PlayState* play);
 void EnNiw_DrawFeathers(EnNiw* this, PlayState* play);
 void EnNiw_SpawnFeather(EnNiw* this, Vec3f* pos, Vec3f* velocity, Vec3f* accel, f32 scale);
+void EnNiw_SpawnAttackNiw(EnNiw* this, PlayState* play);
 
 s16 sCuccoStormActive = false;
 
@@ -136,7 +138,15 @@ void EnNiw_Init(Actor* thisx, PlayState* play) {
         this->unk2BC.z = 0.0f;
         this->actor.velocity.y = 0.0f;
         this->actor.gravity = 0.0f;
-    } else {
+    }
+    else if(this->niwType == NIW_TYPE_CHAOS)
+    {
+        this->actionFunc = EnNiw_SetupCuccoStorm;
+        this->unkAttackNiwTimer = 70;
+        this->isStormActive = true;
+    } 
+    else 
+    {
         EnNiw_SetupIdle(this);
     }
 }
@@ -270,6 +280,13 @@ void EnNiw_SpawnAttackNiw(EnNiw* this, PlayState* play) {
     f32 zView;
     Vec3f newNiwPos;
     Actor* attackNiw;
+    u32 cucco_type = ATTACK_NIW_REGULAR;
+
+    // u32 max_cuccos = 7;
+    if(this->niwType == NIW_TYPE_CHAOS)
+    {
+        cucco_type = ATTACK_NIW_CHAOS;
+    }
 
     if ((this->attackNiwSpawnTimer == 0) && (this->attackNiwCount < 7)) {
         xView = play->view.at.x - play->view.eye.x;
@@ -278,8 +295,9 @@ void EnNiw_SpawnAttackNiw(EnNiw* this, PlayState* play) {
         newNiwPos.x = play->view.eye.x + ((Rand_ZeroOne() - 0.5f) * xView);
         newNiwPos.y = play->view.eye.y + 50.0f + (yView * 0.5f) + Rand_CenteredFloat(0.3f);
         newNiwPos.z = play->view.eye.z + ((Rand_ZeroOne() - 0.5f) * zView);
+
         attackNiw = Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_EN_ATTACK_NIW, newNiwPos.x,
-                                       newNiwPos.y, newNiwPos.z, 0, 0, 0, ATTACK_NIW_REGULAR);
+                                    newNiwPos.y, newNiwPos.z, 0, 0, 0, cucco_type);    
 
         if (attackNiw != NULL) {
             this->attackNiwCount++;
@@ -602,7 +620,16 @@ void EnNiw_SetupCuccoStorm(EnNiw* this, PlayState* play) {
     }
 
     if (this->cuccoStormTimer == 0) {
-        this->cuccoStormTimer = 10;
+
+        if(this->niwType == NIW_TYPE_CHAOS)
+        {
+            this->cuccoStormTimer = 1;
+        }
+        else
+        {
+            this->cuccoStormTimer = 10;
+        }
+        
         this->yawTowardsPlayer = this->actor.yawTowardsPlayer;
         this->actor.flags &= ~ACTOR_FLAG_TARGETABLE;
         this->niwState = NIW_STATE_ANGRY3;
@@ -873,9 +900,26 @@ void EnNiw_Update(Actor* thisx, PlayState* play2) {
         return;
     }
 
-    if (this->isStormActive && (this->actor.xyzDistToPlayerSq < SQ(dist)) && (player->invincibilityTimer == 0)) {
-        func_800B8D50(play, &this->actor, 2.0f, this->actor.world.rot.y, 0.0f, 0x10);
+    if (this->isStormActive && (this->actor.xyzDistToPlayerSq < SQ(dist))) 
+    {
+        if(this->niwType == NIW_TYPE_CHAOS)
+        {
+            /* chaos cuccos only shove the player, but cause no damage */
+            if(this->unkAttackNiwTimer == 0)
+            {
+                func_800B8D50(play, &this->actor, 2.0f, this->actor.world.rot.y, 0.0f, 0);
+                this->unkAttackNiwTimer = Rand_S16Offset(15, 55);
+            }
+        }
+        else if(player->invincibilityTimer == 0)
+        {   
+            func_800B8D50(play, &this->actor, 2.0f, this->actor.world.rot.y, 0.0f, 0x10);
+        }
     }
+
+    // if (this->isStormActive && (this->actor.xyzDistToPlayerSq < SQ(dist)) && (player->invincibilityTimer == 0)) {
+    //     func_800B8D50(play, &this->actor, 2.0f, this->actor.world.rot.y, 0.0f, 0x10);
+    // }
 
     EnNiw_CheckRage(this, play);
 

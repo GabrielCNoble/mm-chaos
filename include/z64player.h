@@ -872,7 +872,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_8          (1 << 3)
 // Zora electric shield
 #define PLAYER_STATE1_10         (1 << 4)
-// 
+// Moving on land
 #define PLAYER_STATE1_20         (1 << 5)
 // 
 #define PLAYER_STATE1_40         (1 << 6)
@@ -884,7 +884,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_200        (1 << 9)
 // 
 #define PLAYER_STATE1_400        (1 << 10)
-// 
+// Holding throwable object
 #define PLAYER_STATE1_800        (1 << 11)
 // charging spin attack
 #define PLAYER_STATE1_1000       (1 << 12)
@@ -892,13 +892,13 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_2000       (1 << 13)
 // 
 #define PLAYER_STATE1_4000       (1 << 14)
-// 
+// Locked on something?
 #define PLAYER_STATE1_8000       (1 << 15)
-// 
+// Player
 #define PLAYER_STATE1_10000      (1 << 16)
 // 
 #define PLAYER_STATE1_20000      (1 << 17)
-// 
+// Player jumped?
 #define PLAYER_STATE1_40000      (1 << 18)
 // 
 #define PLAYER_STATE1_80000      (1 << 19)
@@ -912,9 +912,9 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_800000     (1 << 23)
 // 
 #define PLAYER_STATE1_1000000    (1 << 24)
-// 
+// Player is on a ladder
 #define PLAYER_STATE1_2000000    (1 << 25)
-// 
+// Player responding to a received attack
 #define PLAYER_STATE1_4000000    (1 << 26)
 // Swimming?
 #define PLAYER_STATE1_8000000    (1 << 27)
@@ -924,7 +924,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_20000000   (1 << 29)
 // 
 #define PLAYER_STATE1_40000000   (1 << 30)
-// Related to exit a grotto
+// Related to exit a grotto / captured by grotto?
 #define PLAYER_STATE1_80000000   (1 << 31)
 
 
@@ -940,7 +940,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE2_10         (1 << 4)
 // 
 #define PLAYER_STATE2_20         (1 << 5)
-// 
+// Hanging off of something?
 #define PLAYER_STATE2_40         (1 << 6)
 // 
 #define PLAYER_STATE2_80         (1 << 7)
@@ -952,7 +952,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE2_400        (1 << 10)
 // Diving
 #define PLAYER_STATE2_800        (1 << 11)
-// 
+// Player is standing still on a ladder
 #define PLAYER_STATE2_1000       (1 << 12)
 // 
 #define PLAYER_STATE2_2000       (1 << 13)
@@ -964,11 +964,11 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE2_10000      (1 << 16)
 // A non-magic spin attack
 #define PLAYER_STATE2_20000      (1 << 17)
-// 
+// Jumped off a ledge
 #define PLAYER_STATE2_40000      (1 << 18)
-// 
+// Let go of a ledge
 #define PLAYER_STATE2_80000      (1 << 19)
-// 
+// In range to grab something
 #define PLAYER_STATE2_100000     (1 << 20)
 // 
 #define PLAYER_STATE2_200000     (1 << 21)
@@ -1048,7 +1048,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE3_2000000    (1 << 25)
 // 
 #define PLAYER_STATE3_4000000    (1 << 26)
-// 
+// Human link rolling?
 #define PLAYER_STATE3_8000000    (1 << 27)
 // 
 #define PLAYER_STATE3_10000000   (1 << 28)

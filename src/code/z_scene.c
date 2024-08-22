@@ -65,7 +65,9 @@ void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
     objectCtx->spaceStart = objectCtx->slots[0].segment = THA_AllocTailAlign16(&gameState->tha, spaceSize);
     objectCtx->spaceEnd = (void*)((u32)objectCtx->spaceStart + spaceSize);
     objectCtx->mainKeepSlot = Object_SpawnPersistent(objectCtx, GAMEPLAY_KEEP);
-
+    /* keep like-like and cucco always loaded */
+    Object_SpawnPersistent(objectCtx, OBJECT_RR);
+    Object_SpawnPersistent(objectCtx, OBJECT_NIW);
     gSegments[0x04] = OS_K0_TO_PHYSICAL(objectCtx->slots[objectCtx->mainKeepSlot].segment);
 }
 
@@ -135,7 +137,7 @@ void Object_LoadAll(ObjectContext* objectCtx) {
         DmaMgr_RequestSync(objectCtx->slots[i].segment, gObjectTable[id].vromStart, vromSize);
     }
 }
-
+/* Object_RequestOverwrite? */
 void* func_8012F73C(ObjectContext* objectCtx, s32 slot, s16 id) {
     u32 addr;
     uintptr_t vromSize;

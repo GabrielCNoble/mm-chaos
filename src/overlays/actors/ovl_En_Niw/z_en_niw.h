@@ -96,7 +96,8 @@ typedef enum {
     /*  0 */ NIW_TYPE_REGULAR,
     /*  1 */ NIW_TYPE_UNK1, // This unused variant must be spawned as a child, as it expects a NON-NULL parent.
                             // Theory: This was meant to be a small hand held cucco for Grog to show the player
-    /*  2 */ NIW_TYPE_HELD // spawns held by the bomber kid in east clock town during hide and seek
+    /*  2 */ NIW_TYPE_HELD, // spawns held by the bomber kid in east clock town during hide and seek
+             NIW_TYPE_CHAOS,
 } NiwType;
 // the attacking cuccos are not here, they are a different actor: [ ovl_En_Attack_Niw ]
 

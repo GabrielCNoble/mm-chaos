@@ -14,6 +14,7 @@ u64             gChaosRngState = 1;
 u32             gDisplayEffectInfo = 0;
 u32             gChaosEffectPageIndex = 0;
 u32             gAcceptPageChange = 0;
+u32             gPlayerAction;
 extern u32      gSceneIndex;
 extern u32      gEntranceIndex;
 
@@ -37,7 +38,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_BUCKSHOT_ARROWS]         = */ CHAOS_CODE_DEF(15, 25, true,  0.02f),
     /* [CHAOS_CODE_RANDOM_BOMB_TIMER]       = */ CHAOS_CODE_DEF(10, 15, false, 0.01f),
     /* [CHAOS_CODE_LOVELESS_MARRIAGE]       = */ CHAOS_CODE_DEF(0,  0,  false, 0.0065f),
-    /* [CHAOS_CODE_WEIRD_UI]                = */ CHAOS_CODE_DEF(8,  15, false, 0.04f),
+    /* [CHAOS_CODE_WEIRD_UI]                = */ CHAOS_CODE_DEF(8,  15, true,  0.04f),
     /* [CHAOS_CODE_BEER_GOGGLES]            = */ CHAOS_CODE_DEF(15, 30, true,  0.012f),
     /* [CHAOS_CODE_CHANGE_MAGIC]            = */ CHAOS_CODE_DEF(1,  10, true,  0.04f),
     /* [CHAOS_CODE_INVINCIBLE]              = */ CHAOS_CODE_DEF(8,  23, false, 0.005f),
@@ -57,6 +58,9 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_WEIRD_SKYBOX]            = */ CHAOS_CODE_DEF(10, 15, true,  0.006f),
     /* [CHAOS_CODE_SINGLE_ACTION_OWL]       = */ CHAOS_CODE_DEF(5,  15, false, 0.0005f),
     /* [CHAOS_CODE_PLAY_OCARINA]            = */ CHAOS_CODE_DEF(0,  0,  false, 0.004f),
+    /* [CHAOS_CODE_SNEEZE]                  = */ CHAOS_CODE_DEF(5, 15,  false, 0.006f),
+    /* [CHAOS_CODE_RANDO_FIERCE_DEITY]      = */ CHAOS_CODE_DEF(20, 45, false, 0.001f),
+    /* [CHAOS_CODE_CHICKEN_ARISE]           = */ CHAOS_CODE_DEF(0,  0,  false, 0.0045f),
 };
  
 const char *gChaosCodeNames[] = {
@@ -99,6 +103,9 @@ const char *gChaosCodeNames[] = {
     /* [CHAOS_CODE_WEIRD_SKYBOX]            = */ "Weird skybox",
     /* [CHAOS_CODE_SINGLE_ACTION_OWL]       = */ "Single action owl",
     /* [CHAOS_CODE_PLAY_OCARINA]            = */ "Play ocarina",
+    /* [CHAOS_CODE_SNEEZE]                  = */ "Sneeze",
+    /* [CHAOS_CODE_RANDO_FIERCE_DEITY]      = */ "Random fierce deity",
+    /* [CHAOS_CODE_CHICKEN_ARISE]           = */ "Chicken arise",
 };
 
 enum FAIRY_FOUNTAIN_EXITS
@@ -477,7 +484,10 @@ void Chaos_Init(void)
     gChaosContext.link.beer_alpha = 0;
     gChaosContext.link.syke = false; 
     gChaosContext.link.out_of_shape_speed_scale = 1.0f;
-    gChaosContext.link.out_of_shape_state = CHAOS_OUT_OF_SHAPE_STATE_NONE;
+    gChaosContext.link.sneeze_speed_scale = 1.0f;
+    gChaosContext.link.cur_animation = NULL;
+    gChaosContext.link.cur_animation_frame = 0;
+    // gChaosContext.link.out_of_shape_state = CHAOS_OUT_OF_SHAPE_STATE_NONE;
     gChaosContext.link.beer_goggles_state = CHAOS_BEER_GOGGLES_STATE_NONE;
     
     for(index = 0; index < CHAOS_CODE_LAST; index++)
@@ -575,21 +585,21 @@ void Chaos_UpdateChaos(PlayState *playstate)
         slot_index = 0;
         while(slot_index < gChaosContext.actors.spawned_actors)
         {
-            struct ChaosActor *actor = gChaosContext.actors.slots + slot_index;
+            struct ChaosActor *chaos_actor = gChaosContext.actors.slots + slot_index;
 
-            if(!(actor->actor->flags & ACTOR_FLAG_40))
+            if(!(chaos_actor->actor->flags & ACTOR_FLAG_40))
             {
-                if(code_elapsed_seconds >= actor->timer)
+                if(code_elapsed_seconds >= chaos_actor->timer)
                 {
                     Chaos_KillActorAtIndex(slot_index);
                     continue;
                 }
 
-                actor->timer -= code_elapsed_seconds;
+                chaos_actor->timer -= code_elapsed_seconds;
             }
             else
             {
-                actor->timer = ACTOR_DESPAWN_TIMER;
+                chaos_actor->timer = ACTOR_DESPAWN_TIMER;
             }
             slot_index++;
         }
@@ -670,6 +680,21 @@ void Chaos_UpdateChaos(PlayState *playstate)
                                 /* if the player has been grabbed, is mounted on epona, 
                                 riding the boat or time is stopped, don't spawn any of those 
                                 effects to avoid leaving the player in an inconsistent state */
+                                continue;
+                            }
+
+                            if(next_code == CHAOS_CODE_OUT_OF_SHAPE)
+                            {
+                                if(Chaos_IsCodeActive(CHAOS_CODE_SNEEZE))
+                                {
+                                    continue;
+                                }
+                            }
+                        break;
+
+                        case CHAOS_CODE_SNEEZE:
+                            if(Chaos_IsCodeActive(CHAOS_CODE_OUT_OF_SHAPE))
+                            {
                                 continue;
                             }
                         break;
@@ -950,6 +975,8 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
             GfxPrint_Printf(&gfx_print, "actionVar1: %d", player->av1.actionVar1);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "actionVar2: %d", player->av2.actionVar2);
+            GfxPrint_SetPos(&gfx_print, 1, y_pos++);
+            GfxPrint_Printf(&gfx_print, "Action: %d", gPlayerAction);
             // GfxPrint_SetPos(&gfx_print, 20, y_pos++);
             // GfxPrint_Printf(&gfx_print, "%04x", camera->setting);
         }
@@ -1145,6 +1172,32 @@ Actor *Chaos_SpawnActor(ActorContext *context, PlayState *play, s16 actor_id, f3
     if(gChaosContext.actors.spawned_actors < MAX_SPAWNED_ACTORS)
     {
         actor = Actor_Spawn(context, play, actor_id, pos_x, pos_y, pos_z, rot_x, rot_y, rot_z, params);
+
+        if(actor != NULL)
+        {
+            struct ChaosActor *chaos_actor = gChaosContext.actors.slots + gChaosContext.actors.spawned_actors;
+            chaos_actor->actor = actor;
+            chaos_actor->timer = ACTOR_DESPAWN_TIMER;
+
+            if(actor_id == ACTOR_EN_NIW)
+            {
+                /* makes enraged cucco last a lot longer */
+                chaos_actor->timer *= 10;
+            }
+            gChaosContext.actors.spawned_actors++;
+        }
+    }
+
+    return actor;
+}
+
+Actor* Chaos_SpawnAsChild(ActorContext* context, Actor* parent, PlayState* play, s16 actor_id, f32 pos_x, f32 pos_y, f32 pos_z, s16 rot_x, s16 rot_y, s16 rot_z, s32 params)
+{
+    Actor *actor = NULL;
+
+    if(gChaosContext.actors.spawned_actors < MAX_SPAWNED_ACTORS)
+    {
+        actor = Actor_SpawnAsChild(context, parent, play, actor_id, pos_x, pos_y, pos_z, rot_x, rot_y, rot_z, params);
 
         if(actor != NULL)
         {
