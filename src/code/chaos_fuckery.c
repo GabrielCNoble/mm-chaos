@@ -15,6 +15,7 @@ u32             gDisplayEffectInfo = 0;
 u32             gChaosEffectPageIndex = 0;
 u32             gAcceptPageChange = 0;
 u32             gPlayerAction;
+u32             gRngInitialized = 0;
 extern u32      gSceneIndex;
 extern u32      gEntranceIndex;
 
@@ -59,8 +60,9 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_SINGLE_ACTION_OWL]       = */ CHAOS_CODE_DEF(5,  15, false, 0.0005f),
     /* [CHAOS_CODE_PLAY_OCARINA]            = */ CHAOS_CODE_DEF(0,  0,  false, 0.004f),
     /* [CHAOS_CODE_SNEEZE]                  = */ CHAOS_CODE_DEF(5, 15,  false, 0.006f),
-    /* [CHAOS_CODE_RANDO_FIERCE_DEITY]      = */ CHAOS_CODE_DEF(20, 45, false, 0.001f),
-    /* [CHAOS_CODE_CHICKEN_ARISE]           = */ CHAOS_CODE_DEF(0,  0,  false, 0.0045f),
+    /* [CHAOS_CODE_RANDO_FIERCE_DEITY]      = */ CHAOS_CODE_DEF(25, 75, true,  0.0006f),
+    /* [CHAOS_CODE_CHICKEN_ARISE]           = */ CHAOS_CODE_DEF(25, 45, false, 0.0015f),
+    /* [CHAOS_CODE_STARFOX]                 = */ CHAOS_CODE_DEF(15, 25, true,  0.0012f),
 };
  
 const char *gChaosCodeNames[] = {
@@ -106,6 +108,7 @@ const char *gChaosCodeNames[] = {
     /* [CHAOS_CODE_SNEEZE]                  = */ "Sneeze",
     /* [CHAOS_CODE_RANDO_FIERCE_DEITY]      = */ "Random fierce deity",
     /* [CHAOS_CODE_CHICKEN_ARISE]           = */ "Chicken arise",
+    /* [CHAOS_CODE_STARFOX]                 = */ "Starfox",
 };
 
 enum FAIRY_FOUNTAIN_EXITS
@@ -363,7 +366,7 @@ const char *gSceneNames[] = {
     /* [ENTR_SCENE_TREASURE_CHEST_SHOP] = */            "Treasure Chest shop",
     /* [ENTR_SCENE_STONE_TOWER_TEMPLE_INVERTED] = */    "",
     /* [ENTR_SCENE_CLOCK_TOWER_ROOFTOP] = */            "",
-    /* [ENTR_SCENE_OPENING_DUNGEON] = */                "",
+    /* [ENTR_SCENE_OPENING_DUNGEON] = */                "", 
     /* [ENTR_SCENE_WOODFALL_TEMPLE] = */                "Woodfall temple",
     /* [ENTR_SCENE_PATH_TO_MOUNTAIN_VILLAGE] = */       "Path to mountain village",
     /* [ENTR_SCENE_IKANA_CASTLE] = */                   "Ikana castle",
@@ -466,7 +469,7 @@ void Chaos_Init(void)
     u32 index;
     // u64 prev_end = 0;
     // f32 probability_scale = 0.0f;
-    gChaosRngState = Rand_Next();
+    // gChaosRngState = Rand_Next();
     gChaosContext.moon.pitch = 0.0f;
     gChaosContext.moon.yaw = 0.0f;
     gChaosContext.active_code_count = 0;
@@ -487,8 +490,18 @@ void Chaos_Init(void)
     gChaosContext.link.sneeze_speed_scale = 1.0f;
     gChaosContext.link.cur_animation = NULL;
     gChaosContext.link.cur_animation_frame = 0;
+    gChaosContext.link.ear_scales[0].x = 1.0f;
+    gChaosContext.link.ear_scales[0].z = 1.0f;
+    gChaosContext.link.ear_scales[1].x = 1.0f;
+    gChaosContext.link.ear_scales[1].z = 1.0f;
     // gChaosContext.link.out_of_shape_state = CHAOS_OUT_OF_SHAPE_STATE_NONE;
     gChaosContext.link.beer_goggles_state = CHAOS_BEER_GOGGLES_STATE_NONE;
+    gChaosContext.link.fierce_deity_state = CHAOS_RANDOM_FIERCE_DEITY_STATE_NONE;
+    gChaosContext.link.fierce_deity_counter = 0;
+
+    gChaosContext.chicken.cucco.niwType = NIW_TYPE_CHAOS;
+    gChaosContext.chicken.cucco.actor.update = EnNiw_Update;
+    gChaosContext.chicken.cucco.actor.draw = EnNiw_Draw;
     
     for(index = 0; index < CHAOS_CODE_LAST; index++)
     {
@@ -548,6 +561,12 @@ void Chaos_UpdateChaos(PlayState *playstate)
     struct ChaosCode *  last_code = NULL;
     Player *            player = GET_PLAYER(playstate);
     Camera *            camera = Play_GetCamera(playstate, CAM_ID_MAIN);
+
+    if(!gRngInitialized)
+    {
+        gChaosRngState = Rand_Next();
+        gRngInitialized = true;
+    }
 
     if(gChaosContext.need_update_distribution)
     {
@@ -802,6 +821,11 @@ void Chaos_UpdateChaos(PlayState *playstate)
                             gChaosContext.link.tunic_g = color >> 8;
                             gChaosContext.link.tunic_b = color >> 16;
                         }
+                        break;
+
+                        case CHAOS_CODE_CHICKEN_ARISE:
+                            gChaosContext.chicken.cucco.attackNiwSpawnTimer = 0;
+                            gChaosContext.chicken.cucco.attackNiwCount = 0;
                         break;
                     }
                 }

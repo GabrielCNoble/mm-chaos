@@ -39,6 +39,7 @@ u8 sMotionBlurStatus;
 #include "libc/math.h"
 
 #include "overlays/actors/ovl_En_Niw/z_en_niw.h"
+#include "overlays/actors/ovl_En_Attack_Niw/z_en_attack_niw.h"
 
 s32 gDbgCamEnabled = false;
 u8 D_801D0D54 = false;
@@ -1048,10 +1049,58 @@ void Play_UpdateMain(PlayState* this) {
             0, 0, 0, 0);
     }
 
+    // if(Chaos_IsCodeActive(CHAOS_CODE_CHICKEN_ARISE))
+    // {
+    //     Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_NIW, 
+    //         player->actor.world.pos.x, player->actor.world.pos.y, player->actor.world.pos.z, 0, 0, 0, NIW_TYPE_CHAOS);
+    // }
+
     if(Chaos_IsCodeActive(CHAOS_CODE_CHICKEN_ARISE))
     {
-        Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_NIW, 
-            player->actor.world.pos.x, player->actor.world.pos.y, player->actor.world.pos.z, 0, 0, 0, NIW_TYPE_CHAOS);
+        // if(gChaosContext.chicken.cucco.attackNiwCount < 7 && gChaosContext.chicken.cucco.attackNiwSpawnTimer == 0)
+        // {
+        //     // EnAttackNiw *attack_cucco = Actor_SpawnAsChild(&this->actorCtx, &gChaosContext.chicken.cucco, this, ACTOR_EN_ATTACK_NIW,
+        //     //     )
+        // }
+        // if(gChaosContext.chicken.cucco.attackNiwSpawnTimer > 0)
+        // {
+        //     gChaosContext.chicken.cucco.attackNiwSpawnTimer--;
+        // }
+        // EnNiw_SpawnAttackNiw(&gChaosContext.chicken.cucco, this);
+        f32 xView;
+        f32 yView;
+        f32 zView;
+        Vec3f newNiwPos;
+        Actor* attackNiw;
+
+        if(gChaosContext.chicken.cucco.attackNiwSpawnTimer > 0)
+        {
+            gChaosContext.chicken.cucco.attackNiwSpawnTimer--;
+        }
+
+        if(gChaosContext.chicken.cucco.unkAttackNiwTimer > 0)
+        {
+            gChaosContext.chicken.cucco.unkAttackNiwTimer--;
+        }
+
+        if ((gChaosContext.chicken.cucco.attackNiwSpawnTimer == 0) && (gChaosContext.chicken.cucco.attackNiwCount < 14)) 
+        {
+            xView = this->view.at.x - this->view.eye.x;
+            yView = this->view.at.y - this->view.eye.y;
+            zView = this->view.at.z - this->view.eye.z;
+            newNiwPos.x = this->view.eye.x + ((Rand_ZeroOne() - 0.5f) * xView);
+            newNiwPos.y = this->view.eye.y + 50.0f + (yView * 0.5f) + Rand_CenteredFloat(0.3f);
+            newNiwPos.z = this->view.eye.z + ((Rand_ZeroOne() - 0.5f) * zView);
+
+            attackNiw = Actor_SpawnAsChild(&this->actorCtx, &gChaosContext.chicken.cucco.actor, this, ACTOR_EN_ATTACK_NIW, newNiwPos.x,
+                                        newNiwPos.y, newNiwPos.z, 0, 0, 0, ATTACK_NIW_CHAOS);    
+
+            if (attackNiw != NULL) {
+                gChaosContext.chicken.cucco.attackNiwCount++;
+                gChaosContext.chicken.cucco.attackNiwSpawnTimer = 10;
+                Actor_SetScale(attackNiw, 0.018f);
+            }
+        }
     }
 
     
@@ -2663,7 +2712,7 @@ void Play_Init(GameState* thisx) {
     zAlloc = (uintptr_t)THA_AllocTailAlign16(&this->state.tha, zAllocSize);
 
     //! @bug: Incorrect ALIGN16s
-    ZeldaArena_Init((void*)((zAlloc + 8) & ~0xF), (zAllocSize - ((zAlloc + 8) & ~0xF)) + zAlloc);
+    ZeldaArena_Init((void*)((zAlloc + 0xf) & ~0xF), (zAllocSize - ((zAlloc + 0xf) & ~0xF)) + zAlloc);
 
     Actor_InitContext(this, &this->actorCtx, this->linkActorEntry);
 

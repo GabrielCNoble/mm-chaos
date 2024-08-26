@@ -12,24 +12,24 @@
 
 #define THIS ((EnNiw*)thisx)
 
-void EnNiw_Init(Actor* thisx, PlayState* play);
-void EnNiw_Destroy(Actor* thisx, PlayState* play);
-void EnNiw_Update(Actor* thisx, PlayState* play2);
-void EnNiw_Draw(Actor* thisx, PlayState* play);
+// void EnNiw_Init(Actor* thisx, PlayState* play);
+// void EnNiw_Destroy(Actor* thisx, PlayState* play);
+// void EnNiw_Update(Actor* thisx, PlayState* play2);
+// void EnNiw_Draw(Actor* thisx, PlayState* play);
 
-void EnNiw_SetupIdle(EnNiw* this);
-void EnNiw_Idle(EnNiw* this, PlayState* play);
-void EnNiw_Thrown(EnNiw* this, PlayState* play);
-void EnNiw_SetupRunAway(EnNiw* this);
-void EnNiw_RunAway(EnNiw* this, PlayState* play);
-void EnNiw_Upset(EnNiw* this, PlayState* play);
-void EnNiw_SetupCuccoStorm(EnNiw* this, PlayState* play);
-void EnNiw_CuccoStorm(EnNiw* this, PlayState* play);
-void EnNiw_Held(EnNiw* this, PlayState* play);
-void EnNiw_UpdateFeather(EnNiw* this, PlayState* play);
-void EnNiw_DrawFeathers(EnNiw* this, PlayState* play);
-void EnNiw_SpawnFeather(EnNiw* this, Vec3f* pos, Vec3f* velocity, Vec3f* accel, f32 scale);
-void EnNiw_SpawnAttackNiw(EnNiw* this, PlayState* play);
+// void EnNiw_SetupIdle(EnNiw* this);
+// void EnNiw_Idle(EnNiw* this, PlayState* play);
+// void EnNiw_Thrown(EnNiw* this, PlayState* play);
+// void EnNiw_SetupRunAway(EnNiw* this);
+// void EnNiw_RunAway(EnNiw* this, PlayState* play);
+// void EnNiw_Upset(EnNiw* this, PlayState* play);
+// void EnNiw_SetupCuccoStorm(EnNiw* this, PlayState* play);
+// void EnNiw_CuccoStorm(EnNiw* this, PlayState* play);
+// void EnNiw_Held(EnNiw* this, PlayState* play);
+// void EnNiw_UpdateFeather(EnNiw* this, PlayState* play);
+// void EnNiw_DrawFeathers(EnNiw* this, PlayState* play);
+// void EnNiw_SpawnFeather(EnNiw* this, Vec3f* pos, Vec3f* velocity, Vec3f* accel, f32 scale);
+// void EnNiw_SpawnAttackNiw(EnNiw* this, PlayState* play);
 
 s16 sCuccoStormActive = false;
 
@@ -142,8 +142,9 @@ void EnNiw_Init(Actor* thisx, PlayState* play) {
     else if(this->niwType == NIW_TYPE_CHAOS)
     {
         this->actionFunc = EnNiw_SetupCuccoStorm;
-        this->unkAttackNiwTimer = 70;
+        this->unkAttackNiwTimer = Rand_S16Offset(15, 55);
         this->isStormActive = true;
+        Actor_SetScale(&this->actor, 0.018f);
     } 
     else 
     {
@@ -281,7 +282,6 @@ void EnNiw_SpawnAttackNiw(EnNiw* this, PlayState* play) {
     Vec3f newNiwPos;
     Actor* attackNiw;
     u32 cucco_type = ATTACK_NIW_REGULAR;
-
     // u32 max_cuccos = 7;
     if(this->niwType == NIW_TYPE_CHAOS)
     {
@@ -302,6 +302,11 @@ void EnNiw_SpawnAttackNiw(EnNiw* this, PlayState* play) {
         if (attackNiw != NULL) {
             this->attackNiwCount++;
             this->attackNiwSpawnTimer = 10;
+
+            if(this->niwType == NIW_TYPE_CHAOS)
+            {
+                Actor_SetScale(attackNiw, 0.018f);
+            }
         }
     }
 }

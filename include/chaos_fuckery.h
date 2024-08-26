@@ -4,6 +4,7 @@
 #include "ultra64.h"
 #include "z64.h"
 #include "padutils.h"
+#include "overlays/actors/ovl_En_Niw/z_en_niw.h"
 
 /* 
     random-knockback/poke/shock/ice-trap should not be active when there's a 
@@ -96,9 +97,11 @@ enum CHAOS_CODES
     /* link stops and sneezes */
     CHAOS_CODE_SNEEZE,
     /* link randomly becomes fierce deity */
-    CHAOS_CODE_RANDO_FIERCE_DEITY,
+    CHAOS_CODE_RANDOM_FIERCE_DEITY,
     /* spawn chicken swarm */
     CHAOS_CODE_CHICKEN_ARISE,
+    /* spawns oot arwing */
+    CHAOS_CODE_STARFOX,
 
     /* enemies explode when killed */
     // CHAOS_CODE_VILETILE_ENEMIES,
@@ -110,13 +113,11 @@ enum CHAOS_CODES
     // CHAOS_CODE_BUTTERFINGERS,
     
     // CHAOS_CODE_RANDOM_SWORD_TRAILS,
-    // CHAOS_CODE_NO_Z_TARGETING,
     
     // CHAOS_CODE_HIGH_PING,
     // CHAOS_CODE_UPSIDE_DOWN,
     
     // CHAOS_CODE_TAKE_SCREENSHOT,
-    // CHAOS_CODE_MOVE_BACKWARDS,
     
     // CHAOS_CODE_MUSIC_SWAP,
     // CHAOS_CODE_SWAP_HEAL_AND_HURT,
@@ -137,7 +138,6 @@ enum CHAOS_CODES
     // CHAOS_CODE_RANDOM_C_BUTTONS,
     // CHAOS_CODE_HEAT_TIMER,
     // CHAOS_CODE_QUICKSAND,
-    // CHAOS_CODE_STARFOX,
     // CHAOS_CODE_SNAP_TO_FLOOR,
     // CHAOS_CODE_ACTIVATE_SWORD_COLLIDER,
     // CHAOS_CODE_NO_AUTOJUMP,
@@ -150,7 +150,6 @@ enum CHAOS_CODES
     // CHAOS_CODE_IGNORE_WATER,
     // CHAOS_CODE_ALL_SOUNDS_ARE_PLAYER,
     // CHAOS_CODE_INFINITE_HOVER_BOOTS,
-    // CHAOS_CODE_BUTTON_SWAP,
     // CHAOS_CODE_MAGIC_ARMOR,
 
     // CHAOS_CODE_PUZZLE_EVENT,
@@ -286,6 +285,13 @@ enum CHAOS_SNEEZE_STATES
     CHAOS_SNEEZE_STATE_NONE,
 };
 
+enum CHAOS_RANDOM_FIERCE_DEITY_STATES
+{
+    CHAOS_RANDOM_FIERCE_DEITY_STATE_NONE,
+    CHAOS_RANDOM_FIERCE_DEITY_STATE_SWITCH,
+    CHAOS_RANDOM_FIERCE_DEITY_STATE_FIERCE_DEITY
+};
+
 #define INVALID_CODE_INDEX      0xff 
 #define MAX_CHAOS_TIMER         8
 #define MIN_CHAOS_TIMER         2
@@ -355,12 +361,16 @@ typedef struct ChaosContext
         f32                     beer_yaw;
         f32                     beer_roll;
         Vec3f                   beer_sway;
+        Vec2f                   ear_scales[2];
         u8                      beer_alpha;
         u8                      tunic_r;
         u8                      tunic_g;
         u8                      tunic_b;
         // u8                      out_of_shape_state;
         u8                      beer_goggles_state;
+        u8                      fierce_deity_state;
+        u8                      fierce_deity_counter;
+        u8                      prev_link_form;
         u16                     syke_health;
         u8                      syke;
         // u8                  
@@ -384,6 +394,11 @@ typedef struct ChaosContext
         Vec3f               talk_scale;
         Vec3s               talk_rotation;
     } npc;
+
+    struct
+    {
+        EnNiw               cucco;
+    } chicken;
 
     // struct
     // {

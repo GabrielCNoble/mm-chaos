@@ -110,5 +110,24 @@ typedef enum {
     /* 5 */ NIW_ANIM_PECKING_SLOW_FORFLAPPING // wing speed half that of 3
 } EnNiwHeadAndWingAnimationState;
 
+void EnNiw_Init(Actor* thisx, PlayState* play);
+void EnNiw_Destroy(Actor* thisx, PlayState* play);
+void EnNiw_Update(Actor* thisx, PlayState* play2);
+void EnNiw_Draw(Actor* thisx, PlayState* play);
+
+void EnNiw_SetupIdle(EnNiw* this);
+void EnNiw_Idle(EnNiw* this, PlayState* play);
+void EnNiw_Thrown(EnNiw* this, PlayState* play);
+void EnNiw_SetupRunAway(EnNiw* this);
+void EnNiw_RunAway(EnNiw* this, PlayState* play);
+void EnNiw_Upset(EnNiw* this, PlayState* play);
+void EnNiw_SetupCuccoStorm(EnNiw* this, PlayState* play);
+void EnNiw_CuccoStorm(EnNiw* this, PlayState* play);
+void EnNiw_Held(EnNiw* this, PlayState* play);
+void EnNiw_UpdateFeather(EnNiw* this, PlayState* play);
+void EnNiw_DrawFeathers(EnNiw* this, PlayState* play);
+void EnNiw_SpawnFeather(EnNiw* this, Vec3f* pos, Vec3f* velocity, Vec3f* accel, f32 scale);
+void EnNiw_SpawnAttackNiw(EnNiw* this, PlayState* play);
+
 
 #endif // Z_EN_NIW_H

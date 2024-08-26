@@ -616,6 +616,7 @@
     'ovl_En_Bsb',
     'ovl_En_Recepgirl',
     'ovl_En_Thiefbird',
+    'ovl_En_Arwing'
     'ovl_En_Jgame_Tsn',
     'ovl_Obj_Jgame_Light',
     'ovl_Obj_Yado',

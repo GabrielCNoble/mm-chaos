@@ -68,6 +68,7 @@ void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
     /* keep like-like and cucco always loaded */
     Object_SpawnPersistent(objectCtx, OBJECT_RR);
     Object_SpawnPersistent(objectCtx, OBJECT_NIW);
+    Object_SpawnPersistent(objectCtx, OBJECT_ARWING);
     gSegments[0x04] = OS_K0_TO_PHYSICAL(objectCtx->slots[objectCtx->mainKeepSlot].segment);
 }
 

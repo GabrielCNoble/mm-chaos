@@ -36,6 +36,8 @@
 #include "overlays/actors/ovl_En_Torch2/z_en_torch2.h"
 #include "overlays/actors/ovl_En_Zoraegg/z_en_zoraegg.h"
 #include "overlays/actors/ovl_Obj_Aqua/z_obj_aqua.h"
+#include "overlays/actors/ovl_En_Niw/z_en_niw.h"
+#include "overlays/effects/ovl_Effect_Ss_Dead_Db/z_eff_ss_dead_db.h"
 
 #include "overlays/effects/ovl_Effect_Ss_Fhg_Flash/z_eff_ss_fhg_flash.h"
 #include "overlays/effects/ovl_Effect_Ss_G_Splash/z_eff_ss_g_splash.h"
@@ -197,6 +199,7 @@ void Player_Action_73(Player* this, PlayState* play);
 void Player_Action_74(Player* this, PlayState* play);
 void Player_Action_75(Player* this, PlayState* play);
 void Player_Action_76(Player* this, PlayState* play);
+/* PLAYER_ACTION_VOID_OUT */
 void Player_Action_77(Player* this, PlayState* play);
 void Player_Action_78(Player* this, PlayState* play);
 void Player_Action_79(Player* this, PlayState* play);
@@ -4595,6 +4598,13 @@ void Player_UseItem(PlayState* play, Player* this, ItemId item) {
                 func_8082E1F0(this, NA_SE_PL_TAKE_OUT_SHIELD);
             } else {
                 this->currentMask = maskId;
+                if(maskId == PLAYER_MASK_BUNNY)
+                {
+                    gChaosContext.link.ear_scales[0].x = 0.1f + Rand_ZeroOne() * 7.0f;
+                    gChaosContext.link.ear_scales[0].z = 0.1f + Rand_ZeroOne() * 7.0f;
+                    gChaosContext.link.ear_scales[1].x = 0.1f + Rand_ZeroOne() * 7.0f;
+                    gChaosContext.link.ear_scales[1].z = 0.1f + Rand_ZeroOne() * 7.0f;
+                }
                 func_8082E1F0(this, NA_SE_PL_CHANGE_ARMS);
             }
             gSaveContext.save.equippedMask = this->currentMask;
@@ -4653,9 +4663,14 @@ void func_80831F34(PlayState* play, Player* this, PlayerAnimationHeader* anim) {
         gSaveContext.unk_1014 = 0;
         gSaveContext.jinxTimer = 0;
 
-        if (Inventory_ConsumeFairy(play)) {
+        if (gChaosContext.link.syke || Inventory_ConsumeFairy(play)) {
             play->gameOverCtx.state = GAMEOVER_REVIVE_START;
-            this->av1.actionVar1 = 1;
+            this->av1.revivePlayer = 1;
+            if(gChaosContext.link.syke)
+            {
+                Audio_PlayFanfare(NA_BGM_GAME_OVER);    
+                play->gameOverCtx.state = GAMEOVER_REVIVE_START;
+            }
         } else {
             play->gameOverCtx.state = GAMEOVER_DEATH_START;
             Audio_StopFanfare(0);
@@ -5913,7 +5928,14 @@ void func_808345A8(Player* this) {
 
 void func_808345C8(void) {
     if (INV_CONTENT(ITEM_MASK_DEKU) == ITEM_MASK_DEKU) {
-        gSaveContext.save.playerForm = PLAYER_FORM_HUMAN;
+        if(gChaosContext.link.fierce_deity_state == CHAOS_RANDOM_FIERCE_DEITY_STATE_FIERCE_DEITY)
+        {
+            gSaveContext.save.playerForm = PLAYER_FORM_FIERCE_DEITY;    
+        }
+        else
+        {
+            gSaveContext.save.playerForm = PLAYER_FORM_HUMAN;
+        }
         gSaveContext.save.equippedMask = PLAYER_MASK_NONE;
     }
 }
@@ -8797,8 +8819,10 @@ void func_8083B930(PlayState* play, Player* this) {
     func_80123140(play, this);
 }
 
+/* Player_HandlePlayerInWater? */
 void func_8083BB4C(PlayState* play, Player* this) {
     f32 sp1C = this->actor.depthInWater - this->ageProperties->unk_2C;
+    u32 out_of_shape = false;
 
     if (sp1C < 0.0f) {
         this->underwaterTimer = 0;
@@ -8815,16 +8839,23 @@ void func_8083BB4C(PlayState* play, Player* this) {
         }
     }
 
+    out_of_shape = gChaosContext.link.out_of_shape_speed_scale < 0.1f;
+
     if ((this->actor.parent == NULL) && (Player_Action_33 != this->actionFunc) &&
         (Player_Action_49 != this->actionFunc) &&
         ((Player_Action_28 != this->actionFunc) || (this->actor.velocity.y < -2.0f))) {
         if (this->ageProperties->unk_2C < this->actor.depthInWater) {
-            if (this->transformation == PLAYER_FORM_GORON) {
+            /* player is beyond swim threshold */
+            if (this->transformation == PLAYER_FORM_GORON ||
+                (out_of_shape && (this->transformation != PLAYER_FORM_ZORA))) {
+                /* goron sinks like a rock and voids out */
                 func_80834140(play, this, &gPlayerAnim_link_swimer_swim_down);
                 func_808345C8();
                 func_8083B8D0(play, this);
             } else if (this->transformation == PLAYER_FORM_DEKU) {
+                /* deku either hops or voids out */
                 if (this->remainingHopsCounter != 0) {
+                    /* start hop */
                     func_808373F8(play, this, NA_SE_VO_LI_AUTO_JUMP);
                 } else {
                     if ((play->sceneId == SCENE_20SICHITAI) && (this->unk_3CF == 0)) {
@@ -10446,10 +10477,10 @@ s32 func_808401F4(PlayState* play, Player* this) {
 Vec3f D_8085D2A4 = { 0.0f, 0.0f, 5.0f };
 /* Player_ReviveOrKill */
 void func_80840770(PlayState* play, Player* this) {
-    if (this->av2.actionVar2 != 0) {
-        if (this->av2.actionVar2 > 0) {
-            this->av2.actionVar2--;
-            if (this->av2.actionVar2 == 0) {
+    if (this->av2.fairyReviveCounter != 0) {
+        if (this->av2.fairyReviveCounter > 0) {
+            this->av2.fairyReviveCounter--;
+            if (this->av2.fairyReviveCounter == 0) {
                 if (this->stateFlags1 & PLAYER_STATE1_8000000) {
                     PlayerAnimation_Change(
                         play, &this->skelAnime, &gPlayerAnim_link_swimer_swim_wait, PLAYER_ANIM_NORMAL_SPEED, 0.0f,
@@ -10459,11 +10490,22 @@ void func_80840770(PlayState* play, Player* this) {
                         play, &this->skelAnime, &gPlayerAnim_link_derth_rebirth, PLAYER_ANIM_NORMAL_SPEED, 99.0f,
                         Animation_GetLastFrame(&gPlayerAnim_link_derth_rebirth), ANIMMODE_ONCE, 0.0f);
                 }
-                gSaveContext.healthAccumulator = 0xA0;
+                // gSaveContext.healthAccumulator = 0xA0;
+
+                if(gChaosContext.link.syke)
+                {
+                    gSaveContext.healthAccumulator = gChaosContext.link.syke_health;
+                }
+                else
+                {
+                    gSaveContext.healthAccumulator = 0xA0;
+                }
+
                 this->av2.actionVar2 = -1;
             }
         } else if (gSaveContext.healthAccumulator == 0) {
             Player_StopCutscene(this);
+            gChaosContext.link.syke = false;
 
             this->stateFlags1 &= ~PLAYER_STATE1_80;
             if (this->stateFlags1 & PLAYER_STATE1_8000000) {
@@ -10476,12 +10518,20 @@ void func_80840770(PlayState* play, Player* this) {
             func_808339B4(this, -20);
             Audio_SetBgmVolumeOn();
         }
-    } else if (this->av1.actionVar1 != 0) {
+    } else if (this->av1.revivePlayer && (!gChaosContext.link.syke || (gChaosContext.link.syke &&
+        play->gameOverCtx.state == GAMEOVER_REVIVE_FADE_OUT))) {
         Player_StopCutscene(this);
         this->csId = play->playerCsIds[PLAYER_CS_ID_REVIVE];
-        this->av2.actionVar2 = 60;
-        Player_SpawnFairy(play, this, &this->actor.world.pos, &D_8085D2A4, FAIRY_PARAMS(FAIRY_TYPE_5, false, 0));
-        Player_PlaySfx(this, NA_SE_EV_FIATY_HEAL - SFX_FLAG);
+        if(gChaosContext.link.syke)
+        {
+            this->av2.fairyReviveCounter = 1;
+        }
+        else
+        {
+            this->av2.fairyReviveCounter = 60;
+            Player_SpawnFairy(play, this, &this->actor.world.pos, &D_8085D2A4, FAIRY_PARAMS(FAIRY_TYPE_5, false, 0));
+            Player_PlaySfx(this, NA_SE_EV_FIATY_HEAL - SFX_FLAG);
+        }
     } else if (play->gameOverCtx.state == GAMEOVER_DEATH_WAIT_GROUND) {
         play->gameOverCtx.state = GAMEOVER_DEATH_FADE_OUT;
     }
@@ -10817,6 +10867,10 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
         ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawFeet, this->ageProperties->shadowScale);
     }
 
+    gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_GORON] = ITEM_MASK_GORON;
+    gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
+    gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_BUNNY] = ITEM_MASK_BUNNY;
+
     this->subCamId = CAM_ID_NONE;
     Collider_InitAndSetCylinder(play, &this->cylinder, &this->actor, &D_8085C2EC);
     Collider_InitAndSetCylinder(play, &this->shieldCylinder, &this->actor, &D_8085C318);
@@ -10975,8 +11029,6 @@ void Player_Init(Actor* thisx, PlayState* play) {
     play->unk_18794 = func_8085B854;
     play->setPlayerTalkAnim = func_8085B930;
 
-    // Player_PlaySfx(this, NA_SE_SY_ERROR);
-
     gActorOverlayTable[ACTOR_PLAYER].initInfo->objectId = GAMEPLAY_KEEP;
 
     this->actor.room = -1;
@@ -10995,6 +11047,12 @@ void Player_Init(Actor* thisx, PlayState* play) {
         Actor_SetObjectDependency(play, &this->actor);
     } else {
         this->transformation = GET_PLAYER_FORM;
+
+        // if(Chaos_IsCodeActive(CHAOS_CODE_RANDOM_FIERCE_DEITY) && this->transformation == PLAYER_FORM_HUMAN)
+        // {
+        //     this->transformation = PLAYER_FORM_FIERCE_DEITY;
+        // }
+
         if (this->transformation == PLAYER_FORM_HUMAN) {
             if (gSaveContext.save.equippedMask == PLAYER_MASK_GIANT) {
                 gSaveContext.save.equippedMask = PLAYER_MASK_NONE;
@@ -11007,27 +11065,20 @@ void Player_Init(Actor* thisx, PlayState* play) {
 
         Inventory_UpdateDeitySwordEquip(play);
 
-        if(this->actionFunc == Player_Action_86)
-        {
-            this->unk_B28 = 0;
-            this->unk_B90 = 0;
-            this->unk_B92 = 0;
-            this->unk_B94 = 0;
-            this->unk_B96 = 0;
-            this->stateFlags1 &= ~(PLAYER_STATE1_8 | PLAYER_STATE1_1000 | PLAYER_STATE1_1000000 | PLAYER_STATE1_2000000);
-            this->stateFlags2 &= ~(PLAYER_STATE2_20000 | PLAYER_STATE2_1000000 | PLAYER_STATE2_40000000);
-            this->stateFlags3 &=
-                ~(PLAYER_STATE3_8 | PLAYER_STATE3_40 | PLAYER_STATE3_80 | PLAYER_STATE3_100 | PLAYER_STATE3_200 |
-                PLAYER_STATE3_800 | PLAYER_STATE3_1000 | PLAYER_STATE3_2000 | PLAYER_STATE3_8000 | PLAYER_STATE3_10000 |
-                PLAYER_STATE3_40000 | PLAYER_STATE3_80000 | PLAYER_STATE3_100000 | PLAYER_STATE3_200000 |
-                PLAYER_STATE3_800000 | PLAYER_STATE3_1000000 | PLAYER_STATE3_2000000);
-            this->unk_B08 = 0.0f;
-            this->unk_B0C = 0.0f;
-        }
-        // else
-        // {
-
-        // }
+        this->unk_B28 = 0;
+        this->unk_B90 = 0;
+        this->unk_B92 = 0;
+        this->unk_B94 = 0;
+        this->unk_B96 = 0;
+        this->stateFlags1 &= ~(PLAYER_STATE1_8 | PLAYER_STATE1_1000 | PLAYER_STATE1_1000000 | PLAYER_STATE1_2000000);
+        this->stateFlags2 &= ~(PLAYER_STATE2_20000 | PLAYER_STATE2_1000000 | PLAYER_STATE2_40000000);
+        this->stateFlags3 &=
+            ~(PLAYER_STATE3_8 | PLAYER_STATE3_40 | PLAYER_STATE3_80 | PLAYER_STATE3_100 | PLAYER_STATE3_200 |
+            PLAYER_STATE3_800 | PLAYER_STATE3_1000 | PLAYER_STATE3_2000 | PLAYER_STATE3_8000 | PLAYER_STATE3_10000 |
+            PLAYER_STATE3_40000 | PLAYER_STATE3_80000 | PLAYER_STATE3_100000 | PLAYER_STATE3_200000 |
+            PLAYER_STATE3_800000 | PLAYER_STATE3_1000000 | PLAYER_STATE3_2000000);
+        this->unk_B08 = 0.0f;
+        this->unk_B0C = 0.0f;
     }
 
     if (this->transformation == PLAYER_FORM_ZORA) {
@@ -11058,6 +11109,7 @@ void Player_Init(Actor* thisx, PlayState* play) {
     Player_InitCommon(this, play, gPlayerSkeletons[this->transformation]);
 
     if (this->actor.shape.rot.z != 0) {
+        /* player is changing form */
         EffectTireMark* tireMark;
 
         this->actor.shape.rot.z = 0;
@@ -11098,6 +11150,8 @@ void Player_Init(Actor* thisx, PlayState* play) {
                     gChaosContext.link.cur_animation_play_speed, 
                     gChaosContext.link.cur_animation_frame, end_frame, 
                     gChaosContext.link.cur_animation_mode, 0);  
+
+            gChaosContext.link.cur_animation = NULL;
         }
 
         return;
@@ -12283,10 +12337,21 @@ void Player_WaitForNextForm(Actor *this, PlayState *play)
     func_8012301C(this, play);
 }
 
+#define RANDOM_FIERCE_DEITY_TIMER 7
+
+Color_RGBA8 gRandomFierceDeityFireColors[] = {
+    {200, 200, 255, 255},
+    {240, 120, 30, 255},
+    {50, 50, 255, 255},
+    {200, 200, 50, 255},
+    {60, 210, 54, 255}
+};
+
 void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     f32 temp_fv0;
     f32 temp_fv1;
     struct ChaosCode *code = NULL;
+    Camera *camera = Play_GetCamera(play, CAM_ID_MAIN);
 
     if(CHECK_BTN_ANY(input->press.button, BTN_L))
     {
@@ -12303,7 +12368,13 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // Chaos_ActivateCode(CHAOS_CODE_SNEEZE, 15);
         // Player_UseItem(play, this, ITEM_MASK_FIERCE_DEITY);
 
-        // this->transformation = PLAYER_FORM_FIERCE_DEITY;
+        // EffectSsDeadDbInitParams initParams;
+
+        // Vec3f velocity = {0, 0, 0};
+        // Vec3f accel = {0, 0, 0};
+        // Color_RGBA8 color = {100, 100, 255, 255};
+        // Color_RGBA8 env = {0, 0, 0, 0};
+
         // gSaveContext.save.playerForm = (gSaveContext.save.playerForm == PLAYER_FORM_HUMAN) ? 
         //                                     PLAYER_FORM_FIERCE_DEITY : PLAYER_FORM_HUMAN;
         // this->actor.update = Player_WaitForNextForm;
@@ -12314,11 +12385,119 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // gChaosContext.link.cur_animation_play_speed = this->skelAnime.playSpeed;
         // gChaosContext.link.cur_animation_mode = this->skelAnime.mode;
 
-        // EnNiw *cucco = (EnNiw *)Chaos_SpawnActor(&play->actorCtx, play, ACTOR_EN_NIW, 
-        //     this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z, 0, 0, 0, NIW_TYPE_CHAOS);
-        // cucco->actor.colChkInfo.health = 0;
-        // cucco->collider.base.acFlags |= AC_HIT;
-        // return;
+        // EffectSsDeadDb_Spawn(play, &this->actor.world.pos, &velocity, &accel, &color, &env, 200, 50, 10);
+
+        Chaos_ActivateCode(CHAOS_CODE_RANDOM_FIERCE_DEITY, 25);
+        // Chaos_ActivateCode(CHAOS_CODE_OUT_OF_SHAPE, 10);
+    }
+
+    if(CHECK_BTN_ANY(input->press.button, BTN_R))
+    {
+        // Chaos_ActivateCode(CHAOS_CODE_DIE, 0);
+        // Chaos_ActivateCode(CHAOS_CODE_SNEEZE, 10);
+        // Chaos_ActivateCode(CHAOS_CODE_LOVELESS_MARRIAGE, 1);
+        Chaos_ActivateCode(CHAOS_CODE_OUT_OF_SHAPE, 5);
+        // Actor_Spawn(&play->actorCtx, play, ACTOR_EN_ARWING, 
+        //     this->actor.world.pos.x, this->actor.world.pos.y + 20.0f, this->actor.world.pos.z, 0, 0, 0, 0);
+    }
+
+    if(this == GET_PLAYER(play))
+    {
+        switch(gChaosContext.link.fierce_deity_state)
+        {
+            case CHAOS_RANDOM_FIERCE_DEITY_STATE_NONE:
+                if(Chaos_IsCodeActive(CHAOS_CODE_RANDOM_FIERCE_DEITY))
+                {
+                    gChaosContext.link.fierce_deity_counter = RANDOM_FIERCE_DEITY_TIMER;
+                    gChaosContext.link.fierce_deity_state = CHAOS_RANDOM_FIERCE_DEITY_STATE_SWITCH;
+                }
+            break;
+
+            case CHAOS_RANDOM_FIERCE_DEITY_STATE_SWITCH:
+            {
+                if(gChaosContext.link.fierce_deity_counter >= 1)
+                {
+                    Vec3f velocity = {0, 0, 0};
+                    Vec3f accel = {0, 0, 0};
+                    Color_RGBA8 color;
+                    Color_RGBA8 env = {0, 0, 0, 0};
+                    Vec3f cam_player_vec;
+                    Vec3f base_effect_pos;
+                    u32 effect_index;
+                    f32 pitch = fabsf((f32)camera->camDir.x / (f32)0x4000);
+                    Math_Vec3f_DistXYZAndStoreNormDiff(&this->actor.world.pos, &camera->eye, 1.0f, &cam_player_vec);
+
+                    base_effect_pos.x = cam_player_vec.x * 15.0f + this->actor.world.pos.x;
+                    base_effect_pos.y = cam_player_vec.y * 15.0f + this->actor.world.pos.y + 50.0f;
+                    base_effect_pos.z = cam_player_vec.z * 15.0f + this->actor.world.pos.z;
+
+                    SoundSource_PlaySfxAtFixedWorldPos(play, &this->actor.world.pos, 11, NA_SE_EN_EXTINCT);
+
+                    if(this->transformation != PLAYER_FORM_FIERCE_DEITY)
+                    {
+                        color = gRandomFierceDeityFireColors[PLAYER_FORM_FIERCE_DEITY];
+                    }
+                    else
+                    {
+                        color = gRandomFierceDeityFireColors[gChaosContext.link.prev_link_form];
+                    }
+
+                    for(effect_index = 0; effect_index < 2; effect_index++)
+                    {
+                        Vec3f effect_pos;
+                        s16 scale = Rand_S16Offset(100, 50);
+                        s16 life = Rand_S16Offset(5, 15);
+                        effect_pos.x = base_effect_pos.x + (Rand_ZeroOne() - 0.5f) * 60.0f;
+                        effect_pos.y = base_effect_pos.y + (Rand_ZeroOne() - 0.4f) * 20.0f;
+                        effect_pos.z = base_effect_pos.z + (Rand_ZeroOne() - 0.5f) * 60.0f;
+
+                        EffectSsDeadDb_Spawn(play, &effect_pos, &velocity, &accel, &color, &env, scale, 50, life);
+                    }
+                }
+
+                gChaosContext.link.fierce_deity_counter--;
+
+                if(gChaosContext.link.fierce_deity_counter == 0)
+                {
+                    if(this->transformation != PLAYER_FORM_FIERCE_DEITY)
+                    {
+                        gChaosContext.link.fierce_deity_state = CHAOS_RANDOM_FIERCE_DEITY_STATE_FIERCE_DEITY;
+                        gChaosContext.link.prev_link_form = this->transformation;
+                        gSaveContext.save.playerForm = PLAYER_FORM_FIERCE_DEITY;
+
+                        if(this->actionFunc == Player_Action_96 || this->actionFunc == Player_Action_93)
+                        {
+                            /* transition to running action if goron is rolling or 
+                            deku is inside a deku flower */
+                            Player_SetAction(play, this, Player_Action_13, 1);
+                        }
+                    }
+                    else
+                    {
+                        gChaosContext.link.fierce_deity_state = CHAOS_RANDOM_FIERCE_DEITY_STATE_NONE;
+                        gSaveContext.save.playerForm = gChaosContext.link.prev_link_form;
+                    }
+
+                    this->actor.update = Player_WaitForNextForm;
+                    this->actor.draw = NULL;
+                    this->av1.actionVar1 = 1;
+                    gChaosContext.link.cur_animation = this->skelAnime.animation;
+                    gChaosContext.link.cur_animation_frame = this->skelAnime.curFrame;
+                    gChaosContext.link.cur_animation_play_speed = this->skelAnime.playSpeed;
+                    gChaosContext.link.cur_animation_mode = this->skelAnime.mode;
+                    return;
+                }
+            }
+            break;
+
+            case CHAOS_RANDOM_FIERCE_DEITY_STATE_FIERCE_DEITY:
+                if(!Chaos_IsCodeActive(CHAOS_CODE_RANDOM_FIERCE_DEITY))
+                {
+                    gChaosContext.link.fierce_deity_counter = RANDOM_FIERCE_DEITY_TIMER;
+                    gChaosContext.link.fierce_deity_state = CHAOS_RANDOM_FIERCE_DEITY_STATE_SWITCH;
+                }
+            break;
+        }
     }
 
     if(!(this->stateFlags2 & PLAYER_STATE2_80) & !(this->stateFlags1 & PLAYER_STATE1_800000))
@@ -13136,6 +13315,10 @@ void Player_Draw(Actor* thisx, PlayState* play) {
             Color_RGB8 spBC;
             f32 spB8 = this->unk_ABC + 1.0f;
             f32 spB4 = 1.0f - (this->unk_ABC * 0.5f);
+
+            actor_scale.x *= this->actor.scale.x;
+            actor_scale.y *= this->actor.scale.y;
+            actor_scale.z *= this->actor.scale.z;
 
             func_80846460(this);
             Matrix_Translate(this->actor.world.pos.x, this->actor.world.pos.y + (1200.0f * actor_scale.y * spB8),
@@ -18307,7 +18490,7 @@ void Player_Action_77(Player* this, PlayState* play) {
         }
     }
 
-    if ((this->av2.actionVar2++ >= 9) && !func_8082DA90(play)) {
+    if ((this->av2.voidOutTimer++ >= 9) && !func_8082DA90(play)) {
         if (this->av1.actionVar1 != 0) {
             if (this->av1.actionVar1 < 0) {
                 func_80169FDC(play);
@@ -19007,6 +19190,7 @@ void func_80855F9C(PlayState* play, Player* this) {
     Math_ScaledStepToS(&this->currentYaw, yawTarget, 0x258);
 }
 
+/* Player_IsDekuFlowerBlocked */
 s32 func_80856000(PlayState* play, Player* this) {
     CollisionPoly* poly;
     s32 bgId;
@@ -19049,6 +19233,7 @@ void Player_Action_93(Player* this, PlayState* play) {
     f32 temp_fv0_2;
     s32 sp38;
     s32 var_v1;
+    // u32 is_fierce_deitying = Chaos_IsCodeActive(CHAOS_CODE_RANDOM_FIERCE_DEITY);
 
     gPlayerAction = 93;
 
@@ -19097,12 +19282,15 @@ void Player_Action_93(Player* this, PlayState* play) {
     } else if (this->av1.actionVar1 == 2) {
         if (!CHECK_BTN_ALL(sPlayerControlInput->cur.button, BTN_A)) {
             if (func_80856000(play, this)) {
+                /* player is blocked from exiting flower */
                 this->av2.actionVar2 = 0;
             } else {
                 this->av1.actionVar1 = 3;
                 if (this->av2.actionVar2 >= 10) {
+                    /* yellow flower speed */
                     this->unk_B48 = 2700.0f;
                 } else {
+                    /* pink flower speed */
                     this->unk_B48 = 1450.0f;
                 }
                 func_8082E1F0(this, NA_SE_PL_DEKUNUTS_OUT_GRD);
@@ -19595,6 +19783,7 @@ void func_80857AEC(PlayState* play, Player* this) {
 // Goron rolling related
 void Player_Action_96(Player* this, PlayState* play) {
 
+    // u32 is_fierce_deitying = Chaos_IsCodeActive(CHAOS_CODE_RANDOM_FIERCE_DEITY);
     gPlayerAction = 96;
 
     if(Player_IsOutOfShape(this, play) || Player_NeedsToSneeze(this, play))
@@ -20021,7 +20210,7 @@ void Player_Action_OutOfShape(Player *this, PlayState *play)
 
 void Player_Action_Sneeze(Player *this, PlayState *play)
 {
-    s32 cur_idle_anim_index;
+    s32 cur_idle_anim_index = func_8082ED94(this);
     PlayerAnimationHeader *default_idle_anim = func_8082ED20(this);
     s32 anim_finished = PlayerAnimation_Update(play, &this->skelAnime);
     // s32 is_playing_default_idle_anim = this->skelAnime.animation == default_idle_anim;
@@ -20054,18 +20243,24 @@ void Player_Action_Sneeze(Player *this, PlayState *play)
             {
                 anim = default_idle_anim;
                 start_frame = 0;
+                end_frame = Animation_GetLastFrame(anim);
                 playback_speed = 2.0f;
                 this->unk_AA4 = -1;
             } 
             else 
             {
                 anim = sPlayerIdleAnimations[1][0];
-                start_frame = 100;
+                start_frame = 0;
+                end_frame =  140;
             }
 
-            end_frame = Animation_GetLastFrame(anim);
+            
             PlayerAnimation_Change(play, &this->skelAnime, anim, PLAYER_ANIM_ADJUSTED_SPEED, start_frame, end_frame, ANIMMODE_ONCE, 18.0f);
         }
+    }
+
+    if (cur_idle_anim_index > 0) {
+        func_8082EEA4(this, cur_idle_anim_index - 1);
     }
 }
 

@@ -43,6 +43,9 @@
 
 // Assets for other actors
 #include "overlays/actors/ovl_En_Arrow/z_en_arrow.h"
+#include "chaos_fuckery.h"
+
+extern struct ChaosContext gChaosContext;
 
 typedef struct {
     /* 0x00 */ Vec3f unk_00;
@@ -3047,6 +3050,7 @@ void Player_DrawBunnyHood(PlayState* play) {
     earRot.y = sBunnyEarKinematics.rot.z + 0xDBE;
     earRot.z = sBunnyEarKinematics.rot.x - 0x348A;
     Matrix_SetTranslateRotateYXZ(97.0f, -1203.0f, -240.0f, &earRot);
+    Matrix_Scale(gChaosContext.link.ear_scales[0].x, 1.0f, gChaosContext.link.ear_scales[0].z, MTXMODE_APPLY);
 
     Matrix_ToMtx(mtx++);
 
@@ -3054,6 +3058,7 @@ void Player_DrawBunnyHood(PlayState* play) {
     earRot.y = -sBunnyEarKinematics.rot.z - 0xDBE;
     earRot.z = sBunnyEarKinematics.rot.x - 0x348A;
     Matrix_SetTranslateRotateYXZ(97.0f, -1203.0f, 240.0f, &earRot);
+    Matrix_Scale(gChaosContext.link.ear_scales[1].x, 1.0f, gChaosContext.link.ear_scales[1].z, MTXMODE_APPLY);
 
     Matrix_ToMtx(mtx);
 

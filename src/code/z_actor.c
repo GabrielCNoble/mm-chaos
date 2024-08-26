@@ -688,6 +688,7 @@ void Target_Update(TargetContext* targetCtx, Player* player, Actor* lockOnActor,
     }
 
     if (lockOnActor != NULL) {
+
         if (lockOnActor != targetCtx->lockOnActor) {
             s32 sfxId;
 
@@ -710,6 +711,12 @@ void Target_Update(TargetContext* targetCtx, Player* player, Actor* lockOnActor,
         targetCtx->lockOnPos.x = lockOnActor->world.pos.x;
         targetCtx->lockOnPos.y = lockOnActor->world.pos.y - (lockOnActor->shape.yOffset * lockOnActor->scale.y);
         targetCtx->lockOnPos.z = lockOnActor->world.pos.z;
+
+        // if(lockOnActor->id == ACTOR_EN_ARWING)
+        // {
+        //     u32 *p = NULL;
+        //     *p = 5;
+        // }
 
         if (targetCtx->rotZTick == 0) {
             f32 lockOnStep = (500.0f - targetCtx->lockOnRadius) * 3.0f;

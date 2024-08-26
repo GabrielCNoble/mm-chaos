@@ -58,7 +58,7 @@ void EnAttackNiw_Init(Actor* thisx, PlayState* play) {
     this->randomTargetCenterOffset.y = Rand_CenteredFloat(10.0f);
     this->randomTargetCenterOffset.z = Rand_CenteredFloat(100.0f);
 
-    Actor_SetScale(&this->actor, 0.01f);
+    // Actor_SetScale(&this->actor, 0.01f);
     this->actor.flags &= ~ACTOR_FLAG_TARGETABLE; // Unnecessary: this actor does not start with this flag
     this->actor.shape.rot.y = this->actor.world.rot.y = (Rand_ZeroOne() - 0.5f) * 60000.0f;
     this->actionFunc = EnAttackNiw_EnterViewFromOffscreen;
@@ -284,7 +284,7 @@ void EnAttackNiw_EnterViewFromOffscreen(EnAttackNiw* this, PlayState* play) {
 }
 
 void EnAttackNiw_AimAtPlayer(EnAttackNiw* this, PlayState* play) {
-    if (!EnAttackNiw_IsOnScreen(this, play)) {
+    if (!EnAttackNiw_IsOnScreen(this, play) && this->actor.params != ATTACK_NIW_CHAOS) {
         Actor_Kill(&this->actor);
         return;
     }
@@ -397,7 +397,11 @@ void EnAttackNiw_Update(Actor* thisx, PlayState* play) {
     } else {
         f32 viewOffset = 20.0f;
 
-    label:
+    
+        if(this->actor.params == ATTACK_NIW_CHAOS)
+        {
+            viewOffset += 10.0f;
+        }
 
         // if (this->actor.xyzDistToPlayerSq < SQ(viewOffset)) {
         //     parent = (EnNiw*)this->actor.parent;

@@ -1238,9 +1238,14 @@ typedef struct Player {
     /* 0xADF */ s8 unk_ADF[4]; // Circular buffer used for testing for triggering a quickspin
     /* 0xAE3 */ s8 unk_AE3[4]; // Circular buffer used for ?
     /* 0xAE7 */ union { 
+        s8 iceTrapHaltCounter;
+        s8 revivePlayer;
         s8 actionVar1;
     } av1; // "Action Variable 1": context dependent variable that has different meanings depending on what action is currently running
     /* 0xAE8 */ union { 
+        s16 inputMashAccumulator;
+        s16 fairyReviveCounter;
+        s16 voidOutTimer;
         s16 actionVar2;
     } av2; // "Action Variable 2": context dependent variable that has different meanings depending on what action is currently running
     /* 0xAEC */ f32 unk_AEC;
@@ -1427,6 +1432,8 @@ s32 func_80127438(struct PlayState* play, Player* player, s32 currentMask);
 s32 func_80128640(struct PlayState* play, Player* player, Gfx* dList);
 void Player_SetFeetPos(struct PlayState* play, Player* player, s32 limbIndex);
 void Player_PostLimbDrawGameplay(struct PlayState* play, s32 limbIndex, Gfx** dList1, Gfx** dList2, Vec3s* rot, Actor* actor);
+/* Player_RevertToHumanToRespawn */
+void func_808345C8(void);
 
 extern FlexSkeletonHeader* gPlayerSkeletons[PLAYER_FORM_MAX];
 extern PlayerModelIndices gPlayerModelTypes[];

@@ -18,6 +18,8 @@
 #include "overlays/actors/ovl_En_Mm3/z_en_mm3.h"
 #include "chaos_fuckery.h"
 
+extern struct ChaosContext gChaosContext;
+
 typedef enum {
     /* 0 */ PICTO_BOX_STATE_OFF,         // Not using the pictograph
     /* 1 */ PICTO_BOX_STATE_LENS,        // Looking through the lens of the pictograph
@@ -1912,7 +1914,10 @@ void Interface_UpdateButtonsPart2(PlayState* play) {
                     }
                     gSaveContext.buttonStatus[i] = BTN_DISABLED;
                 }
-            } else if (gSaveContext.buttonStatus[i] == BTN_DISABLED) {
+            } else if (gSaveContext.buttonStatus[i] == BTN_DISABLED && 
+                    gChaosContext.link.fierce_deity_state == CHAOS_RANDOM_FIERCE_DEITY_STATE_NONE) {
+                /* makes zora mask always usable when swimming, unless random fierce deity effect is
+                active */
                 gSaveContext.buttonStatus[i] = BTN_ENABLED;
                 restoreHudVisibility = true;
             }

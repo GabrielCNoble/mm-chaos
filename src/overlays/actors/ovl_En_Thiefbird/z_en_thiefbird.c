@@ -480,7 +480,7 @@ void func_80C11538(EnThiefbird* this) {
     this->collider.base.acFlags |= AC_ON;
     this->actionFunc = func_80C11590;
 }
-
+/* EnThiefBird_Flying */
 void func_80C11590(EnThiefbird* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s32 onAnimFirstFrame;
@@ -536,7 +536,7 @@ void func_80C11590(EnThiefbird* this, PlayState* play) {
         func_80C118E4(this);
     }
 }
-
+/* EnThiefBird_StartChasePlayer */
 void func_80C118E4(EnThiefbird* this) {
     Animation_MorphToLoop(&this->skelAnime, &gTakkuriAttackAnim, -10.0f);
     this->unk_18E = 300;

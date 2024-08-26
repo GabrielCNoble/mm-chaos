@@ -230,7 +230,8 @@ void EnDg_UpdateCollision(EnDg* this, PlayState* play) {
     this->collider.dim.pos.z = this->actor.world.pos.z;
     Collider_UpdateCylinder(&this->actor, &this->collider);
 
-    if ((player->transformation == PLAYER_FORM_DEKU) && (this->actionFunc == EnDg_JumpAttack)) {
+    if ((player->transformation == PLAYER_FORM_DEKU || player->transformation == PLAYER_FORM_FIERCE_DEITY) 
+        && (this->actionFunc == EnDg_JumpAttack)) {
         CollisionCheck_SetAT(play, &play->colChkCtx, &this->collider.base);
     } else {
         Collider_ResetCylinderAT(play, &this->collider.base);
@@ -590,6 +591,7 @@ s32 EnDg_ShouldReactToNonHumanPlayer(EnDg* this, PlayState* play) {
             }
             // fallthrough
         case PLAYER_FORM_DEKU:
+        case PLAYER_FORM_FIERCE_DEITY:
             if (this->actor.xzDistToPlayer < 250.0f) {
                 return true;
             }
@@ -649,6 +651,7 @@ void EnDg_ChooseActionForForm(EnDg* this, PlayState* play) {
                 break;
 
             case PLAYER_FORM_DEKU:
+            case PLAYER_FORM_FIERCE_DEITY:
                 this->dogFlags &= ~DOG_FLAG_JUMP_ATTACKING;
                 if ((this->behavior != DOG_BEHAVIOR_DEKU) && (player->actor.speed > 1.0f)) {
                     this->behavior = DOG_BEHAVIOR_DEKU;
