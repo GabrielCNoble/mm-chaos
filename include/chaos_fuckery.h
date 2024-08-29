@@ -102,15 +102,25 @@ enum CHAOS_CODES
     CHAOS_CODE_CHICKEN_ARISE,
     /* spawns oot arwing */
     CHAOS_CODE_STARFOX,
-
-    /* enemies explode when killed */
-    // CHAOS_CODE_VILETILE_ENEMIES,
-
-
-    
-    // CHAOS_CODE_SLOW_ANIMATION,
-    // CHAOS_CODE_RANDOM_ITEM,
+    /* self explanatory */
+    CHAOS_CODE_SWAP_HEAL_AND_HURT,
+    /* player randomly loses grip, dropping items, falling from ledges/ladders */
     // CHAOS_CODE_BUTTERFINGERS,
+    /* item randomly vanishes from inventory */
+    // CHAOS_CODE_SHORT_TERM_MEMORY_LOSS,
+    /* vanished item returns */
+    // CHAOS_CODE_RECOVER_LOST_ITEM,
+    /* randomly plays a little puzzle cutscene  */
+    // CHAOS_CODE_PUZZLE_EVENT,
+    /* randomly adds heart container */
+    // CHAOS_CODE_RANDOM_HEALTH_UP,
+    /* randomly removes heart container */
+    // CHAOS_CODE_RANDOM_HEALTH_DOWN,
+
+    // CHAOS_CODE_SLOWER_ANIMATIONS,
+    // CHAOS_CODE_FASTER_ANIMATIONS,
+    // CHAOS_CODE_JUNK_ITEM,
+    
     
     // CHAOS_CODE_RANDOM_SWORD_TRAILS,
     
@@ -118,29 +128,28 @@ enum CHAOS_CODES
     // CHAOS_CODE_UPSIDE_DOWN,
     
     // CHAOS_CODE_TAKE_SCREENSHOT,
+    // CHAOS_CODE_SHOW_SCREENSHOT,
     
     // CHAOS_CODE_MUSIC_SWAP,
-    // CHAOS_CODE_SWAP_HEAL_AND_HURT,
-    // CHAOS_CODE_SHOW_SCREENSHOT,
+    
+    
     /* spawn walls of fire around player */
     // CHAOS_CODE_ANTIVIRUS,
-    // CHAOS_CODE_FASTER_ANIMATIONS,
     // CHAOS_CODE_SONG_OF_STORMS,
     // CHAOS_CODE_SIGNPOST,
     // CHAOS_CODE_ROTATE_SLOWLY,
     // CHAOS_CODE_ENVIRONMENT_SETTINGS,
     
     // CHAOS_CODE_AMBUSH,
-    // CHAOS_CODE_SHORT_TERM_MEMORY_LOSS,
     
     // CHAOS_CODE_RANDOM_PLAYER_SOUNDS,
-    // CHAOS_CODE_JUNK_ITEM,
     // CHAOS_CODE_RANDOM_C_BUTTONS,
     // CHAOS_CODE_HEAT_TIMER,
     // CHAOS_CODE_QUICKSAND,
     // CHAOS_CODE_SNAP_TO_FLOOR,
     // CHAOS_CODE_ACTIVATE_SWORD_COLLIDER,
     // CHAOS_CODE_NO_AUTOJUMP,
+    // CHAOS_CODE_NO_CLIMB_UP,
     // CHAOS_CODE_NAVI,
     // CHAOS_CODE_SPEEDBOOST,
     // CHAOS_CODE_EXPLOSIONS,
@@ -152,24 +161,22 @@ enum CHAOS_CODES
     // CHAOS_CODE_INFINITE_HOVER_BOOTS,
     // CHAOS_CODE_MAGIC_ARMOR,
 
-    // CHAOS_CODE_PUZZLE_EVENT,
-
     // CHAOS_CODE_PUT_AWAY_ITEMS,
-    // CHAOS_CODE_CAMERA_SHAKE,
     // CHAOS_CODE_VOID_OUT,
     // CHAOS_CODE_CLIMB_EVERYTHING,
     // CHAOS_CODE_SUN_SONG,
-    // CHAOS_CODE_USE_OCARINA,
+    // CHAOS_CODE_USELESS_WEAPONS,
+    // CHAOS_CODE_THE_END_OF_THE_WORLD,
+    // CHAOS_CODE_THE_WORLD_IS_SAVED,
 
-
-    /* slow goron roll */
-    // CHAOS_CODE_GOT_A_FLAT,
     /* swap tatl model with the moon's */
     // CHAOS_CODE_EVIL_VOICES,
     
     /* walk over water */
     // CHAOS_CODE_HIM,
     
+    /* enemies explode when killed */
+    // CHAOS_CODE_VILETILE_ENEMIES,
     /* all sounds are the same player sound */
     // CHAOS_CODE_UNORIGINAL,
     /* tatl frequently pipes up with random quest tips */
@@ -193,8 +200,6 @@ enum CHAOS_CODES
     
     /* player takes flight like a gossip stone */
     // CHAOS_CODE_LIFTOFF,
-    /* link randomly slows down and gasps for air */
-    // CHAOS_CODE_OUT_OF_SHAPE,
     /* warps player to majora's lair, then warps them back out */
     // CHAOS_CODE_FAKE_MAJORAS_LAIR,
 
@@ -223,8 +228,9 @@ struct ChaosCodeSlot
 
 struct ChaosCode
 {
-    u32 data;
-    u16 timer;
+    // u32 data;
+    // u16 timer;
+    u8  timer;
     u8  code;
 };
 
@@ -343,6 +349,7 @@ typedef struct ChaosContext
         };
 
         u8                  big_brother_state;
+        u8                  moon_dance;
         
     } moon;
 
@@ -366,14 +373,15 @@ typedef struct ChaosContext
         u8                      tunic_r;
         u8                      tunic_g;
         u8                      tunic_b;
-        // u8                      out_of_shape_state;
+        u8                      out_of_shape_state;
         u8                      beer_goggles_state;
         u8                      fierce_deity_state;
         u8                      fierce_deity_counter;
         u8                      prev_link_form;
         u16                     syke_health;
         u8                      syke;
-        // u8                  
+        u8                      random_knockback_timer;
+        u8                      trap_flap_timer;
     } link;
 
     struct
@@ -399,6 +407,11 @@ typedef struct ChaosContext
     {
         EnNiw               cucco;
     } chicken;
+
+    struct 
+    {
+        u8                  change_timer;
+    } bgm;
 
     // struct
     // {

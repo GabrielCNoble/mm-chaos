@@ -564,6 +564,7 @@ void Target_Draw(TargetContext* targetCtx, PlayState* play) {
         }
 
         Target_SetLockOnPos(targetCtx, targetCtx->lockOnIndex, projectedPos.x, projectedPos.y, projectedPos.z);
+        
 
         if (!(player->stateFlags1 & PLAYER_STATE1_40) || (actor != player->lockOnActor)) {
             OVERLAY_DISP = Gfx_SetupDL(OVERLAY_DISP, SETUPDL_57);
@@ -711,12 +712,6 @@ void Target_Update(TargetContext* targetCtx, Player* player, Actor* lockOnActor,
         targetCtx->lockOnPos.x = lockOnActor->world.pos.x;
         targetCtx->lockOnPos.y = lockOnActor->world.pos.y - (lockOnActor->shape.yOffset * lockOnActor->scale.y);
         targetCtx->lockOnPos.z = lockOnActor->world.pos.z;
-
-        // if(lockOnActor->id == ACTOR_EN_ARWING)
-        // {
-        //     u32 *p = NULL;
-        //     *p = 5;
-        // }
 
         if (targetCtx->rotZTick == 0) {
             f32 lockOnStep = (500.0f - targetCtx->lockOnRadius) * 3.0f;
@@ -2853,7 +2848,9 @@ void Actor_UpdateFlaggedAudio(Actor* actor) {
 
     if (sfxId != NA_SE_NONE) {
         if (actor->audioFlags & ACTOR_AUDIO_FLAG_SFX_CENTERED_1) {
-            AudioSfx_PlaySfx(sfxId, &actor->projectedPos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
+            // AudioSfx_PlaySfx(sfxId, &actor->projectedPos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
+            //                  &gSfxDefaultReverb);
+            AudioSfx_PlaySfx(sfxId, &actor->projectedPos, 4, &gSfxBeerGogglesFreq, &gSfxDefaultFreqAndVolScale,
                              &gSfxDefaultReverb);
         } else if (actor->audioFlags & ACTOR_AUDIO_FLAG_SFX_CENTERED_2) {
             Audio_PlaySfx(sfxId);

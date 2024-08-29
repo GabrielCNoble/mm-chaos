@@ -54,7 +54,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_INCREDIBLE_KNOCKBACK]    = */ CHAOS_CODE_DEF(10, 21, true,  0.008f),
     /* [CHAOS_CODE_RANDOM_SCALING]          = */ CHAOS_CODE_DEF(10, 21, true,  0.007f),
     /* [CHAOS_CODE_BIG_BROTHER]             = */ CHAOS_CODE_DEF(25, 70, true,  0.002f),
-    /* [CHAOS_CODE_OUT_OF_SHAPE]            = */ CHAOS_CODE_DEF(5, 12,  false, 0.006f),
+    /* [CHAOS_CODE_OUT_OF_SHAPE]            = */ CHAOS_CODE_DEF(5, 12,  true,  0.006f),
     /* [CHAOS_CODE_TUNIC_COLOR]             = */ CHAOS_CODE_DEF(0, 0,   false, 0.006f),
     /* [CHAOS_CODE_WEIRD_SKYBOX]            = */ CHAOS_CODE_DEF(10, 15, true,  0.006f),
     /* [CHAOS_CODE_SINGLE_ACTION_OWL]       = */ CHAOS_CODE_DEF(5,  15, false, 0.0005f),
@@ -63,6 +63,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_RANDO_FIERCE_DEITY]      = */ CHAOS_CODE_DEF(25, 75, true,  0.0006f),
     /* [CHAOS_CODE_CHICKEN_ARISE]           = */ CHAOS_CODE_DEF(25, 45, false, 0.0015f),
     /* [CHAOS_CODE_STARFOX]                 = */ CHAOS_CODE_DEF(15, 25, true,  0.0012f),
+    /* [CHAOS_CODE_SWAP_HEAL_AND_HURT]      = */ CHAOS_CODE_DEF(5, 25,  false, 0.003f),
 };
  
 const char *gChaosCodeNames[] = {
@@ -109,6 +110,7 @@ const char *gChaosCodeNames[] = {
     /* [CHAOS_CODE_RANDO_FIERCE_DEITY]      = */ "Random fierce deity",
     /* [CHAOS_CODE_CHICKEN_ARISE]           = */ "Chicken arise",
     /* [CHAOS_CODE_STARFOX]                 = */ "Starfox",
+    /* [CHAOS_CODE_SWAP_HEAL_AND_HURT]      = */ "Swap heal and hurt",
 };
 
 enum FAIRY_FOUNTAIN_EXITS
@@ -735,7 +737,8 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         break;
 
                         case CHAOS_CODE_ONE_HIT_KO:
-                            if(Chaos_IsCodeActive(CHAOS_CODE_CHANGE_HEALTH) || Chaos_IsCodeActive(CHAOS_CODE_INVINCIBLE))
+                            if(Chaos_IsCodeActive(CHAOS_CODE_CHANGE_HEALTH) || 
+                               Chaos_IsCodeActive(CHAOS_CODE_INVINCIBLE))
                             {
                                 /* changing health would one-hit the player or not have any effect at all, so don't activate it */
                                 continue;
@@ -743,7 +746,9 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         break;
 
                         case CHAOS_CODE_CHANGE_HEALTH:
-                            if(Chaos_IsCodeActive(CHAOS_CODE_ONE_HIT_KO) || Chaos_IsCodeActive(CHAOS_CODE_INVINCIBLE))
+                            if(Chaos_IsCodeActive(CHAOS_CODE_ONE_HIT_KO) || 
+                               Chaos_IsCodeActive(CHAOS_CODE_INVINCIBLE) || 
+                               Chaos_IsCodeActive(CHAOS_CODE_SWAP_HEAL_AND_HURT))
                             {
                                 /* changing health would one-hit the player or not have any effect at all, so don't activate it */
                                 continue;
@@ -751,9 +756,17 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         break;
 
                         case CHAOS_CODE_INVINCIBLE:
-                            if(Chaos_IsCodeActive(CHAOS_CODE_ONE_HIT_KO) || Chaos_IsCodeActive(CHAOS_CODE_CHANGE_HEALTH))
+                            if(Chaos_IsCodeActive(CHAOS_CODE_ONE_HIT_KO) || 
+                               Chaos_IsCodeActive(CHAOS_CODE_CHANGE_HEALTH))
                             {
                                 /* making the player invicible now would make both codes not have an effect, so don't activate it */
+                                continue;
+                            }
+                        break;
+
+                        case CHAOS_CODE_SWAP_HEAL_AND_HURT:
+                            if(Chaos_IsCodeActive(CHAOS_CODE_CHANGE_HEALTH))
+                            {
                                 continue;
                             }
                         break;
@@ -789,23 +802,27 @@ void Chaos_UpdateChaos(PlayState *playstate)
                             do
                             {
                                 /* pick a random combination of moon dance move flags */
-                                last_code->data = Rand_Next() % CHAOS_MOON_MOVE_LAST;
+                                // last_code->data = Rand_Next() % CHAOS_MOON_MOVE_LAST;
+                                gChaosContext.moon.moon_dance = Rand_Next() % CHAOS_MOON_MOVE_LAST;
                             }
-                            while(last_code->data == 0);
+                            while(gChaosContext.moon.moon_dance == 0);
                         break;
 
                         case CHAOS_CODE_RANDOM_KNOCKBACK:
                             /* deal first knockback on the same frame the effect gets activated */
-                            last_code->data = 1;
+                            // last_code->data = 1;
+                            gChaosContext.link.random_knockback_timer = 1;
                         break;
 
                         case CHAOS_CODE_TRAP_FLAP:
-                            last_code->data = 1;
+                            // last_code->data = 1;
+                            gChaosContext.link.trap_flap_timer = 1;
                         break;
 
                         case CHAOS_CODE_TERRIBLE_MUSIC:
                             /* start screwing up the bgm on the same frame the effect gets activated */
-                            last_code->data = 1;
+                            // last_code->data = 1;
+                            gChaosContext.bgm.change_timer = 1;
                         break;
 
                         case CHAOS_CODE_BIG_BROTHER:
@@ -986,6 +1003,7 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
         }
         else
         {
+            u32 scene = gSaveContext.save.entrance >> 9;
             GfxPrint_Printf(&gfx_print, "Player state stuff");
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "stateFlags1: %08x", player->stateFlags1);
@@ -1001,6 +1019,8 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
             GfxPrint_Printf(&gfx_print, "actionVar2: %d", player->av2.actionVar2);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "Action: %d", gPlayerAction);
+            GfxPrint_SetPos(&gfx_print, 1, y_pos++);
+            GfxPrint_Printf(&gfx_print, "Scene: %d, room: %d, hazard: %d", scene, playstate->roomCtx.curRoom.num, Player_GetEnvironmentalHazard(playstate));
             // GfxPrint_SetPos(&gfx_print, 20, y_pos++);
             // GfxPrint_Printf(&gfx_print, "%04x", camera->setting);
         }

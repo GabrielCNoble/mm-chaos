@@ -18,9 +18,6 @@ s32 Object_SpawnPersistent(ObjectContext* objectCtx, s16 id) {
     objectCtx->slots[objectCtx->numEntries].id = id;
     size = gObjectTable[id].vromEnd - gObjectTable[id].vromStart;
 
-    //! FAKE:
-    if (1) {}
-
     if (size != 0) {
         DmaMgr_RequestSync(objectCtx->slots[objectCtx->numEntries].segment, gObjectTable[id].vromStart, size);
     }
@@ -58,14 +55,15 @@ void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
     objectCtx->mainKeepSlot = 0;
     objectCtx->subKeepSlot = 0;
 
-    // clang-format off
-    for (i = 0; i < ARRAY_COUNT(objectCtx->slots); i++) { objectCtx->slots[i].id = 0; }
-    // clang-format on
+    for (i = 0; i < ARRAY_COUNT(objectCtx->slots); i++)
+    { 
+        objectCtx->slots[i].id = 0; 
+    }
 
     objectCtx->spaceStart = objectCtx->slots[0].segment = THA_AllocTailAlign16(&gameState->tha, spaceSize);
     objectCtx->spaceEnd = (void*)((u32)objectCtx->spaceStart + spaceSize);
     objectCtx->mainKeepSlot = Object_SpawnPersistent(objectCtx, GAMEPLAY_KEEP);
-    /* keep like-like and cucco always loaded */
+    /* keep like-like, cucco and arwing always loaded */
     Object_SpawnPersistent(objectCtx, OBJECT_RR);
     Object_SpawnPersistent(objectCtx, OBJECT_NIW);
     Object_SpawnPersistent(objectCtx, OBJECT_ARWING);
@@ -73,12 +71,12 @@ void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
 }
 
 void Object_UpdateEntries(ObjectContext* objectCtx) {
-    s32 i;
+    s32 entry_index;
     ObjectEntry* entry = &objectCtx->slots[0];
     RomFile* objectFile;
     size_t size;
 
-    for (i = 0; i < objectCtx->numEntries; i++) {
+    for (entry_index = 0; entry_index < objectCtx->numEntries; entry_index++) {
         if (entry->id < 0) {
             s32 id = -entry->id;
 
@@ -140,7 +138,7 @@ void Object_LoadAll(ObjectContext* objectCtx) {
 }
 /* Object_RequestOverwrite? */
 void* func_8012F73C(ObjectContext* objectCtx, s32 slot, s16 id) {
-    u32 addr;
+    uintptr_t addr;
     uintptr_t vromSize;
     RomFile* fileTableEntry;
 
@@ -151,7 +149,7 @@ void* func_8012F73C(ObjectContext* objectCtx, s32 slot, s16 id) {
     vromSize = fileTableEntry->vromEnd - fileTableEntry->vromStart;
 
     // TODO: UB to cast void to u32
-    addr = ((u32)objectCtx->slots[slot].segment) + vromSize;
+    addr = ((uintptr_t)objectCtx->slots[slot].segment) + vromSize;
     addr = ALIGN16(addr);
 
     return (void*)addr;
@@ -165,8 +163,7 @@ void Scene_CommandSpawnList(PlayState* play, SceneCmd* cmd) {
 
     play->linkActorEntry =
         (ActorEntry*)Lib_SegmentedToVirtual(cmd->spawnList.segment) + play->setupEntranceList[play->curSpawn].spawn;
-    if ((PLAYER_GET_INITMODE(play->linkActorEntry) == PLAYER_INITMODE_TELESCOPE) ||
-        ((gSaveContext.respawnFlag == 2) &&
+    if ((PLAYER_GET_INITMODE(play->linkActorEntry) == PLAYER_INITMODE_TELESCOPE) || ((gSaveContext.respawnFlag == 2) &&
          (gSaveContext.respawn[RESPAWN_MODE_RETURN].playerParams == PLAYER_PARAMS(0xFF, PLAYER_INITMODE_TELESCOPE)))) {
         // Skull Kid Object
         Object_SpawnPersistent(&play->objectCtx, OBJECT_STK);
@@ -178,7 +175,7 @@ void Scene_CommandSpawnList(PlayState* play, SceneCmd* cmd) {
     play->objectCtx.numEntries = loadedCount;
     play->objectCtx.numPersistentEntries = loadedCount;
     playerObjectId = gPlayerFormObjectIds[GET_PLAYER_FORM];
-    gActorOverlayTable[0].initInfo->objectId = playerObjectId;
+    gActorOverlayTable[ACTOR_PLAYER].initInfo->objectId = playerObjectId;
     Object_SpawnPersistent(&play->objectCtx, playerObjectId);
 
     play->objectCtx.slots[play->objectCtx.numEntries].segment = objectPtr;
@@ -269,9 +266,11 @@ void Scene_CommandMesh(PlayState* play, SceneCmd* cmd) {
 
 // SceneTableEntry Header Command 0x0B:  Object List
 void Scene_CommandObjectList(PlayState* play, SceneCmd* cmd) {
-    s32 i;
+    // s32 i;
+    s32 non_persistent_entry_index;
     s32 j;
-    s32 k;
+    // s32 k;
+    s32 object_list_entry_index;
     ObjectEntry* firstObject;
     ObjectEntry* entry;
     ObjectEntry* invalidatedEntry;
@@ -279,45 +278,63 @@ void Scene_CommandObjectList(PlayState* play, SceneCmd* cmd) {
     void* nextPtr;
 
     objectEntry = Lib_SegmentedToVirtual(cmd->objectList.segment);
-    k = 0;
-    i = play->objectCtx.numPersistentEntries;
-    entry = &play->objectCtx.slots[i];
+    // k = 0;
+    // i = play->objectCtx.numPersistentEntries;
+    object_list_entry_index = 0;
+    non_persistent_entry_index = play->objectCtx.numPersistentEntries;
+    // entry = &play->objectCtx.slots[i];
+    entry = &play->objectCtx.slots[non_persistent_entry_index];
     firstObject = &play->objectCtx.slots[0];
 
-    while (i < play->objectCtx.numEntries) {
+    
+    // while (i < play->objectCtx.numEntries) {
+    /* look for the first non-persistent entry that doesn't match the object list */
+    while (non_persistent_entry_index < play->objectCtx.numEntries) {
         if (entry->id != *objectEntry) {
-            invalidatedEntry = &play->objectCtx.slots[i];
+            // invalidatedEntry = &play->objectCtx.slots[i];
+            /* entry doesn't match */
+            invalidatedEntry = &play->objectCtx.slots[non_persistent_entry_index];
 
-            for (j = i; j < play->objectCtx.numEntries; j++) {
+            /* so nuke everything after it */
+            for (j = non_persistent_entry_index; j < play->objectCtx.numEntries; j++) {
                 invalidatedEntry->id = 0;
+                // invalidatedEntry->request_index = MAX_OBJ_REQUESTS;
                 invalidatedEntry++;
             }
 
-            play->objectCtx.numEntries = i;
+            // play->objectCtx.numEntries = i;
+            play->objectCtx.numEntries = non_persistent_entry_index;
             Actor_KillAllWithMissingObject(play, &play->actorCtx);
 
             continue;
         }
-
-        i++;
-        k++;
+        // i++
+        // k++;
+        non_persistent_entry_index++;
+        object_list_entry_index++;
         objectEntry++;
         entry++;
     }
 
-    while (k < cmd->objectList.num) {
-        nextPtr = func_8012F73C(&play->objectCtx, i, *objectEntry);
+    while (object_list_entry_index < cmd->objectList.num) {
+        // nextPtr = func_8012F73C(&play->objectCtx, i, *objectEntry);
+        nextPtr = func_8012F73C(&play->objectCtx, non_persistent_entry_index, *objectEntry);
 
-        if (i < ARRAY_COUNT(play->objectCtx.slots) - 1) {
-            firstObject[i + 1].segment = nextPtr;
+        // if (i < ARRAY_COUNT(play->objectCtx.slots) - 1) {
+        if (non_persistent_entry_index < ARRAY_COUNT(play->objectCtx.slots) - 1) {
+            // firstObject[i + 1].segment = nextPtr;
+            firstObject[non_persistent_entry_index + 1].segment = nextPtr;
         }
 
-        i++;
-        k++;
+        // i++;
+        // k++;
+        non_persistent_entry_index++;
+        object_list_entry_index++;
         objectEntry++;
     }
 
-    play->objectCtx.numEntries = i;
+    // play->objectCtx.numEntries = i;
+    play->objectCtx.numEntries = non_persistent_entry_index;
 }
 
 // SceneTableEntry Header Command 0x0C: Light List

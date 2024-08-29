@@ -1914,12 +1914,19 @@ void Interface_UpdateButtonsPart2(PlayState* play) {
                     }
                     gSaveContext.buttonStatus[i] = BTN_DISABLED;
                 }
-            } else if (gSaveContext.buttonStatus[i] == BTN_DISABLED && 
-                    gChaosContext.link.fierce_deity_state == CHAOS_RANDOM_FIERCE_DEITY_STATE_NONE) {
-                /* makes zora mask always usable when swimming, unless random fierce deity effect is
-                active */
-                gSaveContext.buttonStatus[i] = BTN_ENABLED;
-                restoreHudVisibility = true;
+            } 
+            else
+            {
+                if(gChaosContext.link.fierce_deity_state != CHAOS_RANDOM_FIERCE_DEITY_STATE_NONE)
+                {
+                    /* disallow changing to zora if random fierce deity is active */
+                    gSaveContext.buttonStatus[i] = BTN_DISABLED;
+                }
+                else if (gSaveContext.buttonStatus[i] == BTN_DISABLED) 
+                {
+                    gSaveContext.buttonStatus[i] = BTN_ENABLED;
+                    restoreHudVisibility = true;
+                }
             }
         }
 
@@ -3404,30 +3411,37 @@ void Interface_SetBButtonInterfaceDoAction(PlayState* play, s16 bButtonDoAction)
  * @return false if player is out of health
  */
 s32 Health_ChangeBy(PlayState* play, s16 healthChange) {
+
+    s16 heatlh_change = healthChange;
+    if(Chaos_IsCodeActive(CHAOS_CODE_SWAP_HEAL_AND_HURT))
+    {
+        heatlh_change = -heatlh_change;
+    }
+
     if (healthChange > 0) {
         Audio_PlaySfx(NA_SE_SY_HP_RECOVER);
     } 
     else if (healthChange < 0) 
     {
         if(gSaveContext.save.saveInfo.playerData.doubleDefense) {
-            healthChange >>= 1;
+            heatlh_change >>= 1;
         }
         if(Chaos_IsCodeActive(CHAOS_CODE_INVINCIBLE))
         {
-            healthChange = 0;
+            heatlh_change = 0;
         }
         else if(Chaos_IsCodeActive(CHAOS_CODE_ONE_HIT_KO))
         {
-            healthChange = -gSaveContext.save.saveInfo.playerData.health;
+            heatlh_change = -gSaveContext.save.saveInfo.playerData.health;
         }
         else if(Chaos_IsCodeActive(CHAOS_CODE_BEER_GOGGLES))
         {
             /* he's drunk, what do you expect? */
-            healthChange /= 4;
+            heatlh_change /= 4;
         }
     }
 
-    gSaveContext.save.saveInfo.playerData.health += healthChange;
+    gSaveContext.save.saveInfo.playerData.health += heatlh_change;
 
     if (((void)0, gSaveContext.save.saveInfo.playerData.health) >
         ((void)0, gSaveContext.save.saveInfo.playerData.healthCapacity)) {

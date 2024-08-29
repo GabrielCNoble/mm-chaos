@@ -1,8 +1,11 @@
 #include "z_en_arwing.h"
 #include "libc/math.h"
+#include "overlays/actors/ovl_En_Bom/z_en_bom.h"
+#include "overlays/effects/ovl_Effect_Ss_Fire_Tail/z_eff_ss_fire_tail.h"
+#include "overlays/effects/ovl_Effect_Ss_Dust/z_eff_ss_dust.h"
 
 // #define FLAGS (ACTOR_FLAG_0 | ACTOR_FLAG_2 | ACTOR_FLAG_4 | ACTOR_FLAG_5)
-#define FLAGS (ACTOR_FLAG_TARGETABLE | ACTOR_FLAG_UNFRIENDLY | ACTOR_FLAG_10 | ACTOR_FLAG_20 | ACTOR_FLAG_4000)
+#define FLAGS (ACTOR_FLAG_TARGETABLE | ACTOR_FLAG_UNFRIENDLY | ACTOR_FLAG_200 | ACTOR_FLAG_IGNORE_QUAKE | ACTOR_FLAG_80000000)
 
 void EnArwing_Init(Actor* thisx, PlayState* play);
 void EnArwing_Destroy(Actor* thisx, PlayState* play);
@@ -63,25 +66,25 @@ static InitChainEntry sInitChain[] = {
     ICHAIN_F32(targetArrowOffset, 4000, ICHAIN_STOP),
 };
 
-// static ColliderCylinderInit sLaserCylinderInit = {
-//     {
-//         COLTYPE_METAL,
-//         AT_ON | AT_TYPE_ENEMY,
-//         AC_ON | AC_TYPE_PLAYER,
-//         OC1_ON | OC1_TYPE_ALL,
-//         OC2_TYPE_1,
-//         COLSHAPE_CYLINDER,
-//     },
-//     {
-//         ELEMTYPE_UNK0,
-//         { 0xFFCFFFFF, 0x00, 0x04 },
-//         { 0xFFDFFFFF, 0x00, 0x00 },
-//         ATELEM_ON | ATELEM_SFX_NORMAL,
-//         ACELEM_ON,
-//         OCELEM_ON,
-//     },
-//     { 15, 30, 10, { 0, 0, 0 } },
-// };
+static ColliderCylinderInit sLaserCylinderInit = {
+    {
+        COLTYPE_METAL,
+        AT_ON | AT_TYPE_ENEMY,
+        AC_ON | AC_TYPE_PLAYER,
+        OC1_ON | OC1_TYPE_ALL,
+        OC2_TYPE_1,
+        COLSHAPE_CYLINDER,
+    },
+    {
+        ELEMTYPE_UNK0,
+        { 0xFFCFFFFF, 0x00, 0x04 },
+        { 0xFFDFFFFF, 0x00, 0x00 },
+        TOUCH_ON | TOUCH_SFX_NORMAL,
+        BUMP_ON,
+        OCELEM_ON,
+    },
+    { 15, 30, 10, { 0, 0, 0 } },
+};
 
 // static UNK_TYPE4 D_809D5C98 = 0; // unused
 // static UNK_TYPE4 D_809D5C9C = 0; // unused
@@ -285,12 +288,13 @@ void EnArwing_Init(Actor* thisx, PlayState* play) {
     this->timers[ARWING_TIMER_ARWING_ENTER_LOCKED_ON] = 250;
     this->state = ARWING_STATE_DEMO;
     this->actor.world.rot.x = 0x4000;
-    this->cutsceneMode = ARWING_CUTSCENE_MODE_SETUP;
-    this->cutsceneTimer = defaultCutsceneTimer;
-    this->timers[ARWING_TIMER_ARWING_UPDATE_BG_INFO] = 20;
+    // this->cutsceneMode = ARWING_CUTSCENE_MODE_SETUP;
+    // this->cutsceneTimer = defaultCutsceneTimer;
+    // this->timers[ARWING_TIMER_ARWING_UPDATE_BG_INFO] = 20;
     this->targetPosition.x = player->actor.world.pos.x + random_direction.x;
     this->targetPosition.y = player->actor.world.pos.y + 300.0f;
     this->targetPosition.z = player->actor.world.pos.z + random_direction.z;
+    this->laser_count = 0;
     // Actor_PlaySfx(&this->actor, NA_SE_IT_SWORD_REFLECT_MG);
         // }
 
@@ -351,336 +355,365 @@ void EnArwing_Update(Actor* thisx, PlayState* play2) {
 
     this->frameCounter++;
 
-    // if (this->drawMode != ARWING_DRAW_MODE_EFFECT) 
-    {
-        for (i = 0; i < 3; i++) {
-            if (this->timers[i] != 0) {
-                this->timers[i]--;
+    for (i = 0; i < 3; i++) {
+        if (this->timers[i] != 0) {
+            this->timers[i]--;
+        }
+    }
+
+    // if (this->cutsceneTimer != 0) {
+    //     this->cutsceneTimer--;
+    // }
+
+    switch (this->state) {
+        case ARWING_STATE_DEMO:
+        case ARWING_STATE_TARGET_LOCKED:
+        case ARWING_STATE_FLYING: {
+            f32 vectorToTargetX;
+            f32 vectorToTargetY;
+            f32 vectorToTargetZ;
+            s16 worldRotationTargetX;
+            s16 worldRotationTargetY;
+            f32 loseTargetLockDistance;
+            s16 worldRotationTargetZ;
+            s32 pad;
+
+            // Check if the Arwing should crash.
+            if (this->collider.base.acFlags & AC_HIT) 
+            {
+                this->collider.base.acFlags &= ~AC_HIT;
+                this->crashingTimer = 20;
+                Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_OPA, 5);
+                this->acceleration.x = Rand_CenteredFloat(15.0f);
+                this->acceleration.y = Rand_CenteredFloat(15.0f);
+                this->acceleration.z = Rand_CenteredFloat(15.0f);
+
+                // Actor_PlaySfx(&this->actor, NA_SE_EN_FANTOM_THUNDER_GND);
+                this->actor.colChkInfo.health--;
+                if ((s8)this->actor.colChkInfo.health <= 0) 
+                {
+                    this->state = ARWING_STATE_CRASHING;
+                    this->actor.velocity.y = 0.0f;
+                    goto state_crashing;
+                }
             }
-        }
 
-        if (this->cutsceneTimer != 0) {
-            this->cutsceneTimer--;
-        }
+            Actor_SetScale(&this->actor, 0.2f);
+            this->actor.speed = 7.0f;
 
-        switch (this->state) {
-            case ARWING_STATE_DEMO:
-            case ARWING_STATE_TARGET_LOCKED:
-            case ARWING_STATE_FLYING: {
-                f32 vectorToTargetX;
-                f32 vectorToTargetY;
-                f32 vectorToTargetZ;
-                s16 worldRotationTargetX;
-                s16 worldRotationTargetY;
-                f32 loseTargetLockDistance;
-                s16 worldRotationTargetZ;
-                s32 pad;
-
-                // Check if the Arwing should crash.
-                if (this->collider.base.acFlags & AC_HIT) 
+            if (this->timers[ARWING_TIMER_ARWING_UPDATE_STATE] == 0) 
+            {
+                if (this->timers[ARWING_TIMER_ARWING_ENTER_LOCKED_ON] == 0) 
                 {
-
-                    this->collider.base.acFlags &= ~AC_HIT;
-                    this->crashingTimer = 20;
-                    Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_OPA, 5);
-                    this->acceleration.x = Rand_CenteredFloat(15.0f);
-                    this->acceleration.y = Rand_CenteredFloat(15.0f);
-                    this->acceleration.z = Rand_CenteredFloat(15.0f);
-
-                    // Actor_PlaySfx(&this->actor, NA_SE_EN_FANTOM_THUNDER_GND);
-                    this->actor.colChkInfo.health--;
-                    if ((s8)this->actor.colChkInfo.health <= 0) 
-                    {
-                        this->state = ARWING_STATE_CRASHING;
-                        this->actor.velocity.y = 0.0f;
-                        goto state_crashing;
-                    }
-                }
-
-                Actor_SetScale(&this->actor, 0.2f);
-                this->actor.speed = 7.0f;
-
-                if (this->timers[ARWING_TIMER_ARWING_UPDATE_STATE] == 0) 
-                {
-                    if (this->timers[ARWING_TIMER_ARWING_ENTER_LOCKED_ON] == 0) 
-                    {
-                        this->state = ARWING_STATE_TARGET_LOCKED;
-                        this->timers[ARWING_TIMER_ARWING_UPDATE_STATE] = 300;
-                    } 
-                    else 
-                    {
-                        this->state = ARWING_STATE_FLYING;
-                        this->timers[ARWING_TIMER_ARWING_UPDATE_STATE] = (s16)Rand_ZeroFloat(50.0f) + 20;
-
-                        // if (this->actor.params == ARWING_ARWING) 
-                        {
-                            // Set the Arwing to fly in a circle around the player.
-                            f32 targetCircleX = Math_SinS(player->actor.shape.rot.y) * 400.0f;
-                            f32 targetCircleZ = Math_CosS(player->actor.shape.rot.y) * 400.0f;
-
-                            this->targetPosition.x = Rand_CenteredFloat(700.0f) + (player->actor.world.pos.x + targetCircleX);
-                            this->targetPosition.y = Rand_ZeroFloat(200.0f) + player->actor.world.pos.y + 150.0f;
-                            this->targetPosition.z = Rand_CenteredFloat(700.0f) + (player->actor.world.pos.z + targetCircleZ);
-                        } 
-                        // else 
-                        // {
-                        //     // Set the Arwing to fly to a random position.
-                        //     this->targetPosition.x = Rand_CenteredFloat(700.0f);
-                        //     this->targetPosition.y = Rand_ZeroFloat(200.0f) + 150.0f;
-                        //     this->targetPosition.z = Rand_CenteredFloat(700.0f);
-                        // }
-                    }
-
-                    this->targetDirection.x = this->targetDirection.y = this->targetDirection.z = 0.0f;
-                }
-
-                rotationScale = 10;
-                xRotationTarget = 0x800;
-                loseTargetLockDistance = 100.0f;
-                if (this->state == ARWING_STATE_TARGET_LOCKED) 
-                {
-                    // Set the Arwing to fly towards the player.
-                    this->targetPosition.x = player->actor.world.pos.x;
-                    this->targetPosition.y = player->actor.world.pos.y + 40.0f;
-                    this->targetPosition.z = player->actor.world.pos.z;
-                    rotationScale = 7;
-                    xRotationTarget = 0x1000;
-                    loseTargetLockDistance = 150.0f;
-                } 
-                else if (this->state == ARWING_STATE_DEMO) 
-                {
-                    // Move the Arwing for the intro cutscene.
-
-                    // Do a Barrel Roll!
-                    this->roll += 0.5f;
-                    if (this->roll > M_PI * 2) 
-                    {
-                        this->roll -= M_PI * 2;
-                    }
-
-                    // Set the Arwing to fly to a hardcoded position.
-                    // this->targetPosition.x = 0.0f;
-                    // this->targetPosition.y = 300.0f;
-                    // this->targetPosition.z = 0.0f;
-                    loseTargetLockDistance = 100.0f;
-                }
-
-                // If the Arwing is not in cutscene state, smoothly update the roll to zero.
-                // This will reset the Arwing to be right side up after the cutscene is done.
-                // The cutscene will set the Arwing to do a barrel roll and doesn't end on right side up.
-                if (this->state != ARWING_STATE_DEMO) 
-                {
-                    Math_ApproachZeroF(&this->roll, 0.1f, 0.2f);
-                }
-
-                // Calculate a vector towards the targetted position.
-                vectorToTargetX = this->targetPosition.x - this->actor.world.pos.x;
-                vectorToTargetY = this->targetPosition.y - this->actor.world.pos.y;
-                vectorToTargetZ = this->targetPosition.z - this->actor.world.pos.z;
-
-                // If the Arwing is within a certain distance to the target position, it will be updated to flymode
-                if (sqrtf(SQ(vectorToTargetX) + SQ(vectorToTargetY) + SQ(vectorToTargetZ)) < loseTargetLockDistance) 
-                {
-                    this->timers[ARWING_TIMER_ARWING_UPDATE_STATE] = 0;
-
-                    if (this->state == ARWING_STATE_TARGET_LOCKED) 
-                    {
-                        this->timers[ARWING_TIMER_ARWING_ENTER_LOCKED_ON] = (s16)Rand_ZeroFloat(100.0f) + 100;
-                    }
-                    this->state = ARWING_STATE_FLYING;
-                }
-
-                // Calculate the direction for the Arwing to fly and the rotation for the Arwing
-                // based on the Arwing's direction, and current rotation.
-                worldRotationTargetY = RAD_TO_BINANG(Math_FAtan2F(vectorToTargetX, vectorToTargetZ));
-                worldRotationTargetX = RAD_TO_BINANG(Math_FAtan2F(vectorToTargetY, sqrtf(SQ(vectorToTargetX) + SQ(vectorToTargetZ))));
-
-                if ((worldRotationTargetX < 0) && (this->actor.world.pos.y < this->actor.floorHeight + 20.0f)) 
-                {
-                    worldRotationTargetX = 0;
-                }
-
-                Math_ApproachS(&this->actor.world.rot.x, worldRotationTargetX, rotationScale, this->targetDirection.x);
-                worldRotationTargetZ = Math_SmoothStepToS(&this->actor.world.rot.y, worldRotationTargetY, rotationScale,
-                                                          this->targetDirection.y, 0);
-
-                Math_ApproachF(&this->targetDirection.x, xRotationTarget, 1.0f, 0x100);
-                this->targetDirection.y = this->targetDirection.x;
-                if (ABS(worldRotationTargetZ) < 0x1000) 
-                {
-                    Math_ApproachS(&this->actor.world.rot.z, 0, 15, this->targetDirection.z);
-                    Math_ApproachF(&this->targetDirection.z, 0x500, 1.0f, 0x100);
-
-                    // Check if the Arwing should fire its laser.
-                    if ((this->frameCounter % 4) == 0 && (Rand_ZeroOne() < 0.75f) && (this->state == ARWING_STATE_TARGET_LOCKED)) 
-                    {
-                        this->shouldShootLaser = true;
-                    }
+                    this->state = ARWING_STATE_TARGET_LOCKED;
+                    this->timers[ARWING_TIMER_ARWING_UPDATE_STATE] = 300;
                 } 
                 else 
                 {
-                    worldRotationTargetZ = worldRotationTargetZ > 0 ? -0x2500 : 0x2500;
-                    Math_ApproachS(&this->actor.world.rot.z, worldRotationTargetZ, rotationScale, this->targetDirection.z);
-                    Math_ApproachF(&this->targetDirection.z, 0x1000, 1.0f, 0x200);
+                    f32 targetCircleX = Math_SinS(player->actor.shape.rot.y) * 400.0f;
+                    f32 targetCircleZ = Math_CosS(player->actor.shape.rot.y) * 400.0f;
+
+                    this->state = ARWING_STATE_FLYING;
+                    this->timers[ARWING_TIMER_ARWING_UPDATE_STATE] = (s16)Rand_ZeroFloat(50.0f) + 20;
+
+                    // if (this->actor.params == ARWING_ARWING) 
+                    // {
+                        // Set the Arwing to fly in a circle around the player.
+                    this->targetPosition.x = Rand_CenteredFloat(700.0f) + (player->actor.world.pos.x + targetCircleX);
+                    this->targetPosition.y = Rand_ZeroFloat(200.0f) + player->actor.world.pos.y + 150.0f;
+                    this->targetPosition.z = Rand_CenteredFloat(700.0f) + (player->actor.world.pos.z + targetCircleZ);
+                    // } 
+                    // else 
+                    // {
+                    //     // Set the Arwing to fly to a random position.
+                    //     this->targetPosition.x = Rand_CenteredFloat(700.0f);
+                    //     this->targetPosition.y = Rand_ZeroFloat(200.0f) + 150.0f;
+                    //     this->targetPosition.z = Rand_CenteredFloat(700.0f);
+                    // }
                 }
-                this->actor.shape.rot = this->actor.world.rot;
-                this->actor.shape.rot.x = -this->actor.shape.rot.x;
 
-                // Update the Arwing's velocity.
-                // Actor_UpdateVelocityWithoutGravity(&this->actor);
-                // Actor_UpdatePos(&this->actor);
-                Actor_MoveWithoutGravity(&this->actor);
-                this->actor.velocity.x += this->acceleration.x;
-                this->actor.velocity.y += this->acceleration.y;
-                this->actor.velocity.z += this->acceleration.z;
-                Math_ApproachZeroF(&this->acceleration.x, 1.0f, 1.0f);
-                Math_ApproachZeroF(&this->acceleration.y, 1.0f, 1.0f);
-                Math_ApproachZeroF(&this->acceleration.z, 1.0f, 1.0f);
-
-                // Fire the Arwing laser.
-                // if (this->shouldShootLaser) {
-                //     this->shouldShootLaser = false;
-                //     Actor_Spawn(&play->actorCtx, play, ACTOR_EN_CLEAR_TAG, this->actor.world.pos.x,
-                //                 this->actor.world.pos.y, this->actor.world.pos.z, this->actor.world.rot.x,
-                //                 this->actor.world.rot.y, this->actor.world.rot.z, ARWING_ARWING);
-                // }
-                FALLTHROUGH;
+                this->targetDirection.x = this->targetDirection.y = this->targetDirection.z = 0.0f;
             }
-            case ARWING_STATE_CRASHING:
-            state_crashing:
-                // if (this->crashingTimer != 0) {
-                //     this->crashingTimer--;
-                // }
 
-                // Actor_UpdatePos(&this->actor);
+            rotationScale = 10;
+            xRotationTarget = 0x800;
+            loseTargetLockDistance = 100.0f;
+            if (this->state == ARWING_STATE_TARGET_LOCKED) 
+            {
+                // Set the Arwing to fly towards the player.
+                this->targetPosition.x = player->actor.world.pos.x;
+                this->targetPosition.y = player->actor.world.pos.y + 40.0f;
+                this->targetPosition.z = player->actor.world.pos.z;
+                rotationScale = 7;
+                xRotationTarget = 0x1000;
+                loseTargetLockDistance = 150.0f;
+            } 
+            else if (this->state == ARWING_STATE_DEMO) 
+            {
+                // Move the Arwing for the intro cutscene.
 
-                // Actor_SetFocus(&this->actor, 0.0f);
+                // Do a Barrel Roll!
+                this->roll += 0.5f;
+                if (this->roll > M_PI * 2) 
+                {
+                    this->roll -= M_PI * 2;
+                }
 
-                // // Update Arwing collider to better match a ground collision.
-                // this->collider.dim.radius = 20;
-                // this->collider.dim.height = 15;
-                // this->collider.dim.yShift = -5;
-                // Collider_UpdateCylinder(&this->actor, &this->collider);
+                // Set the Arwing to fly to a hardcoded position.
+                // this->targetPosition.x = 0.0f;
+                // this->targetPosition.y = 300.0f;
+                // this->targetPosition.z = 0.0f;
+                loseTargetLockDistance = 100.0f;
+            }
 
-                // CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
-                // CollisionCheck_SetAT(play, &play->colChkCtx, &this->collider.base);
+            // If the Arwing is not in cutscene state, smoothly update the roll to zero.
+            // This will reset the Arwing to be right side up after the cutscene is done.
+            // The cutscene will set the Arwing to do a barrel roll and doesn't end on right side up.
+            if (this->state != ARWING_STATE_DEMO) 
+            {
+                Math_ApproachZeroF(&this->roll, 0.1f, 0.2f);
+            }
 
-                // if (this->timers[ARWING_TIMER_ARWING_UPDATE_BG_INFO] == 0) {
-                //     // Actor_UpdateBgCheckInfo(play, &this->actor, 50.0f, 30.0f, 100.0f,
-                //     //                         UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
-                //     EnClearTag_CalculateFloorTangent(this);
-                // }
+            // Calculate a vector towards the targetted position.
+            vectorToTargetX = this->targetPosition.x - this->actor.world.pos.x;
+            vectorToTargetY = this->targetPosition.y - this->actor.world.pos.y;
+            vectorToTargetZ = this->targetPosition.z - this->actor.world.pos.z;
 
-                // if (this->state == ARWING_STATE_CRASHING) {
-                //     // Create fire effects while the Arwing crashes.
-                //     EnClearTag_CreateFireEffect(play, &this->actor.world.pos, 1.0f);
+            // If the Arwing is within a certain distance to the target position, it will be updated to flymode
+            if (sqrtf(SQ(vectorToTargetX) + SQ(vectorToTargetY) + SQ(vectorToTargetZ)) < loseTargetLockDistance) 
+            {
+                this->timers[ARWING_TIMER_ARWING_UPDATE_STATE] = 0;
 
-                //     // Causes the Arwing to roll around seemingly randomly while crashing.
-                //     this->roll -= 0.5f;
-                //     this->actor.velocity.y -= 0.2f;
-                //     this->actor.shape.rot.x += 0x10;
+                if (this->state == ARWING_STATE_TARGET_LOCKED) 
+                {
+                    this->timers[ARWING_TIMER_ARWING_ENTER_LOCKED_ON] = (s16)Rand_ZeroFloat(100.0f) + 100;
+                }
+                this->state = ARWING_STATE_FLYING;
+            }
 
-                //     // Actor_PlaySfx(&this->actor, NA_SE_EN_DODO_K_BREATH - SFX_FLAG);
+            // Calculate the direction for the Arwing to fly and the rotation for the Arwing
+            // based on the Arwing's direction, and current rotation.
+            worldRotationTargetY = RAD_TO_BINANG(Math_FAtan2F(vectorToTargetX, vectorToTargetZ));
+            worldRotationTargetX = RAD_TO_BINANG(Math_FAtan2F(vectorToTargetY, sqrtf(SQ(vectorToTargetX) + SQ(vectorToTargetZ))));
 
-                //     // Check if the Arwing has hit the ground or a wall.
-                //     if (this->actor.bgCheckFlags & (BGCHECKFLAG_GROUND | BGCHECKFLAG_WALL)) {
-                //         this->shouldExplode = true;
+            if ((worldRotationTargetX < 0) && (this->actor.world.pos.y < this->actor.floorHeight + 20.0f)) 
+            {
+                worldRotationTargetX = 0;
+            }
 
-                //         if (this->drawMode != ARWING_DRAW_MODE_ARWING) {
-                //             this->drawMode = ARWING_DRAW_MODE_EFFECT;
-                //             this->deathTimer = 70;
-                //             // this->actor.flags &= ~ACTOR_FLAG_0;
-                //         } else {
-                //             Actor_Kill(&this->actor);
-                //         }
-                //     }
-                // }
-                break;
+            Math_ApproachS(&this->actor.world.rot.x, worldRotationTargetX, rotationScale, this->targetDirection.x);
+            worldRotationTargetZ = Math_SmoothStepToS(&this->actor.world.rot.y, worldRotationTargetY, rotationScale,
+                                                        this->targetDirection.y, 0);
 
-            // case ARWING_STATE_LASER:
-            //     Actor_UpdatePos(&this->actor);
+            Math_ApproachF(&this->targetDirection.x, xRotationTarget, 1.0f, 0x100);
+            this->targetDirection.y = this->targetDirection.x;
+            if (ABS(worldRotationTargetZ) < 0x1000) 
+            {
+                Math_ApproachS(&this->actor.world.rot.z, 0, 15, this->targetDirection.z);
+                Math_ApproachF(&this->targetDirection.z, 0x500, 1.0f, 0x100);
 
-            //     // Check if the laser has hit a target.
-            //     if (this->collider.base.atFlags & AT_HIT) {
-            //         hasAtHit = true;
-            //     }
+                // Check if the Arwing should fire its laser.
+                if ((this->frameCounter % 4) == 0 && (Rand_ZeroOne() < 0.75f) && (this->state == ARWING_STATE_TARGET_LOCKED) &&
+                    this->laser_count < EN_ARWING_MAX_LASORS) 
+                {
+                    // this->shouldShootLaser = true;
+                    Actor_PlaySfx(&this->actor, NA_SE_IT_SWORD_REFLECT_MG);
+                }
+            } 
+            else 
+            {
+                worldRotationTargetZ = worldRotationTargetZ > 0 ? -0x2500 : 0x2500;
+                Math_ApproachS(&this->actor.world.rot.z, worldRotationTargetZ, rotationScale, this->targetDirection.z);
+                Math_ApproachF(&this->targetDirection.z, 0x1000, 1.0f, 0x200);
+            }
+            this->actor.shape.rot = this->actor.world.rot;
+            this->actor.shape.rot.x = -this->actor.shape.rot.x;
 
-            //     // Set laser collider properties.
-            //     this->collider.dim.radius = 23;
-            //     this->collider.dim.height = 25;
-            //     this->collider.dim.yShift = -10;
-            //     Collider_UpdateCylinder(&this->actor, &this->collider);
-            //     CollisionCheck_SetAT(play, &play->colChkCtx, &this->collider.base);
-            //     // Actor_UpdateBgCheckInfo(play, &this->actor, 50.0f, 80.0f, 100.0f,
-            //     //                         UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
+            // Update the Arwing's velocity.
+            Actor_UpdateVelocityWithoutGravity(&this->actor);
+            this->actor.velocity.x += this->acceleration.x;
+            this->actor.velocity.y += this->acceleration.y;
+            this->actor.velocity.z += this->acceleration.z;
+            Math_ApproachZeroF(&this->acceleration.x, 1.0f, 1.0f);
+            Math_ApproachZeroF(&this->acceleration.y, 1.0f, 1.0f);
+            Math_ApproachZeroF(&this->acceleration.z, 1.0f, 1.0f);
 
-            //     // Check if the laser has hit a target, timed out, or hit the ground or a wall.
-            //     if ((this->actor.bgCheckFlags & (BGCHECKFLAG_GROUND | BGCHECKFLAG_WALL)) || hasAtHit ||
-            //         this->timers[ARWING_TIMER_LASER_DEATH] == 0) {
-            //         // Kill the laser.
-            //         Actor_Kill(&this->actor);
-            //         // Player laser sound effect if the laser did not time out.
-            //         if (this->timers[ARWING_TIMER_LASER_DEATH] != 0) {
-            //             // SfxSource_PlaySfxAtFixedWorldPos(play, &this->actor.world.pos, 20, NA_SE_EN_FANTOM_THUNDER_GND);
-            //         }
-            //     }
-            //     break;
-        }
-
-        if (this->state < ARWING_STATE_LASER) {
-            // Play the Arwing cutscene.
-            // PRINTF("DEMO_MODE %d\n", this->cutsceneMode);
-            // PRINTF("CAMERA_NO %d\n", this->subCamId);
-
-            // if (this->cutsceneMode != ARWING_CUTSCENE_MODE_NONE) {
-            //     f32 subCamCircleX;
-            //     f32 subCamCircleZ;
-            //     s16 cutsceneTimer;
-            //     Vec3f subCamEyeNext;
-            //     Vec3f subCamAtNext;
-
-            //     switch (this->cutsceneMode) {
-            //         case ARWING_CUTSCENE_MODE_SETUP:
-            //             // Initializes Arwing cutscene camera data.
-            //             this->cutsceneMode = ARWING_CUTSCENE_MODE_PLAY;
-            //             Cutscene_StartManual(play, &play->csCtx);
-            //             this->subCamId = Play_CreateSubCamera(play);
-            //             // Play_ChangeCameraStatus(play, CAM_ID_MAIN, CAM_STAT_WAIT);
-            //             // Play_ChangeCameraStatus(play, this->subCamId, CAM_STAT_ACTIVE);
-            //             FALLTHROUGH;
-            //         case ARWING_CUTSCENE_MODE_PLAY:
-            //             // Update the Arwing cutscene camera to spin around in a circle.
-            //             cutsceneTimer = this->frameCounter * 128;
-            //             subCamCircleX = Math_SinS(cutsceneTimer) * 200.0f;
-            //             subCamCircleZ = Math_CosS(cutsceneTimer) * 200.0f;
-            //             subCamEyeNext.x = this->actor.world.pos.x + subCamCircleX;
-            //             subCamEyeNext.y = 200.0f;
-            //             subCamEyeNext.z = this->actor.world.pos.z + subCamCircleZ;
-            //             subCamAtNext = this->actor.world.pos;
-            //             break;
-            //     }
-
-            //     // Make the Arwing cutscene camera approach the target.
-            //     if (this->subCamId != SUB_CAM_ID_DONE) {
-            //         Math_ApproachF(&this->subCamEye.x, subCamEyeNext.x, 0.1f, 500.0f);
-            //         Math_ApproachF(&this->subCamEye.y, subCamEyeNext.y, 0.1f, 500.0f);
-            //         Math_ApproachF(&this->subCamEye.z, subCamEyeNext.z, 0.1f, 500.0f);
-            //         Math_ApproachF(&this->subCamAt.x, subCamAtNext.x, 0.2f, 500.0f);
-            //         Math_ApproachF(&this->subCamAt.y, subCamAtNext.y, 0.2f, 500.0f);
-            //         Math_ApproachF(&this->subCamAt.z, subCamAtNext.z, 0.2f, 500.0f);
-            //         Play_SetCameraAtEye(play, this->subCamId, &this->subCamAt, &this->subCamEye);
-            //     }
-
-            //     // Cutscene has finished.
-            //     // if (this->cutsceneTimer == 1) {
-            //     //     Play_ReturnToMainCam(play, this->subCamId, 0);
-            //     //     // CLEAR_TAG_CUTSCENE_MODE_NONE / SUB_CAM_ID_DONE
-            //     //     this->cutsceneMode = this->subCamId = 0;
-            //     //     Cutscene_StopManual(play, &play->csCtx);
-            //     // }
+            // Fire the Arwing laser.
+            // if (this->shouldShootLaser) {
+            //     this->shouldShootLaser = false;
+            //     Actor_Spawn(&play->actorCtx, play, ACTOR_EN_CLEAR_TAG, this->actor.world.pos.x,
+            //                 this->actor.world.pos.y, this->actor.world.pos.z, this->actor.world.rot.x,
+            //                 this->actor.world.rot.y, this->actor.world.rot.z, ARWING_ARWING);
             // }
+            FALLTHROUGH;
         }
+        case ARWING_STATE_CRASHING:
+        state_crashing:
+            if (this->crashingTimer != 0) {
+                this->crashingTimer--;
+            }
+
+            // Actor_MoveWithoutGravity(&this->actor);
+            Actor_UpdatePos(&this->actor);
+
+            Actor_SetFocus(&this->actor, 0.0f);
+
+            // // Update Arwing collider to better match a ground collision.
+            this->collider.dim.radius = 20;
+            this->collider.dim.height = 15;
+            this->collider.dim.yShift = -5;
+            Collider_UpdateCylinder(&this->actor, &this->collider);
+
+            CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
+            CollisionCheck_SetAT(play, &play->colChkCtx, &this->collider.base);
+
+            Actor_UpdateBgCheckInfo(play, &this->actor, 50.0f, 30.0f, 100.0f, 
+                UPDBGCHECKINFO_FLAG_1 | UPDBGCHECKINFO_FLAG_2 | UPDBGCHECKINFO_FLAG_4);
+            EnArwing_CalculateFloorTangent(this);
+            
+
+            // if (this->timers[ARWING_TIMER_ARWING_UPDATE_BG_INFO] == 0) {
+            //     // Actor_UpdateBgCheckInfo(play, &this->actor, 50.0f, 30.0f, 100.0f,
+            //     //                         UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
+            //     EnClearTag_CalculateFloorTangent(this);
+            // }
+
+            if (this->state == ARWING_STATE_CRASHING) {
+                // Create fire effects while the Arwing crashes.
+                u32 index;
+                EffectSsDustInitParams trail_params;
+
+                // Causes the Arwing to roll around seemingly randomly while crashing.
+                this->roll -= 0.5f;
+                this->actor.velocity.y -= 0.2f;
+                this->actor.shape.rot.x += 0x10;
+
+                Audio_PlaySfx_AtPosWithFreq(&this->actor.world.pos, NA_SE_EN_DODO_J_BREATH - SFX_FLAG, 0.5f);
+
+                trail_params.velocity = gZeroVec3f;
+                trail_params.accel = gZeroVec3f;
+                // trail_params.scaleStep = 10;
+                trail_params.primColor.r = 255;
+                trail_params.primColor.g = 180;
+                trail_params.primColor.b = 50;
+                trail_params.primColor.a = 255;
+                trail_params.envColor.r = 0;
+                trail_params.envColor.g = 0;
+                trail_params.envColor.b = 0;
+                trail_params.envColor.a = 0;
+                trail_params.updateMode = DUST_UPDATE_FIRE;
+
+
+                for(index = 0; index < 12; index++)
+                {
+                    Vec3f smoke_position = this->actor.world.pos;
+                    smoke_position.x += Rand_CenteredFloat(16.0f);
+                    smoke_position.y += Rand_CenteredFloat(16.0f);
+                    smoke_position.z += Rand_CenteredFloat(16.0f);
+                    trail_params.scale = Rand_S16Offset(60, 120);
+                    trail_params.scaleStep = trail_params.scale / 10;
+                    trail_params.life = Rand_S16Offset(10, 50);
+                    trail_params.pos = smoke_position;
+                    EffectSs_Spawn(play, EFFECT_SS_DUST, 0, &trail_params);
+                }
+
+                // Check if the Arwing has hit the ground or a wall.
+                if (this->actor.bgCheckFlags & (BGCHECKFLAG_GROUND | BGCHECKFLAG_WALL)) 
+                {
+                    
+                    EnBom *bomb = (EnBom *)Actor_Spawn(&play->actorCtx, play, ACTOR_EN_BOM, 
+                        this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
+                        0, 0, 0, BOMB_TYPE_ARROW);
+                    bomb->timer = 0;
+                    Actor_Kill(&this->actor);
+                    this->shouldExplode = true;
+                }
+            }
+            break;
+
+        // case ARWING_STATE_LASER:
+        //     Actor_UpdatePos(&this->actor);
+
+        //     // Check if the laser has hit a target.
+        //     if (this->collider.base.atFlags & AT_HIT) {
+        //         hasAtHit = true;
+        //     }
+
+        //     // Set laser collider properties.
+        //     this->collider.dim.radius = 23;
+        //     this->collider.dim.height = 25;
+        //     this->collider.dim.yShift = -10;
+        //     Collider_UpdateCylinder(&this->actor, &this->collider);
+        //     CollisionCheck_SetAT(play, &play->colChkCtx, &this->collider.base);
+        //     // Actor_UpdateBgCheckInfo(play, &this->actor, 50.0f, 80.0f, 100.0f,
+        //     //                         UPDBGCHECKINFO_FLAG_0 | UPDBGCHECKINFO_FLAG_2);
+
+        //     // Check if the laser has hit a target, timed out, or hit the ground or a wall.
+        //     if ((this->actor.bgCheckFlags & (BGCHECKFLAG_GROUND | BGCHECKFLAG_WALL)) || hasAtHit ||
+        //         this->timers[ARWING_TIMER_LASER_DEATH] == 0) {
+        //         // Kill the laser.
+        //         Actor_Kill(&this->actor);
+        //         // Player laser sound effect if the laser did not time out.
+        //         if (this->timers[ARWING_TIMER_LASER_DEATH] != 0) {
+        //             // SfxSource_PlaySfxAtFixedWorldPos(play, &this->actor.world.pos, 20, NA_SE_EN_FANTOM_THUNDER_GND);
+        //         }
+        //     }
+        //     break;
     }
+
+    // if (this->state < ARWING_STATE_LASER) {
+        // Play the Arwing cutscene.
+        // PRINTF("DEMO_MODE %d\n", this->cutsceneMode);
+        // PRINTF("CAMERA_NO %d\n", this->subCamId);
+
+        // if (this->cutsceneMode != ARWING_CUTSCENE_MODE_NONE) {
+        //     f32 subCamCircleX;
+        //     f32 subCamCircleZ;
+        //     s16 cutsceneTimer;
+        //     Vec3f subCamEyeNext;
+        //     Vec3f subCamAtNext;
+
+        //     switch (this->cutsceneMode) {
+        //         case ARWING_CUTSCENE_MODE_SETUP:
+        //             // Initializes Arwing cutscene camera data.
+        //             this->cutsceneMode = ARWING_CUTSCENE_MODE_PLAY;
+        //             Cutscene_StartManual(play, &play->csCtx);
+        //             this->subCamId = Play_CreateSubCamera(play);
+        //             // Play_ChangeCameraStatus(play, CAM_ID_MAIN, CAM_STAT_WAIT);
+        //             // Play_ChangeCameraStatus(play, this->subCamId, CAM_STAT_ACTIVE);
+        //             FALLTHROUGH;
+        //         case ARWING_CUTSCENE_MODE_PLAY:
+        //             // Update the Arwing cutscene camera to spin around in a circle.
+        //             cutsceneTimer = this->frameCounter * 128;
+        //             subCamCircleX = Math_SinS(cutsceneTimer) * 200.0f;
+        //             subCamCircleZ = Math_CosS(cutsceneTimer) * 200.0f;
+        //             subCamEyeNext.x = this->actor.world.pos.x + subCamCircleX;
+        //             subCamEyeNext.y = 200.0f;
+        //             subCamEyeNext.z = this->actor.world.pos.z + subCamCircleZ;
+        //             subCamAtNext = this->actor.world.pos;
+        //             break;
+        //     }
+
+        //     // Make the Arwing cutscene camera approach the target.
+        //     if (this->subCamId != SUB_CAM_ID_DONE) {
+        //         Math_ApproachF(&this->subCamEye.x, subCamEyeNext.x, 0.1f, 500.0f);
+        //         Math_ApproachF(&this->subCamEye.y, subCamEyeNext.y, 0.1f, 500.0f);
+        //         Math_ApproachF(&this->subCamEye.z, subCamEyeNext.z, 0.1f, 500.0f);
+        //         Math_ApproachF(&this->subCamAt.x, subCamAtNext.x, 0.2f, 500.0f);
+        //         Math_ApproachF(&this->subCamAt.y, subCamAtNext.y, 0.2f, 500.0f);
+        //         Math_ApproachF(&this->subCamAt.z, subCamAtNext.z, 0.2f, 500.0f);
+        //         Play_SetCameraAtEye(play, this->subCamId, &this->subCamAt, &this->subCamEye);
+        //     }
+
+        //     // Cutscene has finished.
+        //     // if (this->cutsceneTimer == 1) {
+        //     //     Play_ReturnToMainCam(play, this->subCamId, 0);
+        //     //     // CLEAR_TAG_CUTSCENE_MODE_NONE / SUB_CAM_ID_DONE
+        //     //     this->cutsceneMode = this->subCamId = 0;
+        //     //     Cutscene_StopManual(play, &play->csCtx);
+        //     // }
+        // }
+    // }
 
     // Explode the Arwing
     // if (this->shouldExplode) {
@@ -718,7 +751,8 @@ void EnArwing_Update(Actor* thisx, PlayState* play2) {
     //                                       Rand_ZeroFloat(0.15f) + 0.075f, this->actor.floorHeight);
     //     }
     // }
-    Actor_UpdateBgCheckInfo(play, &this->actor, 50.0f, 30.0f, 100.0f, UPDBGCHECKINFO_FLAG_1 | UPDBGCHECKINFO_FLAG_2 | UPDBGCHECKINFO_FLAG_4);
+    // Actor_UpdateBgCheckInfo(play, &this->actor, 50.0f, 30.0f, 100.0f, UPDBGCHECKINFO_FLAG_1 | UPDBGCHECKINFO_FLAG_2 | UPDBGCHECKINFO_FLAG_4);
+    // Actor_SetFocus(&this->actor, 40.0f * this->actor.scale.y);
     // if (this->drawMode != ARWING_DRAW_MODE_ARWING) {
     //     // Check if the Arwing should be removed.
     //     if ((this->drawMode == ARWING_DRAW_MODE_EFFECT) && (DECR(this->deathTimer) == 0)) {

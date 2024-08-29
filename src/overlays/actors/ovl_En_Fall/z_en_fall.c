@@ -754,11 +754,12 @@ void EnFall_Moon_ChaosStuff(PlayState *play, EnFall *this)
     Vec3f up_axis = {0.0f, 1.0f, 0.0f};
     Vec3f forward_axis = {0.0f, 0.0f, 1.0f};
 
-    struct ChaosCode *code = Chaos_GetCode(CHAOS_CODE_MOON_DANCE);
+    // struct ChaosCode *code = Chaos_GetCode(CHAOS_CODE_MOON_DANCE);
 
-    if(code != NULL)
+    // if(code != NULL)
+    if(Chaos_IsCodeActive(CHAOS_CODE_MOON_DANCE))
     {
-        if(code->data == CHAOS_MOON_MOVE_HYPE)
+        if(gChaosContext.moon.moon_dance == CHAOS_MOON_MOVE_HYPE)
         {
             if(gChaosContext.moon.bob > 0.0f)
             {
@@ -773,13 +774,13 @@ void EnFall_Moon_ChaosStuff(PlayState *play, EnFall *this)
         }
         else
         {
-            if(code->data & CHAOS_MOON_MOVE_BEEGER)
+            if(gChaosContext.moon.moon_dance & CHAOS_MOON_MOVE_BEEGER)
             {
                 f32 scale = 1.0f + Rand_ZeroOne() * 2.0f;
                 Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
             }
 
-            if(code->data & CHAOS_MOON_MOVE_SPEEN)
+            if(gChaosContext.moon.moon_dance & CHAOS_MOON_MOVE_SPEEN)
             {
                 Matrix_RotateAxisF(gChaosContext.moon.yaw, &up_axis, MTXMODE_APPLY);
                 Matrix_RotateAxisF(gChaosContext.moon.pitch, &forward_axis, MTXMODE_APPLY);
@@ -787,18 +788,18 @@ void EnFall_Moon_ChaosStuff(PlayState *play, EnFall *this)
                 gChaosContext.moon.yaw += 0.39f;
             }
 
-            if(code->data & (CHAOS_MOON_MOVE_BOB | CHAOS_MOON_MOVE_SWAY))
+            if(gChaosContext.moon.moon_dance & (CHAOS_MOON_MOVE_BOB | CHAOS_MOON_MOVE_SWAY))
             {
                 f32 bob = 0.0f;
                 f32 sway = 0.0f;
 
-                if(code->data & CHAOS_MOON_MOVE_BOB)
+                if(gChaosContext.moon.moon_dance & CHAOS_MOON_MOVE_BOB)
                 {
                     bob = sinf(gChaosContext.moon.bob);
                     gChaosContext.moon.bob = fmodf(gChaosContext.moon.bob + 0.12f, 2.0f * M_PI);
                 }
 
-                if(code->data & CHAOS_MOON_MOVE_SWAY)
+                if(gChaosContext.moon.moon_dance & CHAOS_MOON_MOVE_SWAY)
                 {
                     sway = sinf(gChaosContext.moon.sway);
                     gChaosContext.moon.sway = fmodf(gChaosContext.moon.sway + 0.09f, 2.0f * M_PI);

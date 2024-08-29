@@ -87,6 +87,7 @@ void func_808484F0(Player* this);
 void func_80838A20(PlayState* play, Player* this);
 void func_80839978(PlayState* play, Player* this);
 void func_80839A10(PlayState* play, Player* this);
+s32 func_808482E0(PlayState* play, Player* this);
 s32 Player_SetAction(PlayState* play, Player* this, PlayerActionFunc actionFunc, s32 arg3);
 
 typedef enum AnimSfxType {
@@ -554,25 +555,20 @@ u32 Player_UpdateOutOfShape(Player *this, PlayState *play)
 {
     if(Chaos_IsCodeActive(CHAOS_CODE_OUT_OF_SHAPE))
     {
-        // if(gChaosContext.link.out_of_shape_speed_scale > 0.0f)
-        // {
-        //     gChaosContext.link.out_of_shape_speed_scale *= 0.8f;
-        //     // gChaosContext.link.out_of_shape_state = CHAOS_OUT_OF_SHAPE_STATE_SLOWING_DOWN;
-        // }
-
+        gChaosContext.link.out_of_shape_state = CHAOS_OUT_OF_SHAPE_STATE_SLOWING_DOWN;
         gChaosContext.link.out_of_shape_speed_scale *= 0.8f;
 
         if(gChaosContext.link.out_of_shape_speed_scale < 0.1f)
         {
             gChaosContext.link.out_of_shape_speed_scale = 0.0f;
-            // gChaosContext.link.out_of_shape_state = CHAOS_OUT_OF_SHAPE_STATE_GASPING;
+            gChaosContext.link.out_of_shape_state = CHAOS_OUT_OF_SHAPE_STATE_GASPING;
             return true;
         }
     }
     else
     {
         gChaosContext.link.out_of_shape_speed_scale = 1.0f;
-        // gChaosContext.link.out_of_shape_state = CHAOS_OUT_OF_SHAPE_STATE_NONE;
+        gChaosContext.link.out_of_shape_state = CHAOS_OUT_OF_SHAPE_STATE_NONE;
     }
 
     return false;
@@ -9322,6 +9318,7 @@ void func_8083D168(PlayState* play, Player* this, GetItemEntry* giEntry) {
     Audio_PlaySfx((this->getItemId < GI_NONE) ? NA_SE_SY_GET_BOXITEM : NA_SE_SY_GET_ITEM);
 }
 
+/* get item? */
 s32 Player_ActionChange_2(Player* this, PlayState* play) {
     if (gSaveContext.save.saveInfo.playerData.health != 0) {
         Actor* interactRangeActor = this->interactRangeActor;
@@ -10939,45 +10936,49 @@ Vec3f D_8085D340 = { 0.0f, 50.0f, 0.0f };
 
 struct PlayerDrawListColorUpdate
 {
-    Gfx *draw_list;
+    // Gfx *draw_list;
+    u32  limb_index;
     u32  offset;
 };
 
-struct PlayerDrawListColorUpdate gHumanLinkDrawListColorUpdate[] = {
-    { gLinkHumanTorsoDL,            3},
-    { gLinkHumanCollarDL,           3},
-    { gLinkHumanWaistDL,            3},
-    { gLinkHumanHatDL,              7},
-    { gLinkHumanRightShoulderDL,    7},
-    { gLinkHumanLeftShoulderDL,     7},
-    { gLinkHumanRightThighDL,       7},
-    { gLinkHumanLeftThighDL,        7},
-    { gLinkHumanHeadDL,            81},
+struct PlayerDrawListColorUpdate gHumanLinkUpperDrawListColorUpdate[] = {
+    { PLAYER_LIMB_TORSO,               3},
+    { PLAYER_LIMB_COLLAR,              3},
+    { PLAYER_LIMB_HAT,                 7},
+    { PLAYER_LIMB_RIGHT_SHOULDER,      7},
+    { PLAYER_LIMB_LEFT_SHOULDER,       7},
+    { PLAYER_LIMB_HEAD,                81}
 };
 
-struct PlayerDrawListColorUpdate gDekuLinkDrawListColorUpdate[] = {
-    { gLinkDekuWaistDL,            12},
-    { gLinkDekuHeadDL,             12},
-    { gLinkDekuHatDL,              18}
+struct PlayerDrawListColorUpdate gHumanLinkDownerDrawListColorUpdate[] = {
+    { PLAYER_LIMB_WAIST,               3},
+    { PLAYER_LIMB_RIGHT_THIGH,         3},
+    { PLAYER_LIMB_LEFT_THIGH,          7},
 };
+
+// struct PlayerDrawListColorUpdate gDekuLinkDrawListColorUpdate[] = {
+//     { gLinkDekuWaistDL,            12},
+//     { gLinkDekuHeadDL,             12},
+//     { gLinkDekuHatDL,              18}
+// };
 
 struct PlayerDrawListUpdate
 {
-    struct PlayerDrawListColorUpdate *updates;
-    u32                               update_count;
+    struct PlayerDrawListColorUpdate *upper_updates;
+    struct PlayerDrawListColorUpdate *downer_updates;
+    u32                               uppder_update_count;
+    u32                               downer_update_count;
 
 } gPlayerDrawListUpdates[PLAYER_FORM_MAX] = {
-    /* [PLAYER_FORM_FIERCE_DEITY] = */{NULL, 0},
-    /* [PLAYER_FORM_GORON] = */{NULL, 0},
-    /* [PLAYER_FORM_ZORA]  = */{NULL, 0},
-
-    /* [PLAYER_FORM_DEKU]  = */{
-        /* .updates = */ gDekuLinkDrawListColorUpdate,
-        /* .update_count = */ ARRAY_COUNT(gDekuLinkDrawListColorUpdate)
-    },
+    /* [PLAYER_FORM_FIERCE_DEITY] = */  {NULL, NULL, 0, 0},
+    /* [PLAYER_FORM_GORON] = */         {NULL, NULL, 0, 0},
+    /* [PLAYER_FORM_ZORA]  = */         {NULL, NULL, 0, 0},
+    /* [PLAYER_FORM_DEKU]  = */         {NULL, NULL, 0, 0},
     /* [PLAYER_FORM_HUMAN] = */{
-        /* .updates = */ gHumanLinkDrawListColorUpdate,
-        /* .update_count = */ ARRAY_COUNT(gHumanLinkDrawListColorUpdate)
+        /* .upper_updates = */          gHumanLinkUpperDrawListColorUpdate,
+        /* .downer_updates  =*/         gHumanLinkDownerDrawListColorUpdate,
+        /* .upper_update_count = */     ARRAY_COUNT(gHumanLinkUpperDrawListColorUpdate),
+        /* .downer_update_count = */    ARRAY_COUNT(gHumanLinkDownerDrawListColorUpdate)
     }
 };
 
@@ -10997,12 +10998,18 @@ void Player_SetTunicColor(PlayState *play, Player *this)
 
         // ((Gfx *)SEGMENTED_TO_K0(gLinkDekuHatDL))[19] = color_gfx[0];
         // Actor_SetObjectDependency(play, &this->actor);
-        for(update_index = 0; update_index < player_update->update_count; update_index++)
+        for(update_index = 0; update_index < player_update->uppder_update_count; update_index++)
         {
-            struct PlayerDrawListColorUpdate *update = player_update->updates + update_index;
+            struct PlayerDrawListColorUpdate *update = player_update->upper_updates + update_index;
+            LodLimb *limb = Lib_SegmentedToVirtual(this->skelAnime.skeleton[update->limb_index]);
+            Gfx *draw_list = Lib_SegmentedToVirtual(limb->dLists[0]);
+            draw_list[update->offset] = color_gfx[0];
+            osInvalDCache(&draw_list[update->offset], sizeof(Gfx));
             // gSegments[6] = OS_K0_TO_PHYSICAL(update->draw_list);
             // update->draw_list[update->offset] = color_gfx[0];
-            (*(Gfx *)SEGMENTED_TO_K0(&update->draw_list[update->offset])) = color_gfx[0];
+            // Gfx *draw_list = this->skelAnimeUpper.skeleton[update->limb_index];
+            // ((Gfx *)SEGMENTED_TO_K0(((LodLimb *)SEGMENTED_TO_K0(this->skelAnimeUpper.skeleton[update->limb_index]))->dLists[0]))[update->offset] = color_gfx[0];
+            // (*(Gfx *)SEGMENTED_TO_K0(&limb->dLists[0][update->offset])) = color_gfx[0];
         }
     }
 }
@@ -12342,7 +12349,7 @@ void Player_WaitForNextForm(Actor *this, PlayState *play)
 Color_RGBA8 gRandomFierceDeityFireColors[] = {
     {200, 200, 255, 255},
     {240, 120, 30, 255},
-    {50, 50, 255, 255},
+    {80, 80, 255, 255},
     {200, 200, 50, 255},
     {60, 210, 54, 255}
 };
@@ -12356,49 +12363,47 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     if(CHECK_BTN_ANY(input->press.button, BTN_L))
     {
         // play->nextEntrance = Entrance_Create(gSceneIndex, gEntranceIndex, 0);
-        // play->nextEntrance = ENTRANCE(PIRATES_FORTRESS_INTERIOR, 7);
+        // play->nextEntrance = ENTRANCE(PIRATES_FORTRESS_INTERIOR, 9);
         // Scene_SetExitFade(play);
         // play->transitionTrigger = TRANS_TRIGGER_START;
 
-        // Chaos_ActivateCode(CHAOS_CODE_BOMB_ARROWS, 50);
         // u32 tunic_color = Rand_Next() % 0xffffff;
         // gChaosContext.link.tunic_r = tunic_color;
         // gChaosContext.link.tunic_g = (tunic_color >> 8);
         // gChaosContext.link.tunic_g = (tunic_color >> 16);
-        // Chaos_ActivateCode(CHAOS_CODE_SNEEZE, 15);
-        // Player_UseItem(play, this, ITEM_MASK_FIERCE_DEITY);
+        // Player_SetTunicColor(play, this);
 
-        // EffectSsDeadDbInitParams initParams;
-
-        // Vec3f velocity = {0, 0, 0};
-        // Vec3f accel = {0, 0, 0};
-        // Color_RGBA8 color = {100, 100, 255, 255};
-        // Color_RGBA8 env = {0, 0, 0, 0};
-
-        // gSaveContext.save.playerForm = (gSaveContext.save.playerForm == PLAYER_FORM_HUMAN) ? 
-        //                                     PLAYER_FORM_FIERCE_DEITY : PLAYER_FORM_HUMAN;
-        // this->actor.update = Player_WaitForNextForm;
-        // this->actor.draw = NULL;
-        // this->av1.actionVar1 = 1;
-        // gChaosContext.link.cur_animation = this->skelAnime.animation;
-        // gChaosContext.link.cur_animation_frame = this->skelAnime.curFrame;
-        // gChaosContext.link.cur_animation_play_speed = this->skelAnime.playSpeed;
-        // gChaosContext.link.cur_animation_mode = this->skelAnime.mode;
-
-        // EffectSsDeadDb_Spawn(play, &this->actor.world.pos, &velocity, &accel, &color, &env, 200, 50, 10);
-
-        Chaos_ActivateCode(CHAOS_CODE_RANDOM_FIERCE_DEITY, 25);
+        // Chaos_ActivateCode(CHAOS_CODE_RANDOM_FIERCE_DEITY, 25);
         // Chaos_ActivateCode(CHAOS_CODE_OUT_OF_SHAPE, 10);
+        // Chaos_ActivateCode(CHAOS_CODE_SWAP_HEAL_AND_HURT, 25);
+
+        this->getItemId = GI_RUPEE_BLUE;
+        CutsceneManager_Start(play->playerCsIds[PLAYER_CS_ID_ITEM_GET], &this->actor);
+        // func_808323C0(this, play->playerCsIds[PLAYER_CS_ID_ITEM_GET]);
+        // Player_SetAction(play, this, Player_Action_60, 1);
+        // Player_ActionChange_2(this, play);
+        // func_80837C78(play, this);
+        // func_808482E0(play, this);
+        // CutsceneManager_Queue(play->playerCsIds[PLAYER_CS_ID_ITEM_GET]);
+        
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_R))
     {
+        // play->nextEntrance = ENTRANCE(PIRATES_FORTRESS_INTERIOR, 9);
+        // Scene_SetExitFade(play);
+        // play->transitionTrigger = TRANS_TRIGGER_START;
         // Chaos_ActivateCode(CHAOS_CODE_DIE, 0);
         // Chaos_ActivateCode(CHAOS_CODE_SNEEZE, 10);
         // Chaos_ActivateCode(CHAOS_CODE_LOVELESS_MARRIAGE, 1);
-        Chaos_ActivateCode(CHAOS_CODE_OUT_OF_SHAPE, 5);
-        // Actor_Spawn(&play->actorCtx, play, ACTOR_EN_ARWING, 
-        //     this->actor.world.pos.x, this->actor.world.pos.y + 20.0f, this->actor.world.pos.z, 0, 0, 0, 0);
+        // Chaos_ActivateCode(CHAOS_CODE_OUT_OF_SHAPE, 5);
+        Actor_Spawn(&play->actorCtx, play, ACTOR_EN_ARWING, 
+            this->actor.world.pos.x, this->actor.world.pos.y + 20.0f, this->actor.world.pos.z, 0, 0, 0, 0);
+    }
+
+    if(CHECK_BTN_ANY(input->press.button, BTN_DDOWN))
+    {
+        Chaos_ActivateCode(CHAOS_CODE_OUT_OF_SHAPE, 10);
     }
 
     if(this == GET_PLAYER(play))
@@ -12517,22 +12522,23 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
             func_80833B18(play, this, HIT_TYPE_SHOCK, 0, 0, 0, 0);
         }
 
-        code = Chaos_GetCode(CHAOS_CODE_RANDOM_KNOCKBACK);
+        // code = Chaos_GetCode(CHAOS_CODE_RANDOM_KNOCKBACK);
 
-        if(code != NULL)
+        if(Chaos_IsCodeActive(CHAOS_CODE_RANDOM_KNOCKBACK))
         {
-            code->data--;
+            // code->data--;
+            gChaosContext.link.random_knockback_timer--;
 
             /* TODO: figure out which flags are involved when link is getting up after being tossed
             and wait for them to get cleared, so the effect always applies. */
-            if(code->data == 0)
+            if(gChaosContext.link.random_knockback_timer == 0)
             {
                 f32 horizontal_speed = Rand_ZeroOne() * 20.0f;
                 f32 vertical_speed = Rand_ZeroOne() * 20.0f;
                 s16 hit_angle = Rand_Next() % 0xffff;
                 func_80833B18(play, this, HIT_TYPE_MELEE_HEAVY, horizontal_speed, vertical_speed, hit_angle, 0);
                 Player_PlaySfx(this, NA_SE_SY_OCARINA_ERROR);
-                code->data = 2 + Rand_Next() % 160;
+                gChaosContext.link.random_knockback_timer = 2 + Rand_Next() % 160;
             }
         }
         
@@ -12540,13 +12546,15 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
 
     code = Chaos_GetCode(CHAOS_CODE_TRAP_FLAP);
 
-    if(code != NULL && !(this->stateFlags1 & PLAYER_STATE1_80))
+    // if(code != NULL && !(this->stateFlags1 & PLAYER_STATE1_80))
+    if(Chaos_IsCodeActive(CHAOS_CODE_TRAP_FLAP) && !(this->stateFlags1 & PLAYER_STATE1_80))
     {
-        code->data--;
-        if(code->data == 0)
+        // code->data--;
+        gChaosContext.link.trap_flap_timer--;
+        if(gChaosContext.link.trap_flap_timer == 0)
         {
             Player_AnimSfx_PlayVoice(this, gTrapFlapSounds[Rand_Next() % ARRAY_COUNT(gTrapFlapSounds)]);
-            code->data = 10 + Rand_Next() % 50;
+            gChaosContext.link.trap_flap_timer = 10 + Rand_Next() % 50;
         }
     }
 
@@ -18503,6 +18511,26 @@ void Player_Action_77(Player* this, PlayState* play) {
 
             play->transitionType = TRANS_TYPE_FADE_BLACK_FAST;
             Audio_PlaySfx(NA_SE_OC_ABYSS);
+
+            // if(gChaosContext.link.fierce_deity_state != CHAOS_RANDOM_FIERCE_DEITY_STATE_NONE)
+            // {
+            //     Audio_PlaySfx(NA_SE_OC_ABYSS);
+            // }
+            // if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+            // {
+            //     Audio_PlaySfx(NA_SE_SY_ERROR);
+            // }
+
+            if(gChaosContext.link.fierce_deity_state != CHAOS_RANDOM_FIERCE_DEITY_STATE_NONE &&
+                gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE)
+            {
+                // Audio_PlaySfx(NA_SE_SY_ERROR);
+                /* player drowned as fierce deity, so deactivate the effect to avoid softlocks */
+                Chaos_DeactivateCode(CHAOS_CODE_RANDOM_FIERCE_DEITY);
+                // gChaosContext.link.fierce_deity_counter = RANDOM_FIERCE_DEITY_TIMER;
+                // gChaosContext.link.fierce_deity_state = CHAOS_RANDOM_FIERCE_DEITY_STATE_SWITCH;
+                // gSaveContext.save.playerForm = PLAYER_FORM_HUMAN;
+            }
         } else {
             play->transitionType = TRANS_TYPE_FADE_BLACK;
             gSaveContext.nextTransitionType = TRANS_TYPE_FADE_BLACK;

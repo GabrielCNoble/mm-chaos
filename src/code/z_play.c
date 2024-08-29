@@ -68,6 +68,7 @@ void Play_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
 {
     u32 index;
     u32 scene_index;
+    u32 room_index;
     Player *player = GET_PLAYER(this);
     Camera *camera = Play_GetCamera(this, CAM_ID_MAIN);
     u32 has_ocarina = gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] == ITEM_OCARINA_OF_TIME;
@@ -92,9 +93,11 @@ void Play_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     Chaos_EnableCode(CHAOS_CODE_RANDOM_SCALING);
     Chaos_EnableCode(CHAOS_CODE_BIG_BROTHER);
     Chaos_EnableCode(CHAOS_CODE_WEIRD_SKYBOX);
-
     Chaos_EnableCode(CHAOS_CODE_CHANGE_HEALTH);
     Chaos_EnableCode(CHAOS_CODE_CHANGE_RUPEE);
+    Chaos_EnableCode(CHAOS_CODE_SWAP_HEAL_AND_HURT);
+    Chaos_EnableCode(CHAOS_CODE_RANDOM_FIERCE_DEITY);
+
     if(gSaveContext.save.saveInfo.playerData.isMagicAcquired)
     {
         Chaos_EnableCode(CHAOS_CODE_CHANGE_MAGIC);
@@ -148,9 +151,19 @@ void Play_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
         Chaos_DeactivateCode(CHAOS_CODE_LOW_GRAVITY);
     }
 
+    // if(scene_index != ENTR_SCENE_PIRATES_FORTRESS_INTERIOR || (this->roomCtx.curRoom.num != 14 && this->roomCtx.curRoom.num != 12))
+    // {
+    //     /* random fierce deity disallows changing to zora, so only enable it if the player isn't in an underwater section */
+    //     Chaos_EnableCode(CHAOS_CODE_RANDOM_FIERCE_DEITY);
+    // }
+    // else
+    // {
+    //     Chaos_DeactivateCode(CHAOS_CODE_RANDOM_FIERCE_DEITY);
+    // }
+
     if(has_ocarina)
     {
-        if(!Map_IsInBossScene(this) && CHECK_WEEKEVENTREG(WEEKEVENTREG_59_04))
+        if(!Map_IsInBossScene(this) && CHECK_WEEKEVENTREG(WEEKEVENTREG_ENTERED_SOUTH_CLOCK_TOWN))
         {
             /* don't enable entrance rando until the player enters south clock town.
             Also don't enable it in boss rooms as it could interact badly with the warp 
@@ -158,6 +171,10 @@ void Play_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
             Chaos_EnableCode(CHAOS_CODE_ENTRANCE_RANDO);
             // Chaos_EnableCode(CHAOS_CODE_SINGLE_ACTION_OWL);
             Chaos_UpdateEntrances(this);
+        }
+        else
+        {
+            Chaos_DeactivateCode(CHAOS_CODE_ENTRANCE_RANDO);
         }
     }
 }
@@ -1033,6 +1050,18 @@ const char D_801DFA34[][4] = {
     "h",   "i",  "f",  "fa", "fb", "fc", "fd", "fe",  "ff",  "fg", "fh", "fi", "fj", "fk",
 };
 
+static u16 gChaosJunkItems[] = {
+    // GI_RUPEE_GREEN_LOSE,
+    GI_RECOVERY_HEART,
+    GI_DEKU_STICKS_1,
+    GI_DEKU_NUTS_5,
+    GI_ARROWS_10,
+    GI_DEKU_NUTS_5,
+    GI_BOMBS_5,
+    // GI_SHIELD_DEKU,
+    GI_SHIELD_HERO,
+};
+
 void Play_UpdateMain(PlayState* this) {
     s32 pad;
     Input* input = this->state.input;
@@ -1067,11 +1096,11 @@ void Play_UpdateMain(PlayState* this) {
         //     gChaosContext.chicken.cucco.attackNiwSpawnTimer--;
         // }
         // EnNiw_SpawnAttackNiw(&gChaosContext.chicken.cucco, this);
-        f32 xView;
-        f32 yView;
-        f32 zView;
-        Vec3f newNiwPos;
-        Actor* attackNiw;
+        // f32 xView;
+        // f32 yView;
+        // f32 zView;
+        // Vec3f newNiwPos;
+        // Actor* attackNiw;
 
         if(gChaosContext.chicken.cucco.attackNiwSpawnTimer > 0)
         {
@@ -1085,20 +1114,20 @@ void Play_UpdateMain(PlayState* this) {
 
         if ((gChaosContext.chicken.cucco.attackNiwSpawnTimer == 0) && (gChaosContext.chicken.cucco.attackNiwCount < 14)) 
         {
-            xView = this->view.at.x - this->view.eye.x;
-            yView = this->view.at.y - this->view.eye.y;
-            zView = this->view.at.z - this->view.eye.z;
-            newNiwPos.x = this->view.eye.x + ((Rand_ZeroOne() - 0.5f) * xView);
-            newNiwPos.y = this->view.eye.y + 50.0f + (yView * 0.5f) + Rand_CenteredFloat(0.3f);
-            newNiwPos.z = this->view.eye.z + ((Rand_ZeroOne() - 0.5f) * zView);
+            f32 xView = this->view.at.x - this->view.eye.x;
+            f32 yView = this->view.at.y - this->view.eye.y;
+            f32 zView = this->view.at.z - this->view.eye.z;
+            f32 cucco_x = this->view.eye.x + ((Rand_ZeroOne() - 0.5f) * xView);
+            f32 cucco_y = this->view.eye.y + 50.0f + (yView * 0.5f) + Rand_CenteredFloat(0.3f);
+            f32 cucco_z = this->view.eye.z + ((Rand_ZeroOne() - 0.5f) * zView);
 
-            attackNiw = Actor_SpawnAsChild(&this->actorCtx, &gChaosContext.chicken.cucco.actor, this, ACTOR_EN_ATTACK_NIW, newNiwPos.x,
-                                        newNiwPos.y, newNiwPos.z, 0, 0, 0, ATTACK_NIW_CHAOS);    
+            Actor *cucco = Actor_SpawnAsChild(&this->actorCtx, &gChaosContext.chicken.cucco.actor, this, ACTOR_EN_ATTACK_NIW, cucco_x,
+                                        cucco_y, cucco_z, 0, 0, 0, ATTACK_NIW_CHAOS);    
 
-            if (attackNiw != NULL) {
+            if (cucco != NULL) {
                 gChaosContext.chicken.cucco.attackNiwCount++;
                 gChaosContext.chicken.cucco.attackNiwSpawnTimer = 10;
-                Actor_SetScale(attackNiw, 0.018f);
+                Actor_SetScale(cucco, 0.018f);
             }
         }
     }
@@ -1131,15 +1160,16 @@ void Play_UpdateMain(PlayState* this) {
     //     Chaos_DeactivateCode(CHAOS_CODE_TEXTBOX);
     // }
 
-    code = Chaos_GetCode(CHAOS_CODE_TERRIBLE_MUSIC);
+    // code = Chaos_GetCode(CHAOS_CODE_TERRIBLE_MUSIC);
 
-    if(code != NULL)
+    if(Chaos_IsCodeActive(CHAOS_CODE_TERRIBLE_MUSIC))
     {
-        if(code->timer > 1)
+        // if(code->timer > 1)
+        if(gChaosContext.bgm.change_timer > 1)
         {
-            code->data--;
+            gChaosContext.bgm.change_timer--;
 
-            if(code->data == 0)
+            if(gChaosContext.bgm.change_timer == 0)
             {
                 u16 frequency_duration = Rand_S16Offset(5, 15);
                 u16 tempo_duration = Rand_S16Offset(5, 15);
@@ -1147,11 +1177,11 @@ void Play_UpdateMain(PlayState* this) {
 
                 if(frequency_duration > tempo_duration)
                 {
-                    code->data = frequency_duration;
+                    gChaosContext.bgm.change_timer = frequency_duration;
                 }
                 else
                 {
-                    code->data = tempo_duration;
+                    gChaosContext.bgm.change_timer = tempo_duration;
                 }
 
                 scale = 0.25f + Rand_ZeroOne() * 2.5f;
