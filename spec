@@ -4762,6 +4762,13 @@ beginseg
 endseg
 
 beginseg
+    name "ovl_En_Arwing_Laser"
+    compress
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Arwing_Laser/z_en_arwing_laser.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Arwing_Laser/ovl_En_Arwing_Laser_reloc.o"
+endseg
+
+beginseg
     name "ovl_En_Jgame_Tsn"
     compress
     include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Jgame_Tsn/z_en_jgame_tsn.o"

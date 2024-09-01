@@ -74,8 +74,8 @@ typedef struct EnArwing {
     /* 0x0186 */ s16                deathTimer;
     /* 0x0188 */ Vec3f              floorTangent;
     /* 0x0194 */ ColliderCylinder   collider;
-                 u8                 laser_count;
-    struct EnArwingLaser            lasers[EN_ARWING_MAX_LASORS];
+                //  u8                 laser_count;
+    // struct EnArwingLaser            lasers[EN_ARWING_MAX_LASORS];
     // /* 0x01E0 */ u8 cutsceneMode;
     // /* 0x01E2 */ s16 subCamId;
     // /* 0x01E4 */ Vec3f subCamEye;

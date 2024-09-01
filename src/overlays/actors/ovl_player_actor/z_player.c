@@ -12475,12 +12475,12 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // //     largest_size = size;
         // // }
 
-        Chaos_ActivateCode(CHAOS_CODE_LOVELESS_MARRIAGE, 1);
+        // Chaos_ActivateCode(CHAOS_CODE_STARFOX, 1);
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_R))
     {
-        Chaos_ActivateCode(CHAOS_CODE_CHICKEN_ARISE, 10);
+        // Chaos_ActivateCode(CHAOS_CODE_CHICKEN_ARISE, 10);
         // play->nextEntrance = ENTRANCE(PIRATES_FORTRESS_INTERIOR, 9);
         // Scene_SetExitFade(play);
         // play->transitionTrigger = TRANS_TRIGGER_START;

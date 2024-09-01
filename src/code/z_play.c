@@ -64,14 +64,14 @@ u8 gCanBePushedAroundCodes[] = {
     CHAOS_CODE_OUT_OF_SHAPE
 };
 
-static struct 
-{
-    u8  code;
-    u16 object_id;
-} gObjectLoadCodes[] = {
-    { CHAOS_CODE_LOVELESS_MARRIAGE, OBJECT_RR},
-    { CHAOS_CODE_CHICKEN_ARISE, OBJECT_NIW}
-};
+// static struct 
+// {
+//     u8  code;
+//     u16 object_id;
+// } gObjectLoadCodes[] = {
+//     { CHAOS_CODE_LOVELESS_MARRIAGE, OBJECT_RR},
+//     { CHAOS_CODE_CHICKEN_ARISE, OBJECT_NIW}
+// };
 
 void Play_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
 {
@@ -140,8 +140,10 @@ void Play_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
         Chaos_EnableCode(CHAOS_CODE_DIE);
         Chaos_EnableCode(CHAOS_CODE_ACTOR_CHASE);
         Chaos_EnableCode(CHAOS_CODE_OUT_OF_SHAPE);
+
         Chaos_EnableCode(CHAOS_CODE_LOVELESS_MARRIAGE);
         Chaos_EnableCode(CHAOS_CODE_CHICKEN_ARISE);
+        Chaos_EnableCode(CHAOS_CODE_STARFOX);
 
         if(has_ocarina)
         {
@@ -1089,11 +1091,11 @@ void Play_UpdateMain(PlayState* this) {
             0, 0, 0, 0);
     }
 
-    // if(Chaos_IsCodeActive(CHAOS_CODE_CHICKEN_ARISE))
-    // {
-    //     Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_NIW, 
-    //         player->actor.world.pos.x, player->actor.world.pos.y, player->actor.world.pos.z, 0, 0, 0, NIW_TYPE_CHAOS);
-    // }
+    if(Chaos_IsCodeActive(CHAOS_CODE_STARFOX))
+    {
+        Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_ARWING, 
+            player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z, 0, 0, 0, 0);
+    }
 
     if(Chaos_IsCodeActive(CHAOS_CODE_CHICKEN_ARISE))
     {
@@ -1116,7 +1118,7 @@ void Play_UpdateMain(PlayState* this) {
             f32 cucco_y = this->view.eye.y + 50.0f + (yView * 0.5f) + Rand_CenteredFloat(0.3f);
             f32 cucco_z = this->view.eye.z + ((Rand_ZeroOne() - 0.5f) * zView);
 
-            Actor *cucco = Actor_SpawnAsChild(&this->actorCtx, &gChaosContext.chicken.cucco.actor, this, ACTOR_EN_ATTACK_NIW, cucco_x,
+            Actor *cucco = Chaos_SpawnAsChild(&this->actorCtx, &gChaosContext.chicken.cucco.actor, this, ACTOR_EN_ATTACK_NIW, cucco_x,
                                         cucco_y, cucco_z, 0, 0, 0, ATTACK_NIW_CHAOS);    
 
             if (cucco != NULL) {

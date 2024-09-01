@@ -294,7 +294,7 @@ void EnArwing_Init(Actor* thisx, PlayState* play) {
     this->targetPosition.x = player->actor.world.pos.x + random_direction.x;
     this->targetPosition.y = player->actor.world.pos.y + 300.0f;
     this->targetPosition.z = player->actor.world.pos.z + random_direction.z;
-    this->laser_count = 0;
+    // this->laser_count = 0;
     // Actor_PlaySfx(&this->actor, NA_SE_IT_SWORD_REFLECT_MG);
         // }
 
@@ -513,11 +513,11 @@ void EnArwing_Update(Actor* thisx, PlayState* play2) {
                 Math_ApproachF(&this->targetDirection.z, 0x500, 1.0f, 0x100);
 
                 // Check if the Arwing should fire its laser.
-                if ((this->frameCounter % 4) == 0 && (Rand_ZeroOne() < 0.75f) && (this->state == ARWING_STATE_TARGET_LOCKED) &&
-                    this->laser_count < EN_ARWING_MAX_LASORS) 
+                if ((this->frameCounter % 4) == 0 && (Rand_ZeroOne() < 0.75f) && (this->state == ARWING_STATE_TARGET_LOCKED)) 
                 {
-                    // this->shouldShootLaser = true;
-                    Actor_PlaySfx(&this->actor, NA_SE_IT_SWORD_REFLECT_MG);
+                    Actor_Spawn(&play->actorCtx, play, ACTOR_EN_ARWING_LASER, this->actor.world.pos.x,
+                        this->actor.world.pos.y, this->actor.world.pos.z, this->actor.world.rot.x,
+                        this->actor.world.rot.y, this->actor.world.rot.z, 0);
                 }
             } 
             else 

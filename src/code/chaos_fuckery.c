@@ -61,8 +61,8 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_PLAY_OCARINA]            = */ CHAOS_CODE_DEF(0,  0,  false, 0.004f),
     /* [CHAOS_CODE_SNEEZE]                  = */ CHAOS_CODE_DEF(5, 15,  false, 0.006f),
     /* [CHAOS_CODE_RANDO_FIERCE_DEITY]      = */ CHAOS_CODE_DEF(25, 75, true,  0.0006f),
-    /* [CHAOS_CODE_CHICKEN_ARISE]           = */ CHAOS_CODE_DEF(25, 45, false, 0.0035f),
-    /* [CHAOS_CODE_STARFOX]                 = */ CHAOS_CODE_DEF(15, 25, true,  0.0022f),
+    /* [CHAOS_CODE_CHICKEN_ARISE]           = */ CHAOS_CODE_DEF(25, 45, false, 0.0025f),
+    /* [CHAOS_CODE_STARFOX]                 = */ CHAOS_CODE_DEF(0, 0,   true,  0.0045f),
     /* [CHAOS_CODE_SWAP_HEAL_AND_HURT]      = */ CHAOS_CODE_DEF(5, 25,  false, 0.003f),
     /* [CHAOS_CODE_JUNK_ITEM]               = */ CHAOS_CODE_DEF(0, 0,   false, 0.003f),
 };
@@ -714,6 +714,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         case CHAOS_CODE_PLAY_OCARINA:
                         case CHAOS_CODE_OUT_OF_SHAPE:
                         case CHAOS_CODE_CHICKEN_ARISE:
+                        case CHAOS_CODE_STARFOX:
                             if((player->stateFlags2 & PLAYER_STATE2_80) || (player->stateFlags1 & PLAYER_STATE1_800000) ||
                                 (player->stateFlags1 & PLAYER_STATE1_20000000) || camera->setting == CAM_SET_BOAT_CRUISE)
                             {
@@ -729,35 +730,50 @@ void Chaos_UpdateChaos(PlayState *playstate)
                                     continue;
                                 }
                             }
-                            else if(next_code == CHAOS_CODE_LOVELESS_MARRIAGE && 
-                                    gChaosContext.loaded_object_id != OBJECT_RR)
-                            {
-                                if(Chaos_IsCodeActive(CHAOS_CODE_CHICKEN_ARISE) ||
-                                   gChaosContext.chicken.cucco.attackNiwCount > 0 ||
-                                   gChaosContext.spawn_actor_code != CHAOS_CODE_NONE)
-                                {
-                                    continue;
-                                }
+                            // else if(next_code == CHAOS_CODE_LOVELESS_MARRIAGE && 
+                            //         gChaosContext.loaded_object_id != OBJECT_RR)
+                            // {
+                            //     if(Chaos_IsCodeActive(CHAOS_CODE_CHICKEN_ARISE) ||
+                            //        gChaosContext.actors.spawned_actors > 0 ||
+                            //        gChaosContext.spawn_actor_code != CHAOS_CODE_NONE)
+                            //     {
+                            //         continue;
+                            //     }
 
-                                Object_RequestOverwrite(&playstate->objectCtx, playstate->objectCtx.chaos_keep_slot, OBJECT_RR);
-                                gChaosContext.loaded_object_id = OBJECT_RR;
-                                gChaosContext.spawn_actor_code = CHAOS_CODE_LOVELESS_MARRIAGE;
-                                continue;
-                            }
-                            else if(next_code == CHAOS_CODE_CHICKEN_ARISE && 
-                                    gChaosContext.loaded_object_id != OBJECT_NIW)
-                            {
-                                if(gChaosContext.actors.spawned_actors > 0 || 
-                                   gChaosContext.spawn_actor_code != CHAOS_CODE_NONE)
-                                {
-                                    continue;
-                                }
+                            //     Object_RequestOverwrite(&playstate->objectCtx, playstate->objectCtx.chaos_keep_slot, OBJECT_RR);
+                            //     gChaosContext.loaded_object_id = OBJECT_RR;
+                            //     gChaosContext.spawn_actor_code = CHAOS_CODE_LOVELESS_MARRIAGE;
+                            //     continue;
+                            // }
+                            // else if(next_code == CHAOS_CODE_CHICKEN_ARISE && 
+                            //         gChaosContext.loaded_object_id != OBJECT_NIW)
+                            // {
+                            //     if(gChaosContext.actors.spawned_actors > 0 || 
+                            //        gChaosContext.spawn_actor_code != CHAOS_CODE_NONE)
+                            //     {
+                            //         continue;
+                            //     }
 
-                                Object_RequestOverwrite(&playstate->objectCtx, playstate->objectCtx.chaos_keep_slot, OBJECT_NIW);
-                                gChaosContext.loaded_object_id = OBJECT_NIW;
-                                gChaosContext.spawn_actor_code = CHAOS_CODE_CHICKEN_ARISE;
-                                continue;
-                            }
+                            //     Object_RequestOverwrite(&playstate->objectCtx, playstate->objectCtx.chaos_keep_slot, OBJECT_NIW);
+                            //     gChaosContext.loaded_object_id = OBJECT_NIW;
+                            //     gChaosContext.spawn_actor_code = CHAOS_CODE_CHICKEN_ARISE;
+                            //     continue;
+                            // }
+                            // else if(next_code == CHAOS_CODE_STARFOX && 
+                            //         gChaosContext.loaded_object_id != OBJECT_ARWING)
+                            // {
+                            //     if(Chaos_IsCodeActive(CHAOS_CODE_CHICKEN_ARISE) || 
+                            //        gChaosContext.actors.spawned_actors > 0 || 
+                            //        gChaosContext.spawn_actor_code != CHAOS_CODE_NONE)
+                            //     {
+                            //         continue;
+                            //     }
+
+                            //     Object_RequestOverwrite(&playstate->objectCtx, playstate->objectCtx.chaos_keep_slot, OBJECT_ARWING);
+                            //     gChaosContext.loaded_object_id = OBJECT_ARWING;
+                            //     gChaosContext.spawn_actor_code = CHAOS_CODE_STARFOX;
+                            //     continue;
+                            // }
 
                         break;
 
@@ -1270,6 +1286,11 @@ Actor *Chaos_SpawnActor(ActorContext *context, PlayState *play, s16 actor_id, f3
             struct ChaosActor *chaos_actor = gChaosContext.actors.slots + gChaosContext.actors.spawned_actors;
             chaos_actor->actor = actor;
             chaos_actor->timer = ACTOR_DESPAWN_TIMER;
+
+            if(actor_id == ACTOR_EN_ARWING)
+            {
+                chaos_actor->timer *= 10;
+            }
             // chaos_actor->destroy = actor->destroy;
             // actor->destroy = Chaos_DestroyFunction;
             gChaosContext.actors.spawned_actors++;
