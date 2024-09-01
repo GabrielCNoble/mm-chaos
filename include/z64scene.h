@@ -405,13 +405,23 @@ typedef struct {
 } SceneEntranceTableEntry; // size = 0xC
 
 typedef struct {
-    /* 0x00 */ s16 id; // Negative ids mean that the object is unloaded
-    /* 0x02 */ UNK_TYPE1 pad2[0x2];
-    /* 0x04 */ void* segment;
-    /* 0x08 */ DmaRequest dmaReq;
-    /* 0x28 */ OSMesgQueue loadQueue;
-    /* 0x40 */ OSMesg loadMsg;
+    /* 0x00 */ s16      id; // Negative ids mean that the object is unloaded
+    // /* 0x02 */ UNK_TYPE1 pad2[0x2];
+               u16      load_pending;
+    /* 0x04 */ void*    segment;
+            //    uintptr_t vrom_addr;
+    // /* 0x08 */ DmaRequest dmaReq;
+    // /* 0x28 */ OSMesgQueue loadQueue;
+    // /* 0x40 */ OSMesg loadMsg;
 } ObjectEntry; // size = 0x44
+
+struct ObjectLoadRequest
+{
+    DmaRequest  dma_req;
+    OSMesgQueue load_queue;
+    OSMesg      load_msg;
+    s16         slot_index;
+};
 
 typedef struct {
     /* 0x0 */ RomFile segment;
@@ -465,16 +475,20 @@ typedef struct {
 } AnimatedMaterial; // size = 0x8
 
 #define OBJECT_SLOT_NONE -1
-
+#define MAX_OBJECT_REQUESTS 8
 typedef struct {
-    /* 0x000 */ void* spaceStart;
-    /* 0x004 */ void* spaceEnd;
-    /* 0x008 */ u8 numEntries; // total amount of used entries
-    /* 0x009 */ u8 numPersistentEntries; // amount of entries that won't be reused when loading a new object list (when loading a new room)
-    /* 0x00A */ u8 mainKeepSlot; // "gameplay_keep" slot
-    /* 0x00B */ u8 subKeepSlot; // "gameplay_field_keep" or "gameplay_dangeon_keep" slot
-    /* 0x00C */ ObjectEntry slots[35];
-} ObjectContext; // size = 0x958
+    /* 0x000 */ void*           spaceStart;
+    /* 0x004 */ void*           spaceEnd;
+    /* 0x008 */ u8              numEntries; // total amount of used entries
+    /* 0x009 */ u8              numPersistentEntries; // amount of entries that won't be reused when loading a new object list (when loading a new room)
+    /* 0x00A */ u8              mainKeepSlot; // "gameplay_keep" slot
+    /* 0x00B */ u8              subKeepSlot; // "gameplay_field_keep" or "gameplay_dangeon_keep" slot
+                u8              chaos_keep_slot;
+                u8              pending_request_count;
+                u8              next_available_request;
+    /* 0x00C */ ObjectEntry     slots[35];    
+    struct ObjectLoadRequest    load_requests[MAX_OBJECT_REQUESTS];
+} ObjectContext; // size = 0x958 
 
 typedef struct {
     /* 0x0 */ u16 mapId;
@@ -902,7 +916,7 @@ void Object_UpdateEntries(ObjectContext* objectCtx);
 s32 Object_GetSlot(ObjectContext* objectCtx, s16 objectId);
 s32 Object_IsLoaded(ObjectContext* objectCtx, s32 slot);
 void Object_LoadAll(ObjectContext* objectCtx);
-void* func_8012F73C(ObjectContext* objectCtx, s32 slot, s16 id);
+void* Object_RequestOverwrite(ObjectContext* objectCtx, s32 slot, s16 id);
 void Scene_CommandSpawnList(struct PlayState* play, SceneCmd* cmd);
 void Scene_CommandActorList(struct PlayState* play, SceneCmd* cmd);
 void Scene_CommandActorCutsceneCamList(struct PlayState* play, SceneCmd* cmd);

@@ -64,6 +64,15 @@ u8 gCanBePushedAroundCodes[] = {
     CHAOS_CODE_OUT_OF_SHAPE
 };
 
+static struct 
+{
+    u8  code;
+    u16 object_id;
+} gObjectLoadCodes[] = {
+    { CHAOS_CODE_LOVELESS_MARRIAGE, OBJECT_RR},
+    { CHAOS_CODE_CHICKEN_ARISE, OBJECT_NIW}
+};
+
 void Play_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
 {
     u32 index;
@@ -97,6 +106,7 @@ void Play_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     Chaos_EnableCode(CHAOS_CODE_CHANGE_RUPEE);
     Chaos_EnableCode(CHAOS_CODE_SWAP_HEAL_AND_HURT);
     Chaos_EnableCode(CHAOS_CODE_RANDOM_FIERCE_DEITY);
+    Chaos_EnableCode(CHAOS_CODE_JUNK_ITEM);
 
     if(gSaveContext.save.saveInfo.playerData.isMagicAcquired)
     {
@@ -118,6 +128,7 @@ void Play_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
  
     if(can_be_pushed_around)
     {
+        u32 index;
         /* if the player has been grabbed, is mounted on epona, 
         riding the boat or time is stopped, don't spawn any of those 
         effects to avoid leaving the player in an inconsistent state */
@@ -125,11 +136,11 @@ void Play_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
         Chaos_EnableCode(CHAOS_CODE_RANDOM_KNOCKBACK);
         Chaos_EnableCode(CHAOS_CODE_ICE_TRAP);
         Chaos_EnableCode(CHAOS_CODE_SHOCK);
-        Chaos_EnableCode(CHAOS_CODE_LOVELESS_MARRIAGE);
         Chaos_EnableCode(CHAOS_CODE_SYKE);
         Chaos_EnableCode(CHAOS_CODE_DIE);
         Chaos_EnableCode(CHAOS_CODE_ACTOR_CHASE);
         Chaos_EnableCode(CHAOS_CODE_OUT_OF_SHAPE);
+        Chaos_EnableCode(CHAOS_CODE_LOVELESS_MARRIAGE);
         Chaos_EnableCode(CHAOS_CODE_CHICKEN_ARISE);
 
         if(has_ocarina)
@@ -1050,17 +1061,17 @@ const char D_801DFA34[][4] = {
     "h",   "i",  "f",  "fa", "fb", "fc", "fd", "fe",  "ff",  "fg", "fh", "fi", "fj", "fk",
 };
 
-static u16 gChaosJunkItems[] = {
-    // GI_RUPEE_GREEN_LOSE,
-    GI_RECOVERY_HEART,
-    GI_DEKU_STICKS_1,
-    GI_DEKU_NUTS_5,
-    GI_ARROWS_10,
-    GI_DEKU_NUTS_5,
-    GI_BOMBS_5,
-    // GI_SHIELD_DEKU,
-    GI_SHIELD_HERO,
-};
+// static u16 gChaosJunkItems[] = {
+//     // GI_RUPEE_GREEN_LOSE,
+//     GI_RECOVERY_HEART,
+//     GI_DEKU_STICKS_1,
+//     GI_DEKU_NUTS_5,
+//     GI_ARROWS_10,
+//     GI_DEKU_NUTS_5,
+//     GI_BOMBS_5,
+//     // GI_SHIELD_DEKU,
+//     GI_SHIELD_HERO,
+// };
 
 void Play_UpdateMain(PlayState* this) {
     s32 pad;
@@ -1086,22 +1097,6 @@ void Play_UpdateMain(PlayState* this) {
 
     if(Chaos_IsCodeActive(CHAOS_CODE_CHICKEN_ARISE))
     {
-        // if(gChaosContext.chicken.cucco.attackNiwCount < 7 && gChaosContext.chicken.cucco.attackNiwSpawnTimer == 0)
-        // {
-        //     // EnAttackNiw *attack_cucco = Actor_SpawnAsChild(&this->actorCtx, &gChaosContext.chicken.cucco, this, ACTOR_EN_ATTACK_NIW,
-        //     //     )
-        // }
-        // if(gChaosContext.chicken.cucco.attackNiwSpawnTimer > 0)
-        // {
-        //     gChaosContext.chicken.cucco.attackNiwSpawnTimer--;
-        // }
-        // EnNiw_SpawnAttackNiw(&gChaosContext.chicken.cucco, this);
-        // f32 xView;
-        // f32 yView;
-        // f32 zView;
-        // Vec3f newNiwPos;
-        // Actor* attackNiw;
-
         if(gChaosContext.chicken.cucco.attackNiwSpawnTimer > 0)
         {
             gChaosContext.chicken.cucco.attackNiwSpawnTimer--;
@@ -1112,7 +1107,7 @@ void Play_UpdateMain(PlayState* this) {
             gChaosContext.chicken.cucco.unkAttackNiwTimer--;
         }
 
-        if ((gChaosContext.chicken.cucco.attackNiwSpawnTimer == 0) && (gChaosContext.chicken.cucco.attackNiwCount < 14)) 
+        if ((gChaosContext.chicken.cucco.attackNiwSpawnTimer == 0) && (gChaosContext.chicken.cucco.attackNiwCount < 8)) 
         {
             f32 xView = this->view.at.x - this->view.eye.x;
             f32 yView = this->view.at.y - this->view.eye.y;
@@ -1160,12 +1155,12 @@ void Play_UpdateMain(PlayState* this) {
     //     Chaos_DeactivateCode(CHAOS_CODE_TEXTBOX);
     // }
 
-    // code = Chaos_GetCode(CHAOS_CODE_TERRIBLE_MUSIC);
+    code = Chaos_GetCode(CHAOS_CODE_TERRIBLE_MUSIC);
 
-    if(Chaos_IsCodeActive(CHAOS_CODE_TERRIBLE_MUSIC))
+    if(code != NULL)
     {
         // if(code->timer > 1)
-        if(gChaosContext.bgm.change_timer > 1)
+        if(code->timer > 1)
         {
             gChaosContext.bgm.change_timer--;
 
@@ -2018,6 +2013,8 @@ void Play_InitScene(PlayState* this, s32 spawn) {
     gSaveContext.worldMapArea = 0;
     Scene_ExecuteCommands(this, this->sceneSegment);
     Play_InitEnvironment(this, this->skyboxId);
+    // Object_SpawnPersistent(&this->objectCtx, OBJECT_RR);
+    // Object_SpawnPersistent(&this->objectCtx, OBJECT_NIW);
 }
 
 void Play_SpawnScene(PlayState* this, s32 sceneId, s32 spawn) {
@@ -2508,6 +2505,7 @@ void Play_Init(GameState* thisx) {
     uintptr_t zAlloc;
     s32 zAllocSize;
     Player* player;
+    u32 *p;
     s32 i;
     s32 spawn;
     u8 sceneLayer;
@@ -2737,6 +2735,10 @@ void Play_Init(GameState* thisx) {
     sPlayVisFbufInstance->envColor.b = 0;
     sPlayVisFbufInstance->envColor.a = 0;
     CutsceneFlags_UnsetAll(this);
+
+    // p = (u32 *)THA_GetRemaining(&this->state.tha);
+    // *p = 5;
+
     THA_GetRemaining(&this->state.tha);
     zAllocSize = THA_GetRemaining(&this->state.tha);
     zAlloc = (uintptr_t)THA_AllocTailAlign16(&this->state.tha, zAllocSize);

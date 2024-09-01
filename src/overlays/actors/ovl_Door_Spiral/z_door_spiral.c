@@ -12,7 +12,7 @@
 #include "objects/object_ikninside_obj/object_ikninside_obj.h"
 #include "objects/object_danpei_object/object_danpei_object.h"
 
-#define FLAGS (ACTOR_FLAG_10)
+#define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_NO_CHASE)
 
 #define THIS ((DoorSpiral*)thisx)
 

@@ -38,7 +38,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_WEIRD_ARROWS]            = */ CHAOS_CODE_DEF(15, 25, true,  0.02f),
     /* [CHAOS_CODE_BUCKSHOT_ARROWS]         = */ CHAOS_CODE_DEF(15, 25, true,  0.02f),
     /* [CHAOS_CODE_RANDOM_BOMB_TIMER]       = */ CHAOS_CODE_DEF(10, 15, false, 0.01f),
-    /* [CHAOS_CODE_LOVELESS_MARRIAGE]       = */ CHAOS_CODE_DEF(0,  0,  false, 0.0065f),
+    /* [CHAOS_CODE_LOVELESS_MARRIAGE]       = */ CHAOS_CODE_DEF(0,  0,  false, 0.0045f),
     /* [CHAOS_CODE_WEIRD_UI]                = */ CHAOS_CODE_DEF(8,  15, true,  0.04f),
     /* [CHAOS_CODE_BEER_GOGGLES]            = */ CHAOS_CODE_DEF(15, 30, true,  0.012f),
     /* [CHAOS_CODE_CHANGE_MAGIC]            = */ CHAOS_CODE_DEF(1,  10, true,  0.04f),
@@ -61,9 +61,10 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_PLAY_OCARINA]            = */ CHAOS_CODE_DEF(0,  0,  false, 0.004f),
     /* [CHAOS_CODE_SNEEZE]                  = */ CHAOS_CODE_DEF(5, 15,  false, 0.006f),
     /* [CHAOS_CODE_RANDO_FIERCE_DEITY]      = */ CHAOS_CODE_DEF(25, 75, true,  0.0006f),
-    /* [CHAOS_CODE_CHICKEN_ARISE]           = */ CHAOS_CODE_DEF(25, 45, false, 0.0015f),
-    /* [CHAOS_CODE_STARFOX]                 = */ CHAOS_CODE_DEF(15, 25, true,  0.0012f),
+    /* [CHAOS_CODE_CHICKEN_ARISE]           = */ CHAOS_CODE_DEF(25, 45, false, 0.0035f),
+    /* [CHAOS_CODE_STARFOX]                 = */ CHAOS_CODE_DEF(15, 25, true,  0.0022f),
     /* [CHAOS_CODE_SWAP_HEAL_AND_HURT]      = */ CHAOS_CODE_DEF(5, 25,  false, 0.003f),
+    /* [CHAOS_CODE_JUNK_ITEM]               = */ CHAOS_CODE_DEF(0, 0,   false, 0.003f),
 };
  
 const char *gChaosCodeNames[] = {
@@ -111,6 +112,7 @@ const char *gChaosCodeNames[] = {
     /* [CHAOS_CODE_CHICKEN_ARISE]           = */ "Chicken arise",
     /* [CHAOS_CODE_STARFOX]                 = */ "Starfox",
     /* [CHAOS_CODE_SWAP_HEAL_AND_HURT]      = */ "Swap heal and hurt",
+    /* [CHAOS_CODE_JUNK_ITEM]               = */ "Junk item",
 };
 
 enum FAIRY_FOUNTAIN_EXITS
@@ -481,6 +483,11 @@ void Chaos_Init(void)
     gChaosContext.chaos_elapsed_usec = 0;
     gChaosContext.prev_update_counter = osGetTime();
     gChaosContext.update_enabled = 0;
+    // gChaosContext.cur_spawn_actor_code = CHAOS_CODE_NONE;
+    // gChaosContext.spawn_actor_code_was_activated = CHAOS_CODE_NONE;
+    // gChaosContext.update_spawn_actor_code = false;
+    gChaosContext.spawn_actor_code = CHAOS_CODE_NONE;
+    gChaosContext.loaded_object_id = 0;
     gChaosContext.need_update_distribution = false;
     gChaosContext.hide_actors = 0;
     gChaosContext.link.tunic_r = 30;
@@ -500,6 +507,7 @@ void Chaos_Init(void)
     gChaosContext.link.beer_goggles_state = CHAOS_BEER_GOGGLES_STATE_NONE;
     gChaosContext.link.fierce_deity_state = CHAOS_RANDOM_FIERCE_DEITY_STATE_NONE;
     gChaosContext.link.fierce_deity_counter = 0;
+    
 
     gChaosContext.chicken.cucco.niwType = NIW_TYPE_CHAOS;
     gChaosContext.chicken.cucco.actor.update = EnNiw_Update;
@@ -657,14 +665,24 @@ void Chaos_UpdateChaos(PlayState *playstate)
         
             if(gChaosContext.chaos_timer == 0)  
             {
+                u32 attempts = 0;
+                code_add_result = CHAOS_ADD_RESULT_NO_SLOTS;
                 gChaosContext.chaos_timer = MIN_CHAOS_TIMER + Rand_Next() % (MAX_CHAOS_TIMER - MIN_CHAOS_TIMER);
                 next_rand = Rand_Next();
                 do
                 {
-                    // next_code = CHAOS_CODE_FIRST + Rand_Next() % (CHAOS_CODE_LAST - CHAOS_CODE_FIRST);
-                    // next_code = CHAOS_CODE_FIRST + Chaos_Rand() % (CHAOS_CODE_LAST - CHAOS_CODE_FIRST);
-                    next_code = Chaos_RandomCode();
+                    if(gChaosContext.spawn_actor_code != CHAOS_CODE_NONE &&
+                        Object_IsLoaded(&playstate->objectCtx, playstate->objectCtx.chaos_keep_slot))
+                    {
+                        next_code = gChaosContext.spawn_actor_code;
+                        gChaosContext.spawn_actor_code = CHAOS_CODE_NONE;
+                    }
+                    else
+                    {
+                        next_code = Chaos_RandomCode();
+                    }
                     next_code_timer = gChaosCodeDefs[next_code].min_time + next_rand % (gChaosCodeDefs[next_code].max_time - gChaosCodeDefs[next_code].min_time);
+                    attempts++;
 
                     /* TODO: create a effect exclusion list for each effect, to avoid a bunch of branching here */
                     switch(next_code)
@@ -695,6 +713,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         case CHAOS_CODE_ACTOR_CHASE:
                         case CHAOS_CODE_PLAY_OCARINA:
                         case CHAOS_CODE_OUT_OF_SHAPE:
+                        case CHAOS_CODE_CHICKEN_ARISE:
                             if((player->stateFlags2 & PLAYER_STATE2_80) || (player->stateFlags1 & PLAYER_STATE1_800000) ||
                                 (player->stateFlags1 & PLAYER_STATE1_20000000) || camera->setting == CAM_SET_BOAT_CRUISE)
                             {
@@ -703,14 +722,43 @@ void Chaos_UpdateChaos(PlayState *playstate)
                                 effects to avoid leaving the player in an inconsistent state */
                                 continue;
                             }
-
-                            if(next_code == CHAOS_CODE_OUT_OF_SHAPE)
+                            else if(next_code == CHAOS_CODE_OUT_OF_SHAPE)
                             {
                                 if(Chaos_IsCodeActive(CHAOS_CODE_SNEEZE))
                                 {
                                     continue;
                                 }
                             }
+                            else if(next_code == CHAOS_CODE_LOVELESS_MARRIAGE && 
+                                    gChaosContext.loaded_object_id != OBJECT_RR)
+                            {
+                                if(Chaos_IsCodeActive(CHAOS_CODE_CHICKEN_ARISE) ||
+                                   gChaosContext.chicken.cucco.attackNiwCount > 0 ||
+                                   gChaosContext.spawn_actor_code != CHAOS_CODE_NONE)
+                                {
+                                    continue;
+                                }
+
+                                Object_RequestOverwrite(&playstate->objectCtx, playstate->objectCtx.chaos_keep_slot, OBJECT_RR);
+                                gChaosContext.loaded_object_id = OBJECT_RR;
+                                gChaosContext.spawn_actor_code = CHAOS_CODE_LOVELESS_MARRIAGE;
+                                continue;
+                            }
+                            else if(next_code == CHAOS_CODE_CHICKEN_ARISE && 
+                                    gChaosContext.loaded_object_id != OBJECT_NIW)
+                            {
+                                if(gChaosContext.actors.spawned_actors > 0 || 
+                                   gChaosContext.spawn_actor_code != CHAOS_CODE_NONE)
+                                {
+                                    continue;
+                                }
+
+                                Object_RequestOverwrite(&playstate->objectCtx, playstate->objectCtx.chaos_keep_slot, OBJECT_NIW);
+                                gChaosContext.loaded_object_id = OBJECT_NIW;
+                                gChaosContext.spawn_actor_code = CHAOS_CODE_CHICKEN_ARISE;
+                                continue;
+                            }
+
                         break;
 
                         case CHAOS_CODE_SNEEZE:
@@ -790,7 +838,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
 
                     code_add_result = Chaos_ActivateCode(next_code, next_code_timer);
                 }
-                while(code_add_result == CHAOS_ADD_RESULT_ALREADY_ACTIVE);
+                while(code_add_result == CHAOS_ADD_RESULT_ALREADY_ACTIVE || attempts >= 5);
 
                 if(code_add_result == CHAOS_ADD_RESULT_OK)
                 {
@@ -1222,12 +1270,8 @@ Actor *Chaos_SpawnActor(ActorContext *context, PlayState *play, s16 actor_id, f3
             struct ChaosActor *chaos_actor = gChaosContext.actors.slots + gChaosContext.actors.spawned_actors;
             chaos_actor->actor = actor;
             chaos_actor->timer = ACTOR_DESPAWN_TIMER;
-
-            if(actor_id == ACTOR_EN_NIW)
-            {
-                /* makes enraged cucco last a lot longer */
-                chaos_actor->timer *= 10;
-            }
+            // chaos_actor->destroy = actor->destroy;
+            // actor->destroy = Chaos_DestroyFunction;
             gChaosContext.actors.spawned_actors++;
         }
     }
@@ -1248,11 +1292,32 @@ Actor* Chaos_SpawnAsChild(ActorContext* context, Actor* parent, PlayState* play,
             struct ChaosActor *chaos_actor = gChaosContext.actors.slots + gChaosContext.actors.spawned_actors;
             chaos_actor->actor = actor;
             chaos_actor->timer = ACTOR_DESPAWN_TIMER;
+            // chaos_actor->destroy = actor->destroy;
+            // actor->destroy = Chaos_DestroyFunction;
             gChaosContext.actors.spawned_actors++;
         }
     }
 
     return actor;
+}
+
+void Chaos_DestroyFunction(struct Actor *actor, struct PlayState *play)
+{
+    // u32 index;
+
+    // if(actor != NULL)
+    // {
+    //     for(index = 0; index < gChaosContext.actors.spawned_actors; index++)
+    //     {
+    //         if(gChaosContext.actors.slots[index].actor == actor)
+    //         {
+    //             struct ChaosActor *chaos_actor = gChaosContext.actors.slots + index;
+    //             actor->destroy = chaos_actor->destroy;
+    //             actor->destroy(actor, play);
+    //             return;
+    //         }
+    //     }    
+    // }
 }
 
 void Chaos_KillActorAtIndex(u32 index)
@@ -1324,6 +1389,7 @@ void Chaos_DropActor(Actor *actor)
 void Chaos_ClearActors(void)
 {
     gChaosContext.actors.spawned_actors = 0;
+    gChaosContext.chicken.cucco.attackNiwCount = 0;
 }
 
 u16 Chaos_RandomEntrance(PlayState *play)

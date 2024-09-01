@@ -7,7 +7,7 @@
 #include "z_obj_y2shutter.h"
 #include "objects/object_kaizoku_obj/object_kaizoku_obj.h"
 
-#define FLAGS (ACTOR_FLAG_10)
+#define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_NO_CHASE)
 
 #define THIS ((ObjY2shutter*)thisx)
 

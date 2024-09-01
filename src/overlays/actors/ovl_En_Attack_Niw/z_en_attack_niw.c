@@ -425,7 +425,7 @@ void EnAttackNiw_Update(Actor* thisx, PlayState* play) {
                     if(parent->unkAttackNiwTimer == 0)
                     {
                         func_800B8D50(play, &this->actor, 2.0f, this->actor.world.rot.y, 0.0f, 0);
-                        parent->unkAttackNiwTimer = Rand_S16Offset(15, 55);
+                        parent->unkAttackNiwTimer = Rand_S16Offset(35, 35);
                     }
                 }
                 else if((parent->unkAttackNiwTimer == 0) && (player->invincibilityTimer == 0))

@@ -3016,12 +3016,13 @@ u8 Item_CheckObtainabilityImpl(u8 item) {
         }
         return INV_CONTENT(item);
 
-    } else if ((item >= ITEM_BOMBS_5) && (item == ITEM_BOMBS_30)) {
+    } else if ((item >= ITEM_BOMBS_5) && (item <= ITEM_BOMBS_30)) {
         //! @bug: Should be a range check: (item <= ITEM_BOMBS_30)
         if (CUR_UPG_VALUE(UPG_BOMB_BAG) == 0) {
             return ITEM_NONE;
         }
         return 0;
+        // return ITEM_NONE;
 
     } else if ((item >= ITEM_BOMBCHUS_20) && (item <= ITEM_BOMBCHUS_5)) {
         if (CUR_UPG_VALUE(UPG_BOMB_BAG) == 0) {
@@ -3064,6 +3065,7 @@ u8 Item_CheckObtainabilityImpl(u8 item) {
 
     } else if (item == ITEM_RECOVERY_HEART) {
         return ITEM_RECOVERY_HEART;
+        // return ITEM_NONE;
 
     } else if ((item == ITEM_MAGIC_JAR_SMALL) || (item == ITEM_MAGIC_JAR_BIG)) {
         if (!CHECK_WEEKEVENTREG(WEEKEVENTREG_12_80)) {

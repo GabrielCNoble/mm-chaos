@@ -104,7 +104,14 @@ enum CHAOS_CODES
     CHAOS_CODE_STARFOX,
     /* self explanatory */
     CHAOS_CODE_SWAP_HEAL_AND_HURT,
-    /* player randomly loses grip, dropping items, falling from ledges/ladders */
+    /* gives junk item */
+    CHAOS_CODE_JUNK_ITEM,
+    /* 
+        player randomly loses grip, dropping items, falling from ledges/ladders
+        TODO: change this one to include items from the inventory. The item should
+        drop and become visible on the floor, so the player can grab it back. If 
+        the player doesn't, it'll be returned to the player at a later time.
+    */
     // CHAOS_CODE_BUTTERFINGERS,
     /* item randomly vanishes from inventory */
     // CHAOS_CODE_SHORT_TERM_MEMORY_LOSS,
@@ -119,7 +126,7 @@ enum CHAOS_CODES
 
     // CHAOS_CODE_SLOWER_ANIMATIONS,
     // CHAOS_CODE_FASTER_ANIMATIONS,
-    // CHAOS_CODE_JUNK_ITEM,
+    
     
     
     // CHAOS_CODE_RANDOM_SWORD_TRAILS,
@@ -205,6 +212,8 @@ enum CHAOS_CODES
 
     /* link stops and waves/bows at a random direction */
     // CHAOS_CODE_JUST_THE_WIND,
+    /* camera sees from above (similar to gta) */
+    // CHAOS_CODE_BIRDSEYE_VIEW
     
     CHAOS_CODE_LAST
 };
@@ -303,7 +312,7 @@ enum CHAOS_RANDOM_FIERCE_DEITY_STATES
 #define MIN_CHAOS_TIMER         2
 #define CHAOS_SECONDS_TO_FRAMES(seconds)    (((u16)(seconds)) * (20))
 
-#define MAX_SPAWNED_ACTORS  32
+#define MAX_SPAWNED_ACTORS  12
 #define ACTOR_DESPAWN_TIMER 10
 
 struct ChaosActor
@@ -311,11 +320,6 @@ struct ChaosActor
     Actor *     actor;
     u16         timer;
 };
-
-// struct ChaosLikeLikeItems
-// {
-
-// };
 
 #define MAX_ACTIVE_CODES 8
 typedef struct ChaosContext 
@@ -334,6 +338,9 @@ typedef struct ChaosContext
     u8                      enabled_code_indices[CHAOS_CODE_LAST];
     u8                      need_update_distribution;
     u8                      hide_actors;
+
+    u8                      spawn_actor_code;
+    u8                      loaded_object_id;
 
     struct 
     {
@@ -466,6 +473,8 @@ u8 Chaos_CanUpdateChaos(struct PlayState *play);
 Actor *Chaos_SpawnActor(ActorContext *context, PlayState *play, s16 actor_id, f32 pos_x, f32 pos_y, f32 pos_z, s16 rot_x, s16 rot_y, s16 rot_z, s32 params);
 
 Actor* Chaos_SpawnAsChild(ActorContext* context, Actor* parent, PlayState* play, s16 actor_id, f32 pos_x, f32 pos_y, f32 pos_z, s16 rot_x, s16 rot_y, s16 rot_z, s32 params);
+
+void Chaos_DestroyFunction(struct Actor *actor, struct PlayState *play);
 
 void Chaos_KillActorAtIndex(u32 index);
 

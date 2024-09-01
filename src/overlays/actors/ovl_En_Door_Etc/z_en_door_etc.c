@@ -7,7 +7,7 @@
 #include "z_en_door_etc.h"
 #include "objects/gameplay_keep/gameplay_keep.h"
 
-#define FLAGS (ACTOR_FLAG_10)
+#define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_NO_CHASE)
 
 #define THIS ((EnDoorEtc*)thisx)
 

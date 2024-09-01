@@ -1139,6 +1139,7 @@ void Actor_Init(Actor* actor, PlayState* play) {
 
 void Actor_Destroy(Actor* actor, PlayState* play) {
     if (actor->init == NULL) {
+        Chaos_DropActor(actor);
         if (actor->destroy != NULL) {
             actor->destroy(actor, play);
             actor->destroy = NULL;
@@ -3396,6 +3397,8 @@ Actor* Actor_SpawnAsChildAndCutscene(ActorContext* actorCtx, PlayState* play, s1
 
     actorInit = Actor_LoadOverlay(actorCtx, index);
     if (actorInit == NULL) {
+        // u32 *p = (u32 *)0xbaadf00d;
+        // *p = 5;
         return NULL;
     }
 
@@ -3403,13 +3406,17 @@ Actor* Actor_SpawnAsChildAndCutscene(ActorContext* actorCtx, PlayState* play, s1
     if ((objectSlot <= OBJECT_SLOT_NONE) ||
         ((actorInit->type == ACTORCAT_ENEMY) && Flags_GetClear(play, play->roomCtx.curRoom.num) &&
          (actorInit->id != ACTOR_BOSS_05))) {
+        // u32 *p = (u32 *)0xdeadbeef;
+        // *p = 5;
         Actor_FreeOverlay(&gActorOverlayTable[index]);
         return NULL;
     }
 
     actor = ZeldaArena_Malloc(actorInit->instanceSize);
     if (actor == NULL) {
+        // u32 *p = (u32 *)0xdeadbeef;
         Actor_FreeOverlay(&gActorOverlayTable[index]);
+        // *p = 5;
         return NULL;
     }
 

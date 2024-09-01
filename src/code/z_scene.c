@@ -1,4 +1,25 @@
 #include "global.h"
+#include "chaos_fuckery.h"
+
+extern struct ChaosContext gChaosContext;
+
+s32 Object_AllocatePersistent(ObjectContext* objectCtx, s16 id) 
+{
+    size_t size = gObjectTable[id].vromEnd - gObjectTable[id].vromStart;
+
+    objectCtx->slots[objectCtx->numEntries].id = id;
+    size = gObjectTable[id].vromEnd - gObjectTable[id].vromStart;
+
+    if (objectCtx->numEntries < ARRAY_COUNT(objectCtx->slots) - 1) {
+        objectCtx->slots[objectCtx->numEntries + 1].segment =
+            (void*)ALIGN16((uintptr_t)objectCtx->slots[objectCtx->numEntries].segment + size);
+    }
+
+    objectCtx->numEntries++;
+    objectCtx->numPersistentEntries = objectCtx->numEntries;
+
+    return objectCtx->numEntries - 1;
+}
 
 /**
  * Spawn an object file of a specified ID that will persist through room changes.
@@ -12,32 +33,42 @@
  * persistent, which will likely cause either the amount of free slots or object space memory to run out.
  * This function is only meant to be called internally on scene load, before the object list from any room is processed.
  */
-s32 Object_SpawnPersistent(ObjectContext* objectCtx, s16 id) {
-    size_t size;
 
-    objectCtx->slots[objectCtx->numEntries].id = id;
-    size = gObjectTable[id].vromEnd - gObjectTable[id].vromStart;
+s32 Object_SpawnPersistent(ObjectContext* objectCtx, s16 id) {
+    s32 slot = Object_AllocatePersistent(objectCtx, id);
+    size_t size = gObjectTable[id].vromEnd - gObjectTable[id].vromStart;
 
     if (size != 0) {
-        DmaMgr_RequestSync(objectCtx->slots[objectCtx->numEntries].segment, gObjectTable[id].vromStart, size);
+        DmaMgr_RequestSync(objectCtx->slots[slot].segment, gObjectTable[id].vromStart, size);
     }
 
-    if (objectCtx->numEntries < ARRAY_COUNT(objectCtx->slots) - 1) {
-        objectCtx->slots[objectCtx->numEntries + 1].segment =
-            (void*)ALIGN16((uintptr_t)objectCtx->slots[objectCtx->numEntries].segment + size);
-    }
+    return slot;
 
-    objectCtx->numEntries++;
-    objectCtx->numPersistentEntries = objectCtx->numEntries;
+    // if (objectCtx->numEntries < ARRAY_COUNT(objectCtx->slots) - 1) {
+    //     objectCtx->slots[objectCtx->numEntries + 1].segment =
+    //         (void*)ALIGN16((uintptr_t)objectCtx->slots[objectCtx->numEntries].segment + size);
+    // }
 
-    return objectCtx->numEntries - 1;
+    // objectCtx->numEntries++;
+    // objectCtx->numPersistentEntries = objectCtx->numEntries;
+
+    // return objectCtx->numEntries - 1;
 }
+
+static u16 gTestObjectIds[] = {
+    OBJECT_RR,
+    OBJECT_NIW,
+    OBJECT_ARWING
+};
 
 void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
     PlayState* play = (PlayState*)gameState;
     s32 pad;
     u32 spaceSize;
-    s32 i;
+    s32 index;
+    size_t largest_size = 0;
+    u32 largest_id = 0;
+    u32 *p;
 
     if (play->sceneId == SCENE_CLOCKTOWER || play->sceneId == SCENE_TOWN || play->sceneId == SCENE_BACKTOWN ||
         play->sceneId == SCENE_ICHIBA) {
@@ -54,50 +85,134 @@ void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
     objectCtx->numPersistentEntries = 0;
     objectCtx->mainKeepSlot = 0;
     objectCtx->subKeepSlot = 0;
+    objectCtx->pending_request_count = 0;
+    objectCtx->next_available_request = 0;
 
-    for (i = 0; i < ARRAY_COUNT(objectCtx->slots); i++)
+    for (index = 0; index < ARRAY_COUNT(objectCtx->slots); index++)
     { 
-        objectCtx->slots[i].id = 0; 
+        objectCtx->slots[index].id = 0; 
+        objectCtx->slots[index].load_pending = false;
     }
+
+    for(index = 0; index < ARRAY_COUNT(gTestObjectIds); index++)
+    {
+        u32 object_id = gTestObjectIds[index];
+        size_t size = gObjectTable[object_id].vromEnd - gObjectTable[object_id].vromStart;
+        if(size > largest_size)
+        {
+            largest_size = size;
+            largest_id = object_id;
+        }
+    }
+
+    spaceSize += largest_size;
 
     objectCtx->spaceStart = objectCtx->slots[0].segment = THA_AllocTailAlign16(&gameState->tha, spaceSize);
     objectCtx->spaceEnd = (void*)((u32)objectCtx->spaceStart + spaceSize);
     objectCtx->mainKeepSlot = Object_SpawnPersistent(objectCtx, GAMEPLAY_KEEP);
-    /* keep like-like, cucco and arwing always loaded */
-    Object_SpawnPersistent(objectCtx, OBJECT_RR);
-    Object_SpawnPersistent(objectCtx, OBJECT_NIW);
-    Object_SpawnPersistent(objectCtx, OBJECT_ARWING);
+
+    /* allocate enough space for the largest object */
+    objectCtx->chaos_keep_slot = Object_AllocatePersistent(objectCtx, largest_id);
+
+    if(gChaosContext.loaded_object_id > 0)
+    {
+        /* some effect might be using this object, so reload it */
+        Object_RequestOverwrite(objectCtx, objectCtx->chaos_keep_slot, gChaosContext.loaded_object_id);
+    }
     gSegments[0x04] = OS_K0_TO_PHYSICAL(objectCtx->slots[objectCtx->mainKeepSlot].segment);
 }
 
 void Object_UpdateEntries(ObjectContext* objectCtx) {
     s32 entry_index;
+    s32 request_index;
     ObjectEntry* entry = &objectCtx->slots[0];
     RomFile* objectFile;
     size_t size;
 
-    for (entry_index = 0; entry_index < objectCtx->numEntries; entry_index++) {
-        if (entry->id < 0) {
-            s32 id = -entry->id;
+    request_index = objectCtx->next_available_request;
+    if(objectCtx->next_available_request < objectCtx->pending_request_count)
+    {
+        request_index += MAX_OBJECT_REQUESTS;
+    }
+    request_index -= objectCtx->pending_request_count;
 
-            if (entry->dmaReq.vromAddr == 0) {
-                objectFile = &gObjectTable[id];
-                size = objectFile->vromEnd - objectFile->vromStart;
+    while(objectCtx->pending_request_count > 0)
+    {
+        struct ObjectLoadRequest *request = objectCtx->load_requests + request_index;
+        ObjectEntry *slot = objectCtx->slots + request->slot_index;
 
-                if (size == 0) {
-                    entry->id = 0;
-                } else {
-                    osCreateMesgQueue(&entry->loadQueue, &entry->loadMsg, 1);
-                    DmaMgr_RequestAsync(&entry->dmaReq, entry->segment, objectFile->vromStart, size, 0,
-                                        &entry->loadQueue, NULL);
-                }
-            } else if (!osRecvMesg(&entry->loadQueue, NULL, OS_MESG_NOBLOCK)) {
-                entry->id = id;
-            }
+        request_index = (request_index + 1) % MAX_OBJECT_REQUESTS;
+
+        if(osRecvMesg(&request->load_queue, NULL, OS_MESG_NOBLOCK))
+        {
+            break;
         }
 
-        entry++;
+        slot->id = -slot->id;
+        objectCtx->pending_request_count--;
     }
+
+    for (entry_index = 0; entry_index < objectCtx->numEntries; entry_index++) 
+    {
+        ObjectEntry *entry = objectCtx->slots + entry_index;
+
+        if (entry->id < 0) 
+        {
+            // s32 id = -entry->id;
+
+            // if (entry->dmaReq.vromAddr == 0) 
+            if(!entry->load_pending)
+            {
+                objectFile = &gObjectTable[-entry->id];
+                size = objectFile->vromEnd - objectFile->vromStart;
+
+                if (size == 0) 
+                {
+                    entry->id = 0;
+                } 
+                else 
+                {
+                    struct ObjectLoadRequest *request = objectCtx->load_requests + objectCtx->next_available_request;
+                    objectCtx->next_available_request = (objectCtx->next_available_request + 1) % MAX_OBJECT_REQUESTS;
+                    objectCtx->pending_request_count++;
+                    request->slot_index = entry_index;
+                    osCreateMesgQueue(&request->load_queue, &request->load_msg, 1);
+                    DmaMgr_RequestAsync(&request->dma_req, entry->segment, objectFile->vromStart, size, 0, &request->load_queue, NULL);
+                    entry->load_pending = true;
+                    // DmaMgr_RequestAsync(&entry->dmaReq, entry->segment, objectFile->vromStart, size, 0, &request->load_queue, NULL);
+                    // entry->vrom_addr = request->dma_req.vromAddr;
+
+                    if(objectCtx->pending_request_count >= MAX_OBJECT_REQUESTS)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    // for (entry_index = 0; entry_index < objectCtx->numEntries; entry_index++) {
+    //     if (entry->id < 0) {
+    //         s32 id = -entry->id;
+
+    //         if (entry->dmaReq.vromAddr == 0) {
+    //             objectFile = &gObjectTable[id];
+    //             size = objectFile->vromEnd - objectFile->vromStart;
+
+    //             if (size == 0) {
+    //                 entry->id = 0;
+    //             } else {
+    //                 osCreateMesgQueue(&entry->loadQueue, &entry->loadMsg, 1);
+    //                 DmaMgr_RequestAsync(&entry->dmaReq, entry->segment, objectFile->vromStart, size, 0,
+    //                                     &entry->loadQueue, NULL);
+    //             }
+    //         } else if (!osRecvMesg(&entry->loadQueue, NULL, OS_MESG_NOBLOCK)) {
+    //             entry->id = id;
+    //         }
+    //     }
+
+    //     entry++;
+    // }
 }
 
 s32 Object_GetSlot(ObjectContext* objectCtx, s16 objectId) {
@@ -113,11 +228,12 @@ s32 Object_GetSlot(ObjectContext* objectCtx, s16 objectId) {
 }
 
 s32 Object_IsLoaded(ObjectContext* objectCtx, s32 slot) {
-    if (objectCtx->slots[slot].id > 0) {
-        return true;
-    } else {
-        return false;
-    }
+    return objectCtx->slots[slot].id > 0;
+    // if (objectCtx->slots[slot].id > 0) {
+    //     return true;
+    // } else {
+    //     return false;
+    // }
 }
 
 void Object_LoadAll(ObjectContext* objectCtx) {
@@ -137,13 +253,14 @@ void Object_LoadAll(ObjectContext* objectCtx) {
     }
 }
 /* Object_RequestOverwrite? */
-void* func_8012F73C(ObjectContext* objectCtx, s32 slot, s16 id) {
+void* Object_RequestOverwrite(ObjectContext* objectCtx, s32 slot, s16 id) {
     uintptr_t addr;
     uintptr_t vromSize;
     RomFile* fileTableEntry;
 
     objectCtx->slots[slot].id = -id;
-    objectCtx->slots[slot].dmaReq.vromAddr = 0;
+    objectCtx->slots[slot].load_pending = false;
+    // objectCtx->slots[slot].dmaReq.vromAddr = 0;
 
     fileTableEntry = &gObjectTable[id];
     vromSize = fileTableEntry->vromEnd - fileTableEntry->vromStart;
@@ -177,7 +294,6 @@ void Scene_CommandSpawnList(PlayState* play, SceneCmd* cmd) {
     playerObjectId = gPlayerFormObjectIds[GET_PLAYER_FORM];
     gActorOverlayTable[ACTOR_PLAYER].initInfo->objectId = playerObjectId;
     Object_SpawnPersistent(&play->objectCtx, playerObjectId);
-
     play->objectCtx.slots[play->objectCtx.numEntries].segment = objectPtr;
 }
 
@@ -318,7 +434,7 @@ void Scene_CommandObjectList(PlayState* play, SceneCmd* cmd) {
 
     while (object_list_entry_index < cmd->objectList.num) {
         // nextPtr = func_8012F73C(&play->objectCtx, i, *objectEntry);
-        nextPtr = func_8012F73C(&play->objectCtx, non_persistent_entry_index, *objectEntry);
+        nextPtr = Object_RequestOverwrite(&play->objectCtx, non_persistent_entry_index, *objectEntry);
 
         // if (i < ARRAY_COUNT(play->objectCtx.slots) - 1) {
         if (non_persistent_entry_index < ARRAY_COUNT(play->objectCtx.slots) - 1) {
@@ -609,6 +725,8 @@ void (*sSceneCmdHandlers[SCENE_CMD_MAX])(PlayState*, SceneCmd*) = {
  */
 s32 Scene_ExecuteCommands(PlayState* play, SceneCmd* sceneCmd) {
     u32 cmdId;
+
+    Chaos_ClearActors();
 
     while (true) {
         cmdId = sceneCmd->base.code;

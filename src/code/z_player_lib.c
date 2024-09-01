@@ -398,7 +398,7 @@ void func_8012301C(Actor* thisx, PlayState* play2) {
         s16 objectId = gPlayerFormObjectIds[GET_PLAYER_FORM];
 
         gActorOverlayTable[ACTOR_PLAYER].initInfo->objectId = objectId;
-        func_8012F73C(&play->objectCtx, this->actor.objectSlot, objectId);
+        Object_RequestOverwrite(&play->objectCtx, this->actor.objectSlot, objectId);
         this->actor.objectSlot = Object_GetSlot(&play->objectCtx, GAMEPLAY_KEEP);
     } else if (this->av1.actionVar1 >= 3) {
         s32 objectSlot = Object_GetSlot(&play->objectCtx, gActorOverlayTable[ACTOR_PLAYER].initInfo->objectId);
