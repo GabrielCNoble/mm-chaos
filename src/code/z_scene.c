@@ -94,38 +94,38 @@ void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
         objectCtx->slots[index].load_pending = false;
     }
 
-    // for(index = 0; index < ARRAY_COUNT(gTestObjectIds); index++)
-    // {
-    //     u32 object_id = gTestObjectIds[index];
-    //     size_t size = gObjectTable[object_id].vromEnd - gObjectTable[object_id].vromStart;
-    //     if(size > largest_size)
-    //     {
-    //         largest_size = size;
-    //         largest_id = object_id;
-    //     }
-    // }
+    for(index = 0; index < ARRAY_COUNT(gTestObjectIds); index++)
+    {
+        u32 object_id = gTestObjectIds[index];
+        size_t size = gObjectTable[object_id].vromEnd - gObjectTable[object_id].vromStart;
+        if(size > largest_size)
+        {
+            largest_size = size;
+            largest_id = object_id;
+        }
+    }
 
-    largest_size = gObjectTable[OBJECT_ARWING].vromEnd - gObjectTable[OBJECT_ARWING].vromStart;
-    largest_size += gObjectTable[OBJECT_RR].vromEnd - gObjectTable[OBJECT_RR].vromStart;
-    largest_size += gObjectTable[OBJECT_NIW].vromEnd - gObjectTable[OBJECT_NIW].vromStart;
+    // largest_size = gObjectTable[OBJECT_ARWING].vromEnd - gObjectTable[OBJECT_ARWING].vromStart;
+    // largest_size += gObjectTable[OBJECT_RR].vromEnd - gObjectTable[OBJECT_RR].vromStart;
+    // largest_size += gObjectTable[OBJECT_NIW].vromEnd - gObjectTable[OBJECT_NIW].vromStart;
     spaceSize += largest_size;
 
     objectCtx->spaceStart = objectCtx->slots[0].segment = THA_AllocTailAlign16(&gameState->tha, spaceSize);
     objectCtx->spaceEnd = (void*)((u32)objectCtx->spaceStart + spaceSize);
     objectCtx->mainKeepSlot = Object_SpawnPersistent(objectCtx, GAMEPLAY_KEEP);
-    Object_SpawnPersistent(objectCtx, OBJECT_RR);
-    Object_SpawnPersistent(objectCtx, OBJECT_NIW);
-    Object_SpawnPersistent(objectCtx, OBJECT_ARWING);
+    // Object_SpawnPersistent(objectCtx, OBJECT_RR);
+    // Object_SpawnPersistent(objectCtx, OBJECT_NIW);
+    // Object_SpawnPersistent(objectCtx, OBJECT_ARWING);
 
     /* allocate enough space for the largest object */
-    // objectCtx->chaos_keep_slot = Object_AllocatePersistent(objectCtx, largest_id);
+    objectCtx->chaos_keep_slot = Object_AllocatePersistent(objectCtx, largest_id);
 
-    // if(gChaosContext.loaded_object_id > 0)
-    // {
-    //     /* some effect might be using this object, so reload it */
-    //     Object_RequestOverwrite(objectCtx, objectCtx->chaos_keep_slot, gChaosContext.loaded_object_id);
-    // }
-    
+    if(gChaosContext.loaded_object_id > 0)
+    {
+        /* some effect might be using this object, so reload it */
+        Object_RequestOverwrite(objectCtx, objectCtx->chaos_keep_slot, gChaosContext.loaded_object_id);
+    }
+
     gSegments[0x04] = OS_K0_TO_PHYSICAL(objectCtx->slots[objectCtx->mainKeepSlot].segment);
 }
 

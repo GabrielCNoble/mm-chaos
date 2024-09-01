@@ -247,8 +247,8 @@ void EnArwing_Init(Actor* thisx, PlayState* play) {
     random_direction.y = 0.0f;
     random_direction.z = Rand_CenteredFloat(2.0f);
     Math3D_Normalize(&random_direction);
-    random_direction.x *= 100.0f;
-    random_direction.z *= 100.0f;
+    random_direction.x *= 50.0f;
+    random_direction.z *= 50.0f;
 
     Actor_ProcessInitChain(&this->actor, sInitChain);
 

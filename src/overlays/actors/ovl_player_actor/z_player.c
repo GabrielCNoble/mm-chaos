@@ -7077,10 +7077,12 @@ void func_808373A4(PlayState* play, Player* this) {
     Player_PlaySfx(this, NA_SE_PL_DEKUNUTS_ATTACK);
 }
 
+/* Player_AutoJump? */
 s32 func_808373F8(PlayState* play, Player* this, u16 sfxId) {
     PlayerAnimationHeader* anim;
     f32 speed;
     s16 yawDiff = this->currentYaw - this->actor.shape.rot.y;
+    u32 out_of_shape;
 
     if ((IREG(66) / 100.0f) < this->linearVelocity) {
         speed = IREG(67) / 100.0f;
@@ -7116,36 +7118,39 @@ s32 func_808373F8(PlayState* play, Player* this, u16 sfxId) {
         anim = &gPlayerAnim_link_normal_run_jump;
     }
 
-    // Deku hopping
-    if (this->transformation == PLAYER_FORM_DEKU) {
-        speed *= 0.3f + ((5 - this->remainingHopsCounter) * 0.18f);
-        if (speed < 4.0f) {
-            speed = 4.0f;
-        }
-
-        if ((this->actor.depthInWater > 0.0f) && (this->remainingHopsCounter != 0)) {
-            this->actor.world.pos.y += this->actor.depthInWater;
-            func_80834D50(play, this, anim, speed, NA_SE_NONE);
-            this->av2.actionVar2 = 1;
-            this->stateFlags3 |= PLAYER_STATE3_200000;
-            Player_PlaySfx(this, (NA_SE_PL_DEKUNUTS_JUMP5 + 1 - this->remainingHopsCounter));
-            Player_AnimSfx_PlayVoice(this, sfxId);
-            this->remainingHopsCounter--;
-            if (this->remainingHopsCounter == 0) {
-                this->stateFlags2 |= PLAYER_STATE2_80000;
-                func_808373A4(play, this);
+    if(gChaosContext.link.out_of_shape_state == CHAOS_OUT_OF_SHAPE_STATE_NONE)
+    {
+        // Deku hopping
+        if (this->transformation == PLAYER_FORM_DEKU) {
+            speed *= 0.3f + ((5 - this->remainingHopsCounter) * 0.18f);
+            if (speed < 4.0f) {
+                speed = 4.0f;
             }
 
-            return true;
+            if ((this->actor.depthInWater > 0.0f) && (this->remainingHopsCounter != 0)) {
+                this->actor.world.pos.y += this->actor.depthInWater;
+                func_80834D50(play, this, anim, speed, NA_SE_NONE);
+                this->av2.actionVar2 = 1;
+                this->stateFlags3 |= PLAYER_STATE3_200000;
+                Player_PlaySfx(this, (NA_SE_PL_DEKUNUTS_JUMP5 + 1 - this->remainingHopsCounter));
+                Player_AnimSfx_PlayVoice(this, sfxId);
+                this->remainingHopsCounter--;
+                if (this->remainingHopsCounter == 0) {
+                    this->stateFlags2 |= PLAYER_STATE2_80000;
+                    func_808373A4(play, this);
+                }
+
+                return true;
+            }
+
+            if (this->actor.velocity.y > 0.0f) {
+                sfxId = NA_SE_NONE;
+            }
         }
 
-        if (this->actor.velocity.y > 0.0f) {
-            sfxId = NA_SE_NONE;
-        }
+        func_80834D50(play, this, anim, speed, sfxId);
+        this->av2.actionVar2 = 1;
     }
-
-    func_80834D50(play, this, anim, speed, sfxId);
-    this->av2.actionVar2 = 1;
 
     return true;
 }
@@ -8838,7 +8843,12 @@ void func_8083BB4C(PlayState* play, Player* this) {
         }
     }
 
-    out_of_shape = gChaosContext.link.out_of_shape_speed_scale < 0.1f;
+    out_of_shape = gChaosContext.link.out_of_shape_state == CHAOS_OUT_OF_SHAPE_STATE_GASPING;
+
+    // if(out_of_shape)
+    // {
+    //     this->remainingHopsCounter = 0;
+    // }
 
     if ((this->actor.parent == NULL) && (Player_Action_33 != this->actionFunc) &&
         (Player_Action_49 != this->actionFunc) &&
@@ -8846,14 +8856,15 @@ void func_8083BB4C(PlayState* play, Player* this) {
         if (this->ageProperties->unk_2C < this->actor.depthInWater) {
             /* player is beyond swim threshold */
             if (this->transformation == PLAYER_FORM_GORON ||
-                (out_of_shape && (this->transformation != PLAYER_FORM_ZORA))) {
+                (out_of_shape && this->transformation != PLAYER_FORM_ZORA && 
+                                 this->transformation != PLAYER_FORM_DEKU)) {
                 /* goron sinks like a rock and voids out */
                 func_80834140(play, this, &gPlayerAnim_link_swimer_swim_down);
                 func_808345C8();
                 func_8083B8D0(play, this);
             } else if (this->transformation == PLAYER_FORM_DEKU) {
                 /* deku either hops or voids out */
-                if (this->remainingHopsCounter != 0) {
+                if (this->remainingHopsCounter != 0 && !out_of_shape) {
                     /* start hop */
                     func_808373F8(play, this, NA_SE_VO_LI_AUTO_JUMP);
                 } else {
@@ -12382,8 +12393,8 @@ s16 gTrapFlapSounds[] = {
     NA_SE_VO_LI_FALL_L, 
     NA_SE_VO_LI_FALL_S, 
     NA_SE_VO_LI_LASH,
-    NA_SE_VO_LI_GROAN,
-    NA_SE_VO_LI_RELAX,
+    // NA_SE_VO_LI_GROAN,
+    // NA_SE_VO_LI_RELAX,
     NA_SE_VO_LI_CLIMB_END,
     NA_SE_VO_LI_FREEZE,
     NA_SE_VO_LI_TAKEN_AWAY,
@@ -12475,7 +12486,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // //     largest_size = size;
         // // }
 
-        // Chaos_ActivateCode(CHAOS_CODE_STARFOX, 1);
+        // Chaos_ActivateCode(CHAOS_CODE_BEER_GOGGLES, 10);
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_R))
@@ -13539,7 +13550,7 @@ void Player_Draw(Actor* thisx, PlayState* play) {
 
                 Matrix_Push();
 
-                actor_scale.y = -actor_scale.y;
+                reflection_scale.y = -reflection_scale.y;
                 Matrix_SetTranslateRotateYXZ(this->actor.world.pos.x, this->actor.world.pos.y + (2.0f * this->actor.depthInWater) +
                                                  (this->unk_ABC * reflection_scale.y), this->actor.world.pos.z, &this->actor.shape.rot);
                 Matrix_Scale(reflection_scale.x, reflection_scale.y, reflection_scale.z, MTXMODE_APPLY);
@@ -13551,7 +13562,7 @@ void Player_Draw(Actor* thisx, PlayState* play) {
                 Matrix_RotateYS(-sp70, MTXMODE_APPLY);
                 Matrix_RotateXS(-temp_s0_2, MTXMODE_APPLY);
                 Player_DrawGameplay(play, this, lod, gCullFrontDList, sp84);
-                actor_scale.y = -actor_scale.y;
+                // actor_scale.y = -actor_scale.y;
 
                 Matrix_Pop();
             }
@@ -17214,9 +17225,11 @@ s32 func_80850734(PlayState* play, Player* this) {
     return false;
 }
 
-/* Player_CanHop */
+/* Player_DekuHop */
 s32 func_80850854(PlayState* play, Player* this) {
-    if ((this->transformation == PLAYER_FORM_DEKU) && (this->remainingHopsCounter != 0) &&
+
+    if ((this->transformation == PLAYER_FORM_DEKU) && (this->remainingHopsCounter != 0) && 
+        gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_GASPING &&
         (gSaveContext.save.saveInfo.playerData.health != 0) && (sPlayerControlStickMagnitude != 0.0f)) {
         func_808373F8(play, this, 0);
         return true;
@@ -21252,7 +21265,8 @@ void Player_CsAction_21(PlayState* play, Player* this, CsCmdActorCue* cue) {
 }
 
 void Player_CsAction_22(PlayState* play, Player* this, CsCmdActorCue* cue) {
-    if (this->transformation != PLAYER_FORM_DEKU) {
+    if (this->transformation != PLAYER_FORM_DEKU && 
+            gChaosContext.link.fierce_deity_state == CHAOS_RANDOM_FIERCE_DEITY_STATE_NONE) {
         gSaveContext.save.playerForm = PLAYER_FORM_DEKU;
     }
 }
