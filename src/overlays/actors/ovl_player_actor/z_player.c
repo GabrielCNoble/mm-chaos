@@ -12432,7 +12432,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // //     largest_size = size;
         // // }
 
-        Chaos_ActivateCode(CHAOS_CODE_IMAGINARY_FRIENDS, 5);
+        // Chaos_ActivateCode(CHAOS_CODE_IMAGINARY_FRIENDS, 5);
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_R))

@@ -228,25 +228,52 @@ enum CHAOS_CODES
     CHAOS_CODE_LAST
 };
 
-#define CHAOS_CODE_FLAG_UPDATE_TRANSITION_SHIFT 0
-#define CHAOS_CODE_FLAG_UPDATE_CUTSCENE_SHIFT   1
-#define CHAOS_CODE_FLAG_UPDATE_BOAT_RIDE_SHIFT  2
-#define CHAOS_CODE_FLAG_UPDATE_EPONA_RIDE_SHIFT 3
+#define CHAOS_CODE_RESTRICTION_FLAG_TRANSITION_SHIFT     0
+#define CHAOS_CODE_RESTRICTION_FLAG_CUTSCENE_SHIFT       1
+#define CHAOS_CODE_RESTRICTION_FLAG_BOAT_RIDE_SHIFT      2
+#define CHAOS_CODE_RESTRICTION_FLAG_EPONA_RIDE_SHIFT     3
+#define CHAOS_CODE_RESTRICTION_FLAG_GRABBED_SHIFT        4
+// #define CHAOS_CODE_RESTRICTION_FLAG_PAUSED_SHIFT         5
+#define CHAOS_CODE_RESTRICTION_FLAG_DEAD_SHIFT           5             
+#define CHAOS_CODE_RESTRICTION_FLAG_TIME_STOPPED_SHIFT   6
 
-enum CHAOS_CODE_FLAGS
+enum CHAOS_CODE_RESTRICTION_FLAGS
 {
-    CHAOS_CODE_FLAG_UPDATE_TRANSITION   = 1 << CHAOS_CODE_FLAG_UPDATE_TRANSITION_SHIFT,
-    CHAOS_CODE_FLAG_UPDATE_CUTSCENE     = 1 << CHAOS_CODE_FLAG_UPDATE_CUTSCENE_SHIFT,
-    CHAOS_CODE_FLAG_UPDATE_BOAT_RIDE    = 1 << CHAOS_CODE_FLAG_UPDATE_BOAT_RIDE_SHIFT,
-    CHAOS_CODE_FLAG_UPDATE_EPONA_RIDE   = 1 << CHAOS_CODE_FLAG_UPDATE_EPONA_RIDE_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_TRANSITION   = 1 << CHAOS_CODE_RESTRICTION_FLAG_TRANSITION_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_CUTSCENE     = 1 << CHAOS_CODE_RESTRICTION_FLAG_CUTSCENE_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_BOAT_RIDE    = 1 << CHAOS_CODE_RESTRICTION_FLAG_BOAT_RIDE_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_EPONA_RIDE   = 1 << CHAOS_CODE_RESTRICTION_FLAG_EPONA_RIDE_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_GRABBED      = 1 << CHAOS_CODE_RESTRICTION_FLAG_GRABBED_SHIFT,
+    // CHAOS_CODE_RESTRICTION_FLAG_PAUSED       = 1 << CHAOS_CODE_RESTRICTION_FLAG_PAUSED_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_DEAD         = 1 << CHAOS_CODE_RESTRICTION_FLAG_DEAD_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_TIME_STOPPED = 1 << CHAOS_CODE_RESTRICTION_FLAG_TIME_STOPPED_SHIFT,
+
+    CHAOS_CODE_RESTRICTION_FLAG_ALL          =  CHAOS_CODE_RESTRICTION_FLAG_TRANSITION | 
+                                                CHAOS_CODE_RESTRICTION_FLAG_CUTSCENE |
+                                                CHAOS_CODE_RESTRICTION_FLAG_BOAT_RIDE |
+                                                CHAOS_CODE_RESTRICTION_FLAG_EPONA_RIDE |
+                                                CHAOS_CODE_RESTRICTION_FLAG_GRABBED |
+                                                // CHAOS_CODE_RESTRICTION_FLAG_PAUSED | 
+                                                CHAOS_CODE_RESTRICTION_FLAG_DEAD | 
+                                                CHAOS_CODE_RESTRICTION_FLAG_TIME_STOPPED
 };
+ 
+#define CHAOS_CODE_RESTRICTIONS(transition, cutscene, boat_ride, epona_ride, grabbed, dead, time_stopped)    \
+    ((((transition) && 1) << CHAOS_CODE_RESTRICTION_FLAG_TRANSITION_SHIFT) |                                 \
+    (((cutscene) && 1) << CHAOS_CODE_RESTRICTION_FLAG_CUTSCENE_SHIFT) |                                      \
+    (((boat_ride) && 1) << CHAOS_CODE_RESTRICTION_FLAG_BOAT_RIDE_SHIFT) |                                    \
+    (((epona_ride) && 1) << CHAOS_CODE_RESTRICTION_FLAG_EPONA_RIDE_SHIFT) |                                  \
+    (((grabbed) && 1) << CHAOS_CODE_RESTRICTION_FLAG_GRABBED_SHIFT) |                                        \
+    (((dead) && 1) << CHAOS_CODE_RESTRICTION_FLAG_DEAD_SHIFT) |                                              \
+    (((time_stopped) && 1) << CHAOS_CODE_RESTRICTION_FLAG_TIME_STOPPED_SHIFT))                               \
 
 struct ChaosCodeDef
 {
     f32     probability;   
     u8      min_time;
     u8      max_time;
-    u8      always_update;
+    u8      always_active;
+    u8      restrictions;
 };
 
 struct ChaosCodeSlot
@@ -257,7 +284,7 @@ struct ChaosCodeSlot
     u8  code; 
 };
  
-#define CHAOS_CODE_DEF(min_time, max_time, always_update, probability) {probability, min_time, max_time, always_update}
+#define CHAOS_CODE_DEF(min_time, max_time, always_active, restrictions, probability) {probability, min_time, max_time, always_active, restrictions}
 
 struct ChaosCode
 {
@@ -361,6 +388,7 @@ typedef struct ChaosContext
     u16                     chaos_timer;
     u8                      active_code_count;
     u8                      update_enabled;
+    u8                      effect_restrictions;
     struct ChaosCode        active_codes[MAX_ACTIVE_CODES];
     u8                      active_code_indices[CHAOS_CODE_LAST];
 
@@ -507,6 +535,8 @@ void Chaos_UpdateCodeDistribution(void);
 
 u8 Chaos_CanUpdateChaos(struct PlayState *play);
 
+u8 Chaos_EffectRestrictions(struct PlayState *play);
+
 Actor *Chaos_SpawnActor(ActorContext *context, PlayState *play, s16 actor_id, f32 pos_x, f32 pos_y, f32 pos_z, s16 rot_x, s16 rot_y, s16 rot_z, s32 params);
 
 Actor* Chaos_SpawnAsChild(ActorContext* context, Actor* parent, PlayState* play, s16 actor_id, f32 pos_x, f32 pos_y, f32 pos_z, s16 rot_x, s16 rot_y, s16 rot_z, s32 params);
@@ -524,5 +554,7 @@ void Chaos_ClearActors(void);
 u16 Chaos_RandomEntrance(PlayState *play);
 
 void Chaos_UpdateEntrances(PlayState *play);
+
+void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this);
 
 #endif

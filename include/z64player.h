@@ -876,8 +876,9 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_20         (1 << 5)
 // 
 #define PLAYER_STATE1_40         (1 << 6)
-// 
+// dead
 #define PLAYER_STATE1_80         (1 << 7)
+#define PLAYER_STATE1_DEAD PLAYER_STATE1_80
 // 
 #define PLAYER_STATE1_100        (1 << 8)
 // 
@@ -908,8 +909,9 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_200000     (1 << 21)
 // 
 #define PLAYER_STATE1_400000     (1 << 22)
-// 
+// Mounted on epona
 #define PLAYER_STATE1_800000     (1 << 23)
+#define PLAYER_STATE1_MOUNTED PLAYER_STATE1_800000
 // 
 #define PLAYER_STATE1_1000000    (1 << 24)
 // Player is on a ladder
@@ -918,10 +920,12 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_4000000    (1 << 26)
 // Swimming?
 #define PLAYER_STATE1_8000000    (1 << 27)
+#define PLAYER_STATE1_SWIMMING PLAYER_STATE1_8000000
 // 
 #define PLAYER_STATE1_10000000   (1 << 28)
 // Time is stopped but Link & NPC animations continue
 #define PLAYER_STATE1_20000000   (1 << 29)
+#define PLAYER_STATE1_TIME_STOPPED PLAYER_STATE1_20000000
 // 
 #define PLAYER_STATE1_40000000   (1 << 30)
 // Related to exit a grotto / captured by grotto?
@@ -942,8 +946,9 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE2_20         (1 << 5)
 // Hanging off of something?
 #define PLAYER_STATE2_40         (1 << 6)
-// 
+// Player grabbed
 #define PLAYER_STATE2_80         (1 << 7)
+#define PLAYER_STATE2_GRABBED PLAYER_STATE2_80
 // 
 #define PLAYER_STATE2_100        (1 << 8)
 // 
