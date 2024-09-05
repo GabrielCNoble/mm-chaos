@@ -117,5 +117,5 @@ Please note that is is our strict policy that *Anyone who wishes to contribute t
 
 For more information on getting started, see our [Contributing Guide](docs/CONTRIBUTING.md), [Style Guide](docs/STYLE.md) and our [Code Review Guidelines](docs/REVIEWING.md) to see what code quality guidelines we follow.
 
-## Special thanks
+## Special thanks 
 Special thanks goes to Aegiker and Bat Basement community for the invaluable help.
