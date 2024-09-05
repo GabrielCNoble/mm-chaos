@@ -11,7 +11,8 @@ typedef enum {
     /* 0 */ LIKE_LIKE_PARAM_0,
     /* 1 */ LIKE_LIKE_PARAM_1,
     /* 2 */ LIKE_LIKE_PARAM_2,
-    /* 3 */ LIKE_LIKE_PARAM_3
+    /* 3 */ LIKE_LIKE_PARAM_3,
+            LIKE_LIKE_TYPE_VORE,
 } LikeLikeParam;
 
 typedef enum LikeLikeBodyPart {

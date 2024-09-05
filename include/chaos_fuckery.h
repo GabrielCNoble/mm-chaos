@@ -106,6 +106,12 @@ enum CHAOS_CODES
     CHAOS_CODE_SWAP_HEAL_AND_HURT,
     /* gives junk item */
     CHAOS_CODE_JUNK_ITEM,
+    /* randomly adds heart container */
+    CHAOS_CODE_RANDOM_HEALTH_UP,
+    /* randomly removes heart container */
+    CHAOS_CODE_RANDOM_HEALTH_DOWN,
+    /* link stops and waves/bows at a random direction */
+    CHAOS_CODE_IMAGINARY_FRIENDS,
     /* 
         player randomly loses grip, dropping items, falling from ledges/ladders
         TODO: change this one to include items from the inventory. The item should
@@ -119,10 +125,7 @@ enum CHAOS_CODES
     // CHAOS_CODE_RECOVER_LOST_ITEM,
     /* randomly plays a little puzzle cutscene  */
     // CHAOS_CODE_PUZZLE_EVENT,
-    /* randomly adds heart container */
-    // CHAOS_CODE_RANDOM_HEALTH_UP,
-    /* randomly removes heart container */
-    // CHAOS_CODE_RANDOM_HEALTH_DOWN,
+    
 
     // CHAOS_CODE_SLOWER_ANIMATIONS,
     // CHAOS_CODE_FASTER_ANIMATIONS,
@@ -210,12 +213,32 @@ enum CHAOS_CODES
     /* warps player to majora's lair, then warps them back out */
     // CHAOS_CODE_FAKE_MAJORAS_LAIR,
 
-    /* link stops and waves/bows at a random direction */
-    // CHAOS_CODE_JUST_THE_WIND,
     /* camera sees from above (similar to gta) */
-    // CHAOS_CODE_BIRDSEYE_VIEW
+    // CHAOS_CODE_BIRDSEYE_VIEW,
+
+    /* randomly spawns elegy statue behind player */
+    // CHAOS_CODE_BEN,
+    /* when in goron shape, goron curls up and stays like that */
+    // CHAOS_CODE_SHY_GORON,
+    /* spawns the shadow and sound effect of a wallmaster */
+    // CHAOS_CODE_FAKE_WALLMASTER,
+    /* spawns the actual wallmaster */
+    // CHAOS_CODE_REAL_WALLMASTER,
     
     CHAOS_CODE_LAST
+};
+
+#define CHAOS_CODE_FLAG_UPDATE_TRANSITION_SHIFT 0
+#define CHAOS_CODE_FLAG_UPDATE_CUTSCENE_SHIFT   1
+#define CHAOS_CODE_FLAG_UPDATE_BOAT_RIDE_SHIFT  2
+#define CHAOS_CODE_FLAG_UPDATE_EPONA_RIDE_SHIFT 3
+
+enum CHAOS_CODE_FLAGS
+{
+    CHAOS_CODE_FLAG_UPDATE_TRANSITION   = 1 << CHAOS_CODE_FLAG_UPDATE_TRANSITION_SHIFT,
+    CHAOS_CODE_FLAG_UPDATE_CUTSCENE     = 1 << CHAOS_CODE_FLAG_UPDATE_CUTSCENE_SHIFT,
+    CHAOS_CODE_FLAG_UPDATE_BOAT_RIDE    = 1 << CHAOS_CODE_FLAG_UPDATE_BOAT_RIDE_SHIFT,
+    CHAOS_CODE_FLAG_UPDATE_EPONA_RIDE   = 1 << CHAOS_CODE_FLAG_UPDATE_EPONA_RIDE_SHIFT,
 };
 
 struct ChaosCodeDef
@@ -230,7 +253,8 @@ struct ChaosCodeSlot
 {
     u32 range_start;
     u32 range_end;
-    u8  code;
+    f32 prob_scale;
+    u8  code; 
 };
  
 #define CHAOS_CODE_DEF(min_time, max_time, always_update, probability) {probability, min_time, max_time, always_update}
@@ -307,6 +331,13 @@ enum CHAOS_RANDOM_FIERCE_DEITY_STATES
     CHAOS_RANDOM_FIERCE_DEITY_STATE_FIERCE_DEITY
 };
 
+enum CHAOS_IMAGINARY_FRIENDS_STATES
+{
+    CHAOS_IMAGINARY_FRIENDS_STATE_SLOWING_DOWN,
+    CHAOS_IMAGINARY_FRIENDS_STATE_SCHIZO,
+    CHAOS_IMAGINARY_FRIENDS_STATE_NONE,
+};
+
 #define INVALID_CODE_INDEX      0xff 
 #define MAX_CHAOS_TIMER         8
 #define MIN_CHAOS_TIMER         2
@@ -339,7 +370,7 @@ typedef struct ChaosContext
     u8                      need_update_distribution;
     u8                      hide_actors;
 
-    u8                      spawn_actor_code;
+    u8                      queued_spawn_actor_code;
     u8                      loaded_object_id;
 
     struct 
@@ -363,12 +394,14 @@ typedef struct ChaosContext
     struct
     {
         PlayerAnimationHeader * cur_animation;
+        // PlayerAnimationHeader * imaginary_friends_animation;
         f32                     cur_animation_frame;
         f32                     cur_animation_play_speed;
         u32                     cur_animation_mode;
 
         f32                     out_of_shape_speed_scale;
         f32                     sneeze_speed_scale;
+        f32                     imaginary_friends_speed_scale;
         f32                     beer_x_offset;
         f32                     beer_y_offset;
         f32                     beer_pitch;
@@ -383,9 +416,13 @@ typedef struct ChaosContext
         u8                      out_of_shape_state;
         u8                      beer_goggles_state;
         u8                      fierce_deity_state;
+        u8                      imaginary_friends_state;
+        u8                      imaginary_friends_anim_index;
+        u8                      sneeze_state;
         u8                      fierce_deity_counter;
         u8                      prev_link_form;
         u16                     syke_health;
+        s16                     imaginary_friends_target_yaw;
         u8                      syke;
         u8                      random_knockback_timer;
         u8                      trap_flap_timer;
@@ -458,7 +495,7 @@ u8 Chaos_IsCodeActive(u8 code);
 
 struct ChaosCode *Chaos_GetCode(u8 code);
 
-void Chaos_EnableCode(u8 code);
+void Chaos_EnableCode(u8 code, f32 prob_scale);
 
 void Chaos_DisableCode(u8 code);
 

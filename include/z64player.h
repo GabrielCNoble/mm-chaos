@@ -1434,6 +1434,8 @@ void Player_SetFeetPos(struct PlayState* play, Player* player, s32 limbIndex);
 void Player_PostLimbDrawGameplay(struct PlayState* play, s32 limbIndex, Gfx** dList1, Gfx** dList2, Vec3s* rot, Actor* actor);
 /* Player_RevertToHumanToRespawn */
 void func_808345C8(void);
+void func_80834104(struct PlayState* play, Player* this);
+void func_80169EFC(struct PlayState* this);
 
 extern FlexSkeletonHeader* gPlayerSkeletons[PLAYER_FORM_MAX];
 extern PlayerModelIndices gPlayerModelTypes[];

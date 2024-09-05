@@ -40,6 +40,7 @@ u8 sMotionBlurStatus;
 
 #include "overlays/actors/ovl_En_Niw/z_en_niw.h"
 #include "overlays/actors/ovl_En_Attack_Niw/z_en_attack_niw.h"
+#include "overlays/actors/ovl_En_Rr/z_en_rr.h"
 
 s32 gDbgCamEnabled = false;
 u8 D_801D0D54 = false;
@@ -86,44 +87,46 @@ void Play_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
                         camera->setting != CAM_SET_BOAT_CRUISE;
     
     Chaos_ClearEnabledCodes();
-    Chaos_EnableCode(CHAOS_CODE_YEET);
-    Chaos_EnableCode(CHAOS_CODE_MOON_DANCE);
-    Chaos_EnableCode(CHAOS_CODE_ONE_HIT_KO);
-    Chaos_EnableCode(CHAOS_CODE_TIMER_UP);
-    Chaos_EnableCode(CHAOS_CODE_EARTHQUAKE);
-    Chaos_EnableCode(CHAOS_CODE_WEIRD_UI);
-    Chaos_EnableCode(CHAOS_CODE_BEER_GOGGLES);
-    Chaos_EnableCode(CHAOS_CODE_INVINCIBLE);
-    Chaos_EnableCode(CHAOS_CODE_TRAP_FLAP);
-    Chaos_EnableCode(CHAOS_CODE_SLIPPERY_FLOORS);
-    Chaos_EnableCode(CHAOS_CODE_SLOW_DOWN);
-    Chaos_EnableCode(CHAOS_CODE_TERRIBLE_MUSIC);
-    Chaos_EnableCode(CHAOS_CODE_INCREDIBLE_KNOCKBACK);
-    Chaos_EnableCode(CHAOS_CODE_RANDOM_SCALING);
-    Chaos_EnableCode(CHAOS_CODE_BIG_BROTHER);
-    Chaos_EnableCode(CHAOS_CODE_WEIRD_SKYBOX);
-    Chaos_EnableCode(CHAOS_CODE_CHANGE_HEALTH);
-    Chaos_EnableCode(CHAOS_CODE_CHANGE_RUPEE);
-    Chaos_EnableCode(CHAOS_CODE_SWAP_HEAL_AND_HURT);
-    Chaos_EnableCode(CHAOS_CODE_RANDOM_FIERCE_DEITY);
-    Chaos_EnableCode(CHAOS_CODE_JUNK_ITEM);
+    Chaos_EnableCode(CHAOS_CODE_YEET, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_MOON_DANCE, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_ONE_HIT_KO, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_TIMER_UP, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_EARTHQUAKE, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_WEIRD_UI, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_BEER_GOGGLES, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_INVINCIBLE, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_TRAP_FLAP, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_SLIPPERY_FLOORS, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_SLOW_DOWN, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_TERRIBLE_MUSIC, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_INCREDIBLE_KNOCKBACK, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_RANDOM_SCALING, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_BIG_BROTHER, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_WEIRD_SKYBOX, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_CHANGE_HEALTH, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_CHANGE_RUPEE, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_SWAP_HEAL_AND_HURT, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_RANDOM_FIERCE_DEITY, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_JUNK_ITEM, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_RANDOM_HEALTH_UP, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_RANDOM_HEALTH_DOWN, 1.0f);
 
     if(gSaveContext.save.saveInfo.playerData.isMagicAcquired)
     {
-        Chaos_EnableCode(CHAOS_CODE_CHANGE_MAGIC);
+        Chaos_EnableCode(CHAOS_CODE_CHANGE_MAGIC, 1.0f);
     }
 
     if(gSaveContext.save.saveInfo.inventory.items[SLOT_BOW] == ITEM_BOW)
     {
-        Chaos_EnableCode(CHAOS_CODE_BOMB_ARROWS);
-        Chaos_EnableCode(CHAOS_CODE_BUCKSHOT_ARROWS);
-        Chaos_EnableCode(CHAOS_CODE_WEIRD_ARROWS);
+        Chaos_EnableCode(CHAOS_CODE_BOMB_ARROWS, 1.0f);
+        Chaos_EnableCode(CHAOS_CODE_BUCKSHOT_ARROWS, 1.0f);
+        Chaos_EnableCode(CHAOS_CODE_WEIRD_ARROWS, 1.0f);
     }
 
     if(gSaveContext.save.saveInfo.inventory.items[SLOT_BOMB] == ITEM_BOMB ||
        gSaveContext.save.saveInfo.inventory.items[SLOT_BOMBCHU] == ITEM_BOMBCHU)
     {
-        Chaos_EnableCode(CHAOS_CODE_RANDOM_BOMB_TIMER);
+        Chaos_EnableCode(CHAOS_CODE_RANDOM_BOMB_TIMER, 1.0f);
     }
  
     if(can_be_pushed_around)
@@ -132,22 +135,22 @@ void Play_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
         /* if the player has been grabbed, is mounted on epona, 
         riding the boat or time is stopped, don't spawn any of those 
         effects to avoid leaving the player in an inconsistent state */
-        Chaos_EnableCode(CHAOS_CODE_POKE);
-        Chaos_EnableCode(CHAOS_CODE_RANDOM_KNOCKBACK);
-        Chaos_EnableCode(CHAOS_CODE_ICE_TRAP);
-        Chaos_EnableCode(CHAOS_CODE_SHOCK);
-        Chaos_EnableCode(CHAOS_CODE_SYKE);
-        Chaos_EnableCode(CHAOS_CODE_DIE);
-        Chaos_EnableCode(CHAOS_CODE_ACTOR_CHASE);
-        Chaos_EnableCode(CHAOS_CODE_OUT_OF_SHAPE);
+        Chaos_EnableCode(CHAOS_CODE_POKE, 1.0f);
+        Chaos_EnableCode(CHAOS_CODE_RANDOM_KNOCKBACK, 1.0f);
+        Chaos_EnableCode(CHAOS_CODE_ICE_TRAP, 1.0f);
+        Chaos_EnableCode(CHAOS_CODE_SHOCK, 1.0f);
+        Chaos_EnableCode(CHAOS_CODE_SYKE, 1.0f);
+        Chaos_EnableCode(CHAOS_CODE_DIE, 1.0f);
+        Chaos_EnableCode(CHAOS_CODE_ACTOR_CHASE, 1.0f);
+        Chaos_EnableCode(CHAOS_CODE_OUT_OF_SHAPE, 1.0f);
 
-        Chaos_EnableCode(CHAOS_CODE_LOVELESS_MARRIAGE);
-        Chaos_EnableCode(CHAOS_CODE_CHICKEN_ARISE);
-        Chaos_EnableCode(CHAOS_CODE_STARFOX);
+        Chaos_EnableCode(CHAOS_CODE_LOVELESS_MARRIAGE, 1.0f);
+        Chaos_EnableCode(CHAOS_CODE_CHICKEN_ARISE, 1.0f);
+        Chaos_EnableCode(CHAOS_CODE_STARFOX, 1.0f);
 
         if(has_ocarina)
         {
-            Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA);
+            Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA, 1.0f);
         }
     }
 
@@ -157,7 +160,7 @@ void Play_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
        this->roomCtx.curRoom.num != 0 && this->roomCtx.curRoom.num != 1 && this->roomCtx.curRoom.num != 2))
     {
         /* some bosses jump around and may fall out of bounds of low gravity is active */
-        Chaos_EnableCode(CHAOS_CODE_LOW_GRAVITY);
+        Chaos_EnableCode(CHAOS_CODE_LOW_GRAVITY, 1.0f);
     }
     else
     {
@@ -181,7 +184,7 @@ void Play_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
             /* don't enable entrance rando until the player enters south clock town.
             Also don't enable it in boss rooms as it could interact badly with the warp 
             out */
-            Chaos_EnableCode(CHAOS_CODE_ENTRANCE_RANDO);
+            Chaos_EnableCode(CHAOS_CODE_ENTRANCE_RANDO, 1.0f);
             // Chaos_EnableCode(CHAOS_CODE_SINGLE_ACTION_OWL);
             Chaos_UpdateEntrances(this);
         }
@@ -1088,7 +1091,7 @@ void Play_UpdateMain(PlayState* this) {
     {
         Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_RR, 
             player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z,
-            0, 0, 0, 0);
+            0, 0, 0, LIKE_LIKE_TYPE_VORE);
     }
 
     if(Chaos_IsCodeActive(CHAOS_CODE_STARFOX))
