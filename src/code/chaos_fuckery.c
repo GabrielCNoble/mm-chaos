@@ -81,7 +81,7 @@ PlayerAnimationHeader *gImaginaryFriendAnimations[] = {
 struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_NONE]                    = */ CHAOS_CODE_DEF(0,  0,  false,  CHAOS_CODE_RESTRICTIONS(true,   true,   true,   true,   true,   true,   true),    0),
     /* [CHAOS_CODE_LOW_GRAVITY]             = */ CHAOS_CODE_DEF(10, 18, true,   CHAOS_CODE_RESTRICTIONS(false,  false,  false,  false,  false,  false,  false),   0.020f),
-    /* [CHAOS_CODE_CHANGE_HEALTH]           = */ CHAOS_CODE_DEF(1,  10, false,  CHAOS_CODE_RESTRICTIONS(false,  false,  false,  false,  false,  false,  false),   0.04f),
+    /* [CHAOS_CODE_CHANGE_HEALTH]           = */ CHAOS_CODE_DEF(1,  10, false,  CHAOS_CODE_RESTRICTIONS(false,  false,  false,  false,  false,  true,  false),   0.04f),
     /* [CHAOS_CODE_CHANGE_RUPEE]            = */ CHAOS_CODE_DEF(0,  0,  false,  CHAOS_CODE_RESTRICTIONS(false,  false,  false,  false,  false,  false,  false),   0.04f),
     /* [CHAOS_CODE_ACTOR_CHASE]             = */ CHAOS_CODE_DEF(6,  15, false,  CHAOS_CODE_RESTRICTIONS(true,   true,   true,   true,   true,   true,   true),    0.01f),
     /* [CHAOS_CODE_YEET]                    = */ CHAOS_CODE_DEF(8,  17, true,   CHAOS_CODE_RESTRICTIONS(false,  false,  false,  false,  false,  false,  false),   0.01f),
@@ -97,7 +97,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_WEIRD_ARROWS]            = */ CHAOS_CODE_DEF(15, 25, false,  0,  0.02f),
     /* [CHAOS_CODE_BUCKSHOT_ARROWS]         = */ CHAOS_CODE_DEF(15, 25, false,  0,  0.02f),
     /* [CHAOS_CODE_RANDOM_BOMB_TIMER]       = */ CHAOS_CODE_DEF(10, 15, false,  0,  0.02f),
-    /* [CHAOS_CODE_LOVELESS_MARRIAGE]       = */ CHAOS_CODE_DEF(0,  0,  false,  CHAOS_CODE_RESTRICTIONS(true, true, true, true, true, true, true), 0.0075f),
+    /* [CHAOS_CODE_LOVELESS_MARRIAGE]       = */ CHAOS_CODE_DEF(0,  0,  false,  CHAOS_CODE_RESTRICTIONS(true, false, true, true, false, true, false), 0.0075f),
     /* [CHAOS_CODE_WEIRD_UI]                = */ CHAOS_CODE_DEF(8,  15, true,   0,  0.04f),
     /* [CHAOS_CODE_BEER_GOGGLES]            = */ CHAOS_CODE_DEF(15, 30, true,   0,  0.014f),
     /* [CHAOS_CODE_CHANGE_MAGIC]            = */ CHAOS_CODE_DEF(1,  10, false,  0,  0.04f),
@@ -108,7 +108,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_TEXTBOX]                 = */ CHAOS_CODE_DEF(0,   0, false,  CHAOS_CODE_RESTRICTIONS(true, true, true, true, true, true, true), 0.008f),
     /* [CHAOS_CODE_SLIPPERY_FLOORS]         = */ CHAOS_CODE_DEF(10, 20, false,  0,  0.012f),
     /* [CHAOS_CODE_SLOW_DOWN]               = */ CHAOS_CODE_DEF(5,  12, false,  0,  0.006f),
-    /* [CHAOS_CODE_ENTRANCE_RANDO]          = */ CHAOS_CODE_DEF(5,  15, false,  0,  0.001f),
+    /* [CHAOS_CODE_ENTRANCE_RANDO]          = */ CHAOS_CODE_DEF(5,  15, false,  0,  0.006f),
     /* [CHAOS_CODE_TERRIBLE_MUSIC]          = */ CHAOS_CODE_DEF(15, 35, true,   0,  0.01f),
     /* [CHAOS_CODE_INCREDIBLE_KNOCKBACK]    = */ CHAOS_CODE_DEF(10, 21, false,  0,  0.008f),
     /* [CHAOS_CODE_RANDOM_SCALING]          = */ CHAOS_CODE_DEF(10, 21, false,  0,  0.007f),
@@ -119,9 +119,9 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_SINGLE_ACTION_OWL]       = */ CHAOS_CODE_DEF(5,  15, false,  0, 0.0005f),
     /* [CHAOS_CODE_PLAY_OCARINA]            = */ CHAOS_CODE_DEF(0,  0,  false,  CHAOS_CODE_RESTRICTIONS(true, true, true, true, true, true, true), 0.004f),
     /* [CHAOS_CODE_SNEEZE]                  = */ CHAOS_CODE_DEF(5, 15,  false,  CHAOS_CODE_RESTRICTIONS(true, true, true, true, true, true, true), 0.006f),
-    /* [CHAOS_CODE_RANDO_FIERCE_DEITY]      = */ CHAOS_CODE_DEF(25, 75, false,  CHAOS_CODE_RESTRICTIONS(true, true, true, true, true, true, true), 0.00095f),
-    /* [CHAOS_CODE_CHICKEN_ARISE]           = */ CHAOS_CODE_DEF(25, 45, false,  CHAOS_CODE_RESTRICTIONS(true, true, true, true, true, true, true), 0.0035f),
-    /* [CHAOS_CODE_STARFOX]                 = */ CHAOS_CODE_DEF(0, 0,   false,  CHAOS_CODE_RESTRICTIONS(true, true, true, true, true, true, true), 0.0055f),
+    /* [CHAOS_CODE_RANDO_FIERCE_DEITY]      = */ CHAOS_CODE_DEF(25, 75, false,  CHAOS_CODE_RESTRICTIONS(true, true, true, true, false, true, true), 0.00095f),
+    /* [CHAOS_CODE_CHICKEN_ARISE]           = */ CHAOS_CODE_DEF(25, 45, false,  CHAOS_CODE_RESTRICTIONS(true, false, true, true, false, true, false), 0.0055f),
+    /* [CHAOS_CODE_STARFOX]                 = */ CHAOS_CODE_DEF(0, 0,   false,  CHAOS_CODE_RESTRICTIONS(true, false, true, true, false, true, false), 0.0055f),
     /* [CHAOS_CODE_SWAP_HEAL_AND_HURT]      = */ CHAOS_CODE_DEF(5, 25,  false,  0, 0.003f),
     /* [CHAOS_CODE_JUNK_ITEM]               = */ CHAOS_CODE_DEF(0, 0,   false,  CHAOS_CODE_RESTRICTIONS(true, true, true, true, true, true, true), 0.003f),
     /* [CHAOS_CODE_RANDOM_HEALTH_UP]        = */ CHAOS_CODE_DEF(0, 0,   false,  0, 0.0005f),
@@ -782,35 +782,41 @@ void Chaos_UpdateChaos(PlayState *playstate)
                             }
                         break;
 
-                        case CHAOS_CODE_POKE:
-                        case CHAOS_CODE_RANDOM_KNOCKBACK:
-                        case CHAOS_CODE_ICE_TRAP:
-                        case CHAOS_CODE_SHOCK:
-                        case CHAOS_CODE_LOVELESS_MARRIAGE:
-                        case CHAOS_CODE_SYKE:
-                        case CHAOS_CODE_DIE:
-                        case CHAOS_CODE_ACTOR_CHASE:
-                        case CHAOS_CODE_PLAY_OCARINA:
+                        // case CHAOS_CODE_POKE:
+                        // case CHAOS_CODE_RANDOM_KNOCKBACK:
+                        // case CHAOS_CODE_ICE_TRAP:
+                        // case CHAOS_CODE_SHOCK:
+                        // case CHAOS_CODE_SYKE:
+                        // case CHAOS_CODE_DIE:
+                        // case CHAOS_CODE_ACTOR_CHASE:
+                        // case CHAOS_CODE_PLAY_OCARINA:
                         case CHAOS_CODE_OUT_OF_SHAPE:
-                        case CHAOS_CODE_CHICKEN_ARISE:
-                        case CHAOS_CODE_STARFOX:
-                            if((player->stateFlags2 & PLAYER_STATE2_80) || (player->stateFlags1 & PLAYER_STATE1_800000) ||
-                                (player->stateFlags1 & PLAYER_STATE1_20000000) || camera->setting == CAM_SET_BOAT_CRUISE)
-                            {
-                                /* if the player has been grabbed, is mounted on epona, 
-                                riding the boat or time is stopped, don't spawn any of those 
-                                effects to avoid leaving the player in an inconsistent state */
-                                gChaosContext.queued_spawn_actor_code = CHAOS_CODE_NONE;
-                                continue;
-                            }
-                            else if(next_code == CHAOS_CODE_OUT_OF_SHAPE)
+                        
+                            // if((player->stateFlags2 & PLAYER_STATE2_80) || (player->stateFlags1 & PLAYER_STATE1_800000) ||
+                            //     (player->stateFlags1 & PLAYER_STATE1_20000000) || camera->setting == CAM_SET_BOAT_CRUISE)
+                            // {
+                            //     /* if the player has been grabbed, is mounted on epona, 
+                            //     riding the boat or time is stopped, don't spawn any of those 
+                            //     effects to avoid leaving the player in an inconsistent state */
+                            //     gChaosContext.queued_spawn_actor_code = CHAOS_CODE_NONE;
+                            //     continue;
+                            // }
+                            // else 
+                            
+                            if(next_code == CHAOS_CODE_OUT_OF_SHAPE)
                             {
                                 if(Chaos_IsCodeActive(CHAOS_CODE_SNEEZE))
                                 {
                                     continue;
                                 }
                             }
-                            else if(gChaosContext.queued_spawn_actor_code == CHAOS_CODE_NONE &&
+
+                            break;
+
+                        case CHAOS_CODE_LOVELESS_MARRIAGE:
+                        case CHAOS_CODE_CHICKEN_ARISE:
+                        case CHAOS_CODE_STARFOX:
+                            if(gChaosContext.queued_spawn_actor_code == CHAOS_CODE_NONE &&
                                     gChaosContext.actors.spawned_actors == 0)
                             {
                                 if(next_code == CHAOS_CODE_LOVELESS_MARRIAGE && 
@@ -1171,7 +1177,8 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
             GfxPrint_Printf(&gfx_print, "Action: %d", gPlayerAction);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "Scene: %d, room: %d, hazard: %d", scene, playstate->roomCtx.curRoom.num, Player_GetEnvironmentalHazard(playstate));
-            // GfxPrint_SetPos(&gfx_print, 1, y_pos++);
+            GfxPrint_SetPos(&gfx_print, 1, y_pos++);
+            GfxPrint_Printf(&gfx_print, "effect restrictions: %x", gChaosContext.effect_restrictions);
             // GfxPrint_Printf(&gfx_print, "%x(%f) %x(%f) %x", player->skelAnime.animation, player->skelAnime.curFrame,
             //                                                 player->skelAnimeUpper.animation, player->skelAnimeUpper.curFrame,
             //                                                 gImaginaryFriendAnimations[gChaosContext.link.imaginary_friends_anim_index]);
@@ -1441,6 +1448,8 @@ Actor *Chaos_SpawnActor(ActorContext *context, PlayState *play, s16 actor_id, f3
             chaos_actor->actor = actor;
             chaos_actor->timer = ACTOR_DESPAWN_TIMER;
 
+            Actor_ChangeCategory(play, &play->actorCtx, actor, ACTORCAT_CHAOS);
+
             if(actor_id == ACTOR_EN_ARWING)
             {
                 chaos_actor->timer *= 10;
@@ -1467,6 +1476,7 @@ Actor* Chaos_SpawnAsChild(ActorContext* context, Actor* parent, PlayState* play,
             struct ChaosActor *chaos_actor = gChaosContext.actors.slots + gChaosContext.actors.spawned_actors;
             chaos_actor->actor = actor;
             chaos_actor->timer = ACTOR_DESPAWN_TIMER;
+            Actor_ChangeCategory(play, &play->actorCtx, actor, ACTORCAT_CHAOS);
             // chaos_actor->destroy = actor->destroy;
             // actor->destroy = Chaos_DestroyFunction;
             gChaosContext.actors.spawned_actors++;
@@ -1936,29 +1946,29 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     }
  
     // if(can_be_pushed_around)
+    // {
+    // u32 index;
+    /* if the player has been grabbed, is mounted on epona, 
+    riding the boat or time is stopped, don't spawn any of those 
+    effects to avoid leaving the player in an inconsistent state */
+    Chaos_EnableCode(CHAOS_CODE_POKE, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_RANDOM_KNOCKBACK, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_ICE_TRAP, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_SHOCK, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_SYKE, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_DIE, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_ACTOR_CHASE, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_OUT_OF_SHAPE, 1.0f);
+
+    Chaos_EnableCode(CHAOS_CODE_LOVELESS_MARRIAGE, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_CHICKEN_ARISE, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_STARFOX, 1.0f);
+
+    if(has_ocarina)
     {
-        u32 index;
-        /* if the player has been grabbed, is mounted on epona, 
-        riding the boat or time is stopped, don't spawn any of those 
-        effects to avoid leaving the player in an inconsistent state */
-        Chaos_EnableCode(CHAOS_CODE_POKE, 1.0f);
-        Chaos_EnableCode(CHAOS_CODE_RANDOM_KNOCKBACK, 1.0f);
-        Chaos_EnableCode(CHAOS_CODE_ICE_TRAP, 1.0f);
-        Chaos_EnableCode(CHAOS_CODE_SHOCK, 1.0f);
-        Chaos_EnableCode(CHAOS_CODE_SYKE, 1.0f);
-        Chaos_EnableCode(CHAOS_CODE_DIE, 1.0f);
-        Chaos_EnableCode(CHAOS_CODE_ACTOR_CHASE, 1.0f);
-        Chaos_EnableCode(CHAOS_CODE_OUT_OF_SHAPE, 1.0f);
-
-        Chaos_EnableCode(CHAOS_CODE_LOVELESS_MARRIAGE, 1.0f);
-        Chaos_EnableCode(CHAOS_CODE_CHICKEN_ARISE, 1.0f);
-        Chaos_EnableCode(CHAOS_CODE_STARFOX, 1.0f);
-
-        if(has_ocarina)
-        {
-            Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA, 1.0f);
-        }
+        Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA, 1.0f);
     }
+    // }
 
     scene_index = gSaveContext.save.entrance >> 9;
     if(scene_index != ENTR_SCENE_ODOLWAS_LAIR && scene_index != ENTR_SCENE_IGOS_DU_IKANAS_LAIR &&

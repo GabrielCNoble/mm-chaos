@@ -220,10 +220,10 @@ enum CHAOS_CODES
     // CHAOS_CODE_BEN,
     /* when in goron shape, goron curls up and stays like that */
     // CHAOS_CODE_SHY_GORON,
-    /* spawns the shadow and sound effect of a wallmaster */
-    // CHAOS_CODE_FAKE_WALLMASTER,
-    /* spawns the actual wallmaster */
-    // CHAOS_CODE_REAL_WALLMASTER,
+    /* spawns either a real or a fake wallmaster */
+    // CHAOS_CODE_WALLMASTER,
+    /* makes the player bonk on nothing while rolling */
+    // CHAOS_CODE_INVISIBLE_WALL,
     
     CHAOS_CODE_LAST
 };

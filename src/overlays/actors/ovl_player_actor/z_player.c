@@ -18710,8 +18710,6 @@ void Player_Action_77(Player* this, PlayState* play) {
         }
     }
 
-    return;
-
     if ((this->av2.voidOutTimer++ >= 9) && !func_8082DA90(play)) {
         if (this->av1.actionVar1 != 0) {
             if (this->av1.actionVar1 < 0) {

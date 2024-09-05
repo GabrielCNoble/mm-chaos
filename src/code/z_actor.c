@@ -455,6 +455,7 @@ TatlColor sTatlColorList[] = {
     { { 255, 255, 0, 255 }, { 200, 155, 0, 0 } },     // ACTORCAT_BOSS
     { { 0, 255, 0, 255 }, { 0, 255, 0, 0 } },         // ACTORCAT_DOOR
     { { 0, 255, 0, 255 }, { 0, 255, 0, 0 } },         // ACTORCAT_CHEST
+    { { 255, 255, 0, 255 }, { 200, 155, 0, 0 } },     // ACTORCAT_CHAOS
     { { 0, 255, 0, 255 }, { 0, 255, 0, 0 } },         // ACTORCAT_MAX
 };
 
@@ -2504,17 +2505,6 @@ void Actor_SpawnSetupActors(PlayState* play, ActorContext* actorCtx) {
     }
 }
 
-typedef struct {
-    /* 0x00 */ PlayState* play;
-    /* 0x04 */ Actor* actor;
-    /* 0x08 */ u32 requiredActorFlag;
-    /* 0x0C */ u32 canFreezeCategory;
-    /* 0x10 */ Actor* talkActor;
-    /* 0x14 */ Player* player;
-    /* 0x18 */ u32 unk_18; // Bitmask of actor flags. The actor will only have main called if it has at least 1
-                           // flag set that matches this bitmask
-} UpdateActor_Params;      // size = 0x1C
-
 Actor* Actor_UpdateActor(UpdateActor_Params* params) {
     PlayState* play = params->play;
     Actor* actor = params->actor;
@@ -2625,6 +2615,9 @@ u32 sCategoryFreezeMasks[ACTORCAT_MAX] = {
     PLAYER_STATE1_2,
     /* ACTORCAT_CHEST */
     PLAYER_STATE1_2 | PLAYER_STATE1_40 | PLAYER_STATE1_80 | PLAYER_STATE1_200 | PLAYER_STATE1_10000000,
+
+    /* ACTORCAT_CHAOS */
+    0,
 };
 
 void Actor_UpdateAll(PlayState* play, ActorContext* actorCtx) {
@@ -3311,8 +3304,9 @@ Actor* Actor_RemoveFromCategory(PlayState* play, ActorContext* actorCtx, Actor* 
     actorToRemove->next = NULL;
     actorToRemove->prev = NULL;
 
-    if ((actorToRemove->room == play->roomCtx.curRoom.num) && (actorToRemove->category == ACTORCAT_ENEMY) &&
-        (actorCtx->actorLists[ACTORCAT_ENEMY].length == 0)) {
+    if ((actorToRemove->room == play->roomCtx.curRoom.num) && (
+        (actorToRemove->category == ACTORCAT_ENEMY && actorCtx->actorLists[ACTORCAT_ENEMY].length == 0) ||
+        (actorToRemove->category == ACTORCAT_CHAOS && actorCtx->actorLists[ACTORCAT_CHAOS].length == 0))) {
         Flags_SetClearTemp(play, play->roomCtx.curRoom.num);
     }
 
@@ -3406,17 +3400,13 @@ Actor* Actor_SpawnAsChildAndCutscene(ActorContext* actorCtx, PlayState* play, s1
     if ((objectSlot <= OBJECT_SLOT_NONE) ||
         ((actorInit->type == ACTORCAT_ENEMY) && Flags_GetClear(play, play->roomCtx.curRoom.num) &&
          (actorInit->id != ACTOR_BOSS_05))) {
-        // u32 *p = (u32 *)0xdeadbeef;
-        // *p = 5;
         Actor_FreeOverlay(&gActorOverlayTable[index]);
         return NULL;
     }
 
     actor = ZeldaArena_Malloc(actorInit->instanceSize);
     if (actor == NULL) {
-        // u32 *p = (u32 *)0xdeadbeef;
         Actor_FreeOverlay(&gActorOverlayTable[index]);
-        // *p = 5;
         return NULL;
     }
 
@@ -3640,7 +3630,7 @@ void Target_FindTargetableActorForCategory(PlayState* play, ActorContext* actorC
         }
 
         // Determine the closest enemy actor to player within a range. Used for playing enemy background music.
-        if ((actorCategory == ACTORCAT_ENEMY) &&
+        if ((actorCategory == ACTORCAT_ENEMY || actorCategory == ACTORCAT_CHAOS) &&
             CHECK_FLAG_ALL(actor->flags, ACTOR_FLAG_TARGETABLE | ACTOR_FLAG_UNFRIENDLY)) {
             if ((actor->xyzDistToPlayerSq < SQ(500.0f)) && (actor->xyzDistToPlayerSq < sBgmEnemyDistSq)) {
                 actorCtx->targetCtx.bgmEnemy = actor;
@@ -3698,8 +3688,8 @@ void Target_FindTargetableActorForCategory(PlayState* play, ActorContext* actorC
 }
 
 u8 sTargetableActorCategories[] = {
-    ACTORCAT_BOSS,  ACTORCAT_ENEMY,  ACTORCAT_BG,   ACTORCAT_EXPLOSIVES, ACTORCAT_NPC,  ACTORCAT_ITEMACTION,
-    ACTORCAT_CHEST, ACTORCAT_SWITCH, ACTORCAT_PROP, ACTORCAT_MISC,       ACTORCAT_DOOR, ACTORCAT_SWITCH,
+    ACTORCAT_BOSS,  ACTORCAT_ENEMY, ACTORCAT_CHAOS,  ACTORCAT_BG, ACTORCAT_EXPLOSIVES, ACTORCAT_NPC,  ACTORCAT_ITEMACTION,
+    ACTORCAT_CHEST, ACTORCAT_SWITCH, ACTORCAT_PROP, ACTORCAT_MISC, ACTORCAT_DOOR, ACTORCAT_SWITCH,
 };
 
 /**

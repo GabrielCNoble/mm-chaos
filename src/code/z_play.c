@@ -1091,7 +1091,7 @@ void Play_UpdateMain(PlayState* this) {
     {
         Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_RR, 
             player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z,
-            0, 0, 0, LIKE_LIKE_TYPE_VORE);
+            0, 0, 0, (Rand_S16Offset(0, 24) == 3) ? LIKE_LIKE_TYPE_VORE : 0);
     }
 
     if(Chaos_IsCodeActive(CHAOS_CODE_STARFOX))
@@ -1284,9 +1284,53 @@ void Play_UpdateMain(PlayState* this) {
                     CollisionCheck_OC(this, &this->colChkCtx);
                     CollisionCheck_Damage(this, &this->colChkCtx);
                     CollisionCheck_ClearContext(this, &this->colChkCtx);
-                    if (!this->haltAllActors) {
+                    if (!this->haltAllActors) 
+                    {
                         Actor_UpdateAll(this, &this->actorCtx);
                     }
+                    // else
+                    // {
+                    //     u32 actor_index;
+                    //     for(actor_index = 0; actor_index < gChaosContext.actors.spawned_actors; actor_index++)
+                    //     {
+                    //         struct ChaosActor *chaos_actor = gChaosContext.actors.slots + actor_index;
+                    //         UpdateActor_Params params;
+                    //         params.player = player;
+                    //         params.play = this;
+
+                    //         if (this->unk_18844) {
+                    //             params.unk_18 = ACTOR_FLAG_200000;
+                    //         } else {
+                    //             params.unk_18 = ACTOR_FLAG_200000 | ACTOR_FLAG_40 | ACTOR_FLAG_10;
+                    //         }
+
+                    //         // categoryFreezeMaskP = sCategoryFreezeMasks;
+
+                    //         if (player->stateFlags2 & PLAYER_STATE2_8000000) {
+                    //             params.requiredActorFlag = ACTOR_FLAG_2000000;
+                    //         } else {
+                    //             params.requiredActorFlag = 0;
+                    //         }
+
+                    //         if ((player->stateFlags1 & PLAYER_STATE1_40) && ((player->actor.textId & 0xFF00) != 0x1900)) {
+                    //             params.talkActor = player->talkActor;
+                    //         } else {
+                    //             params.talkActor = NULL;
+                    //         }
+
+                    //         params.actor = chaos_actor->actor;
+
+                    //         // for (category = 0, entry = actorCtx->actorLists; category < ACTORCAT_MAX;
+                    //         //     entry++, categoryFreezeMaskP++, category++) {
+                    //         //     params.canFreezeCategory = *categoryFreezeMaskP & player->stateFlags1;
+                    //         //     params.actor = entry->first;
+
+                    //         //     while (params.actor != NULL) {
+                    //         //         params.actor = Actor_UpdateActor(&params);
+                    //         //     }
+                    //         Actor_UpdateActor(&params);
+                    //     }
+                    // }
                     Cutscene_UpdateManual(this, &this->csCtx);
                     Cutscene_UpdateScripted(this, &this->csCtx);
                     Effect_UpdateAll(this);

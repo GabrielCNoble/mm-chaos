@@ -135,6 +135,7 @@ void Actor_DeactivateLens(PlayState* play);
 void Actor_InitHalfDaysBit(ActorContext* actorCtx);
 void Actor_InitContext(PlayState* play, ActorContext* actorCtx, ActorEntry* actorEntry);
 void Actor_UpdateAll(PlayState* play, ActorContext* actorCtx);
+Actor* Actor_UpdateActor(UpdateActor_Params* params);
 s32 Actor_AddToLensActors(PlayState* play, Actor* actor);
 void Actor_DrawAll(PlayState* play, ActorContext* actorCtx);
 void Actor_KillAllWithMissingObject(PlayState* play, ActorContext* actorCtx);

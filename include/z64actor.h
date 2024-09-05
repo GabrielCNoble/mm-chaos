@@ -260,6 +260,7 @@ typedef enum {
     /* 0x09 */ ACTORCAT_BOSS,
     /* 0x0A */ ACTORCAT_DOOR,
     /* 0x0B */ ACTORCAT_CHEST,
+               ACTORCAT_CHAOS,
     /* 0x0C */ ACTORCAT_MAX
 } ActorType;
 
@@ -425,6 +426,17 @@ typedef struct ActorContext {
     /* 0x269 */ UNK_TYPE1 pad269[0x3];
     /* 0x26C */ Input overrideInput;
 } ActorContext; // size = 0x284
+
+typedef struct {
+    /* 0x00 */ struct PlayState* play;
+    /* 0x04 */ Actor* actor;
+    /* 0x08 */ u32 requiredActorFlag;
+    /* 0x0C */ u32 canFreezeCategory;
+    /* 0x10 */ Actor* talkActor;
+    /* 0x14 */ struct Player* player;
+    /* 0x18 */ u32 unk_18; // Bitmask of actor flags. The actor will only have main called if it has at least 1
+                           // flag set that matches this bitmask
+} UpdateActor_Params;      // size = 0x1C
 
 typedef enum {
     /*  0 */ ACTOR_DRAW_DMGEFF_FIRE,
