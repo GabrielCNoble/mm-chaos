@@ -127,6 +127,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_RANDOM_HEALTH_UP]        = */ CHAOS_CODE_DEF(0, 0,   false,  0, 0.0005f),
     /* [CHAOS_CODE_RANDOM_HEALTH_DOWN]      = */ CHAOS_CODE_DEF(0, 0,   false,  0, 0.0005f),
     /* [CHAOS_CODE_IMAGINARY_FRIENDS]       = */ CHAOS_CODE_DEF(5, 12,  false,  CHAOS_CODE_RESTRICTIONS(true, true, true, true, true, true, true), 0.008f),
+    /* [CHAOS_CODE_WALLMASTER]              = */ CHAOS_CODE_DEF(0, 0,   false,  CHAOS_CODE_RESTRICTIONS(false, false, true, true, false, true, false), 0.0055f),
 };
  
 const char *gChaosCodeNames[] = {
@@ -178,6 +179,7 @@ const char *gChaosCodeNames[] = {
     /* [CHAOS_CODE_RANDOM_HEALTH_UP]        = */ "Random health up",
     /* [CHAOS_CODE_RANDOM_HEALTH_DOWN]      = */ "Random health down",
     /* [CHAOS_CODE_IMAGINARY_FRIENDS]       = */ "Imaginary friends",
+    /* [CHAOS_CODE_WALLMASTER]              = */ "Wallmaster",
 };
 
 enum FAIRY_FOUNTAIN_EXITS
@@ -816,11 +818,11 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         case CHAOS_CODE_LOVELESS_MARRIAGE:
                         case CHAOS_CODE_CHICKEN_ARISE:
                         case CHAOS_CODE_STARFOX:
+                        case CHAOS_CODE_WALLMASTER:
                             if(gChaosContext.queued_spawn_actor_code == CHAOS_CODE_NONE &&
                                     gChaosContext.actors.spawned_actors == 0)
                             {
-                                if(next_code == CHAOS_CODE_LOVELESS_MARRIAGE && 
-                                    gChaosContext.loaded_object_id != OBJECT_RR)
+                                if(next_code == CHAOS_CODE_LOVELESS_MARRIAGE && gChaosContext.loaded_object_id != OBJECT_RR)
                                 {
                                     if(Chaos_IsCodeActive(CHAOS_CODE_CHICKEN_ARISE))
                                     {
@@ -832,16 +834,14 @@ void Chaos_UpdateChaos(PlayState *playstate)
                                     gChaosContext.queued_spawn_actor_code = CHAOS_CODE_LOVELESS_MARRIAGE;
                                     continue;
                                 }
-                                else if(next_code == CHAOS_CODE_CHICKEN_ARISE && 
-                                        gChaosContext.loaded_object_id != OBJECT_NIW)
+                                else if(next_code == CHAOS_CODE_CHICKEN_ARISE && gChaosContext.loaded_object_id != OBJECT_NIW)
                                 {
                                     Object_RequestOverwrite(&playstate->objectCtx, playstate->objectCtx.chaos_keep_slot, OBJECT_NIW);
                                     gChaosContext.loaded_object_id = OBJECT_NIW;
                                     gChaosContext.queued_spawn_actor_code = CHAOS_CODE_CHICKEN_ARISE;
                                     continue;
                                 }
-                                else if(next_code == CHAOS_CODE_STARFOX && 
-                                        gChaosContext.loaded_object_id != OBJECT_ARWING)
+                                else if(next_code == CHAOS_CODE_STARFOX && gChaosContext.loaded_object_id != OBJECT_ARWING)
                                 {
                                     if(Chaos_IsCodeActive(CHAOS_CODE_CHICKEN_ARISE))
                                     {
@@ -851,6 +851,18 @@ void Chaos_UpdateChaos(PlayState *playstate)
                                     Object_RequestOverwrite(&playstate->objectCtx, playstate->objectCtx.chaos_keep_slot, OBJECT_ARWING);
                                     gChaosContext.loaded_object_id = OBJECT_ARWING;
                                     gChaosContext.queued_spawn_actor_code = CHAOS_CODE_STARFOX;
+                                    continue;
+                                }
+                                else if(next_code == CHAOS_CODE_WALLMASTER && gChaosContext.loaded_object_id != OBJECT_WALLMASTER)
+                                {
+                                    if(Chaos_IsCodeActive(CHAOS_CODE_CHICKEN_ARISE))
+                                    {
+                                        continue;
+                                    }
+                                    
+                                    Object_RequestOverwrite(&playstate->objectCtx, playstate->objectCtx.chaos_keep_slot, OBJECT_WALLMASTER);
+                                    gChaosContext.loaded_object_id = OBJECT_WALLMASTER;
+                                    gChaosContext.queued_spawn_actor_code = CHAOS_CODE_WALLMASTER;
                                     continue;
                                 }
                             }
@@ -1179,6 +1191,8 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
             GfxPrint_Printf(&gfx_print, "Scene: %d, room: %d, hazard: %d", scene, playstate->roomCtx.curRoom.num, Player_GetEnvironmentalHazard(playstate));
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "effect restrictions: %x", gChaosContext.effect_restrictions);
+            GfxPrint_SetPos(&gfx_print, 1, y_pos++);
+            GfxPrint_Printf(&gfx_print, "game mode: %x", gSaveContext.gameMode);
             // GfxPrint_Printf(&gfx_print, "%x(%f) %x(%f) %x", player->skelAnime.animation, player->skelAnime.curFrame,
             //                                                 player->skelAnimeUpper.animation, player->skelAnimeUpper.curFrame,
             //                                                 gImaginaryFriendAnimations[gChaosContext.link.imaginary_friends_anim_index]);
@@ -1363,7 +1377,8 @@ u8 Chaos_CanUpdateChaos(struct PlayState *play)
     //                    play->pauseCtx.state == PAUSE_STATE_OFF &&
     //                    !(player->stateFlags1 & PLAYER_STATE1_80);
 
-    u8 enable_update = gSaveContext.gameMode == GAMEMODE_NORMAL &&
+    u8 enable_update = (gSaveContext.gameMode == GAMEMODE_NORMAL ||
+                        gSaveContext.gameMode == GAMEMODE_TITLE_SCREEN) &&
                         play->pauseCtx.state == PAUSE_STATE_OFF;
 
     if(enable_update && !gChaosContext.update_enabled)
@@ -1384,12 +1399,6 @@ u8 Chaos_EffectRestrictions(struct PlayState *play)
     Camera *camera = Play_GetCamera(play, CAM_ID_MAIN);
     u8 restriction_flags = 0;
 
-    // if(gSaveContext.gameMode != GAMEMODE_NORMAL)
-    // {
-    //     restriction_flags = CHAOS_CODE_RESTRICTION_FLAG_ALL;
-    // }
-    // else
-    // {
     if(CutsceneManager_GetCurrentCsId() != CS_ID_NONE)
     {
         restriction_flags |= CHAOS_CODE_RESTRICTION_FLAG_CUTSCENE;
@@ -1399,11 +1408,6 @@ u8 Chaos_EffectRestrictions(struct PlayState *play)
     {
         restriction_flags |= CHAOS_CODE_RESTRICTION_FLAG_TRANSITION;
     }
-
-    // if(play->pauseCtx.state != PAUSE_STATE_OFF)
-    // {
-    //     restriction_flags |= CHAOS_CODE_RESTRICTION_FLAG_PAUSED;
-    // }
 
     if(player->stateFlags1 & PLAYER_STATE1_DEAD)
     {
@@ -1429,7 +1433,6 @@ u8 Chaos_EffectRestrictions(struct PlayState *play)
     {
         restriction_flags |= CHAOS_CODE_RESTRICTION_FLAG_EPONA_RIDE;
     }
-    // }
 
     return restriction_flags;
 }
@@ -1926,6 +1929,8 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     Chaos_EnableCode(CHAOS_CODE_JUNK_ITEM, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_RANDOM_HEALTH_UP, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_RANDOM_HEALTH_DOWN, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_IMAGINARY_FRIENDS, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_WALLMASTER, 1.0f);
 
     if(gSaveContext.save.saveInfo.playerData.isMagicAcquired)
     {
@@ -1964,10 +1969,10 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     Chaos_EnableCode(CHAOS_CODE_CHICKEN_ARISE, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_STARFOX, 1.0f);
 
-    if(has_ocarina)
-    {
-        Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA, 1.0f);
-    }
+    // if(has_ocarina)
+    // {
+        // Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA, 1.0f);
+    // }
     // }
 
     scene_index = gSaveContext.save.entrance >> 9;
@@ -1995,6 +2000,8 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
 
     if(has_ocarina)
     {
+        Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA, 1.0f);
+        
         if(!Map_IsInBossScene(this) && CHECK_WEEKEVENTREG(WEEKEVENTREG_ENTERED_SOUTH_CLOCK_TOWN))
         {
             /* don't enable entrance rando until the player enters south clock town.

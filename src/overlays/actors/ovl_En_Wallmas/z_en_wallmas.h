@@ -29,7 +29,8 @@
 typedef enum {
     /* 0 */ WALLMASTER_TYPE_TIMER_ONLY,
     /* 1 */ WALLMASTER_TYPE_PROXIMITY,
-    /* 2 */ WALLMASTER_TYPE_FLAG
+    /* 2 */ WALLMASTER_TYPE_FLAG,
+            WALLMASTER_TYPE_FAKE,
 } WallmasterType;
 
 struct EnWallmas;

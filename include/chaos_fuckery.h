@@ -112,6 +112,8 @@ enum CHAOS_CODES
     CHAOS_CODE_RANDOM_HEALTH_DOWN,
     /* link stops and waves/bows at a random direction */
     CHAOS_CODE_IMAGINARY_FRIENDS,
+    /* spawns either a real or a fake wallmaster */
+    CHAOS_CODE_WALLMASTER,
     /* 
         player randomly loses grip, dropping items, falling from ledges/ladders
         TODO: change this one to include items from the inventory. The item should
@@ -220,8 +222,6 @@ enum CHAOS_CODES
     // CHAOS_CODE_BEN,
     /* when in goron shape, goron curls up and stays like that */
     // CHAOS_CODE_SHY_GORON,
-    /* spawns either a real or a fake wallmaster */
-    // CHAOS_CODE_WALLMASTER,
     /* makes the player bonk on nothing while rolling */
     // CHAOS_CODE_INVISIBLE_WALL,
     

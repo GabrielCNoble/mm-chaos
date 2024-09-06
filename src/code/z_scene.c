@@ -58,7 +58,8 @@ s32 Object_SpawnPersistent(ObjectContext* objectCtx, s16 id) {
 static u16 gTestObjectIds[] = {
     OBJECT_RR,
     OBJECT_NIW,
-    OBJECT_ARWING
+    OBJECT_ARWING,
+    OBJECT_WALLMASTER
 };
 
 void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
@@ -113,7 +114,7 @@ void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
     objectCtx->spaceStart = objectCtx->slots[0].segment = THA_AllocTailAlign16(&gameState->tha, spaceSize);
     objectCtx->spaceEnd = (void*)((u32)objectCtx->spaceStart + spaceSize);
     objectCtx->mainKeepSlot = Object_SpawnPersistent(objectCtx, GAMEPLAY_KEEP);
-    // Object_SpawnPersistent(objectCtx, OBJECT_RR);
+    // Object_SpawnPersistent(objectCtx, OBJECT_WALLMASTER);
     // Object_SpawnPersistent(objectCtx, OBJECT_NIW);
     // Object_SpawnPersistent(objectCtx, OBJECT_ARWING);
 

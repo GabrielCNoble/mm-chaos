@@ -38,6 +38,7 @@
 #include "overlays/actors/ovl_En_Zoraegg/z_en_zoraegg.h"
 #include "overlays/actors/ovl_Obj_Aqua/z_obj_aqua.h"
 #include "overlays/actors/ovl_En_Niw/z_en_niw.h"
+#include "overlays/actors/ovl_En_Wallmas/z_en_wallmas.h"
 #include "overlays/effects/ovl_Effect_Ss_Dead_Db/z_eff_ss_dead_db.h"
 
 #include "overlays/effects/ovl_Effect_Ss_Fhg_Flash/z_eff_ss_fhg_flash.h"
@@ -10835,6 +10836,8 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_REMAINS_GYORG);
     // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_REMAINS_ODOLWA);
     // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_REMAINS_TWINMOLD);
+    gSaveContext.save.saveInfo.inventory.items[SLOT_POWDER_KEG] = ITEM_POWDER_KEG;
+    gSaveContext.save.saveInfo.inventory.ammo[SLOT_POWDER_KEG] = 1;
 
     this->subCamId = CAM_ID_NONE;
     Collider_InitAndSetCylinder(play, &this->cylinder, &this->actor, &D_8085C2EC);
@@ -12445,8 +12448,8 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // Chaos_ActivateCode(CHAOS_CODE_SNEEZE, 10);
         // Chaos_ActivateCode(CHAOS_CODE_LOVELESS_MARRIAGE, 1);
         // Chaos_ActivateCode(CHAOS_CODE_OUT_OF_SHAPE, 5);
-        // Actor_Spawn(&play->actorCtx, play, ACTOR_EN_ARWING, 
-        //     this->actor.world.pos.x, this->actor.world.pos.y + 20.0f, this->actor.world.pos.z, 0, 0, 0, 0);
+        // Actor_Spawn(&play->actorCtx, play, ACTOR_EN_WALLMAS, 
+        //     this->actor.world.pos.x, this->actor.world.pos.y + 20.0f, this->actor.world.pos.z, 0, 0, 0, WALLMASTER_PARAMS(WALLMASTER_TYPE_FAKE, 0, false));
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_DDOWN))

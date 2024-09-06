@@ -23,6 +23,8 @@ void EnWallmas_TimerInit(EnWallmas* this, PlayState* play);
 void EnWallmas_WaitToDrop(EnWallmas* this, PlayState* play);
 void EnWallmas_SetupDrop(EnWallmas* this, PlayState* play);
 void EnWallmas_Drop(EnWallmas* this, PlayState* play);
+void EnWallmas_SetupFakeDrop(EnWallmas *this, PlayState *play);
+void EnWallmas_FakeDrop(EnWallmas *this, PlayState *play);
 void EnWallmas_SetupLand(EnWallmas* this, PlayState* play);
 void EnWallmas_Land(EnWallmas* this, PlayState* play);
 void EnWallmas_SetupStand(EnWallmas* this);
@@ -257,24 +259,44 @@ void EnWallmas_WaitToDrop(EnWallmas* this, PlayState* play) {
     }
 
     if (this->timer == 0) {
+        // if(WALLMASTER_GET_TYPE(&this->actor) == WALLMASTER_TYPE_FAKE)
+        // {
+        //     // Actor_Kill(&this->actor);
+        //     EnWallmas_SetupFakeDrop(this, play);
+        // }
+        // else
+        // {
         EnWallmas_SetupDrop(this, play);
+        // }
     }
 }
+
+
 
 void EnWallmas_SetupDrop(EnWallmas* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    Animation_Change(&this->skelAnime, &gWallmasterLungeAnim, 0.0f, 20.0f,
+    if(WALLMASTER_GET_TYPE(&this->actor) == WALLMASTER_TYPE_FAKE)
+    {
+        this->timer = 30;
+        this->actor.world.pos.y = player->actor.world.pos.y + 300.0f;
+        this->actionFunc = EnWallmas_FakeDrop;
+    }
+    else
+    {
+        Animation_Change(&this->skelAnime, &gWallmasterLungeAnim, 0.0f, 20.0f,
                      Animation_GetLastFrame(&gWallmasterLungeAnim), ANIMMODE_ONCE, 0.0f);
 
-    this->yTarget = player->actor.world.pos.y;
-    this->actor.world.pos.y = player->actor.world.pos.y + 300.0f;
-    this->actor.shape.rot.y = player->actor.shape.rot.y + 0x8000;
-    this->actor.world.rot.y = this->actor.shape.rot.y;
-    this->actor.floorHeight = player->actor.floorHeight;
-    this->actor.flags |= ACTOR_FLAG_TARGETABLE;
-    this->actor.flags &= ~ACTOR_FLAG_20;
-    this->actionFunc = EnWallmas_Drop;
+        this->yTarget = player->actor.world.pos.y;
+        this->actor.world.pos.y = player->actor.world.pos.y + 300.0f;
+        this->actor.shape.rot.y = player->actor.shape.rot.y + 0x8000;
+        this->actor.world.rot.y = this->actor.shape.rot.y;
+        this->actor.floorHeight = player->actor.floorHeight;
+        this->actor.flags |= ACTOR_FLAG_TARGETABLE;
+        this->actor.flags &= ~ACTOR_FLAG_20;
+
+        this->actionFunc = EnWallmas_Drop;
+    }
 }
 
 void EnWallmas_Drop(EnWallmas* this, PlayState* play) {
@@ -290,6 +312,15 @@ void EnWallmas_Drop(EnWallmas* this, PlayState* play) {
         this->actor.world.pos.y = this->yTarget;
         this->actor.velocity.y = 0.0f;
         EnWallmas_SetupLand(this, play);
+    }
+}
+
+void EnWallmas_FakeDrop(EnWallmas *this, PlayState *play)
+{
+    this->timer--;
+    if(this->timer == 0)
+    {
+        Actor_Kill(&this->actor);
     }
 }
 
@@ -623,7 +654,8 @@ void EnWallmas_Update(Actor* thisx, PlayState* play) {
     this->actionFunc(this, play);
 
     if ((this->actionFunc != EnWallmas_WaitToDrop) && (this->actionFunc != EnWallmas_WaitForProximity) &&
-        (this->actionFunc != EnWallmas_TakePlayer) && (this->actionFunc != EnWallmas_WaitForSwitchFlag)) {
+        (this->actionFunc != EnWallmas_TakePlayer) && (this->actionFunc != EnWallmas_WaitForSwitchFlag) &&
+        WALLMASTER_GET_TYPE(thisx) != WALLMASTER_TYPE_FAKE) {
         if ((this->actionFunc != EnWallmas_ReturnToCeiling) && (this->actionFunc != EnWallmas_TakePlayer)) {
             Actor_MoveWithGravity(&this->actor);
         }

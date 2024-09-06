@@ -41,6 +41,7 @@ u8 sMotionBlurStatus;
 #include "overlays/actors/ovl_En_Niw/z_en_niw.h"
 #include "overlays/actors/ovl_En_Attack_Niw/z_en_attack_niw.h"
 #include "overlays/actors/ovl_En_Rr/z_en_rr.h"
+#include "overlays/actors/ovl_En_Wallmas/z_en_wallmas.h"
 
 s32 gDbgCamEnabled = false;
 u8 D_801D0D54 = false;
@@ -1092,12 +1093,22 @@ void Play_UpdateMain(PlayState* this) {
         Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_RR, 
             player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z,
             0, 0, 0, (Rand_S16Offset(0, 24) == 3) ? LIKE_LIKE_TYPE_VORE : 0);
+        Chaos_DeactivateCode(CHAOS_CODE_LOVELESS_MARRIAGE);
     }
 
     if(Chaos_IsCodeActive(CHAOS_CODE_STARFOX))
     {
         Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_ARWING, 
             player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z, 0, 0, 0, 0);
+        Chaos_DeactivateCode(CHAOS_CODE_STARFOX);
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_WALLMASTER))
+    {
+        Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_WALLMAS, 
+            player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z, 
+            0, 0, 0, WALLMASTER_PARAMS((Rand_S16Offset(0, 8) == 0) ? WALLMASTER_TYPE_FAKE : 0, 0, false));
+        Chaos_DeactivateCode(CHAOS_CODE_WALLMASTER);
     }
 
     if(Chaos_IsCodeActive(CHAOS_CODE_CHICKEN_ARISE))
