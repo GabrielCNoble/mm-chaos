@@ -25,111 +25,59 @@ PlayerAnimationHeader *gImaginaryFriendAnimations[] = {
     &gPlayerAnim_link_kei_wait,
     &gPlayerAnim_link_keirei,
 };
-
-// struct ChaosCodeDef gChaosCodeDefs[] = {
-//     /* [CHAOS_CODE_NONE]                    = */ CHAOS_CODE_DEF(0,  0,  false, 0),
-//     /* [CHAOS_CODE_LOW_GRAVITY]             = */ CHAOS_CODE_DEF(10, 18, true,  0.020f),
-//     /* [CHAOS_CODE_CHANGE_HEALTH]           = */ CHAOS_CODE_DEF(1,  10, false, 0.04f),
-//     /* [CHAOS_CODE_CHANGE_RUPEE]            = */ CHAOS_CODE_DEF(0,  0,  true,  0.04f),
-//     /* [CHAOS_CODE_ACTOR_CHASE]             = */ CHAOS_CODE_DEF(6,  15, false, 0.01f),
-//     /* [CHAOS_CODE_YEET]                    = */ CHAOS_CODE_DEF(8,  17, true,  0.01f),
-//     /* [CHAOS_CODE_POKE]                    = */ CHAOS_CODE_DEF(0,  0,  false, 0.017f),
-//     /* [CHAOS_CODE_MOON_DANCE]              = */ CHAOS_CODE_DEF(5,  30, true,  0.006f),
-//     /* [CHAOS_CODE_ONE_HIT_KO]              = */ CHAOS_CODE_DEF(8,  23, false, 0.006f),
-//     /* [CHAOS_CODE_RANDOM_KNOCKBACK]        = */ CHAOS_CODE_DEF(8,  15, false, 0.007f),
-//     /* [CHAOS_CODE_ICE_TRAP]                = */ CHAOS_CODE_DEF(0,  0,  false, 0.01f),
-//     /* [CHAOS_CODE_TIMER_UP]                = */ CHAOS_CODE_DEF(10, 20, false, 0.011f),
-//     /* [CHAOS_CODE_SHOCK]                   = */ CHAOS_CODE_DEF(0,  0,  false, 0.015f),
-//     /* [CHAOS_CODE_EARTHQUAKE]              = */ CHAOS_CODE_DEF(0,  0,  true,  0.06f),
-//     /* [CHAOS_CODE_BOMB_ARROWS]             = */ CHAOS_CODE_DEF(15, 25, true,  0.02f),
-//     /* [CHAOS_CODE_WEIRD_ARROWS]            = */ CHAOS_CODE_DEF(15, 25, true,  0.02f),
-//     /* [CHAOS_CODE_BUCKSHOT_ARROWS]         = */ CHAOS_CODE_DEF(15, 25, true,  0.02f),
-//     /* [CHAOS_CODE_RANDOM_BOMB_TIMER]       = */ CHAOS_CODE_DEF(10, 15, false, 0.02f),
-//     /* [CHAOS_CODE_LOVELESS_MARRIAGE]       = */ CHAOS_CODE_DEF(0,  0,  false, 0.0075f),
-//     /* [CHAOS_CODE_WEIRD_UI]                = */ CHAOS_CODE_DEF(8,  15, true,  0.04f),
-//     /* [CHAOS_CODE_BEER_GOGGLES]            = */ CHAOS_CODE_DEF(15, 30, true,  0.014f),
-//     /* [CHAOS_CODE_CHANGE_MAGIC]            = */ CHAOS_CODE_DEF(1,  10, true,  0.04f),
-//     /* [CHAOS_CODE_INVINCIBLE]              = */ CHAOS_CODE_DEF(8,  23, false, 0.005f),
-//     /* [CHAOS_CODE_SYKE]                    = */ CHAOS_CODE_DEF(0,  0,  false, 0.00007f),
-//     /* [CHAOS_CODE_DIE]                     = */ CHAOS_CODE_DEF(0,  0,  false, 0.000005f),
-//     /* [CHAOS_CODE_TRAP_FLAP]               = */ CHAOS_CODE_DEF(10, 20, true,  0.02f),
-//     /* [CHAOS_CODE_TEXTBOX]                 = */ CHAOS_CODE_DEF(0,   0, false, 0.008f),
-//     /* [CHAOS_CODE_SLIPPERY_FLOORS]         = */ CHAOS_CODE_DEF(10, 20, false, 0.012f),
-//     /* [CHAOS_CODE_SLOW_DOWN]               = */ CHAOS_CODE_DEF(5,  12, false, 0.006f),
-//     /* [CHAOS_CODE_ENTRANCE_RANDO]          = */ CHAOS_CODE_DEF(5,  15, false, 0.001f),
-//     /* [CHAOS_CODE_TERRIBLE_MUSIC]          = */ CHAOS_CODE_DEF(15, 35, true,  0.01f),
-//     /* [CHAOS_CODE_INCREDIBLE_KNOCKBACK]    = */ CHAOS_CODE_DEF(10, 21, true,  0.008f),
-//     /* [CHAOS_CODE_RANDOM_SCALING]          = */ CHAOS_CODE_DEF(10, 21, true,  0.007f),
-//     /* [CHAOS_CODE_BIG_BROTHER]             = */ CHAOS_CODE_DEF(25, 70, true,  0.002f),
-//     /* [CHAOS_CODE_OUT_OF_SHAPE]            = */ CHAOS_CODE_DEF(5, 12,  true,  0.008f),
-//     /* [CHAOS_CODE_TUNIC_COLOR]             = */ CHAOS_CODE_DEF(0, 0,   false, 0.006f),
-//     /* [CHAOS_CODE_WEIRD_SKYBOX]            = */ CHAOS_CODE_DEF(10, 15, true,  0.006f),
-//     /* [CHAOS_CODE_SINGLE_ACTION_OWL]       = */ CHAOS_CODE_DEF(5,  15, false, 0.0005f),
-//     /* [CHAOS_CODE_PLAY_OCARINA]            = */ CHAOS_CODE_DEF(0,  0,  false, 0.004f),
-//     /* [CHAOS_CODE_SNEEZE]                  = */ CHAOS_CODE_DEF(5, 15,  false, 0.006f),
-//     /* [CHAOS_CODE_RANDO_FIERCE_DEITY]      = */ CHAOS_CODE_DEF(25, 75, true,  0.00095f),
-//     /* [CHAOS_CODE_CHICKEN_ARISE]           = */ CHAOS_CODE_DEF(25, 45, false, 0.0035f),
-//     /* [CHAOS_CODE_STARFOX]                 = */ CHAOS_CODE_DEF(0, 0,   true,  0.0055f),
-//     /* [CHAOS_CODE_SWAP_HEAL_AND_HURT]      = */ CHAOS_CODE_DEF(5, 25,  false, 0.003f),
-//     /* [CHAOS_CODE_JUNK_ITEM]               = */ CHAOS_CODE_DEF(0, 0,   false, 0.003f),
-//     /* [CHAOS_CODE_RANDOM_HEALTH_UP]        = */ CHAOS_CODE_DEF(0, 0,   false, 0.0005f),
-//     /* [CHAOS_CODE_RANDOM_HEALTH_DOWN]      = */ CHAOS_CODE_DEF(0, 0,   false, 0.0005f),
-//     /* [CHAOS_CODE_IMAGINARY_FRIENDS]       = */ CHAOS_CODE_DEF(5, 12,  false, 0.008f),
-// };
-
-
-struct ChaosCodeDef gChaosCodeDefs[] = {
-    /* [CHAOS_CODE_NONE]                    = */ CHAOS_CODE_DEF(0,  0,  false,  CHAOS_CODE_RESTRICTIONS(true,   true,   true,   true,   true,   true,   true),    0),
-    /* [CHAOS_CODE_LOW_GRAVITY]             = */ CHAOS_CODE_DEF(10, 18, true,   CHAOS_CODE_RESTRICTIONS(false,  false,  false,  false,  false,  false,  false),   0.020f),
-    /* [CHAOS_CODE_CHANGE_HEALTH]           = */ CHAOS_CODE_DEF(1,  10, false,  CHAOS_CODE_RESTRICTIONS(false,  false,  false,  false,  false,  true,  false),   0.04f),
-    /* [CHAOS_CODE_CHANGE_RUPEE]            = */ CHAOS_CODE_DEF(0,  0,  false,  CHAOS_CODE_RESTRICTIONS(false,  false,  false,  false,  false,  false,  false),   0.04f),
-    /* [CHAOS_CODE_ACTOR_CHASE]             = */ CHAOS_CODE_DEF(6,  15, false,  CHAOS_CODE_RESTRICTIONS(true,   true,   true,   true,   true,   true,   true),    0.01f),
-    /* [CHAOS_CODE_YEET]                    = */ CHAOS_CODE_DEF(8,  17, true,   CHAOS_CODE_RESTRICTIONS(false,  false,  false,  false,  false,  false,  false),   0.01f),
-    /* [CHAOS_CODE_POKE]                    = */ CHAOS_CODE_DEF(0,  0,  false,  CHAOS_CODE_RESTRICTIONS(true,   true,   true,   true,   true,   true,   true),    0.017f),
-    /* [CHAOS_CODE_MOON_DANCE]              = */ CHAOS_CODE_DEF(5,  30, true,   CHAOS_CODE_RESTRICTIONS(false,  false,  false,  false,  false,  false,  false),   0.006f),
-    /* [CHAOS_CODE_ONE_HIT_KO]              = */ CHAOS_CODE_DEF(8,  23, true,   CHAOS_CODE_RESTRICTIONS(false,  false,  false,  false,  false,  false,  false),   0.006f),
-    /* [CHAOS_CODE_RANDOM_KNOCKBACK]        = */ CHAOS_CODE_DEF(8,  15, false,  CHAOS_CODE_RESTRICTIONS(true,   true,   true,   true,   true,   true,   true),    0.007f),
-    /* [CHAOS_CODE_ICE_TRAP]                = */ CHAOS_CODE_DEF(0,  0,  false,  CHAOS_CODE_RESTRICTIONS(true,   true,   true,   true,   true,   true,   true),    0.01f),
-    /* [CHAOS_CODE_TIMER_UP]                = */ CHAOS_CODE_DEF(10, 20, false,  CHAOS_CODE_RESTRICTIONS(false,  false,  false,  false,  false,  false,  false),   0.011f),
-    /* [CHAOS_CODE_SHOCK]                   = */ CHAOS_CODE_DEF(0,  0,  false,  CHAOS_CODE_RESTRICTIONS(true,   true,   true,   true,   true,   true,   true),    0.015f),
-    /* [CHAOS_CODE_EARTHQUAKE]              = */ CHAOS_CODE_DEF(0,  0,  false,  0,  0.06f),
-    /* [CHAOS_CODE_BOMB_ARROWS]             = */ CHAOS_CODE_DEF(15, 25, false,  0,  0.02f),
-    /* [CHAOS_CODE_WEIRD_ARROWS]            = */ CHAOS_CODE_DEF(15, 25, false,  0,  0.02f),
-    /* [CHAOS_CODE_BUCKSHOT_ARROWS]         = */ CHAOS_CODE_DEF(15, 25, false,  0,  0.02f),
-    /* [CHAOS_CODE_RANDOM_BOMB_TIMER]       = */ CHAOS_CODE_DEF(10, 15, false,  0,  0.02f),
-    /* [CHAOS_CODE_LOVELESS_MARRIAGE]       = */ CHAOS_CODE_DEF(0,  0,  false,  CHAOS_CODE_RESTRICTIONS(false, false, true, true, false, true, false), 0.0075f),
-    /* [CHAOS_CODE_WEIRD_UI]                = */ CHAOS_CODE_DEF(8,  15, true,   0,  0.04f),
-    /* [CHAOS_CODE_BEER_GOGGLES]            = */ CHAOS_CODE_DEF(15, 30, true,   0,  0.014f),
-    /* [CHAOS_CODE_CHANGE_MAGIC]            = */ CHAOS_CODE_DEF(1,  10, false,  0,  0.04f),
-    /* [CHAOS_CODE_INVINCIBLE]              = */ CHAOS_CODE_DEF(8,  23, true,   0,  0.005f),
-    /* [CHAOS_CODE_SYKE]                    = */ CHAOS_CODE_DEF(0,  0,  false,  CHAOS_CODE_RESTRICTIONS(true, true, true, true, true, true, true), 0.00007f),
-    /* [CHAOS_CODE_DIE]                     = */ CHAOS_CODE_DEF(0,  0,  false,  CHAOS_CODE_RESTRICTIONS(true, true, true, true, true, true, true), 0.000005f),
-    /* [CHAOS_CODE_TRAP_FLAP]               = */ CHAOS_CODE_DEF(10, 20, false,  0,  0.02f),
-    /* [CHAOS_CODE_TEXTBOX]                 = */ CHAOS_CODE_DEF(0,   0, false,  CHAOS_CODE_RESTRICTIONS(true, true, true, true, true, true, true), 0.008f),
-    /* [CHAOS_CODE_SLIPPERY_FLOORS]         = */ CHAOS_CODE_DEF(10, 20, false,  0,  0.012f),
-    /* [CHAOS_CODE_SLOW_DOWN]               = */ CHAOS_CODE_DEF(5,  12, false,  0,  0.006f),
-    /* [CHAOS_CODE_ENTRANCE_RANDO]          = */ CHAOS_CODE_DEF(5,  15, false,  0,  0.006f),
-    /* [CHAOS_CODE_TERRIBLE_MUSIC]          = */ CHAOS_CODE_DEF(15, 35, true,   0,  0.01f),
-    /* [CHAOS_CODE_INCREDIBLE_KNOCKBACK]    = */ CHAOS_CODE_DEF(10, 21, false,  0,  0.008f),
-    /* [CHAOS_CODE_RANDOM_SCALING]          = */ CHAOS_CODE_DEF(10, 21, false,  0,  0.007f),
-    /* [CHAOS_CODE_BIG_BROTHER]             = */ CHAOS_CODE_DEF(25, 70, true,   0,  0.002f),
-    /* [CHAOS_CODE_OUT_OF_SHAPE]            = */ CHAOS_CODE_DEF(5, 12,  false,  CHAOS_CODE_RESTRICTIONS(true, true, true, true, true, true, true),  0.008f),
-    /* [CHAOS_CODE_TUNIC_COLOR]             = */ CHAOS_CODE_DEF(0, 0,   false,  0, 0.006f),
-    /* [CHAOS_CODE_WEIRD_SKYBOX]            = */ CHAOS_CODE_DEF(10, 15, true,   0, 0.006f),
-    /* [CHAOS_CODE_SINGLE_ACTION_OWL]       = */ CHAOS_CODE_DEF(5,  15, false,  0, 0.0005f),
-    /* [CHAOS_CODE_PLAY_OCARINA]            = */ CHAOS_CODE_DEF(0,  0,  false,  CHAOS_CODE_RESTRICTIONS(true, true, true, true, true, true, true), 0.004f),
-    /* [CHAOS_CODE_SNEEZE]                  = */ CHAOS_CODE_DEF(5, 15,  false,  CHAOS_CODE_RESTRICTIONS(true, true, true, true, true, true, true), 0.006f),
-    /* [CHAOS_CODE_RANDO_FIERCE_DEITY]      = */ CHAOS_CODE_DEF(25, 75, false,  CHAOS_CODE_RESTRICTIONS(false, false, true, true, false, false, false), 0.00095f),
-    /* [CHAOS_CODE_CHICKEN_ARISE]           = */ CHAOS_CODE_DEF(25, 45, false,  CHAOS_CODE_RESTRICTIONS(false, false, true, true, false, true, false), 0.0055f),
-    /* [CHAOS_CODE_STARFOX]                 = */ CHAOS_CODE_DEF(0, 0,   false,  CHAOS_CODE_RESTRICTIONS(false, false, true, true, false, true, false), 0.0055f),
-    /* [CHAOS_CODE_SWAP_HEAL_AND_HURT]      = */ CHAOS_CODE_DEF(5, 25,  false,  0, 0.003f),
-    /* [CHAOS_CODE_JUNK_ITEM]               = */ CHAOS_CODE_DEF(0, 0,   false,  CHAOS_CODE_RESTRICTIONS(true, true, true, true, true, true, true), 0.003f),
-    /* [CHAOS_CODE_RANDOM_HEALTH_UP]        = */ CHAOS_CODE_DEF(0, 0,   false,  0, 0.0005f),
-    /* [CHAOS_CODE_RANDOM_HEALTH_DOWN]      = */ CHAOS_CODE_DEF(0, 0,   false,  0, 0.0005f),
-    /* [CHAOS_CODE_IMAGINARY_FRIENDS]       = */ CHAOS_CODE_DEF(5, 12,  false,  CHAOS_CODE_RESTRICTIONS(true, true, true, true, true, true, true), 0.008f),
-    /* [CHAOS_CODE_WALLMASTER]              = */ CHAOS_CODE_DEF(0, 0,   false,  CHAOS_CODE_RESTRICTIONS(false, false, true, true, false, true, false), 0.0055f),
-};
  
+struct ChaosCodeDef gChaosCodeDefs[] = {
+    /* [CHAOS_CODE_NONE]                    = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1), 0),
+    /* [CHAOS_CODE_LOW_GRAVITY]             = */ CHAOS_CODE_DEF(10, 18, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.020f),
+    /* [CHAOS_CODE_CHANGE_HEALTH]           = */ CHAOS_CODE_DEF(1,  10, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.04f),
+    /* [CHAOS_CODE_CHANGE_RUPEE]            = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.04f),
+    /* [CHAOS_CODE_ACTOR_CHASE]             = */ CHAOS_CODE_DEF(6,  15, CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1), 0.01f),
+    /* [CHAOS_CODE_YEET]                    = */ CHAOS_CODE_DEF(8,  17, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.01f),
+    /* [CHAOS_CODE_POKE]                    = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1), 0.017f),
+    /* [CHAOS_CODE_MOON_DANCE]              = */ CHAOS_CODE_DEF(5,  30, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.006f),
+    /* [CHAOS_CODE_ONE_HIT_KO]              = */ CHAOS_CODE_DEF(8,  23, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.006f),
+    /* [CHAOS_CODE_RANDOM_KNOCKBACK]        = */ CHAOS_CODE_DEF(8,  15, CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1), 0.007f),
+    /* [CHAOS_CODE_ICE_TRAP]                = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1), 0.01f),
+    /* [CHAOS_CODE_TIMER_UP]                = */ CHAOS_CODE_DEF(10, 20, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.011f),
+    /* [CHAOS_CODE_SHOCK]                   = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1), 0.015f),
+    /* [CHAOS_CODE_EARTHQUAKE]              = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.06f),
+    /* [CHAOS_CODE_BOMB_ARROWS]             = */ CHAOS_CODE_DEF(15, 25, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.02f),
+    /* [CHAOS_CODE_WEIRD_ARROWS]            = */ CHAOS_CODE_DEF(15, 25, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.02f),
+    /* [CHAOS_CODE_BUCKSHOT_ARROWS]         = */ CHAOS_CODE_DEF(15, 25, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.02f),
+    /* [CHAOS_CODE_RANDOM_BOMB_TIMER]       = */ CHAOS_CODE_DEF(10, 15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.02f),
+    /* [CHAOS_CODE_LOVELESS_MARRIAGE]       = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1), 0.0075f),
+    /* [CHAOS_CODE_WEIRD_UI]                = */ CHAOS_CODE_DEF(8,  15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.04f),
+    /* [CHAOS_CODE_BEER_GOGGLES]            = */ CHAOS_CODE_DEF(15, 30, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.014f),
+    /* [CHAOS_CODE_CHANGE_MAGIC]            = */ CHAOS_CODE_DEF(1,  10, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.04f),
+    /* [CHAOS_CODE_INVINCIBLE]              = */ CHAOS_CODE_DEF(8,  23, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.005f),
+    /* [CHAOS_CODE_SYKE]                    = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1), 0.00007f),
+    /* [CHAOS_CODE_DIE]                     = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1), 0.000005f),
+    /* [CHAOS_CODE_TRAP_FLAP]               = */ CHAOS_CODE_DEF(10, 20, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.02f),
+    /* [CHAOS_CODE_TEXTBOX]                 = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1), 0.008f),
+    /* [CHAOS_CODE_SLIPPERY_FLOORS]         = */ CHAOS_CODE_DEF(10, 20, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.012f),
+    /* [CHAOS_CODE_SLOW_DOWN]               = */ CHAOS_CODE_DEF(5,  12, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.006f),
+    /* [CHAOS_CODE_ENTRANCE_RANDO]          = */ CHAOS_CODE_DEF(5,  15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.008f),
+    /* [CHAOS_CODE_TERRIBLE_MUSIC]          = */ CHAOS_CODE_DEF(15, 35, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.01f),
+    /* [CHAOS_CODE_INCREDIBLE_KNOCKBACK]    = */ CHAOS_CODE_DEF(10, 21, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.008f),
+    /* [CHAOS_CODE_RANDOM_SCALING]          = */ CHAOS_CODE_DEF(10, 21, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.007f),
+    /* [CHAOS_CODE_BIG_BROTHER]             = */ CHAOS_CODE_DEF(25, 70, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.002f),
+    /* [CHAOS_CODE_OUT_OF_SHAPE]            = */ CHAOS_CODE_DEF(5,  12, CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1), 0.008f),
+    /* [CHAOS_CODE_TUNIC_COLOR]             = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.006f),
+    /* [CHAOS_CODE_WEIRD_SKYBOX]            = */ CHAOS_CODE_DEF(10, 15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.006f),
+    /* [CHAOS_CODE_SINGLE_ACTION_OWL]       = */ CHAOS_CODE_DEF(5,  15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.0005f),
+    /* [CHAOS_CODE_PLAY_OCARINA]            = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1), 0.004f),
+    /* [CHAOS_CODE_SNEEZE]                  = */ CHAOS_CODE_DEF(5,  15, CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1), 0.006f),
+    /* [CHAOS_CODE_RANDO_FIERCE_DEITY]      = */ CHAOS_CODE_DEF(25, 75, CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1), 0.00095f),
+    /* [CHAOS_CODE_CHICKEN_ARISE]           = */ CHAOS_CODE_DEF(15, 23, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1), 0.0055f),
+    /* [CHAOS_CODE_STARFOX]                 = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1), 0.0055f),
+    /* [CHAOS_CODE_SWAP_HEAL_AND_HURT]      = */ CHAOS_CODE_DEF(5,  25, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.003f),
+    /* [CHAOS_CODE_JUNK_ITEM]               = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1), 0.003f),
+    /* [CHAOS_CODE_RANDOM_HEALTH_UP]        = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.001f),
+    /* [CHAOS_CODE_RANDOM_HEALTH_DOWN]      = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.001f),
+    /* [CHAOS_CODE_IMAGINARY_FRIENDS]       = */ CHAOS_CODE_DEF(5,  12, CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1), 0.008f),
+    /* [CHAOS_CODE_WALLMASTER]              = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1), 0.0055f),
+};
+  
 const char *gChaosCodeNames[] = {
     /* [CHAOS_CODE_NONE]                    = */ "NONE",
     /* [CHAOS_CODE_LOW_GRAVITY]             = */ "Low gravity",
@@ -291,6 +239,13 @@ u8 gBossEntrances[] = {
     ENTR_SCENE_GOHTS_LAIR, 
     ENTR_SCENE_GYORGS_LAIR,
     ENTR_SCENE_TWINMOLDS_LAIR
+};
+
+struct ChaosSpawnActorCodeDef gSpawnActorCodeDefs[] = {
+    { OBJECT_RR, CHAOS_CODE_LOVELESS_MARRIAGE },
+    { OBJECT_NIW, CHAOS_CODE_CHICKEN_ARISE },
+    { OBJECT_ARWING, CHAOS_CODE_STARFOX },
+    { OBJECT_WALLMASTER, CHAOS_CODE_WALLMASTER }
 };
 
 #define RANDOM_ENTRANCES_DEF(entrances) {           \
@@ -533,7 +488,14 @@ u32 Chaos_Rand(void)
     gChaosRngState ^= gChaosRngState << 25;
     gChaosRngState ^= gChaosRngState >> 27;
     return gChaosRngState * 0x2545F4914F6CDD1DULL;
-} 
+}
+
+// static u16 gTestObjectIds[] = {
+//     OBJECT_RR,
+//     OBJECT_NIW,
+//     OBJECT_ARWING,
+//     OBJECT_WALLMASTER
+// };
 
 void Chaos_Init(void)
 {
@@ -555,6 +517,7 @@ void Chaos_Init(void)
     // gChaosContext.update_spawn_actor_code = false;
     gChaosContext.queued_spawn_actor_code = CHAOS_CODE_NONE;
     gChaosContext.loaded_object_id = 0;
+    gChaosContext.chaos_keep_size = 0;
     gChaosContext.need_update_distribution = false;
     gChaosContext.hide_actors = 0;
     gChaosContext.link.tunic_r = 30;
@@ -588,6 +551,19 @@ void Chaos_Init(void)
         gChaosContext.active_code_indices[index] = INVALID_CODE_INDEX;
         gChaosContext.enabled_code_indices[index] = INVALID_CODE_INDEX;
     }
+
+    for(index = 0; index < ARRAY_COUNT(gSpawnActorCodeDefs); index++)
+    {
+        u32 object_id = gSpawnActorCodeDefs[index].object;
+        size_t size = gObjectTable[object_id].vromEnd - gObjectTable[object_id].vromStart;
+        if(size > gChaosContext.chaos_keep_size)
+        {
+            gChaosContext.chaos_keep_size = size;
+            gChaosContext.chaos_keep_largest_object = object_id;
+        }
+    }
+
+    gChaosContext.chaos_keep_size = (gChaosContext.chaos_keep_size + 0x3ff) & (~0x3ff);
 }
 
 u8 Chaos_RandomCode(void)
@@ -662,7 +638,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
             /* PARANOID: cpu counter overflow */
             gChaosContext.prev_update_counter = update_counter;
         }
-
+ 
         elapsed_usec = (OS_CYCLES_TO_USEC(update_counter) - OS_CYCLES_TO_USEC(gChaosContext.prev_update_counter));
         gChaosContext.code_elapsed_usec += elapsed_usec;
         gChaosContext.prev_update_counter = update_counter;
@@ -686,7 +662,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
         while(slot_index < gChaosContext.actors.spawned_actors)
         {
             struct ChaosActor *chaos_actor = gChaosContext.actors.slots + slot_index;
-
+            chaos_actor->actor->flags |= ACTOR_FLAG_CHAOS;
             if(!(chaos_actor->actor->flags & ACTOR_FLAG_40))
             {
                 if(code_elapsed_seconds >= chaos_actor->timer)
@@ -709,10 +685,19 @@ void Chaos_UpdateChaos(PlayState *playstate)
         while(slot_index < gChaosContext.active_code_count)
         {
             struct ChaosCode *code = gChaosContext.active_codes + slot_index;
+            u16 restrictions = gChaosCodeDefs[code->code].restrictions & CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_MASK;
 
             if(code_elapsed_seconds >= code->timer)
             {
-                Chaos_DeactivateCodeAtIndex(slot_index);
+                code->timer = 0;
+                if(!(restrictions & gChaosContext.effect_restrictions))
+                {
+                    Chaos_DeactivateCodeAtIndex(slot_index);
+                }
+                else
+                {
+                    slot_index++;
+                }
                 continue;
             }
 
@@ -743,8 +728,10 @@ void Chaos_UpdateChaos(PlayState *playstate)
                 next_rand = Rand_Next();
                 do
                 {
+                    u16 effect_restrictions;
+
                     if(gChaosContext.queued_spawn_actor_code != CHAOS_CODE_NONE &&
-                        Object_IsLoaded(&playstate->objectCtx, playstate->objectCtx.chaos_keep_slot))
+                        Object_IsLoaded(&playstate->objectCtx, gChaosContext.chaos_keep_slot))
                     {
                         /* there's an actor spawn effect "queued" and the object
                         is already done loading, so activate it */
@@ -756,11 +743,10 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         next_code = Chaos_RandomCode();
                     }
                     next_code_timer = gChaosCodeDefs[next_code].min_time + next_rand % (gChaosCodeDefs[next_code].max_time - gChaosCodeDefs[next_code].min_time);
+                    effect_restrictions = gChaosCodeDefs[next_code].restrictions & CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_MASK;
                     attempts++;
 
-                    code_def = gChaosCodeDefs + next_code;
-
-                    if(code_def->restrictions & gChaosContext.effect_restrictions)
+                    if(effect_restrictions & gChaosContext.effect_restrictions)
                     {
                         continue;
                     }
@@ -769,7 +755,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                     switch(next_code)
                     {
                         case CHAOS_CODE_TERRIBLE_MUSIC:
-                            if(Chaos_IsCodeActive(CHAOS_CODE_BEER_GOGGLES))
+                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_BEER_GOGGLES))
                             {
                                 /* beer goggles also screws with sound tempo/frequency */
                                 continue;
@@ -777,7 +763,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         break;
 
                         case CHAOS_CODE_BEER_GOGGLES:
-                            if(Chaos_IsCodeActive(CHAOS_CODE_TERRIBLE_MUSIC))
+                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_TERRIBLE_MUSIC))
                             {
                                 /* terrible music also screws with sound tempo/frequency */
                                 continue;
@@ -793,91 +779,116 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         // case CHAOS_CODE_ACTOR_CHASE:
                         // case CHAOS_CODE_PLAY_OCARINA:
                         case CHAOS_CODE_OUT_OF_SHAPE:
-                        
-                            // if((player->stateFlags2 & PLAYER_STATE2_80) || (player->stateFlags1 & PLAYER_STATE1_800000) ||
-                            //     (player->stateFlags1 & PLAYER_STATE1_20000000) || camera->setting == CAM_SET_BOAT_CRUISE)
-                            // {
-                            //     /* if the player has been grabbed, is mounted on epona, 
-                            //     riding the boat or time is stopped, don't spawn any of those 
-                            //     effects to avoid leaving the player in an inconsistent state */
-                            //     gChaosContext.queued_spawn_actor_code = CHAOS_CODE_NONE;
-                            //     continue;
-                            // }
-                            // else 
-                            
-                            if(next_code == CHAOS_CODE_OUT_OF_SHAPE)
-                            {
-                                if(Chaos_IsCodeActive(CHAOS_CODE_SNEEZE))
-                                {
-                                    continue;
-                                }
-                            }
-
-                            break;
-
-                        case CHAOS_CODE_LOVELESS_MARRIAGE:
-                        case CHAOS_CODE_CHICKEN_ARISE:
-                        case CHAOS_CODE_STARFOX:
-                        case CHAOS_CODE_WALLMASTER:
-                            if(gChaosContext.queued_spawn_actor_code == CHAOS_CODE_NONE &&
-                                    gChaosContext.actors.spawned_actors == 0)
-                            {
-                                if(next_code == CHAOS_CODE_LOVELESS_MARRIAGE && gChaosContext.loaded_object_id != OBJECT_RR)
-                                {
-                                    if(Chaos_IsCodeActive(CHAOS_CODE_CHICKEN_ARISE))
-                                    {
-                                        continue;
-                                    }
-
-                                    Object_RequestOverwrite(&playstate->objectCtx, playstate->objectCtx.chaos_keep_slot, OBJECT_RR);
-                                    gChaosContext.loaded_object_id = OBJECT_RR;
-                                    gChaosContext.queued_spawn_actor_code = CHAOS_CODE_LOVELESS_MARRIAGE;
-                                    continue;
-                                }
-                                else if(next_code == CHAOS_CODE_CHICKEN_ARISE && gChaosContext.loaded_object_id != OBJECT_NIW)
-                                {
-                                    Object_RequestOverwrite(&playstate->objectCtx, playstate->objectCtx.chaos_keep_slot, OBJECT_NIW);
-                                    gChaosContext.loaded_object_id = OBJECT_NIW;
-                                    gChaosContext.queued_spawn_actor_code = CHAOS_CODE_CHICKEN_ARISE;
-                                    continue;
-                                }
-                                else if(next_code == CHAOS_CODE_STARFOX && gChaosContext.loaded_object_id != OBJECT_ARWING)
-                                {
-                                    if(Chaos_IsCodeActive(CHAOS_CODE_CHICKEN_ARISE))
-                                    {
-                                        continue;
-                                    }
-                                    
-                                    Object_RequestOverwrite(&playstate->objectCtx, playstate->objectCtx.chaos_keep_slot, OBJECT_ARWING);
-                                    gChaosContext.loaded_object_id = OBJECT_ARWING;
-                                    gChaosContext.queued_spawn_actor_code = CHAOS_CODE_STARFOX;
-                                    continue;
-                                }
-                                else if(next_code == CHAOS_CODE_WALLMASTER && gChaosContext.loaded_object_id != OBJECT_WALLMASTER)
-                                {
-                                    if(Chaos_IsCodeActive(CHAOS_CODE_CHICKEN_ARISE))
-                                    {
-                                        continue;
-                                    }
-                                    
-                                    Object_RequestOverwrite(&playstate->objectCtx, playstate->objectCtx.chaos_keep_slot, OBJECT_WALLMASTER);
-                                    gChaosContext.loaded_object_id = OBJECT_WALLMASTER;
-                                    gChaosContext.queued_spawn_actor_code = CHAOS_CODE_WALLMASTER;
-                                    continue;
-                                }
-                            }
-
-                        break;
-
-                        case CHAOS_CODE_SNEEZE:
-                            if(Chaos_IsCodeActive(CHAOS_CODE_OUT_OF_SHAPE))
+                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_SNEEZE) || Chaos_IsCodeInActiveList(CHAOS_CODE_IMAGINARY_FRIENDS))
                             {
                                 continue;
                             }
                         break;
 
+                        case CHAOS_CODE_SNEEZE:
+                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_OUT_OF_SHAPE) || Chaos_IsCodeInActiveList(CHAOS_CODE_IMAGINARY_FRIENDS))
+                            {
+                                continue;
+                            }
+                        break;
+
+                        case CHAOS_CODE_IMAGINARY_FRIENDS:
+                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_OUT_OF_SHAPE) || Chaos_IsCodeInActiveList(CHAOS_CODE_SNEEZE))
+                            {
+                                continue;
+                            }
+                        break;
+
+                        case CHAOS_CODE_LOVELESS_MARRIAGE:
+                        case CHAOS_CODE_CHICKEN_ARISE:
+                        case CHAOS_CODE_STARFOX:
+                        case CHAOS_CODE_WALLMASTER:
+                        {
+                            u32 index;
+                            
+                            for(index = 0; index < ARRAY_COUNT(gSpawnActorCodeDefs); index++)
+                            {
+                                struct ChaosSpawnActorCodeDef *code_def = gSpawnActorCodeDefs + index;
+
+                                if(next_code == code_def->code && gChaosContext.loaded_object_id != code_def->object)
+                                {
+                                    /* object for next code is not loaded */
+
+                                    next_code = CHAOS_CODE_NONE;
+
+                                    if(Chaos_IsCodeInActiveList(CHAOS_CODE_CHICKEN_ARISE) || gChaosContext.actors.spawned_actors > 0)
+                                    {
+                                        /* there's still another code using the currently loaded object */
+                                        break;
+                                    }
+
+                                    Object_RequestOverwrite(&playstate->objectCtx, gChaosContext.chaos_keep_slot, code_def->object);
+                                    gChaosContext.loaded_object_id = code_def->object;
+                                    gChaosContext.queued_spawn_actor_code = code_def->code;
+                                    break;
+                                }
+                            }
+
+                            if(next_code == CHAOS_CODE_NONE)
+                            {
+                                continue;
+                            }
+                        }
+                            // if(gChaosContext.queued_spawn_actor_code != CHAOS_CODE_NONE || gChaosContext.actors.spawned_actors != 0)
+                            // {
+                            //     continue;
+                            // }
+
+
+
+                            // if(next_code == CHAOS_CODE_LOVELESS_MARRIAGE && gChaosContext.loaded_object_id != OBJECT_RR)
+                            // {
+                            //     if(Chaos_IsCodeInActiveList(CHAOS_CODE_CHICKEN_ARISE))
+                            //     {
+                            //         continue;
+                            //     }
+
+                            //     Object_RequestOverwrite(&playstate->objectCtx, gChaosContext.chaos_keep_slot, OBJECT_RR);
+                            //     gChaosContext.loaded_object_id = OBJECT_RR;
+                            //     gChaosContext.queued_spawn_actor_code = CHAOS_CODE_LOVELESS_MARRIAGE;
+                            //     continue;
+                            // }
+                            // else if(next_code == CHAOS_CODE_CHICKEN_ARISE && gChaosContext.loaded_object_id != OBJECT_NIW)
+                            // {
+                            //     Object_RequestOverwrite(&playstate->objectCtx, gChaosContext.chaos_keep_slot, OBJECT_NIW);
+                            //     gChaosContext.loaded_object_id = OBJECT_NIW;
+                            //     gChaosContext.queued_spawn_actor_code = CHAOS_CODE_CHICKEN_ARISE;
+                            //     continue;
+                            // }
+                            // else if(next_code == CHAOS_CODE_STARFOX && gChaosContext.loaded_object_id != OBJECT_ARWING)
+                            // {
+                            //     if(Chaos_IsCodeInActiveList(CHAOS_CODE_CHICKEN_ARISE))
+                            //     {
+                            //         continue;
+                            //     }
+                                
+                            //     Object_RequestOverwrite(&playstate->objectCtx, gChaosContext.chaos_keep_slot, OBJECT_ARWING);
+                            //     gChaosContext.loaded_object_id = OBJECT_ARWING;
+                            //     gChaosContext.queued_spawn_actor_code = CHAOS_CODE_STARFOX;
+                            //     continue;
+                            // }
+                            // else if(next_code == CHAOS_CODE_WALLMASTER && gChaosContext.loaded_object_id != OBJECT_WALLMASTER)
+                            // {
+                            //     if(Chaos_IsCodeInActiveList(CHAOS_CODE_CHICKEN_ARISE))
+                            //     {
+                            //         continue;
+                            //     }
+                                
+                            //     Object_RequestOverwrite(&playstate->objectCtx, gChaosContext.chaos_keep_slot, OBJECT_WALLMASTER);
+                            //     gChaosContext.loaded_object_id = OBJECT_WALLMASTER;
+                            //     gChaosContext.queued_spawn_actor_code = CHAOS_CODE_WALLMASTER;
+                            //     continue;
+                            // }
+
+                        break;
+
                         case CHAOS_CODE_BUCKSHOT_ARROWS:
-                            if(Chaos_IsCodeActive(CHAOS_CODE_BOMB_ARROWS))
+                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_BOMB_ARROWS))
                             {
                                 /* bomb arrows and buckshot arrows don't mix very well */
                                 continue;
@@ -885,7 +896,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         break;
 
                         case CHAOS_CODE_BOMB_ARROWS:
-                            if(Chaos_IsCodeActive(CHAOS_CODE_BUCKSHOT_ARROWS))
+                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_BUCKSHOT_ARROWS))
                             {
                                 /* bomb arrows and buckshot arrows don't mix very well */
                                 continue;
@@ -893,8 +904,8 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         break;
 
                         case CHAOS_CODE_ONE_HIT_KO:
-                            if(Chaos_IsCodeActive(CHAOS_CODE_CHANGE_HEALTH) || 
-                               Chaos_IsCodeActive(CHAOS_CODE_INVINCIBLE))
+                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_CHANGE_HEALTH) || 
+                               Chaos_IsCodeInActiveList(CHAOS_CODE_INVINCIBLE))
                             {
                                 /* changing health would one-hit the player or not have any 
                                 effect at all, so don't activate it */
@@ -903,9 +914,9 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         break;
 
                         case CHAOS_CODE_CHANGE_HEALTH:
-                            if(Chaos_IsCodeActive(CHAOS_CODE_ONE_HIT_KO) || 
-                               Chaos_IsCodeActive(CHAOS_CODE_INVINCIBLE) || 
-                               Chaos_IsCodeActive(CHAOS_CODE_SWAP_HEAL_AND_HURT))
+                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_ONE_HIT_KO) || 
+                               Chaos_IsCodeInActiveList(CHAOS_CODE_INVINCIBLE) || 
+                               Chaos_IsCodeInActiveList(CHAOS_CODE_SWAP_HEAL_AND_HURT))
                             {
                                 /* changing health would one-hit the player or not have any 
                                 effect at all, so don't activate it */
@@ -914,8 +925,8 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         break;
 
                         case CHAOS_CODE_INVINCIBLE:
-                            if(Chaos_IsCodeActive(CHAOS_CODE_ONE_HIT_KO) || 
-                               Chaos_IsCodeActive(CHAOS_CODE_CHANGE_HEALTH))
+                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_ONE_HIT_KO) || 
+                               Chaos_IsCodeInActiveList(CHAOS_CODE_CHANGE_HEALTH))
                             {
                                 /* making the player invicible now would make both codes 
                                 not have an effect, so don't activate it */
@@ -924,7 +935,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         break;
 
                         case CHAOS_CODE_SWAP_HEAL_AND_HURT:
-                            if(Chaos_IsCodeActive(CHAOS_CODE_CHANGE_HEALTH))
+                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_CHANGE_HEALTH))
                             {
                                 /* could potentially one-hit the player, so
                                 don't activate it */
@@ -933,7 +944,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         break;
 
                         case CHAOS_CODE_BIG_BROTHER:
-                            if(Chaos_IsCodeActive(CHAOS_CODE_MOON_DANCE))
+                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_MOON_DANCE))
                             {
                                 /* the moon won't be able to face the player if 
                                 it starts dancing, so do it later */
@@ -942,7 +953,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         break;
 
                         case CHAOS_CODE_MOON_DANCE:
-                            if(Chaos_IsCodeActive(CHAOS_CODE_BIG_BROTHER))
+                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_BIG_BROTHER))
                             {
                                 /* the moon won't be able to dance if it's
                                 trying to face the player, so do it later */
@@ -1180,7 +1191,7 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "stateFlags3: %08x", player->stateFlags3);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
-            GfxPrint_Printf(&gfx_print, "csId: %02x csAction: %02x", player->csId, player->csAction);
+            GfxPrint_Printf(&gfx_print, "csId: %d csAction: %d", player->csId, player->csAction);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "actionVar1: %d", player->av1.actionVar1);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
@@ -1188,11 +1199,14 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "Action: %d", gPlayerAction);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
-            GfxPrint_Printf(&gfx_print, "Scene: %d, room: %d, hazard: %d", scene, playstate->roomCtx.curRoom.num, Player_GetEnvironmentalHazard(playstate));
+            // GfxPrint_Printf(&gfx_print, "Scene: %d, room: %d, hazard: %d", scene, playstate->roomCtx.curRoom.num, Player_GetEnvironmentalHazard(playstate));
+            GfxPrint_Printf(&gfx_print, "Scene: %d", playstate->sceneId);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "effect restrictions: %x", gChaosContext.effect_restrictions);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "game mode: %x", gSaveContext.gameMode);
+            GfxPrint_SetPos(&gfx_print, 1, y_pos++);
+            GfxPrint_Printf(&gfx_print, "actor count: %x", gChaosContext.actors.spawned_actors);
             // GfxPrint_Printf(&gfx_print, "%x(%f) %x(%f) %x", player->skelAnime.animation, player->skelAnime.curFrame,
             //                                                 player->skelAnimeUpper.animation, player->skelAnimeUpper.curFrame,
             //                                                 gImaginaryFriendAnimations[gChaosContext.link.imaginary_friends_anim_index]);
@@ -1215,7 +1229,7 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
 
 u8 Chaos_ActivateCode(u8 code, u8 seconds)
 {
-    if(Chaos_IsCodeActive(code))
+    if(gChaosContext.active_code_indices[code] != INVALID_CODE_INDEX)
     {
         return CHAOS_ADD_RESULT_ALREADY_ACTIVE;
     }
@@ -1258,19 +1272,23 @@ void Chaos_DeactivateCode(u8 code)
     Chaos_DeactivateCodeAtIndex(gChaosContext.active_code_indices[code]);
 }
 
-u8 Chaos_IsCodeActive(u8 code)
+u8 Chaos_IsCodeInActiveList(u8 code)
 {
     u32 slot_index = gChaosContext.active_code_indices[code];
-    return slot_index < gChaosContext.active_code_count && (gChaosCodeDefs[code].always_active || 
-        (gChaosContext.effect_restrictions & gChaosCodeDefs[code].restrictions) == 0);
+    return slot_index < gChaosContext.active_code_count;
+}
+
+u8 Chaos_IsCodeActive(u8 code)
+{
+    u16 restrictions = gChaosCodeDefs[code].restrictions & CHAOS_CODE_RESTRICTION_FLAG_AFFECT_MASK;
+    return Chaos_IsCodeInActiveList(code) && ((restrictions & gChaosContext.effect_restrictions) == 0);
 }
 
 struct ChaosCode *Chaos_GetCode(u8 code)
 {
     u32 slot_index = gChaosContext.active_code_indices[code];
-
-    if(slot_index < gChaosContext.active_code_count && (gChaosCodeDefs[code].always_active || 
-        (gChaosContext.effect_restrictions & gChaosCodeDefs[code].restrictions) == 0))
+    u16 restrictions = gChaosCodeDefs[code].restrictions & CHAOS_CODE_RESTRICTION_FLAG_AFFECT_MASK;
+    if(slot_index < gChaosContext.active_code_count && (restrictions & gChaosContext.effect_restrictions) == 0)
     {
         return gChaosContext.active_codes + slot_index;
     }
@@ -1281,7 +1299,8 @@ struct ChaosCode *Chaos_GetCode(u8 code)
 void Chaos_EnableCode(u8 code, f32 prob_scale)
 {
     u32 same_as_previous_index = false;
-    if(!Chaos_IsCodeEnabled(code) && !(gChaosCodeDefs[code].restrictions & gChaosContext.effect_restrictions))
+    u16 effect_restrictions = gChaosCodeDefs[code].restrictions & CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_MASK;
+    if(!Chaos_IsCodeEnabled(code) && !(effect_restrictions & gChaosContext.effect_restrictions))
     {
         u32 index = gChaosContext.enabled_code_count;
         gChaosContext.enabled_code_count++;
@@ -1393,45 +1412,57 @@ u8 Chaos_CanUpdateChaos(struct PlayState *play)
     return gChaosContext.update_enabled;
 }
 
-u8 Chaos_EffectRestrictions(struct PlayState *play)
+u16 Chaos_EffectRestrictions(struct PlayState *play)
 {
     Player *player = GET_PLAYER(play);
     Camera *camera = Play_GetCamera(play, CAM_ID_MAIN);
-    u8 restriction_flags = 0;
+    u16 restriction_flags = 0;
 
     if(CutsceneManager_GetCurrentCsId() != CS_ID_NONE)
     {
-        restriction_flags |= CHAOS_CODE_RESTRICTION_FLAG_CUTSCENE;
+        restriction_flags |= CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_CUTSCENE |
+                             CHAOS_CODE_RESTRICTION_FLAG_AFFECT_CUTSCENE;
     }
 
     if(play->transitionMode != TRANS_MODE_OFF)
     {
-        restriction_flags |= CHAOS_CODE_RESTRICTION_FLAG_TRANSITION;
+        restriction_flags |= CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_TRANSITION |
+                             CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TRANSITION;
     }
 
     if(player->stateFlags1 & PLAYER_STATE1_DEAD)
     {
-        restriction_flags |= CHAOS_CODE_RESTRICTION_FLAG_DEAD;
+        restriction_flags |= CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_DEAD |
+                             CHAOS_CODE_RESTRICTION_FLAG_AFFECT_DEAD;
     }
 
     if(camera->setting == CAM_SET_BOAT_CRUISE)
     {
-        restriction_flags |= CHAOS_CODE_RESTRICTION_FLAG_BOAT_RIDE;
+        restriction_flags |= CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_BOAT_RIDE | 
+                             CHAOS_CODE_RESTRICTION_FLAG_AFFECT_BOAT_RIDE;
     }
 
     if(player->stateFlags1 & PLAYER_STATE1_TIME_STOPPED)
     {
-        restriction_flags |= CHAOS_CODE_RESTRICTION_FLAG_TIME_STOPPED;
+        restriction_flags |= CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_TIME_STOPPED | 
+                             CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TIME_STOPPED;
     }
 
     if(player->stateFlags2 & PLAYER_STATE2_GRABBED)
     {
-        restriction_flags |= CHAOS_CODE_RESTRICTION_FLAG_GRABBED;
+        restriction_flags |= CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_GRABBED | 
+                             CHAOS_CODE_RESTRICTION_FLAG_AFFECT_GRABBED;
     }
 
     if(player->stateFlags1 & PLAYER_STATE1_MOUNTED)
     {
-        restriction_flags |= CHAOS_CODE_RESTRICTION_FLAG_EPONA_RIDE;
+        restriction_flags |= CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_EPONA_RIDE | 
+                             CHAOS_CODE_RESTRICTION_FLAG_AFFECT_EPONA_RIDE;
+    }
+
+    if(play->pauseCtx.state != PAUSE_STATE_OFF)
+    {
+        restriction_flags |= CHAOS_CODE_RESTRICTION_FLAG_AFFECT_PAUSED;
     }
 
     return restriction_flags;
@@ -1450,8 +1481,9 @@ Actor *Chaos_SpawnActor(ActorContext *context, PlayState *play, s16 actor_id, f3
             struct ChaosActor *chaos_actor = gChaosContext.actors.slots + gChaosContext.actors.spawned_actors;
             chaos_actor->actor = actor;
             chaos_actor->timer = ACTOR_DESPAWN_TIMER;
+            actor->flags |= ACTOR_FLAG_CHAOS;
 
-            Actor_ChangeCategory(play, &play->actorCtx, actor, ACTORCAT_CHAOS);
+            // Actor_ChangeCategory(play, &play->actorCtx, actor, ACTORCAT_CHAOS);
 
             if(actor_id == ACTOR_EN_ARWING)
             {
@@ -1479,7 +1511,8 @@ Actor* Chaos_SpawnAsChild(ActorContext* context, Actor* parent, PlayState* play,
             struct ChaosActor *chaos_actor = gChaosContext.actors.slots + gChaosContext.actors.spawned_actors;
             chaos_actor->actor = actor;
             chaos_actor->timer = ACTOR_DESPAWN_TIMER;
-            Actor_ChangeCategory(play, &play->actorCtx, actor, ACTORCAT_CHAOS);
+            actor->flags |= ACTOR_FLAG_CHAOS;
+            // Actor_ChangeCategory(play, &play->actorCtx, actor, ACTORCAT_CHAOS);
             // chaos_actor->destroy = actor->destroy;
             // actor->destroy = Chaos_DestroyFunction;
             gChaosContext.actors.spawned_actors++;
@@ -1896,14 +1929,16 @@ void Chaos_UpdateEntrances(PlayState *play)
 void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
 {
     u32 index;
-    u32 scene_index;
+    u32 scene_index = gSaveContext.save.entrance >> 9;
     u32 room_index;
+    f32 change_rupee_prob = 1.0f;
     Player *player = GET_PLAYER(this);
     Camera *camera = Play_GetCamera(this, CAM_ID_MAIN);
     u32 has_ocarina = gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] == ITEM_OCARINA_OF_TIME;
     u32 can_be_pushed_around = !(player->stateFlags2 & PLAYER_STATE2_80) && 
                         !(player->stateFlags1 & (PLAYER_STATE1_800000 | PLAYER_STATE1_20000000)) &&
                         camera->setting != CAM_SET_BOAT_CRUISE;
+
     
     Chaos_ClearEnabledCodes();
     Chaos_EnableCode(CHAOS_CODE_YEET, 1.0f);
@@ -1922,15 +1957,29 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     Chaos_EnableCode(CHAOS_CODE_RANDOM_SCALING, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_BIG_BROTHER, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_WEIRD_SKYBOX, 1.0f);
-    Chaos_EnableCode(CHAOS_CODE_CHANGE_HEALTH, 1.0f);
-    Chaos_EnableCode(CHAOS_CODE_CHANGE_RUPEE, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_SWAP_HEAL_AND_HURT, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_RANDOM_FIERCE_DEITY, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_JUNK_ITEM, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_RANDOM_HEALTH_UP, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_RANDOM_HEALTH_DOWN, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_IMAGINARY_FRIENDS, 1.0f);
-    Chaos_EnableCode(CHAOS_CODE_WALLMASTER, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_CHANGE_HEALTH, 1.0f);
+
+    if(scene_index == ENTR_SCENE_TERMINA_FIELD)
+    {
+        change_rupee_prob = 1.2f;
+    }
+    else if(scene_index == ENTR_SCENE_SOUTH_CLOCK_TOWN || scene_index == ENTR_SCENE_EAST_CLOCK_TOWN ||
+            scene_index == ENTR_SCENE_NORTH_CLOCK_TOWN)
+    {
+        change_rupee_prob = 1.5f;
+    }
+    else if(scene_index == ENTR_SCENE_WEST_CLOCK_TOWN)
+    {
+        change_rupee_prob = 2.0f;
+    }
+
+    Chaos_EnableCode(CHAOS_CODE_CHANGE_RUPEE, change_rupee_prob);
 
     if(gSaveContext.save.saveInfo.playerData.isMagicAcquired)
     {
@@ -1968,14 +2017,13 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     Chaos_EnableCode(CHAOS_CODE_LOVELESS_MARRIAGE, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_CHICKEN_ARISE, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_STARFOX, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_WALLMASTER, 1.0f);
 
     // if(has_ocarina)
     // {
         // Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA, 1.0f);
     // }
     // }
-
-    scene_index = gSaveContext.save.entrance >> 9;
     if(scene_index != ENTR_SCENE_ODOLWAS_LAIR && scene_index != ENTR_SCENE_IGOS_DU_IKANAS_LAIR &&
        scene_index != ENTR_SCENE_PIRATES_FORTRESS_INTERIOR || (scene_index == ENTR_SCENE_PIRATES_FORTRESS_INTERIOR &&
        this->roomCtx.curRoom.num != 0 && this->roomCtx.curRoom.num != 1 && this->roomCtx.curRoom.num != 2))
@@ -2001,7 +2049,7 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     if(has_ocarina)
     {
         Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA, 1.0f);
-        
+
         if(!Map_IsInBossScene(this) && CHECK_WEEKEVENTREG(WEEKEVENTREG_ENTERED_SOUTH_CLOCK_TOWN))
         {
             /* don't enable entrance rando until the player enters south clock town.

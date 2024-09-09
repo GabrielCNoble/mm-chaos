@@ -8,6 +8,7 @@
 #include "z64rumble.h"
 #include "overlays/actors/ovl_En_Clear_Tag/z_en_clear_tag.h"
 #include "objects/object_rr/object_rr.h"
+#include "chaos_fuckery.h"
 
 #define FLAGS (ACTOR_FLAG_TARGETABLE | ACTOR_FLAG_UNFRIENDLY | ACTOR_FLAG_400)
 
@@ -20,7 +21,7 @@ void EnRr_Draw(Actor* thisx, PlayState* play2);
 
 void func_808FAF94(EnRr* this, PlayState* play);
 void func_808FB088(EnRr* this, PlayState* play);
-void func_808FB1C0(EnRr* this, PlayState* play);
+void EnRr_ChewPlayer(EnRr* this, PlayState* play);
 void func_808FB2C0(EnRr* this, PlayState* play);
 void func_808FB42C(EnRr* this, PlayState* play);
 void func_808FB680(EnRr* this, PlayState* play);
@@ -219,8 +220,8 @@ void func_808FA19C(EnRr* this, PlayState* play) {
         this->actor.flags |= ACTOR_FLAG_400;
     }
 }
-/* EnRr_SetMoveSpeed */
-void func_808FA238(EnRr* this, f32 arg1) {
+/* EnRr_Move */
+void EnRr_Move(EnRr* this, f32 arg1) {
     this->actor.speed = arg1;
     Actor_PlaySfx(&this->actor, NA_SE_EN_LIKE_WALK);
 }
@@ -268,8 +269,8 @@ void func_808FA344(EnRr* this) {
         this->actionFunc = func_808FAF94;
     }
 }
-/* EnRr_BeginGobblePlayer */
-void func_808FA3F8(EnRr* this, Player* player) {
+/* EnRr_SetupChewPlayer */
+void EnRr_SetupChewPlayer(EnRr* this, Player* player) {
     s32 i;
 
     this->unk_1EA = 100;
@@ -292,12 +293,12 @@ void func_808FA3F8(EnRr* this, Player* player) {
         this->unk_324[i].unk_18 = 0;
     }
 
-    this->actionFunc = func_808FB1C0;
+    this->actionFunc = EnRr_ChewPlayer;
     Actor_PlaySfx(&this->actor, NA_SE_EN_SUISEN_DRINK);
 }
 
 /* EnRr_SpitPlayer */
-void func_808FA4F4(EnRr* this, PlayState* play) {
+void EnRr_SpitPlayer(EnRr* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     // u32 sp38;
     u32 player_damage;
@@ -337,6 +338,12 @@ void func_808FA4F4(EnRr* this, PlayState* play) {
 
         player_throw_xz_speed = this->actor.scale.x * 210.52632f;
         player_throw_y_velocity = this->actor.scale.x * 631.579f;
+
+        if(Chaos_IsCodeActive(CHAOS_CODE_INCREDIBLE_KNOCKBACK))
+        {
+            player_throw_xz_speed *= 2.0f;
+            player_throw_y_velocity *= 2.0f;
+        }
 
         player->actor.world.pos.x += player_throw_xz_speed * Math_SinS(this->actor.shape.rot.y);
         player->actor.world.pos.y += player_throw_y_velocity;
@@ -481,7 +488,7 @@ s32 func_808FAA94(EnRr* this, PlayState* play) {
         }
 
         Actor_SetDropFlag(&this->actor, &sp2C->info);
-        func_808FA4F4(this, play);
+        EnRr_SpitPlayer(this, play);
         func_808FA19C(this, play);
 
         if (!Actor_ApplyDamage(&this->actor)) {
@@ -520,7 +527,7 @@ void func_808FAC80(EnRr* this, PlayState* play) {
         this->collider2.base.atFlags &= ~AT_HIT;
         if (play->grabPlayer(play, player)) {
             player->actor.parent = &this->actor;
-            func_808FA3F8(this, player);
+            EnRr_SetupChewPlayer(this, player);
         }
     }
 }
@@ -590,7 +597,7 @@ void func_808FAF94(EnRr* this, PlayState* play) {
         (this->actor.xzDistToPlayer < (8421.053f * this->actor.scale.x))) {
         func_808FA260(this);
     } else if ((this->actor.xzDistToPlayer < 400.0f) && (this->actor.speed == 0.0f)) {
-        func_808FA238(this, 2.0f);
+        EnRr_Move(this, 2.0f);
     }
 }
 
@@ -644,7 +651,7 @@ void func_808FB088(EnRr* this, PlayState* play) {
     }
 }
 
-void func_808FB1C0(EnRr* this, PlayState* play) {
+void EnRr_ChewPlayer(EnRr* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     Rumble_Request(this->actor.xyzDistToPlayerSq, 120, 2, 120);
@@ -687,7 +694,7 @@ void func_808FB2C0(EnRr* this, PlayState* play) {
     Math_StepToF(&this->unk_218, -(f32)this->collider1.dim.height, 5.0f);
     if (this->unk_1E6 == 0) {
         this->unk_1E1 = 0;
-        func_808FA4F4(this, play);
+        EnRr_SpitPlayer(this, play);
         func_808FA344(this);
     }
 }
@@ -770,7 +777,7 @@ void func_808FB680(EnRr* this, PlayState* play) {
         Math_SmoothStepToS(&this->actor.shape.rot.y, BINANG_ROT180(this->actor.yawTowardsPlayer), 10, 0x3E8, 0);
         this->actor.world.rot.y = this->actor.shape.rot.y;
         if (this->actor.speed == 0.0f) {
-            func_808FA238(this, 2.0f);
+            EnRr_Move(this, 2.0f);
         }
     }
 }

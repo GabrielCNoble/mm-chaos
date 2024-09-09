@@ -260,7 +260,7 @@ typedef enum {
     /* 0x09 */ ACTORCAT_BOSS,
     /* 0x0A */ ACTORCAT_DOOR,
     /* 0x0B */ ACTORCAT_CHEST,
-               ACTORCAT_CHAOS,
+            //    ACTORCAT_CHAOS,
     /* 0x0C */ ACTORCAT_MAX
 } ActorType;
 
@@ -457,6 +457,7 @@ typedef enum DoorLockType {
     /* 3 */ DOORLOCK_MAX
 } DoorLockType;
 
+#define ACTOR_FLAG_FRIENDLY      0
 // Allows Tatl to fly over the actor and lock-on it (using the Z-target)
 #define ACTOR_FLAG_TARGETABLE    (1 << 0)
 // Actor won't chase player
@@ -464,7 +465,8 @@ typedef enum DoorLockType {
 // Changes the targeting behaviour for unfriendly actors (sound effects, Player's stance, etc)
 #define ACTOR_FLAG_UNFRIENDLY    (1 << 2)
 // Opposite of the UNFRIENDLY flag. It is not checked explictly in the original game.
-#define ACTOR_FLAG_FRIENDLY      (1 << 3)
+// #define ACTOR_FLAG_FRIENDLY      (1 << 3)
+#define ACTOR_FLAG_CHAOS         (1 << 3)
 // 
 #define ACTOR_FLAG_10            (1 << 4)
 // 

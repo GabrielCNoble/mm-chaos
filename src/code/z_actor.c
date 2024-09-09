@@ -455,7 +455,7 @@ TatlColor sTatlColorList[] = {
     { { 255, 255, 0, 255 }, { 200, 155, 0, 0 } },     // ACTORCAT_BOSS
     { { 0, 255, 0, 255 }, { 0, 255, 0, 0 } },         // ACTORCAT_DOOR
     { { 0, 255, 0, 255 }, { 0, 255, 0, 0 } },         // ACTORCAT_CHEST
-    { { 255, 255, 0, 255 }, { 200, 155, 0, 0 } },     // ACTORCAT_CHAOS
+    // { { 255, 255, 0, 255 }, { 200, 155, 0, 0 } },     // ACTORCAT_CHAOS
     { { 0, 255, 0, 255 }, { 0, 255, 0, 0 } },         // ACTORCAT_MAX
 };
 
@@ -2542,12 +2542,12 @@ Actor* Actor_UpdateActor(UpdateActor_Params* params) {
     } else {
         if (!Object_IsLoaded(&play->objectCtx, actor->objectSlot)) {
             Actor_Kill(actor);
-        } else if ((params->requiredActorFlag && !(actor->flags & params->requiredActorFlag)) ||
-                   (((!params->requiredActorFlag) != 0) &&
-                    (!(actor->flags & ACTOR_FLAG_100000) ||
+        } else if (!(actor->flags & ACTOR_FLAG_CHAOS) &&
+                    ((params->requiredActorFlag && !(actor->flags & params->requiredActorFlag)) ||
+                   (((!params->requiredActorFlag) != 0) && (!(actor->flags & ACTOR_FLAG_100000) ||
                      ((actor->category == ACTORCAT_EXPLOSIVES) && (params->player->stateFlags1 & PLAYER_STATE1_200))) &&
                     params->canFreezeCategory && (actor != params->talkActor) && (actor != params->player->heldActor) &&
-                    (actor->parent != &params->player->actor))) {
+                    (actor->parent != &params->player->actor)))) {
             CollisionCheck_ResetDamage(&actor->colChkInfo);
         } else {
             Math_Vec3f_Copy(&actor->prevPos, &actor->world.pos);
@@ -2617,7 +2617,7 @@ u32 sCategoryFreezeMasks[ACTORCAT_MAX] = {
     PLAYER_STATE1_2 | PLAYER_STATE1_40 | PLAYER_STATE1_80 | PLAYER_STATE1_200 | PLAYER_STATE1_10000000,
 
     /* ACTORCAT_CHAOS */
-    0,
+    // 0,
 };
 
 void Actor_UpdateAll(PlayState* play, ActorContext* actorCtx) {
@@ -3305,8 +3305,9 @@ Actor* Actor_RemoveFromCategory(PlayState* play, ActorContext* actorCtx, Actor* 
     actorToRemove->prev = NULL;
 
     if ((actorToRemove->room == play->roomCtx.curRoom.num) && (
-        (actorToRemove->category == ACTORCAT_ENEMY && actorCtx->actorLists[ACTORCAT_ENEMY].length == 0) ||
-        (actorToRemove->category == ACTORCAT_CHAOS && actorCtx->actorLists[ACTORCAT_CHAOS].length == 0))) {
+        // (actorToRemove->category == ACTORCAT_ENEMY && actorCtx->actorLists[ACTORCAT_ENEMY].length == 0) ||
+        // (actorToRemove->category == ACTORCAT_CHAOS && actorCtx->actorLists[ACTORCAT_CHAOS].length == 0))) {
+        (actorToRemove->category == ACTORCAT_ENEMY && actorCtx->actorLists[ACTORCAT_ENEMY].length == 0))) { 
         Flags_SetClearTemp(play, play->roomCtx.curRoom.num);
     }
 
@@ -3630,7 +3631,7 @@ void Target_FindTargetableActorForCategory(PlayState* play, ActorContext* actorC
         }
 
         // Determine the closest enemy actor to player within a range. Used for playing enemy background music.
-        if ((actorCategory == ACTORCAT_ENEMY || actorCategory == ACTORCAT_CHAOS) &&
+        if ((actorCategory == ACTORCAT_ENEMY /* || actorCategory == ACTORCAT_CHAOS */) &&
             CHECK_FLAG_ALL(actor->flags, ACTOR_FLAG_TARGETABLE | ACTOR_FLAG_UNFRIENDLY)) {
             if ((actor->xyzDistToPlayerSq < SQ(500.0f)) && (actor->xyzDistToPlayerSq < sBgmEnemyDistSq)) {
                 actorCtx->targetCtx.bgmEnemy = actor;
@@ -3688,7 +3689,7 @@ void Target_FindTargetableActorForCategory(PlayState* play, ActorContext* actorC
 }
 
 u8 sTargetableActorCategories[] = {
-    ACTORCAT_BOSS,  ACTORCAT_ENEMY, ACTORCAT_CHAOS,  ACTORCAT_BG, ACTORCAT_EXPLOSIVES, ACTORCAT_NPC,  ACTORCAT_ITEMACTION,
+    ACTORCAT_BOSS,  ACTORCAT_ENEMY, /* ACTORCAT_CHAOS ,*/  ACTORCAT_BG, ACTORCAT_EXPLOSIVES, ACTORCAT_NPC,  ACTORCAT_ITEMACTION,
     ACTORCAT_CHEST, ACTORCAT_SWITCH, ACTORCAT_PROP, ACTORCAT_MISC, ACTORCAT_DOOR, ACTORCAT_SWITCH,
 };
 

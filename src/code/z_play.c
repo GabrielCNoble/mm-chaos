@@ -1123,7 +1123,7 @@ void Play_UpdateMain(PlayState* this) {
             gChaosContext.chicken.cucco.unkAttackNiwTimer--;
         }
 
-        if ((gChaosContext.chicken.cucco.attackNiwSpawnTimer == 0) && (gChaosContext.chicken.cucco.attackNiwCount < 8)) 
+        if ((gChaosContext.chicken.cucco.attackNiwSpawnTimer == 0) && (gChaosContext.chicken.cucco.attackNiwCount < 7)) 
         {
             f32 xView = this->view.at.x - this->view.eye.x;
             f32 yView = this->view.at.y - this->view.eye.y;

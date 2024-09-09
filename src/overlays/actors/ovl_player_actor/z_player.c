@@ -10827,6 +10827,8 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
         ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawFeet, this->ageProperties->shadowScale);
     }
 
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_]
+
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_GORON] = ITEM_MASK_GORON;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_BUNNY] = ITEM_MASK_BUNNY;
@@ -10838,6 +10840,7 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_REMAINS_TWINMOLD);
     gSaveContext.save.saveInfo.inventory.items[SLOT_POWDER_KEG] = ITEM_POWDER_KEG;
     gSaveContext.save.saveInfo.inventory.ammo[SLOT_POWDER_KEG] = 1;
+    gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOW] = 30;
 
     this->subCamId = CAM_ID_NONE;
     Collider_InitAndSetCylinder(play, &this->cylinder, &this->actor, &D_8085C2EC);
@@ -12386,7 +12389,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     if(CHECK_BTN_ANY(input->press.button, BTN_L))
     {
         // play->nextEntrance = Entrance_Create(gSceneIndex, gEntranceIndex, 0);
-        // play->nextEntrance = ENTRANCE(PIRATES_FORTRESS_INTERIOR, 9);
+        // play->nextEntrance = ENTRANCE(MAJORAS_LAIR, 0);
         // Scene_SetExitFade(play);
         // play->transitionTrigger = TRANS_TRIGGER_START;
 
@@ -12436,10 +12439,15 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // // }
 
         // Chaos_ActivateCode(CHAOS_CODE_IMAGINARY_FRIENDS, 5);
+
+        // Chaos_ActivateCode(CHAOS_CODE_RANDOM_HEALTH_UP, 1);
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_R))
     {
+        // Chaos_ActivateCode(CHAOS_CODE_BOMB_ARROWS, 120);
+        // Chaos_ActivateCode(CHAOS_CODE_RANDOM_FIERCE_DEITY, 60);
+        
         // Chaos_ActivateCode(CHAOS_CODE_CHICKEN_ARISE, 10);
         // play->nextEntrance = ENTRANCE(PIRATES_FORTRESS_INTERIOR, 9);
         // Scene_SetExitFade(play);
@@ -12450,6 +12458,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // Chaos_ActivateCode(CHAOS_CODE_OUT_OF_SHAPE, 5);
         // Actor_Spawn(&play->actorCtx, play, ACTOR_EN_WALLMAS, 
         //     this->actor.world.pos.x, this->actor.world.pos.y + 20.0f, this->actor.world.pos.z, 0, 0, 0, WALLMASTER_PARAMS(WALLMASTER_TYPE_FAKE, 0, false));
+        // Chaos_ActivateCode(CHAOS_CODE_RANDOM_HEALTH_DOWN, 1);
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_DDOWN))
@@ -12645,17 +12654,29 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
 
         if(Chaos_IsCodeActive(CHAOS_CODE_CHANGE_RUPEE) && gSaveContext.rupeeAccumulator == 0)
         {
-            s16 max_rupee = CUR_CAPACITY(UPG_WALLET);
-            s16 rupee_change = 0;
+            // s16 max_rupee = CUR_CAPACITY(UPG_WALLET);
+            // s16 rupee_change = 0;
             
-            while(rupee_change == 0)
+            // while(rupee_change == 0)
+            // {
+            //     // rupee_change = ((Rand_Next() % max_rupee) << 1) - max_rupee;
+            //     rupee_change = Rand_S16Offset(-max_rupee, max_rupee << 1);
+            //     if(gSaveContext.save.saveInfo.playerData.rupees + rupee_change < 0)
+            //     {
+            //         rupee_change = -gSaveContext.save.saveInfo.playerData.rupees;
+            //     }
+            // }
+
+            s16 rupee_change = -Rand_S16Offset(1, CUR_CAPACITY(UPG_WALLET) / 2);
+
+            if((Rand_Next() % 5) >= 3)
             {
-                // rupee_change = ((Rand_Next() % max_rupee) << 1) - max_rupee;
-                rupee_change = Rand_S16Offset(-max_rupee, max_rupee << 1);
-                if(gSaveContext.save.saveInfo.playerData.rupees + rupee_change < 0)
-                {
-                    rupee_change = -gSaveContext.save.saveInfo.playerData.rupees;
-                }
+                rupee_change = -rupee_change;
+            }
+            
+            if(gSaveContext.save.saveInfo.playerData.rupees + rupee_change < 0)
+            {
+                rupee_change = -gSaveContext.save.saveInfo.playerData.rupees;
             }
 
             Rupees_ChangeBy(rupee_change);
@@ -12690,13 +12711,19 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         {
             gSaveContext.save.saveInfo.playerData.healthCapacity += 16;
             gSaveContext.save.saveInfo.playerData.health += 16;
+            Audio_PlaySfx(NA_SE_SY_HP_RECOVER);
             Chaos_DeactivateCode(CHAOS_CODE_RANDOM_HEALTH_UP);
         }
 
         if(Chaos_IsCodeActive(CHAOS_CODE_RANDOM_HEALTH_DOWN))
         {
             gSaveContext.save.saveInfo.playerData.healthCapacity -= 16;
-            gSaveContext.save.saveInfo.playerData.health -= 16;
+            if(gSaveContext.save.saveInfo.playerData.health > 
+                gSaveContext.save.saveInfo.playerData.healthCapacity)
+            {
+                gSaveContext.save.saveInfo.playerData.health -= 16;
+            }
+            Audio_PlaySfx(NA_SE_SY_HP_RECOVER);
             Chaos_DeactivateCode(CHAOS_CODE_RANDOM_HEALTH_DOWN);
         }
     }

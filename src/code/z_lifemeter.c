@@ -436,8 +436,9 @@ void LifeMeter_UpdateSizeAndBeep(PlayState* play) {
 
 u32 LifeMeter_IsCritical(void) {
     s16 criticalThreshold;
-
-    if (gSaveContext.save.saveInfo.playerData.healthCapacity <= 0x50) {
+    if (gSaveContext.save.saveInfo.playerData.healthCapacity <= 0x20) {
+        criticalThreshold = 0x8;
+    }else if (gSaveContext.save.saveInfo.playerData.healthCapacity <= 0x50) {
         criticalThreshold = 0x10;
     } else if (gSaveContext.save.saveInfo.playerData.healthCapacity <= 0xA0) {
         criticalThreshold = 0x18;

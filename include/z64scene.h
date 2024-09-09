@@ -406,13 +406,13 @@ typedef struct {
 
 typedef struct {
     /* 0x00 */ s16      id; // Negative ids mean that the object is unloaded
-    // /* 0x02 */ UNK_TYPE1 pad2[0x2];
-               u16      load_pending;
+    /* 0x02 */ UNK_TYPE1 pad2[0x2];
+            //    u16      load_pending;
     /* 0x04 */ void*    segment;
             //    uintptr_t vrom_addr;
-    // /* 0x08 */ DmaRequest dmaReq;
-    // /* 0x28 */ OSMesgQueue loadQueue;
-    // /* 0x40 */ OSMesg loadMsg;
+    /* 0x08 */ DmaRequest dmaReq;
+    /* 0x28 */ OSMesgQueue loadQueue;
+    /* 0x40 */ OSMesg loadMsg;
 } ObjectEntry; // size = 0x44
 
 struct ObjectLoadRequest
@@ -483,11 +483,11 @@ typedef struct {
     /* 0x009 */ u8              numPersistentEntries; // amount of entries that won't be reused when loading a new object list (when loading a new room)
     /* 0x00A */ u8              mainKeepSlot; // "gameplay_keep" slot
     /* 0x00B */ u8              subKeepSlot; // "gameplay_field_keep" or "gameplay_dangeon_keep" slot
-                u8              chaos_keep_slot;
-                u8              pending_request_count;
-                u8              next_available_request;
+                // u8              chaos_keep_slot;
+                // u8              pending_request_count;
+                // u8              next_available_request;
     /* 0x00C */ ObjectEntry     slots[35];    
-    struct ObjectLoadRequest    load_requests[MAX_OBJECT_REQUESTS];
+    // struct ObjectLoadRequest    load_requests[MAX_OBJECT_REQUESTS];
 } ObjectContext; // size = 0x958 
 
 typedef struct {

@@ -228,52 +228,112 @@ enum CHAOS_CODES
     CHAOS_CODE_LAST
 };
 
-#define CHAOS_CODE_RESTRICTION_FLAG_TRANSITION_SHIFT     0
-#define CHAOS_CODE_RESTRICTION_FLAG_CUTSCENE_SHIFT       1
-#define CHAOS_CODE_RESTRICTION_FLAG_BOAT_RIDE_SHIFT      2
-#define CHAOS_CODE_RESTRICTION_FLAG_EPONA_RIDE_SHIFT     3
-#define CHAOS_CODE_RESTRICTION_FLAG_GRABBED_SHIFT        4
-// #define CHAOS_CODE_RESTRICTION_FLAG_PAUSED_SHIFT         5
-#define CHAOS_CODE_RESTRICTION_FLAG_DEAD_SHIFT           5             
-#define CHAOS_CODE_RESTRICTION_FLAG_TIME_STOPPED_SHIFT   6
+#define CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_TIME_STOPPED_SHIFT   0
+#define CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TIME_STOPPED_SHIFT   1
+#define CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_CUTSCENE_SHIFT       2
+#define CHAOS_CODE_RESTRICTION_FLAG_AFFECT_CUTSCENE_SHIFT       3
+#define CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_BOAT_RIDE_SHIFT      4
+#define CHAOS_CODE_RESTRICTION_FLAG_AFFECT_BOAT_RIDE_SHIFT      5
+#define CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_EPONA_RIDE_SHIFT     6
+#define CHAOS_CODE_RESTRICTION_FLAG_AFFECT_EPONA_RIDE_SHIFT     7
+#define CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_GRABBED_SHIFT        8
+#define CHAOS_CODE_RESTRICTION_FLAG_AFFECT_GRABBED_SHIFT        9
+#define CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_DEAD_SHIFT           10
+#define CHAOS_CODE_RESTRICTION_FLAG_AFFECT_DEAD_SHIFT           11
+#define CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_TRANSITION_SHIFT     12
+#define CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TRANSITION_SHIFT     13
+#define CHAOS_CODE_RESTRICTION_FLAG_AFFECT_PAUSED_SHIFT         14
 
 enum CHAOS_CODE_RESTRICTION_FLAGS
 {
-    CHAOS_CODE_RESTRICTION_FLAG_TRANSITION   = 1 << CHAOS_CODE_RESTRICTION_FLAG_TRANSITION_SHIFT,
-    CHAOS_CODE_RESTRICTION_FLAG_CUTSCENE     = 1 << CHAOS_CODE_RESTRICTION_FLAG_CUTSCENE_SHIFT,
-    CHAOS_CODE_RESTRICTION_FLAG_BOAT_RIDE    = 1 << CHAOS_CODE_RESTRICTION_FLAG_BOAT_RIDE_SHIFT,
-    CHAOS_CODE_RESTRICTION_FLAG_EPONA_RIDE   = 1 << CHAOS_CODE_RESTRICTION_FLAG_EPONA_RIDE_SHIFT,
-    CHAOS_CODE_RESTRICTION_FLAG_GRABBED      = 1 << CHAOS_CODE_RESTRICTION_FLAG_GRABBED_SHIFT,
-    // CHAOS_CODE_RESTRICTION_FLAG_PAUSED       = 1 << CHAOS_CODE_RESTRICTION_FLAG_PAUSED_SHIFT,
-    CHAOS_CODE_RESTRICTION_FLAG_DEAD         = 1 << CHAOS_CODE_RESTRICTION_FLAG_DEAD_SHIFT,
-    CHAOS_CODE_RESTRICTION_FLAG_TIME_STOPPED = 1 << CHAOS_CODE_RESTRICTION_FLAG_TIME_STOPPED_SHIFT,
-
-    CHAOS_CODE_RESTRICTION_FLAG_ALL          =  CHAOS_CODE_RESTRICTION_FLAG_TRANSITION | 
-                                                CHAOS_CODE_RESTRICTION_FLAG_CUTSCENE |
-                                                CHAOS_CODE_RESTRICTION_FLAG_BOAT_RIDE |
-                                                CHAOS_CODE_RESTRICTION_FLAG_EPONA_RIDE |
-                                                CHAOS_CODE_RESTRICTION_FLAG_GRABBED |
-                                                // CHAOS_CODE_RESTRICTION_FLAG_PAUSED | 
-                                                CHAOS_CODE_RESTRICTION_FLAG_DEAD | 
-                                                CHAOS_CODE_RESTRICTION_FLAG_TIME_STOPPED
+    CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_TIME_STOPPED   = 1 << CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_TIME_STOPPED_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TIME_STOPPED   = 1 << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TIME_STOPPED_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_CUTSCENE       = 1 << CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_CUTSCENE_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_AFFECT_CUTSCENE       = 1 << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_CUTSCENE_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_BOAT_RIDE      = 1 << CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_BOAT_RIDE_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_AFFECT_BOAT_RIDE      = 1 << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_BOAT_RIDE_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_EPONA_RIDE     = 1 << CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_EPONA_RIDE_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_AFFECT_EPONA_RIDE     = 1 << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_EPONA_RIDE_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_GRABBED        = 1 << CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_GRABBED_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_AFFECT_GRABBED        = 1 << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_GRABBED_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_DEAD           = 1 << CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_DEAD_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_AFFECT_DEAD           = 1 << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_DEAD_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_TRANSITION     = 1 << CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_TRANSITION_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TRANSITION     = 1 << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TRANSITION_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_AFFECT_PAUSED         = 1 << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TIME_STOPPED_SHIFT,
 };
- 
-#define CHAOS_CODE_RESTRICTIONS(transition, cutscene, boat_ride, epona_ride, grabbed, dead, time_stopped)    \
-    ((((transition) && 1) << CHAOS_CODE_RESTRICTION_FLAG_TRANSITION_SHIFT) |                                 \
-    (((cutscene) && 1) << CHAOS_CODE_RESTRICTION_FLAG_CUTSCENE_SHIFT) |                                      \
-    (((boat_ride) && 1) << CHAOS_CODE_RESTRICTION_FLAG_BOAT_RIDE_SHIFT) |                                    \
-    (((epona_ride) && 1) << CHAOS_CODE_RESTRICTION_FLAG_EPONA_RIDE_SHIFT) |                                  \
-    (((grabbed) && 1) << CHAOS_CODE_RESTRICTION_FLAG_GRABBED_SHIFT) |                                        \
-    (((dead) && 1) << CHAOS_CODE_RESTRICTION_FLAG_DEAD_SHIFT) |                                              \
-    (((time_stopped) && 1) << CHAOS_CODE_RESTRICTION_FLAG_TIME_STOPPED_SHIFT))                               \
+
+#define CHAOS_CODE_RESTRICTION_FLAG_MASK(toggle_time_stopped,                                   \
+                                         affect_time_stopped,                                   \
+                                         toggle_cutscene,                                       \
+                                         affect_cutscene,                                       \
+                                         toggle_boat_ride,                                      \
+                                         affect_boat_ride,                                      \
+                                         toggle_epona_ride,                                     \
+                                         affect_epona_ride,                                     \
+                                         toggle_grabbed,                                        \
+                                         affect_grabbed,                                        \
+                                         toggle_dead,                                           \
+                                         affect_dead,                                           \
+                                         toggle_transition,                                     \
+                                         affect_transition,                                     \
+                                         affect_paused)                                         \
+(                                                                                               \
+    (((toggle_time_stopped) && 1)   << CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_TIME_STOPPED_SHIFT) | \
+    (((affect_time_stopped) && 1)   << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TIME_STOPPED_SHIFT) | \
+    (((toggle_cutscene) && 1)       << CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_CUTSCENE_SHIFT) |     \
+    (((affect_cutscene) && 1)       << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_CUTSCENE_SHIFT) |     \
+    (((toggle_boat_ride) && 1)      << CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_BOAT_RIDE_SHIFT) |    \
+    (((affect_boat_ride) && 1)      << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_BOAT_RIDE_SHIFT) |    \
+    (((toggle_epona_ride) && 1)     << CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_EPONA_RIDE_SHIFT) |   \
+    (((affect_epona_ride) && 1)     << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_EPONA_RIDE_SHIFT) |   \
+    (((toggle_grabbed) && 1)        << CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_GRABBED_SHIFT) |      \
+    (((affect_grabbed) && 1)        << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_GRABBED_SHIFT) |      \
+    (((toggle_dead) && 1)           << CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_DEAD_SHIFT) |         \
+    (((affect_dead) && 1)           << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_DEAD_SHIFT) |         \
+    (((toggle_transition) && 1)     << CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_TRANSITION_SHIFT) |   \
+    (((affect_transition) && 1)     << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TRANSITION_SHIFT) |   \
+    (((affect_paused) && 1)         << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_PAUSED_SHIFT)         \
+)                                                                                               \
+
+#define CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_MASK         \
+(                                                       \
+    CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_TIME_STOPPED |   \
+    CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_CUTSCENE |       \
+    CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_BOAT_RIDE |      \
+    CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_EPONA_RIDE |     \
+    CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_GRABBED |        \
+    CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_DEAD |           \
+    CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_TRANSITION       \
+)                                                       \
+
+#define CHAOS_CODE_RESTRICTION_FLAG_AFFECT_MASK         \
+(                                                       \
+    CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TIME_STOPPED |   \
+    CHAOS_CODE_RESTRICTION_FLAG_AFFECT_CUTSCENE |       \
+    CHAOS_CODE_RESTRICTION_FLAG_AFFECT_BOAT_RIDE |      \
+    CHAOS_CODE_RESTRICTION_FLAG_AFFECT_EPONA_RIDE |     \
+    CHAOS_CODE_RESTRICTION_FLAG_AFFECT_GRABBED |        \
+    CHAOS_CODE_RESTRICTION_FLAG_AFFECT_DEAD |           \
+    CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TRANSITION |     \
+    CHAOS_CODE_RESTRICTION_FLAG_AFFECT_PAUSED           \
+)                                                       \
 
 struct ChaosCodeDef
 {
     f32     probability;   
+    u16     restrictions;
     u8      min_time;
     u8      max_time;
-    u8      always_active;
-    u8      restrictions;
+    // u8      always_active;
+    // u8      update_restrictions;
+    // u8      activate_restrictions;
+};
+
+struct ChaosSpawnActorCodeDef
+{
+    u16 object;
+    u8  code;
 };
 
 struct ChaosCodeSlot
@@ -284,7 +344,7 @@ struct ChaosCodeSlot
     u8  code; 
 };
  
-#define CHAOS_CODE_DEF(min_time, max_time, always_active, restrictions, probability) {probability, min_time, max_time, always_active, restrictions}
+#define CHAOS_CODE_DEF(min_time, max_time, restrictions, probability) {probability, restrictions, min_time, max_time}
 
 struct ChaosCode
 {
@@ -386,9 +446,12 @@ typedef struct ChaosContext
     u32                     chaos_elapsed_usec; 
     u32                     code_elapsed_usec; 
     u16                     chaos_timer;
+    u16                     effect_restrictions;
+    u16                     chaos_keep_size;
+    u16                     chaos_keep_largest_object;
     u8                      active_code_count;
     u8                      update_enabled;
-    u8                      effect_restrictions;
+    // u8                      effect_restrictions;
     struct ChaosCode        active_codes[MAX_ACTIVE_CODES];
     u8                      active_code_indices[CHAOS_CODE_LAST];
 
@@ -396,10 +459,11 @@ typedef struct ChaosContext
     struct ChaosCodeSlot    enabled_codes[CHAOS_CODE_LAST];
     u8                      enabled_code_indices[CHAOS_CODE_LAST];
     u8                      need_update_distribution;
-    u8                      hide_actors;
+    u8                      hide_actors; 
 
     u8                      queued_spawn_actor_code;
     u8                      loaded_object_id;
+    u8                      chaos_keep_slot;
 
     struct 
     {
@@ -519,6 +583,8 @@ void Chaos_DeactivateCodeAtIndex(u8 index);
 
 void Chaos_DeactivateCode(u8 code);
 
+u8 Chaos_IsCodeInActiveList(u8 code);
+
 u8 Chaos_IsCodeActive(u8 code);
 
 struct ChaosCode *Chaos_GetCode(u8 code);
@@ -535,7 +601,7 @@ void Chaos_UpdateCodeDistribution(void);
 
 u8 Chaos_CanUpdateChaos(struct PlayState *play);
 
-u8 Chaos_EffectRestrictions(struct PlayState *play);
+u16 Chaos_EffectRestrictions(struct PlayState *play);
 
 Actor *Chaos_SpawnActor(ActorContext *context, PlayState *play, s16 actor_id, f32 pos_x, f32 pos_y, f32 pos_z, s16 rot_x, s16 rot_y, s16 rot_z, s32 params);
 

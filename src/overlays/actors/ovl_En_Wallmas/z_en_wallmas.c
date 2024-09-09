@@ -302,7 +302,8 @@ void EnWallmas_SetupDrop(EnWallmas* this, PlayState* play) {
 void EnWallmas_Drop(EnWallmas* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
-    if ((player->stateFlags2 & PLAYER_STATE2_80) || (player->actor.freezeTimer > 0)) {
+    if ((player->stateFlags2 & PLAYER_STATE2_80) || (player->stateFlags1 & PLAYER_STATE1_TIME_STOPPED) ||
+         (player->actor.freezeTimer > 0)) {
         EnWallmas_SetupReturnToCeiling(this);
     } else if (!Play_InCsMode(play) && !(player->stateFlags2 & PLAYER_STATE2_10) && (player->invincibilityTimer >= 0) &&
                (this->actor.xzDistToPlayer < 30.0f) && (this->actor.playerHeightRel < -5.0f) &&
