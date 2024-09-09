@@ -243,6 +243,7 @@ enum CHAOS_CODES
 #define CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_TRANSITION_SHIFT     12
 #define CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TRANSITION_SHIFT     13
 #define CHAOS_CODE_RESTRICTION_FLAG_AFFECT_PAUSED_SHIFT         14
+#define CHAOs_CODE_RESTRICTION_FLAG_TOGGLE_TITLE_SCREEN_SHIFT   15
 
 enum CHAOS_CODE_RESTRICTION_FLAGS
 {
@@ -261,6 +262,7 @@ enum CHAOS_CODE_RESTRICTION_FLAGS
     CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_TRANSITION     = 1 << CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_TRANSITION_SHIFT,
     CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TRANSITION     = 1 << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TRANSITION_SHIFT,
     CHAOS_CODE_RESTRICTION_FLAG_AFFECT_PAUSED         = 1 << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TIME_STOPPED_SHIFT,
+    CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_TITLE_SCREEN   = 1 << CHAOs_CODE_RESTRICTION_FLAG_TOGGLE_TITLE_SCREEN_SHIFT,
 };
 
 #define CHAOS_CODE_RESTRICTION_FLAG_MASK(toggle_time_stopped,                                   \
@@ -277,7 +279,8 @@ enum CHAOS_CODE_RESTRICTION_FLAGS
                                          affect_dead,                                           \
                                          toggle_transition,                                     \
                                          affect_transition,                                     \
-                                         affect_paused)                                         \
+                                         affect_paused,                                         \
+                                         toggle_title_screen)                                   \
 (                                                                                               \
     (((toggle_time_stopped) && 1)   << CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_TIME_STOPPED_SHIFT) | \
     (((affect_time_stopped) && 1)   << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TIME_STOPPED_SHIFT) | \
@@ -293,7 +296,8 @@ enum CHAOS_CODE_RESTRICTION_FLAGS
     (((affect_dead) && 1)           << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_DEAD_SHIFT) |         \
     (((toggle_transition) && 1)     << CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_TRANSITION_SHIFT) |   \
     (((affect_transition) && 1)     << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TRANSITION_SHIFT) |   \
-    (((affect_paused) && 1)         << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_PAUSED_SHIFT)         \
+    (((affect_paused) && 1)         << CHAOS_CODE_RESTRICTION_FLAG_AFFECT_PAUSED_SHIFT) |       \
+    (((toggle_title_screen) && 1)   << CHAOs_CODE_RESTRICTION_FLAG_TOGGLE_TITLE_SCREEN_SHIFT)   \
 )                                                                                               \
 
 #define CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_MASK         \
@@ -304,7 +308,8 @@ enum CHAOS_CODE_RESTRICTION_FLAGS
     CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_EPONA_RIDE |     \
     CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_GRABBED |        \
     CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_DEAD |           \
-    CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_TRANSITION       \
+    CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_TRANSITION |     \
+    CHAOS_CODE_RESTRICTION_FLAG_TOGGLE_TITLE_SCREEN     \
 )                                                       \
 
 #define CHAOS_CODE_RESTRICTION_FLAG_AFFECT_MASK         \
@@ -517,6 +522,7 @@ typedef struct ChaosContext
         s16                     imaginary_friends_target_yaw;
         u8                      syke;
         u8                      random_knockback_timer;
+        u8                      magic_gauge_sfx_timer;
         u8                      trap_flap_timer;
     } link;
 

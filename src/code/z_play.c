@@ -1107,7 +1107,7 @@ void Play_UpdateMain(PlayState* this) {
     {
         Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_WALLMAS, 
             player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z, 
-            0, 0, 0, WALLMASTER_PARAMS((Rand_S16Offset(0, 8) == 0) ? WALLMASTER_TYPE_FAKE : 0, 0, false));
+            0, 0, 0, WALLMASTER_PARAMS((Rand_S16Offset(0, 8) != 0) ? WALLMASTER_TYPE_FAKE : 0, 0, false));
         Chaos_DeactivateCode(CHAOS_CODE_WALLMASTER);
     }
 

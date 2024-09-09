@@ -12649,7 +12649,22 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
             s16 max_magic = gSaveContext.magicCapacity;
             s16 magic_change = Rand_S16Offset(-(max_magic >> 1), max_magic);
 
+            if(gChaosContext.link.magic_gauge_sfx_timer == 0)
+            {
+                Audio_PlaySfx(NA_SE_SY_GAUGE_UP);
+                gChaosContext.link.magic_gauge_sfx_timer = 2;
+            }            
             Magic_ChangeBy(play, magic_change);
+        }
+
+        if(gChaosContext.link.magic_gauge_sfx_timer > 0)
+        {
+            gChaosContext.link.magic_gauge_sfx_timer--;
+
+            if(gChaosContext.link.magic_gauge_sfx_timer == 0)
+            {
+                AudioSfx_StopById(NA_SE_SY_GAUGE_UP);
+            }
         }
 
         if(Chaos_IsCodeActive(CHAOS_CODE_CHANGE_RUPEE) && gSaveContext.rupeeAccumulator == 0)
