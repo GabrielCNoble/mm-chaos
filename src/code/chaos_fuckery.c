@@ -512,6 +512,7 @@ void Chaos_Init(void)
     gChaosContext.chaos_elapsed_usec = 0;
     gChaosContext.prev_update_counter = osGetTime();
     gChaosContext.update_enabled = 0;
+    gChaosContext.disruptive_code_probability_scale = 1.0f;
     // gChaosContext.cur_spawn_actor_code = CHAOS_CODE_NONE;
     // gChaosContext.spawn_actor_code_was_activated = CHAOS_CODE_NONE;
     // gChaosContext.update_spawn_actor_code = false;
@@ -708,6 +709,15 @@ void Chaos_UpdateChaos(PlayState *playstate)
 
         if(chaos_elapsed_seconds > 0)
         {
+            u32 restrictions = CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TIME_STOPPED |
+                                CHAOS_CODE_RESTRICTION_FLAG_AFFECT_CUTSCENE |
+                                CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TRANSITION;
+
+            if((gChaosContext.effect_restrictions & restrictions) && gChaosContext.disruptive_code_probability_scale < 3.0f)
+            {
+                Chaos_IncreaseDisruptiveEffectProbability(chaos_elapsed_seconds);
+            }
+
             gChaosContext.chaos_elapsed_usec -= chaos_elapsed_seconds * 1000000;
 
             if(chaos_elapsed_seconds > gChaosContext.chaos_timer)
@@ -770,14 +780,6 @@ void Chaos_UpdateChaos(PlayState *playstate)
                             }
                         break;
 
-                        // case CHAOS_CODE_POKE:
-                        // case CHAOS_CODE_RANDOM_KNOCKBACK:
-                        // case CHAOS_CODE_ICE_TRAP:
-                        // case CHAOS_CODE_SHOCK:
-                        // case CHAOS_CODE_SYKE:
-                        // case CHAOS_CODE_DIE:
-                        // case CHAOS_CODE_ACTOR_CHASE:
-                        // case CHAOS_CODE_PLAY_OCARINA:
                         case CHAOS_CODE_OUT_OF_SHAPE:
                             if(Chaos_IsCodeInActiveList(CHAOS_CODE_SNEEZE) || Chaos_IsCodeInActiveList(CHAOS_CODE_IMAGINARY_FRIENDS))
                             {
@@ -992,6 +994,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         case CHAOS_CODE_RANDOM_KNOCKBACK:
                             /* deal knockback immediately */
                             gChaosContext.link.random_knockback_timer = 1;
+                            Chaos_StepDownDisruptiveEffectProbabiliy();
                         break;
 
                         case CHAOS_CODE_TRAP_FLAP:
@@ -1018,9 +1021,25 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         }
                         break;
 
+                        case CHAOS_CODE_LOVELESS_MARRIAGE:
+                        case CHAOS_CODE_WALLMASTER:
+                        case CHAOS_CODE_STARFOX:
+                        case CHAOS_CODE_POKE:
+                        case CHAOS_CODE_IMAGINARY_FRIENDS:
+                        case CHAOS_CODE_OUT_OF_SHAPE:
+                        case CHAOS_CODE_JUNK_ITEM:
+                        case CHAOS_CODE_ICE_TRAP:
+                        case CHAOS_CODE_SYKE:
+                        case CHAOS_CODE_DIE:
+                        case CHAOS_CODE_PLAY_OCARINA:
+                        case CHAOS_CODE_SHOCK:
+                            Chaos_StepDownDisruptiveEffectProbabiliy();
+                        break;
+
                         case CHAOS_CODE_CHICKEN_ARISE:
                             gChaosContext.chicken.cucco.attackNiwSpawnTimer = 0;
                             gChaosContext.chicken.cucco.attackNiwCount = 0;
+                            Chaos_StepDownDisruptiveEffectProbabiliy();
                         break;
                     }
                 }
@@ -1114,12 +1133,8 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
             while(slot_index < gChaosContext.active_code_count)
             {
                 struct ChaosCode *code = gChaosContext.active_codes + slot_index;
-
-                // if(code->timer > 0)
-                // {
                 GfxPrint_SetPos(&gfx_print, 1, y_pos++);
                 GfxPrint_Printf(&gfx_print, "%s: %d", gChaosCodeNames[code->code], (u32)code->timer);
-                // }
                 slot_index++;
             }
 
@@ -1146,7 +1161,9 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
             display_effect_count = CLAMP_MAX(display_effect_count, ENABLED_EFFECTS_PER_PAGE);
             
             GfxPrint_Printf(&gfx_print, "Enabled effects: (%d/%d)", gChaosEffectPageIndex, enabled_effects_page_count);            
-
+            GfxPrint_SetPos(&gfx_print, 1, y_pos++);
+            GfxPrint_Printf(&gfx_print, "Disruptive prob scale: %f", gChaosContext.disruptive_code_probability_scale);            
+            GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             slot_index = 0;
             while(slot_index < display_effect_count)
             {
@@ -1410,6 +1427,36 @@ u8 Chaos_CanUpdateChaos(struct PlayState *play)
     gChaosContext.update_enabled = enable_update;
     gChaosContext.effect_restrictions = Chaos_EffectRestrictions(play);
     return gChaosContext.update_enabled;
+}
+
+void Chaos_IncreaseDisruptiveEffectProbability(u8 seconds)
+{
+    if(gChaosContext.disruptive_code_probability_scale < 3.0f)
+    {
+        gChaosContext.disruptive_code_probability_scale += (f32)seconds * 0.017f;
+
+        if(gChaosContext.disruptive_code_probability_scale > 3.0f)
+        {
+            gChaosContext.disruptive_code_probability_scale = 3.0f;
+        }
+        
+        gChaosContext.need_update_distribution = true;
+    }
+}
+
+void Chaos_StepDownDisruptiveEffectProbabiliy(void)
+{
+    if(gChaosContext.disruptive_code_probability_scale > 1.0f)
+    {
+        gChaosContext.disruptive_code_probability_scale *= 0.9f;
+
+        if(gChaosContext.disruptive_code_probability_scale < 1.0f)
+        {
+            gChaosContext.disruptive_code_probability_scale = 1.0f;
+        }
+
+        gChaosContext.need_update_distribution = true;
+    }
 }
 
 u16 Chaos_EffectRestrictions(struct PlayState *play)
@@ -1964,10 +2011,10 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     Chaos_EnableCode(CHAOS_CODE_WEIRD_SKYBOX, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_SWAP_HEAL_AND_HURT, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_RANDOM_FIERCE_DEITY, 1.0f);
-    Chaos_EnableCode(CHAOS_CODE_JUNK_ITEM, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_JUNK_ITEM, gChaosContext.disruptive_code_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_RANDOM_HEALTH_UP, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_RANDOM_HEALTH_DOWN, 1.0f);
-    Chaos_EnableCode(CHAOS_CODE_IMAGINARY_FRIENDS, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_IMAGINARY_FRIENDS, gChaosContext.disruptive_code_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_CHANGE_HEALTH, 1.0f);
 
     if(scene_index == ENTR_SCENE_TERMINA_FIELD)
@@ -2010,19 +2057,18 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     /* if the player has been grabbed, is mounted on epona, 
     riding the boat or time is stopped, don't spawn any of those 
     effects to avoid leaving the player in an inconsistent state */
-    Chaos_EnableCode(CHAOS_CODE_POKE, 1.0f);
-    Chaos_EnableCode(CHAOS_CODE_RANDOM_KNOCKBACK, 1.0f);
-    Chaos_EnableCode(CHAOS_CODE_ICE_TRAP, 1.0f);
-    Chaos_EnableCode(CHAOS_CODE_SHOCK, 1.0f);
-    Chaos_EnableCode(CHAOS_CODE_SYKE, 1.0f);
-    Chaos_EnableCode(CHAOS_CODE_DIE, 1.0f);
-    Chaos_EnableCode(CHAOS_CODE_ACTOR_CHASE, 1.0f);
-    Chaos_EnableCode(CHAOS_CODE_OUT_OF_SHAPE, 1.0f);
-
-    Chaos_EnableCode(CHAOS_CODE_LOVELESS_MARRIAGE, 1.0f);
-    Chaos_EnableCode(CHAOS_CODE_CHICKEN_ARISE, 1.0f);
-    Chaos_EnableCode(CHAOS_CODE_STARFOX, 1.0f);
-    Chaos_EnableCode(CHAOS_CODE_WALLMASTER, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_POKE, gChaosContext.disruptive_code_probability_scale);
+    Chaos_EnableCode(CHAOS_CODE_RANDOM_KNOCKBACK, gChaosContext.disruptive_code_probability_scale);
+    Chaos_EnableCode(CHAOS_CODE_ICE_TRAP, gChaosContext.disruptive_code_probability_scale);
+    Chaos_EnableCode(CHAOS_CODE_SHOCK, gChaosContext.disruptive_code_probability_scale);
+    Chaos_EnableCode(CHAOS_CODE_SYKE, gChaosContext.disruptive_code_probability_scale);
+    Chaos_EnableCode(CHAOS_CODE_DIE, gChaosContext.disruptive_code_probability_scale);
+    Chaos_EnableCode(CHAOS_CODE_ACTOR_CHASE, gChaosContext.disruptive_code_probability_scale);
+    Chaos_EnableCode(CHAOS_CODE_OUT_OF_SHAPE, gChaosContext.disruptive_code_probability_scale);
+    Chaos_EnableCode(CHAOS_CODE_LOVELESS_MARRIAGE, gChaosContext.disruptive_code_probability_scale);
+    Chaos_EnableCode(CHAOS_CODE_CHICKEN_ARISE, gChaosContext.disruptive_code_probability_scale);
+    Chaos_EnableCode(CHAOS_CODE_STARFOX, gChaosContext.disruptive_code_probability_scale);
+    Chaos_EnableCode(CHAOS_CODE_WALLMASTER, gChaosContext.disruptive_code_probability_scale);
 
     // if(has_ocarina)
     // {
@@ -2053,7 +2099,7 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
 
     if(has_ocarina)
     {
-        Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA, 1.0f);
+        Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA, gChaosContext.disruptive_code_probability_scale);
 
         if(!Map_IsInBossScene(this) && CHECK_WEEKEVENTREG(WEEKEVENTREG_ENTERED_SOUTH_CLOCK_TOWN))
         {

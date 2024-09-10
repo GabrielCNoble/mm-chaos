@@ -450,6 +450,7 @@ typedef struct ChaosContext
     OSTime                  prev_update_counter; 
     u32                     chaos_elapsed_usec; 
     u32                     code_elapsed_usec; 
+    f32                     disruptive_code_probability_scale;
     u16                     chaos_timer;
     u16                     effect_restrictions;
     u16                     chaos_keep_size;
@@ -606,6 +607,10 @@ void Chaos_ClearEnabledCodes(void);
 void Chaos_UpdateCodeDistribution(void);
 
 u8 Chaos_CanUpdateChaos(struct PlayState *play);
+
+void Chaos_IncreaseDisruptiveEffectProbability(u8 seconds);
+
+void Chaos_StepDownDisruptiveEffectProbabiliy(void);
 
 u16 Chaos_EffectRestrictions(struct PlayState *play);
 

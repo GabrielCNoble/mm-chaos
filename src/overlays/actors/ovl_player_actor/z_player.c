@@ -10838,9 +10838,11 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_REMAINS_GYORG);
     // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_REMAINS_ODOLWA);
     // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_REMAINS_TWINMOLD);
-    gSaveContext.save.saveInfo.inventory.items[SLOT_POWDER_KEG] = ITEM_POWDER_KEG;
-    gSaveContext.save.saveInfo.inventory.ammo[SLOT_POWDER_KEG] = 1;
-    gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOW] = 30;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_POWDER_KEG] = ITEM_POWDER_KEG;
+    // gSaveContext.save.saveInfo.inventory.ammo[SLOT_POWDER_KEG] = 1;
+    // gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOW] = 30;
+    // SET_EQUIP_VALUE(EQUIP_TYPE_SHIELD, EQUIP_VALUE_SHIELD_MIRROR);
+    // Player_SetEquipmentData(play, this);
 
     this->subCamId = CAM_ID_NONE;
     Collider_InitAndSetCylinder(play, &this->cylinder, &this->actor, &D_8085C2EC);
@@ -11003,27 +11005,19 @@ void Player_GiveAGoddamnItem(PlayState *play, Player *this, s16 get_item_id)
     //     ((s16)gi_entry->itemId == ITEM_RECOVERY_HEART)) {
     Player_DetachHeldActor(play, this);
     func_80838830(this, gi_entry->objectId);
+    
 
     if (!(this->stateFlags2 & PLAYER_STATE2_400) ||
         (this->currentBoots == PLAYER_BOOTS_ZORA_UNDERWATER)) {
         Player_StopCutscene(this);
         func_808324EC(play, this, func_80837C78, play->playerCsIds[PLAYER_CS_ID_ITEM_GET]);
-        Player_Anim_PlayOnceAdjusted(play, this,
-                                        (this->transformation == PLAYER_FORM_DEKU)
+        Player_Anim_PlayOnceAdjusted(play, this, (this->transformation == PLAYER_FORM_DEKU)
                                             ? &gPlayerAnim_pn_getB
                                             : &gPlayerAnim_link_demo_get_itemB);
     }
 
     this->stateFlags1 |= (PLAYER_STATE1_400 | PLAYER_STATE1_800 | PLAYER_STATE1_20000000);
     func_8082DAD4(this);
-
-        // return true;
-    // }
-    // else
-    // {
-    //     func_8083D168(play, this, gi_entry);
-    //     this->getItemId = GI_NONE;   
-    // }
     gSaveContext.save.saveInfo.inventory.upgrades = upgrades;
 }
 
@@ -12441,6 +12435,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // Chaos_ActivateCode(CHAOS_CODE_IMAGINARY_FRIENDS, 5);
 
         // Chaos_ActivateCode(CHAOS_CODE_RANDOM_HEALTH_UP, 1);
+        // Chaos_ActivateCode(CHAOS_CODE_JUNK_ITEM, 1);
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_R))
