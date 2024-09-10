@@ -7,7 +7,7 @@
 #include "z_obj_hsstump.h"
 #include "objects/object_hsstump/object_hsstump.h"
 
-#define FLAGS (ACTOR_FLAG_10)
+#define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_NO_CHASE)
 
 #define THIS ((ObjHsStump*)thisx)
 

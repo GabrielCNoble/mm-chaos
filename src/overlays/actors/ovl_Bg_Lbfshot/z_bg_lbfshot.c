@@ -1,13 +1,13 @@
 /*
  * File: z_bg_lbfshot.c
  * Overlay: ovl_Bg_Lbfshot
- * Description: Rainbow Hookshot Pillar
+ * Description: Rainbow Hookshot Pillar (those in STT climb)
  */
 
 #include "z_bg_lbfshot.h"
 #include "objects/object_lbfshot/object_lbfshot.h"
 
-#define FLAGS 0x00000000
+#define FLAGS (0x00000000 | ACTOR_FLAG_NO_CHASE)
 
 #define THIS ((BgLbfshot*)thisx)
 

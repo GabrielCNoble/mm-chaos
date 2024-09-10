@@ -10804,6 +10804,7 @@ static InitChainEntry sInitChain[] = {
 Vec3s sPlayerSkeletonBaseTransl = { -57, 3377, 0 };
 
 void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHeader) {
+    u32 index;
     Actor_ProcessInitChain(&this->actor, sInitChain);
     this->currentYaw = this->actor.world.rot.y;
 
@@ -10840,6 +10841,14 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_REMAINS_TWINMOLD);
     // gSaveContext.save.saveInfo.inventory.items[SLOT_POWDER_KEG] = ITEM_POWDER_KEG;
     // gSaveContext.save.saveInfo.inventory.ammo[SLOT_POWDER_KEG] = 1;
+    // gSaveContext.save.saveInfo.inventory.dungeonItems[]
+
+    // for(index = 0; index < ARRAY_COUNT(gSaveContext.save.saveInfo.inventory.dungeonKeys); index++)
+    // {
+    //     gSaveContext.save.saveInfo.inventory.dungeonKeys[index] = 99;
+    // }
+
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_LIGHT] = ITEM_ARROW_LIGHT;
     // gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOW] = 30;
     // SET_EQUIP_VALUE(EQUIP_TYPE_SHIELD, EQUIP_VALUE_SHIELD_MIRROR);
     // Player_SetEquipmentData(play, this);
@@ -12383,7 +12392,8 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     if(CHECK_BTN_ANY(input->press.button, BTN_L))
     {
         // play->nextEntrance = Entrance_Create(gSceneIndex, gEntranceIndex, 0);
-        // play->nextEntrance = ENTRANCE(MAJORAS_LAIR, 0);
+
+        // play->nextEntrance = ENTRANCE(STONE_TOWER, 0);
         // Scene_SetExitFade(play);
         // play->transitionTrigger = TRANS_TRIGGER_START;
 
@@ -12404,42 +12414,14 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // this->actor.parent = NULL;
 
         // Player_GiveAGoddamnItem(play, this, GI_DEKU_STICKS_1);
-
-        // Chaos_ActivateCode(CHAOS_CODE_JUNK_ITEM, 0);
-
-        // u32 *p = (u32 *)malloc_arena.
-        // size_t max_size;
-        // size_t free_size;
-        // size_t alloc_size;
-        // u32 *p;
-        // __osGetSizes(&malloc_arena, &max_size, &free_size, &alloc_size);
-
-        // size_t largest_size = 0;
-        // size_t size = gObjectTable[OBJECT_RR].vromEnd - gObjectTable[OBJECT_RR].vromStart;
-        // u32 *p;
-
-        // largest_size = size;
-        // size += gObjectTable[OBJECT_NIW].vromEnd - gObjectTable[OBJECT_NIW].vromStart;
-
-        // // if(size > largest_size)
-        // // {
-        // //     largest_size = size;
-        // // }
-
-        // size += gObjectTable[OBJECT_ARWING].vromEnd - gObjectTable[OBJECT_ARWING].vromStart;
-        // // if(size > largest_size)
-        // // {
-        // //     largest_size = size;
-        // // }
-
         // Chaos_ActivateCode(CHAOS_CODE_IMAGINARY_FRIENDS, 5);
-
         // Chaos_ActivateCode(CHAOS_CODE_RANDOM_HEALTH_UP, 1);
         // Chaos_ActivateCode(CHAOS_CODE_JUNK_ITEM, 1);
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_R))
     {
+        // Chaos_ActivateCode(CHAOS_CODE_ACTOR_CHASE, 15);
         // Chaos_ActivateCode(CHAOS_CODE_BOMB_ARROWS, 120);
         // Chaos_ActivateCode(CHAOS_CODE_RANDOM_FIERCE_DEITY, 60);
         
@@ -12679,7 +12661,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
 
             s16 rupee_change = -Rand_S16Offset(1, CUR_CAPACITY(UPG_WALLET) / 2);
 
-            if((Rand_Next() % 5) >= 3)
+            if((Rand_Next() % 8) >= 5)
             {
                 rupee_change = -rupee_change;
             }

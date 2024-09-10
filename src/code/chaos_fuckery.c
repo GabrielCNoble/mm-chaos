@@ -639,6 +639,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
             /* PARANOID: cpu counter overflow */
             gChaosContext.prev_update_counter = update_counter;
         }
+        return;
  
         elapsed_usec = (OS_CYCLES_TO_USEC(update_counter) - OS_CYCLES_TO_USEC(gChaosContext.prev_update_counter));
         gChaosContext.code_elapsed_usec += elapsed_usec;
@@ -713,7 +714,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                                 CHAOS_CODE_RESTRICTION_FLAG_AFFECT_CUTSCENE |
                                 CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TRANSITION;
 
-            if((gChaosContext.effect_restrictions & restrictions) && gChaosContext.disruptive_code_probability_scale < 3.0f)
+            if(gChaosContext.effect_restrictions & restrictions)
             {
                 Chaos_IncreaseDisruptiveEffectProbability(chaos_elapsed_seconds);
             }
@@ -1216,8 +1217,8 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "Action: %d", gPlayerAction);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
-            // GfxPrint_Printf(&gfx_print, "Scene: %d, room: %d, hazard: %d", scene, playstate->roomCtx.curRoom.num, Player_GetEnvironmentalHazard(playstate));
-            GfxPrint_Printf(&gfx_print, "Scene: %d", playstate->sceneId);
+            GfxPrint_Printf(&gfx_print, "Scene: %d, room: %d", scene, playstate->roomCtx.curRoom.num);
+            // GfxPrint_Printf(&gfx_print, "Scene: %d", playstate->sceneId);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "effect restrictions: %x", gChaosContext.effect_restrictions);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
@@ -1431,13 +1432,13 @@ u8 Chaos_CanUpdateChaos(struct PlayState *play)
 
 void Chaos_IncreaseDisruptiveEffectProbability(u8 seconds)
 {
-    if(gChaosContext.disruptive_code_probability_scale < 3.0f)
+    if(gChaosContext.disruptive_code_probability_scale < CHAOS_MAX_DISRUPTIVE_PROBABILITY_SCALE)
     {
         gChaosContext.disruptive_code_probability_scale += (f32)seconds * 0.017f;
 
-        if(gChaosContext.disruptive_code_probability_scale > 3.0f)
+        if(gChaosContext.disruptive_code_probability_scale > CHAOS_MAX_DISRUPTIVE_PROBABILITY_SCALE)
         {
-            gChaosContext.disruptive_code_probability_scale = 3.0f;
+            gChaosContext.disruptive_code_probability_scale = CHAOS_MAX_DISRUPTIVE_PROBABILITY_SCALE;
         }
         
         gChaosContext.need_update_distribution = true;
@@ -1978,9 +1979,30 @@ void Chaos_UpdateEntrances(PlayState *play)
     }
 }
 
+u8 gOdolwaLairRooms[] = {0};
+u8 gIgosDuIkanaLairRooms[] = {0};
+u8 gPirateFortressInteriorRooms[] = {0, 1, 2};
+u8 gStoneTowerTempleRooms[] = {10};
+u8 gWoodfallTempleRooms[] = {8};
+
+struct
+{
+    u16     scene_index;
+    u8      room_count;
+    u8 *    room_indices;
+
+} gNoLowGravRooms[] = {
+    {ENTR_SCENE_ODOLWAS_LAIR,               ARRAY_COUNT(gOdolwaLairRooms),              gOdolwaLairRooms},
+    {ENTR_SCENE_IGOS_DU_IKANAS_LAIR,        ARRAY_COUNT(gIgosDuIkanaLairRooms),         gIgosDuIkanaLairRooms},
+    {ENTR_SCENE_PIRATES_FORTRESS_INTERIOR,  ARRAY_COUNT(gPirateFortressInteriorRooms),  gPirateFortressInteriorRooms},
+    {ENTR_SCENE_STONE_TOWER_TEMPLE,         ARRAY_COUNT(gStoneTowerTempleRooms),        gStoneTowerTempleRooms},
+    {ENTR_SCENE_WOODFALL_TEMPLE,            ARRAY_COUNT(gWoodfallTempleRooms),          gWoodfallTempleRooms},
+};
+
 void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
 {
     u32 index;
+    u32 enable_low_grav = true;
     u32 scene_index = gSaveContext.save.entrance >> 9;
     u32 room_index;
     f32 change_rupee_prob = 1.0f;
@@ -2054,9 +2076,6 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     // if(can_be_pushed_around)
     // {
     // u32 index;
-    /* if the player has been grabbed, is mounted on epona, 
-    riding the boat or time is stopped, don't spawn any of those 
-    effects to avoid leaving the player in an inconsistent state */
     Chaos_EnableCode(CHAOS_CODE_POKE, gChaosContext.disruptive_code_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_RANDOM_KNOCKBACK, gChaosContext.disruptive_code_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_ICE_TRAP, gChaosContext.disruptive_code_probability_scale);
@@ -2075,17 +2094,48 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
         // Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA, 1.0f);
     // }
     // }
-    if(scene_index != ENTR_SCENE_ODOLWAS_LAIR && scene_index != ENTR_SCENE_IGOS_DU_IKANAS_LAIR &&
-       scene_index != ENTR_SCENE_PIRATES_FORTRESS_INTERIOR || (scene_index == ENTR_SCENE_PIRATES_FORTRESS_INTERIOR &&
-       this->roomCtx.curRoom.num != 0 && this->roomCtx.curRoom.num != 1 && this->roomCtx.curRoom.num != 2))
+
+    /* some bosses/mini-bosses can fall out of bounds if they jump when low-grav is active,
+    so check if we're not in those rooms */
+    for(index = 0; index < ARRAY_COUNT(gNoLowGravRooms); index++)
     {
-        /* some bosses jump around and may fall out of bounds of low gravity is active */
+        if(scene_index == gNoLowGravRooms[index].scene_index)
+        {
+            u32 room_index;
+            for(room_index = 0; room_index < gNoLowGravRooms[index].room_count; room_index++)
+            {
+                if(gNoLowGravRooms[index].room_indices[room_index] == this->roomCtx.curRoom.num)
+                {
+                    index = ARRAY_COUNT(gNoLowGravRooms);
+                    enable_low_grav = false;
+                    break;
+                }
+            }
+        }
+    }
+
+    if(enable_low_grav)
+    {
         Chaos_EnableCode(CHAOS_CODE_LOW_GRAVITY, 1.0f);
     }
     else
     {
         Chaos_DeactivateCode(CHAOS_CODE_LOW_GRAVITY);
     }
+
+    // if(scene_index != ENTR_SCENE_ODOLWAS_LAIR && scene_index != ENTR_SCENE_IGOS_DU_IKANAS_LAIR &&
+    //    scene_index != ENTR_SCENE_PIRATES_FORTRESS_INTERIOR && scene_index != ENTR_SCENE_STONE_TOWER_TEMPLE || 
+    //    (scene_index == ENTR_SCENE_PIRATES_FORTRESS_INTERIOR && this->roomCtx.curRoom.num != 0 && 
+    //    this->roomCtx.curRoom.num != 1 && this->roomCtx.curRoom.num != 2) || 
+    //    (scene_index == ENTR_SCENE_STONE_TOWER_TEMPLE && this->roomCtx.curRoom.num != 10))
+    // {
+    //     /* some bosses jump around and may fall out of bounds of low gravity is active */
+    //     Chaos_EnableCode(CHAOS_CODE_LOW_GRAVITY, 1.0f);
+    // }
+    // else
+    // {
+    //     Chaos_DeactivateCode(CHAOS_CODE_LOW_GRAVITY);
+    // }
 
     // if(scene_index != ENTR_SCENE_PIRATES_FORTRESS_INTERIOR || (this->roomCtx.curRoom.num != 14 && this->roomCtx.curRoom.num != 12))
     // {
