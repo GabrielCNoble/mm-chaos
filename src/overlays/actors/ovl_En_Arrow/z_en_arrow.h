@@ -18,7 +18,8 @@ typedef enum ArrowType {
     /* 6 */ ARROW_TYPE_SLINGSHOT,
     /* 7 */ ARROW_TYPE_DEKU_BUBBLE,
     /* 8 */ ARROW_TYPE_DEKU_NUT,
-            ARROW_TYPE_BUCKSHOT = 1 << 8
+            ARROW_TYPE_BUCKSHOT = 1 << 8,
+            ARROW_TYPE_NONE,
 } ArrowType;
 
 #define ARROW_IS_MAGICAL(arrowType) (((arrowType) >= ARROW_TYPE_FIRE) && ((arrowType) <= ARROW_TYPE_LIGHT))

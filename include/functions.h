@@ -48,6 +48,8 @@ void* Actor_AddSharedMemoryEntry(PlayState* play, s16 id, void* ptr, size_t size
 void* Actor_FreeSharedMemoryEntry(PlayState* play, s16 id);
 void* Actor_FindSharedMemoryEntry(PlayState* play, s16 id);
 void Actor_Kill(Actor* actor);
+void Actor_Destroy(Actor* actor, PlayState* play);
+Actor* Actor_Delete(ActorContext* actorCtx, Actor* actor, PlayState* play);
 void Actor_SetWorldToHome(Actor* actor);
 void Actor_SetFocus(Actor* actor, f32 height);
 void Actor_SetWorldRotToShape(Actor* actor);

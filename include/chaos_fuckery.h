@@ -91,7 +91,7 @@ enum CHAOS_CODES
     /* makes skybox rotate randomly */
     CHAOS_CODE_WEIRD_SKYBOX,
     /* deactivates a random owl after use */
-    CHAOS_CODE_SINGLE_ACTION_OWL,
+    // CHAOS_CODE_SINGLE_ACTION_OWL,
     /* makes the player pull up the ocarina */
     CHAOS_CODE_PLAY_OCARINA,
     /* link stops and sneezes */
@@ -434,7 +434,7 @@ enum CHAOS_IMAGINARY_FRIENDS_STATES
 #define MAX_CHAOS_TIMER         8
 #define MIN_CHAOS_TIMER         2
 #define CHAOS_SECONDS_TO_FRAMES(seconds)    (((u16)(seconds)) * (20))
-#define CHAOS_MAX_DISRUPTIVE_PROBABILITY_SCALE 5.0f
+#define CHAOS_MAX_DISRUPTIVE_PROBABILITY_SCALE 7.0f
 
 #define MAX_SPAWNED_ACTORS  12
 #define ACTOR_DESPAWN_TIMER 10

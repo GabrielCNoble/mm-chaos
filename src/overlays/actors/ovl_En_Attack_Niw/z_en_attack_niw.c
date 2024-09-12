@@ -38,6 +38,26 @@ static InitChainEntry sInitChain[] = {
     ICHAIN_F32(targetArrowOffset, 0, ICHAIN_STOP),
 };
 
+static ColliderCylinderInit sCylinderInit = {
+    {
+        COLTYPE_HIT5,
+        AT_NONE,
+        AC_ON | AC_TYPE_PLAYER,
+        OC1_ON | OC1_NO_PUSH | OC1_TYPE_ALL,
+        OC2_TYPE_2,
+        COLSHAPE_CYLINDER,
+    },
+    {
+        ELEMTYPE_UNK0,
+        { 0x00000000, 0x00, 0x00 },
+        { 0xF7CFFFFF, 0x00, 0x00 },
+        TOUCH_NONE | TOUCH_SFX_NORMAL,
+        BUMP_ON,
+        OCELEM_ON,
+    },
+    { 15, 25, 4, { 0, 0, 0 } },
+};
+
 void EnAttackNiw_Init(Actor* thisx, PlayState* play) {
     EnAttackNiw* this = THIS;
 
@@ -50,9 +70,16 @@ void EnAttackNiw_Init(Actor* thisx, PlayState* play) {
     if (this->actor.params < 0) {
         this->actor.params = ATTACK_NIW_REGULAR;
     }
+    else if (this->actor.params == ATTACK_NIW_CHAOS) 
+    {
+        Collider_InitAndSetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
+    }
 
     Actor_SetScale(&this->actor, 0.01f);
     this->actor.gravity = 0.0f;
+    this->shove_velocity.x = 0.0f;
+    this->shove_velocity.y = 0.0f;
+    this->shove_velocity.z = 0.0f;
 
     this->randomTargetCenterOffset.x = Rand_CenteredFloat(100.0f);
     this->randomTargetCenterOffset.y = Rand_CenteredFloat(10.0f);
@@ -373,11 +400,43 @@ void EnAttackNiw_Update(Actor* thisx, PlayState* play) {
                             UPDBGCHECKINFO_FLAG_1 | UPDBGCHECKINFO_FLAG_4 | UPDBGCHECKINFO_FLAG_8 |
                                 UPDBGCHECKINFO_FLAG_10);
 
-    if (this->actionFunc == EnAttackNiw_EnterViewFromOffscreen) {
-        Actor_MoveWithoutGravity(&this->actor);
-    } else {
-        Actor_MoveWithGravity(&this->actor);
+    if(this->actor.params == ATTACK_NIW_CHAOS)
+    {
+        if(this->collider.base.acFlags & AC_HIT)
+        {
+            Math_Vec3f_DistXYZAndStoreNormDiff(&player->actor.world.pos, &this->actor.world.pos, 10.0f, &this->shove_velocity);
+            Actor_PlaySfx(&this->actor, NA_SE_IT_GORON_ROLLING_REFLECTION);
+        }
+
+        Collider_UpdateCylinder(&this->actor, &this->collider);
+        CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
     }
+
+    if (this->actionFunc == EnAttackNiw_EnterViewFromOffscreen) {
+        // Actor_MoveWithoutGravity(&this->actor);
+        Actor_UpdateVelocityWithoutGravity(&this->actor);
+    } else {
+        // Actor_MoveWithGravity(&this->actor);
+        Actor_UpdateVelocityWithGravity(&this->actor);
+    }
+
+    this->actor.velocity.x += this->shove_velocity.x;
+    this->actor.velocity.y += this->shove_velocity.y;
+    this->actor.velocity.z += this->shove_velocity.z;
+
+    if(this->actor.bgCheckFlags & BGCHECKFLAG_GROUND)
+    {
+        this->shove_velocity.x *= 0.98f;
+        this->shove_velocity.y *= 0.98f;
+        this->shove_velocity.z *= 0.98f;
+    }
+    else
+    {
+        this->shove_velocity.x *= 0.99f;
+        this->shove_velocity.y *= 0.99f;
+        this->shove_velocity.z *= 0.99f;
+    }
+    Actor_UpdatePos(&this->actor);
 
     if (this->actor.floorHeight <= BGCHECK_Y_MIN) { // under the world
         Actor_Kill(&this->actor);

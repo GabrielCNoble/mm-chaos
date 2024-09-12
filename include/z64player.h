@@ -874,7 +874,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_10         (1 << 4)
 // Moving on land
 #define PLAYER_STATE1_20         (1 << 5)
-// 
+// Arrow drawn/hookshot wound up
 #define PLAYER_STATE1_40         (1 << 6)
 // dead
 #define PLAYER_STATE1_80         (1 << 7)
@@ -1091,10 +1091,14 @@ typedef enum PlayerInitMode {
 #define PLAYER_PARAMS(startBgCamIndex, initMode) ((startBgCamIndex & 0xFF) | ((initMode & 0xF) << 8))
 
 typedef enum PlayerUnkAA5 {
-    /* 0 */ PLAYER_UNKAA5_0,
-    /* 1 */ PLAYER_UNKAA5_1,
-    /* 2 */ PLAYER_UNKAA5_2,
-    /* 3 */ PLAYER_UNKAA5_3,
+    /* 0 */ PLAYER_UNKAA5_0, // FIRST_PERSON_MODE_NONE (Third person)
+            FIRST_PERSON_MODE_NONE = PLAYER_UNKAA5_0,
+    /* 1 */ PLAYER_UNKAA5_1, // FIRST_PERSON_MODE_LOOKING (First person, looking around)
+            FIRST_PERSON_MODE_LOOKING = PLAYER_UNKAA5_1,
+    /* 2 */ PLAYER_UNKAA5_2, // FIRST_PERSON_MODE_PICTO (Looking through pictograph)
+            FIRST_PERSON_MODE_PICTO = PLAYER_UNKAA5_2,
+    /* 3 */ PLAYER_UNKAA5_3, // FIRST_PERSON_MODE_WEAPON (Aiming bow/hookshot/deku bubble)
+            FIRST_PERSON_MODE_WEAPON = PLAYER_UNKAA5_3,
     /* 4 */ PLAYER_UNKAA5_4,
     /* 5 */ PLAYER_UNKAA5_5
 } PlayerUnkAA5;
@@ -1217,8 +1221,8 @@ typedef struct Player {
     /* 0xA9C */ f32 secretRumbleCharge; // builds per frame until discharges with a rumble request
     /* 0xAA0 */ f32 closestSecretDistSq; // Used to augment `secretRumbleCharge`. Cleared every frame
     /* 0xAA4 */ s8 unk_AA4;
-    /* 0xAA5 */ u8 unk_AA5; // PlayerUnkAA5 enum
-    /* 0xAA6 */ u16 unk_AA6; // flags of some kind
+    /* 0xAA5 */ u8 unk_AA5; // First person mode? PlayerUnkAA5 enum
+    /* 0xAA6 */ u16 unk_AA6; // flags of some kind (player limb angle reset ignore flags)
     /* 0xAA8 */ s16 unk_AA8;
     /* 0xAAA */ s16 unk_AAA;
     /* 0xAAC */ Vec3s headLimbRot;

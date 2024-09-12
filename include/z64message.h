@@ -323,4 +323,11 @@ extern u8 gPageSwitchNextButtonStatus[6][5];
 extern u16 gBombersNotebookWeekEventFlags[BOMBERS_NOTEBOOK_EVENT_MAX];
 extern s16 gOcarinaSongItemMap[];
 
+#define MESSAGE_ID_CONFIRM_SONG_OF_TIME_NORMAL                      0x1B8A
+#define MESSAGE_ID_CONFIRM_SONG_OF_TIME_FLIPPED                     0x354D
+#define MESSAGE_ID_CONFIRM_SONG_OF_SLOW_TIME_SLOW_DOWN_NORMAL       0x1B8C
+#define MESSAGE_ID_CONFIRM_SONG_OF_SLOW_TIME_SPEED_UP_NORMAL        0x1B8D
+#define MESSAGE_ID_CONFIRM_OWL_WARP_NORMAL                          0x1B93
+#define MESSAGE_ID_CONFIRM_OWL_WARP_FLIPPED                         0x354E
+
 #endif

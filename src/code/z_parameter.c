@@ -3530,7 +3530,7 @@ void Inventory_ChangeAmmo(s16 item, s16 ammoChange) {
 }
 
 void Magic_Add(PlayState* play, s16 magicToAdd) {
-    if (((void)0, gSaveContext.save.saveInfo.playerData.magic) < ((void)0, gSaveContext.magicCapacity)) {
+    if (gSaveContext.save.saveInfo.playerData.magic < gSaveContext.magicCapacity) {
         gSaveContext.magicToAdd += magicToAdd;
         gSaveContext.isMagicRequested = true;
     }
@@ -3556,6 +3556,9 @@ void Magic_ChangeBy(PlayState *play, s16 magic)
         {
             gSaveContext.save.saveInfo.playerData.magic = 0;
         }
+
+        // gSaveContext.magicToAdd = 0;
+        // gSaveContext.magicToConsume = 0;
     }
 }
 
@@ -3826,7 +3829,7 @@ void Magic_Update(PlayState* play) {
             // Consume magic until target is reached or no more magic is available
             if (!CHECK_WEEKEVENTREG(WEEKEVENTREG_DRANK_CHATEAU_ROMANI)) {
                 gSaveContext.save.saveInfo.playerData.magic =
-                    ((void)0, gSaveContext.save.saveInfo.playerData.magic) - ((void)0, gSaveContext.magicToConsume);
+                    gSaveContext.save.saveInfo.playerData.magic - gSaveContext.magicToConsume;
                 if (gSaveContext.save.saveInfo.playerData.magic <= 0) {
                     gSaveContext.save.saveInfo.playerData.magic = 0;
                 }

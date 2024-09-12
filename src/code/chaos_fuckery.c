@@ -9,6 +9,7 @@
 #include "z64scene.h"
 #include "overlays/kaleido_scope/ovl_kaleido_scope/z_kaleido_scope.h"
 #include "assets/objects/gameplay_keep/gameplay_keep.h"
+#include "overlays/actors/ovl_En_Arrow/z_en_arrow.h"
 
 ChaosContext    gChaosContext; 
 u64             gChaosRngState = 1;
@@ -16,9 +17,12 @@ u32             gDisplayEffectInfo = 0;
 u32             gChaosEffectPageIndex = 0;
 u32             gAcceptPageChange = 0;
 u32             gPlayerAction;
+u32             gPlayerUpperAction;
 u32             gRngInitialized = 0;
 extern u32      gSceneIndex;
 extern u32      gEntranceIndex;
+ArrowType       gCurrentArrowType = 0;
+u32             gChangeArrowType = 0;
 
 PlayerAnimationHeader *gImaginaryFriendAnimations[] = {
     &gPlayerAnim_cl_tewofuru,
@@ -44,7 +48,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_BOMB_ARROWS]             = */ CHAOS_CODE_DEF(15, 25, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.02f),
     /* [CHAOS_CODE_WEIRD_ARROWS]            = */ CHAOS_CODE_DEF(15, 25, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.02f),
     /* [CHAOS_CODE_BUCKSHOT_ARROWS]         = */ CHAOS_CODE_DEF(15, 25, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.02f),
-    /* [CHAOS_CODE_RANDOM_BOMB_TIMER]       = */ CHAOS_CODE_DEF(10, 15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.02f),
+    /* [CHAOS_CODE_RANDOM_BOMB_TIMER]       = */ CHAOS_CODE_DEF(10, 15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.028f),
     /* [CHAOS_CODE_LOVELESS_MARRIAGE]       = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0), 0.0075f),
     /* [CHAOS_CODE_WEIRD_UI]                = */ CHAOS_CODE_DEF(8,  15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.04f),
     /* [CHAOS_CODE_BEER_GOGGLES]            = */ CHAOS_CODE_DEF(15, 30, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0), 0.014f),
@@ -64,10 +68,10 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_OUT_OF_SHAPE]            = */ CHAOS_CODE_DEF(5,  12, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1), 0.008f),
     /* [CHAOS_CODE_TUNIC_COLOR]             = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0), 0.006f),
     /* [CHAOS_CODE_WEIRD_SKYBOX]            = */ CHAOS_CODE_DEF(10, 15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0), 0.006f),
-    /* [CHAOS_CODE_SINGLE_ACTION_OWL]       = */ CHAOS_CODE_DEF(5,  15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.0005f),
+    // /* [CHAOS_CODE_SINGLE_ACTION_OWL]       = */ CHAOS_CODE_DEF(5,  15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.0005f),
     /* [CHAOS_CODE_PLAY_OCARINA]            = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1), 0.004f),
     /* [CHAOS_CODE_SNEEZE]                  = */ CHAOS_CODE_DEF(5,  15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1), 0.006f),
-    /* [CHAOS_CODE_RANDO_FIERCE_DEITY]      = */ CHAOS_CODE_DEF(25, 75, CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1), 0.00095f),
+    /* [CHAOS_CODE_RANDO_FIERCE_DEITY]      = */ CHAOS_CODE_DEF(25, 75, CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1), 0.00095f),
     /* [CHAOS_CODE_CHICKEN_ARISE]           = */ CHAOS_CODE_DEF(15, 23, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0), 0.0055f),
     /* [CHAOS_CODE_STARFOX]                 = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0), 0.0055f),
     /* [CHAOS_CODE_SWAP_HEAL_AND_HURT]      = */ CHAOS_CODE_DEF(5,  25, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.003f),
@@ -116,7 +120,7 @@ const char *gChaosCodeNames[] = {
     /* [CHAOS_CODE_OUT_OF_SHAPE]            = */ "Out of shape",
     /* [CHAOS_CODE_TUNIC_COLOR]             = */ "Tunic color",
     /* [CHAOS_CODE_WEIRD_SKYBOX]            = */ "Weird skybox",
-    /* [CHAOS_CODE_SINGLE_ACTION_OWL]       = */ "Single action owl",
+    // /* [CHAOS_CODE_SINGLE_ACTION_OWL]       = */ "Single action owl",
     /* [CHAOS_CODE_PLAY_OCARINA]            = */ "Play ocarina",
     /* [CHAOS_CODE_SNEEZE]                  = */ "Sneeze",
     /* [CHAOS_CODE_RANDO_FIERCE_DEITY]      = */ "Random fierce deity",
@@ -481,6 +485,26 @@ const char *gSceneNames[] = {
     /* [ENTR_SCENE_LAUNDRY_POOL] = */                   "Laundry pool",
 };
 
+u8 gOdolwaLairRooms[] = {0};
+u8 gIgosDuIkanaLairRooms[] = {0};
+u8 gPirateFortressInteriorRooms[] = {0, 1, 2};
+u8 gStoneTowerTempleRooms[] = {10};
+u8 gWoodfallTempleRooms[] = {8};
+
+struct
+{
+    u16     scene_index;
+    u8      room_count;
+    u8 *    room_indices;
+
+} gNoLowGravRooms[] = {
+    {ENTR_SCENE_ODOLWAS_LAIR,               ARRAY_COUNT(gOdolwaLairRooms),              gOdolwaLairRooms},
+    {ENTR_SCENE_IGOS_DU_IKANAS_LAIR,        ARRAY_COUNT(gIgosDuIkanaLairRooms),         gIgosDuIkanaLairRooms},
+    {ENTR_SCENE_PIRATES_FORTRESS_INTERIOR,  ARRAY_COUNT(gPirateFortressInteriorRooms),  gPirateFortressInteriorRooms},
+    {ENTR_SCENE_STONE_TOWER_TEMPLE,         ARRAY_COUNT(gStoneTowerTempleRooms),        gStoneTowerTempleRooms},
+    {ENTR_SCENE_WOODFALL_TEMPLE,            ARRAY_COUNT(gWoodfallTempleRooms),          gWoodfallTempleRooms},
+};
+
 /* xorshift* */
 u32 Chaos_Rand(void)
 {
@@ -507,7 +531,7 @@ void Chaos_Init(void)
     gChaosContext.moon.yaw = 0.0f;
     gChaosContext.active_code_count = 0;
     gChaosContext.enabled_code_count = 0;
-    gChaosContext.chaos_timer = 7;
+    gChaosContext.chaos_timer = 15;
     gChaosContext.code_elapsed_usec = 0;
     gChaosContext.chaos_elapsed_usec = 0;
     gChaosContext.prev_update_counter = osGetTime();
@@ -634,12 +658,12 @@ void Chaos_UpdateChaos(PlayState *playstate)
     if(Chaos_CanUpdateChaos(playstate))
     {   
         Chaos_UpdateEnabledChaosEffectsAndEntrances(playstate);
+
         if(update_counter < gChaosContext.prev_update_counter)
         {
             /* PARANOID: cpu counter overflow */
             gChaosContext.prev_update_counter = update_counter;
         }
-        return;
  
         elapsed_usec = (OS_CYCLES_TO_USEC(update_counter) - OS_CYCLES_TO_USEC(gChaosContext.prev_update_counter));
         gChaosContext.code_elapsed_usec += elapsed_usec;
@@ -706,7 +730,10 @@ void Chaos_UpdateChaos(PlayState *playstate)
             code->timer -= code_elapsed_seconds;
             slot_index++;
         }
+
         gChaosContext.code_elapsed_usec -= code_elapsed_seconds * 1000000;
+
+        // return;
 
         if(chaos_elapsed_seconds > 0)
         {
@@ -1215,7 +1242,11 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "actionVar2: %d", player->av2.actionVar2);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
-            GfxPrint_Printf(&gfx_print, "Action: %d", gPlayerAction);
+            GfxPrint_Printf(&gfx_print, "Action: %d, Upper action: %d", gPlayerAction, gPlayerUpperAction);
+            GfxPrint_SetPos(&gfx_print, 1, y_pos++);
+            GfxPrint_Printf(&gfx_print, "First person mode: %d", player->unk_AA5);
+            GfxPrint_SetPos(&gfx_print, 1, y_pos++);
+            GfxPrint_Printf(&gfx_print, "Magic state: %d", gSaveContext.magicState);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "Scene: %d, room: %d", scene, playstate->roomCtx.curRoom.num);
             // GfxPrint_Printf(&gfx_print, "Scene: %d", playstate->sceneId);
@@ -1327,7 +1358,6 @@ void Chaos_EnableCode(u8 code, f32 prob_scale)
         gChaosContext.enabled_codes[index].code = code;
         gChaosContext.enabled_codes[index].prob_scale = prob_scale;
         gChaosContext.enabled_code_indices[code] = index;
-        // gChaosContext.need_update_distribution = true;
     }
 }
 
@@ -1603,7 +1633,7 @@ void Chaos_KillActorAtIndex(u32 index)
         if(slot->actor != NULL)
         {
             Actor_Kill(slot->actor);
-            Actor_Destroy(slot->actor);
+            // Actor_Destroy(slot->actor, play);
         }
 
         Chaos_DropActorAtIndex(index);
@@ -1978,26 +2008,6 @@ void Chaos_UpdateEntrances(PlayState *play)
         }
     }
 }
-
-u8 gOdolwaLairRooms[] = {0};
-u8 gIgosDuIkanaLairRooms[] = {0};
-u8 gPirateFortressInteriorRooms[] = {0, 1, 2};
-u8 gStoneTowerTempleRooms[] = {10};
-u8 gWoodfallTempleRooms[] = {8};
-
-struct
-{
-    u16     scene_index;
-    u8      room_count;
-    u8 *    room_indices;
-
-} gNoLowGravRooms[] = {
-    {ENTR_SCENE_ODOLWAS_LAIR,               ARRAY_COUNT(gOdolwaLairRooms),              gOdolwaLairRooms},
-    {ENTR_SCENE_IGOS_DU_IKANAS_LAIR,        ARRAY_COUNT(gIgosDuIkanaLairRooms),         gIgosDuIkanaLairRooms},
-    {ENTR_SCENE_PIRATES_FORTRESS_INTERIOR,  ARRAY_COUNT(gPirateFortressInteriorRooms),  gPirateFortressInteriorRooms},
-    {ENTR_SCENE_STONE_TOWER_TEMPLE,         ARRAY_COUNT(gStoneTowerTempleRooms),        gStoneTowerTempleRooms},
-    {ENTR_SCENE_WOODFALL_TEMPLE,            ARRAY_COUNT(gWoodfallTempleRooms),          gWoodfallTempleRooms},
-};
 
 void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
 {

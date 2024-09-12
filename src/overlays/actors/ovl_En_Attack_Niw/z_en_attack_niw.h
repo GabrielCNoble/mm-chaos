@@ -52,6 +52,8 @@ typedef struct EnAttackNiw {
     /* 0x2D4 */ f32 rotStep;
     /* 0x2D8 */ f32 targetXZSpeed;
     /* 0x2DC */ f32 targetHeight; // never set, but sent to Actor_SetFocus 
+                Vec3f shove_velocity;
+    ColliderCylinder collider;
 } EnAttackNiw; // size = 0x2E0
 
 

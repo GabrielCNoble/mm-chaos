@@ -1684,7 +1684,18 @@ void Player_DrawImpl(PlayState* play, void** skeleton, Vec3s* jointTable, s32 dL
                      PostLimbDrawFlex postLimbDraw, Actor* actor) {
     s32 eyeIndex = GET_EYE_INDEX_FROM_JOINT_TABLE(jointTable);
     s32 mouthIndex = GET_MOUTH_INDEX_FROM_JOINT_TABLE(jointTable);
+    Vec3s *arm_joint;
     Gfx* gfx;
+
+    // arm_joint = jointTable + PLAYER_LIMB_RIGHT_HAND;
+    // arm_joint->x += Rand_S16Offset(-1800, 3600);
+    // arm_joint->y += Rand_S16Offset(-1800, 3600);
+    // arm_joint->z += Rand_S16Offset(-1800, 3600);
+
+    // arm_joint = jointTable + PLAYER_LIMB_LEFT_HAND;
+    // arm_joint->x += Rand_S16Offset(-1800, 3600);
+    // arm_joint->y += Rand_S16Offset(-1800, 3600);
+    // arm_joint->z += Rand_S16Offset(-1800, 3600);
 
     OPEN_DISPS(play->state.gfxCtx);
 

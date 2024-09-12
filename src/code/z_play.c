@@ -1138,7 +1138,14 @@ void Play_UpdateMain(PlayState* this) {
             if (cucco != NULL) {
                 gChaosContext.chicken.cucco.attackNiwCount++;
                 gChaosContext.chicken.cucco.attackNiwSpawnTimer = 10;
-                Actor_SetScale(cucco, 0.018f);
+                if(Rand_S16Offset(0, 11) == 0)
+                {
+                    Actor_SetScale(cucco, 0.006f);
+                }
+                else
+                {
+                    Actor_SetScale(cucco, 0.018f);
+                }
             }
         }
     }
@@ -1299,49 +1306,6 @@ void Play_UpdateMain(PlayState* this) {
                     {
                         Actor_UpdateAll(this, &this->actorCtx);
                     }
-                    // else
-                    // {
-                    //     u32 actor_index;
-                    //     for(actor_index = 0; actor_index < gChaosContext.actors.spawned_actors; actor_index++)
-                    //     {
-                    //         struct ChaosActor *chaos_actor = gChaosContext.actors.slots + actor_index;
-                    //         UpdateActor_Params params;
-                    //         params.player = player;
-                    //         params.play = this;
-
-                    //         if (this->unk_18844) {
-                    //             params.unk_18 = ACTOR_FLAG_200000;
-                    //         } else {
-                    //             params.unk_18 = ACTOR_FLAG_200000 | ACTOR_FLAG_40 | ACTOR_FLAG_10;
-                    //         }
-
-                    //         // categoryFreezeMaskP = sCategoryFreezeMasks;
-
-                    //         if (player->stateFlags2 & PLAYER_STATE2_8000000) {
-                    //             params.requiredActorFlag = ACTOR_FLAG_2000000;
-                    //         } else {
-                    //             params.requiredActorFlag = 0;
-                    //         }
-
-                    //         if ((player->stateFlags1 & PLAYER_STATE1_40) && ((player->actor.textId & 0xFF00) != 0x1900)) {
-                    //             params.talkActor = player->talkActor;
-                    //         } else {
-                    //             params.talkActor = NULL;
-                    //         }
-
-                    //         params.actor = chaos_actor->actor;
-
-                    //         // for (category = 0, entry = actorCtx->actorLists; category < ACTORCAT_MAX;
-                    //         //     entry++, categoryFreezeMaskP++, category++) {
-                    //         //     params.canFreezeCategory = *categoryFreezeMaskP & player->stateFlags1;
-                    //         //     params.actor = entry->first;
-
-                    //         //     while (params.actor != NULL) {
-                    //         //         params.actor = Actor_UpdateActor(&params);
-                    //         //     }
-                    //         Actor_UpdateActor(&params);
-                    //     }
-                    // }
                     Cutscene_UpdateManual(this, &this->csCtx);
                     Cutscene_UpdateScripted(this, &this->csCtx);
                     Effect_UpdateAll(this);

@@ -3392,8 +3392,6 @@ Actor* Actor_SpawnAsChildAndCutscene(ActorContext* actorCtx, PlayState* play, s1
 
     actorInit = Actor_LoadOverlay(actorCtx, index);
     if (actorInit == NULL) {
-        // u32 *p = (u32 *)0xbaadf00d;
-        // *p = 5;
         return NULL;
     }
 

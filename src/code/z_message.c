@@ -5692,7 +5692,7 @@ void Message_Update(PlayState* play) {
                            (play->msgCtx.ocarinaMode == OCARINA_MODE_PROCESS_SOT)) {
                     if (Message_ShouldAdvance(play)) {
                         // if (msgCtx->choiceIndex == 0) {
-                        if (choice_index == (play->msgCtx.currentTextId == 0x354d)) {
+                        if (choice_index == (play->msgCtx.currentTextId == MESSAGE_ID_CONFIRM_SONG_OF_TIME_FLIPPED)) {
                             Audio_PlaySfx_MessageDecide();
                             msgCtx->msgMode = MSGMODE_NEW_CYCLE_0;
                             msgCtx->decodedTextLen -= 3;
@@ -5752,7 +5752,7 @@ void Message_Update(PlayState* play) {
                         (play->msgCtx.ocarinaMode == OCARINA_MODE_1B)) {
                         if (Message_ShouldAdvance(play)) {
                             // if (msgCtx->choiceIndex == 0) {
-                            if (choice_index == 0) {
+                            if (choice_index == (play->msgCtx.currentTextId == MESSAGE_ID_CONFIRM_OWL_WARP_FLIPPED)) {
                                 Audio_PlaySfx_MessageDecide();
                                 play->msgCtx.ocarinaMode = OCARINA_MODE_WARP_TO_ENTRANCE;
                             } else {
@@ -5813,7 +5813,15 @@ void Message_Update(PlayState* play) {
             if (sLastPlayedSong == OCARINA_SONG_SOARING) {
                 if (interfaceCtx->restrictions.songOfSoaring == 0) {
                     if (Map_CurRoomHasMapI(play) || (play->sceneId == SCENE_SECOM)) {
-                        Message_StartTextbox(play, 0x1B93, NULL);
+
+                        u16 text_id = MESSAGE_ID_CONFIRM_OWL_WARP_NORMAL;
+
+                        if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI) && (Rand_Next() % 2) == 0)
+                        {
+                            text_id = MESSAGE_ID_CONFIRM_OWL_WARP_FLIPPED;
+                        }
+
+                        Message_StartTextbox(play, text_id, NULL);
                         play->msgCtx.ocarinaMode = OCARINA_MODE_1B;
                         sLastPlayedSong = 0xFF;
                     } else if (!msgCtx->ocarinaSongEffectActive) {
@@ -5913,11 +5921,11 @@ void Message_Update(PlayState* play) {
                     if (interfaceCtx->restrictions.songOfTime == 0) {
 
                         // Message_StartTextbox(play, 0x1B8A, NULL);
-                        u32 text_id = 0x1B8A;
+                        u32 text_id = MESSAGE_ID_CONFIRM_SONG_OF_TIME_NORMAL;
 
                         if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI) && (Rand_Next() % 2))
                         {
-                            text_id = 0x354D;
+                            text_id = MESSAGE_ID_CONFIRM_SONG_OF_TIME_FLIPPED;
                         }
 
                         Message_StartTextbox(play, text_id, NULL);
@@ -5931,9 +5939,9 @@ void Message_Update(PlayState* play) {
                     if (interfaceCtx->restrictions.invSongOfTime == 0) {
                         if (R_TIME_SPEED != 0) {
                             if (gSaveContext.save.timeSpeedOffset == 0) {
-                                Message_StartTextbox(play, 0x1B8C, NULL);
+                                Message_StartTextbox(play, MESSAGE_ID_CONFIRM_SONG_OF_SLOW_TIME_SLOW_DOWN_NORMAL, NULL);
                             } else {
-                                Message_StartTextbox(play, 0x1B8D, NULL);
+                                Message_StartTextbox(play, MESSAGE_ID_CONFIRM_SONG_OF_SLOW_TIME_SPEED_UP_NORMAL, NULL);
                             }
                             play->msgCtx.ocarinaMode = OCARINA_MODE_PROCESS_INVERTED_TIME;
                         } else {
