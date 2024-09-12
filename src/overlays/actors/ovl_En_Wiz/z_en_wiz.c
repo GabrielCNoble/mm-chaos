@@ -11,7 +11,7 @@
 
 #define FLAGS                                                                                                  \
     (ACTOR_FLAG_TARGETABLE | ACTOR_FLAG_UNFRIENDLY | ACTOR_FLAG_10 | ACTOR_FLAG_20 | ACTOR_FLAG_IGNORE_QUAKE | \
-     ACTOR_FLAG_100000 | ACTOR_FLAG_CANT_LOCK_ON | ACTOR_FLAG_80000000)
+     ACTOR_FLAG_100000 | ACTOR_FLAG_CANT_LOCK_ON | ACTOR_FLAG_80000000 | ACTOR_FLAG_NO_CHASE)
 
 #define THIS ((EnWiz*)thisx)
 
