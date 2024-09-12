@@ -1054,6 +1054,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         case CHAOS_CODE_STARFOX:
                         case CHAOS_CODE_POKE:
                         case CHAOS_CODE_IMAGINARY_FRIENDS:
+                        case CHAOS_CODE_SNEEZE:
                         case CHAOS_CODE_OUT_OF_SHAPE:
                         case CHAOS_CODE_JUNK_ITEM:
                         case CHAOS_CODE_ICE_TRAP:
@@ -2047,6 +2048,7 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     Chaos_EnableCode(CHAOS_CODE_RANDOM_HEALTH_UP, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_RANDOM_HEALTH_DOWN, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_IMAGINARY_FRIENDS, gChaosContext.disruptive_code_probability_scale);
+    Chaos_EnableCode(CHAOS_CODE_SNEEZE, gChaosContext.disruptive_code_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_CHANGE_HEALTH, 1.0f);
 
     if(scene_index == ENTR_SCENE_TERMINA_FIELD)

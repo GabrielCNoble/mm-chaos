@@ -506,6 +506,7 @@ typedef struct ChaosContext
         f32                     beer_pitch;
         f32                     beer_yaw;
         f32                     beer_roll;
+        f32                     beer_time;
         Vec3f                   beer_sway;
         Vec2f                   ear_scales[2];
         u8                      beer_alpha;

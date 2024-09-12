@@ -1389,6 +1389,7 @@ void Play_UpdateMain(PlayState* this) {
         gChaosContext.link.beer_roll = fmodf(gChaosContext.link.beer_roll + 0.0293f, M_PI * 2.0f);
         gChaosContext.link.beer_x_offset = fmodf(gChaosContext.link.beer_x_offset + 0.061f, M_PI * 2.0f);
         gChaosContext.link.beer_y_offset = fmodf(gChaosContext.link.beer_y_offset + 0.0950f, M_PI * 2.0f);
+        gChaosContext.link.beer_time += 0.1f;
     }
     else if(gChaosContext.link.beer_alpha > 0)
     {
@@ -1470,6 +1471,7 @@ void Play_UpdateMain(PlayState* this) {
         gChaosContext.link.beer_sway.x = 0;
         gChaosContext.link.beer_sway.y = 0;
         gChaosContext.link.beer_sway.z = 0;
+        gChaosContext.link.beer_time = 0;
         gSfxBeerGogglesFreq = 1.0f;
     }
 

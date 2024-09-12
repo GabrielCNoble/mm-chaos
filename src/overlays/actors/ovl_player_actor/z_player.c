@@ -5036,6 +5036,15 @@ s32 Player_GetMovementSpeedAndYaw(Player* this, f32* outSpeedTarget, s16* outYaw
     return true;
 }
 
+s16 Player_BeerGogglesYawFuckup(f32 time_offset)
+{
+    // return 2500.0f * Math_SinF((Math_SinF(gChaosContext.link.beer_pitch * 0.35f) + Math_SinF(gChaosContext.link.beer_yaw * 0.237f) + 
+    //         Math_SinF((gChaosContext.link.beer_pitch + gChaosContext.link.beer_yaw) * 0.186)) * 3.14159265f);
+
+    return 2500.0f * Math_SinF(Math_SinF(gChaosContext.link.beer_time + time_offset) * 0.8f + Math_SinF(gChaosContext.link.beer_time * 2.3f) * 0.5f +
+        gChaosContext.link.beer_yaw * 1.2f + gChaosContext.link.beer_pitch);
+}
+
 s32 Player_GetMovementSpeedAndYawUnderTheInfluence(Player* this, f32* outSpeedTarget, s16* outYawTarget, f32 speedMode,
                                   PlayState* play)
 {
@@ -5063,8 +5072,9 @@ s32 Player_GetMovementSpeedAndYawUnderTheInfluence(Player* this, f32* outSpeedTa
 
     if(Chaos_IsCodeActive(CHAOS_CODE_BEER_GOGGLES) && result)
     {
-        *outYawTarget += 2500.0f * Math_SinF((Math_SinF(gChaosContext.link.beer_pitch * 0.35f) + Math_SinF(gChaosContext.link.beer_yaw * 0.237f) + 
-            Math_SinF((gChaosContext.link.beer_pitch + gChaosContext.link.beer_yaw) * 0.186)) * 3.14159265f);
+        // *outYawTarget += 2500.0f * Math_SinF((Math_SinF(gChaosContext.link.beer_pitch * 0.35f) + Math_SinF(gChaosContext.link.beer_yaw * 0.237f) + 
+        //     Math_SinF((gChaosContext.link.beer_pitch + gChaosContext.link.beer_yaw) * 0.186)) * 3.14159265f);
+        *outYawTarget += Player_BeerGogglesYawFuckup(0.0f);
     }
 
     return result;
@@ -10850,9 +10860,8 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
         ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawFeet, this->ageProperties->shadowScale);
     }
 
-    // gSaveContext.save.saveInfo.inventory.items[SLOT_]
-
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_GORON] = ITEM_MASK_GORON;
+    // gSaveContext.save.saveInfo.playerData.owlActivationFlags |= 1 << OWL_WARP_GREAT_BAY_COAST;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_BUNNY] = ITEM_MASK_BUNNY;
 
@@ -12443,7 +12452,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // Chaos_ActivateCode(CHAOS_CODE_IMAGINARY_FRIENDS, 5);
         // Chaos_ActivateCode(CHAOS_CODE_RANDOM_HEALTH_UP, 1);
         // Chaos_ActivateCode(CHAOS_CODE_JUNK_ITEM, 1);
-        // Chaos_ActivateCode(CHAOS_CODE_SNEEZE , 5);
+        // Chaos_ActivateCode(CHAOS_CODE_BEER_GOGGLES, 8);
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_R))
@@ -17625,6 +17634,7 @@ void func_80850D20(PlayState* play, Player* this) {
     func_8083F8A8(play, this, 12.0f, -1, 1.0f, 160, 20, true);
 }
 
+/* zora swim */
 void Player_Action_56(Player* this, PlayState* play) {
     f32 speedTarget;
     s16 sp42;
@@ -17632,14 +17642,15 @@ void Player_Action_56(Player* this, PlayState* play) {
     s16 sp3E;
     s16 sp3C;
     s16 sp3A;
-    u32 out_of_shape = gChaosContext.link.out_of_shape_speed_scale < 0.1f;
-    u32 need_to_sneeze = gChaosContext.link.sneeze_speed_scale < 0.1f;
+    u32 out_of_shape = gChaosContext.link.out_of_shape_state == CHAOS_OUT_OF_SHAPE_STATE_GASPING;
+    u32 need_to_sneeze = gChaosContext.link.sneeze_state == CHAOS_SNEEZE_STATE_SNEEZE;
+    u32 being_kinda_schizo = gChaosContext.link.imaginary_friends_state == CHAOS_IMAGINARY_FRIENDS_STATE_SCHIZO;
 
     gPlayerAction = 56;
 
     this->stateFlags2 |= PLAYER_STATE2_20;
 
-    if(!out_of_shape && !need_to_sneeze)
+    if(!out_of_shape && !need_to_sneeze && !being_kinda_schizo)
     {
         func_808475B4(this);
         func_8082F164(this, BTN_R);
@@ -17664,6 +17675,12 @@ void Player_Action_56(Player* this, PlayState* play) {
 
     speedTarget = 0.0f;
 
+    if(Chaos_IsCodeActive(CHAOS_CODE_BEER_GOGGLES))
+    {
+        sPlayerControlInput->rel.stick_x += Player_BeerGogglesYawFuckup(gChaosContext.link.beer_time * 0.1f) * 0.015f;
+        sPlayerControlInput->rel.stick_y += Player_BeerGogglesYawFuckup(-gChaosContext.link.beer_time * 0.27f) * 0.008f;
+    }
+
     if (this->av2.actionVar2 != 0) {
         if ((!func_8082DA90(play) && !CHECK_BTN_ALL(sPlayerControlInput->cur.button, BTN_A)) ||
             (this->currentBoots != PLAYER_BOOTS_ZORA_LAND)) {
@@ -17679,6 +17696,7 @@ void Player_Action_56(Player* this, PlayState* play) {
             }
         } else {
             Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+
             Math_ScaledStepToS(&this->currentYaw, yawTarget, 0x640);
 
             if (this->skelAnime.curFrame >= 13.0f) {
@@ -17722,6 +17740,7 @@ void Player_Action_56(Player* this, PlayState* play) {
 
         // X
         sp42 = sPlayerControlInput->rel.stick_x * 0x64;
+
         if (Math_ScaledStepToS(&this->unk_B8A, sp42, 0x384) && (sp42 == 0)) {
             Math_SmoothStepToS(&this->unk_B86[1], 0, 4, 0x5DC, 0x64);
             Math_SmoothStepToS(&this->unk_B8E, this->unk_B86[1], IREG(44) + 1, IREG(45), IREG(46));
@@ -20235,6 +20254,7 @@ void Player_Action_96(Player* this, PlayState* play) {
         u16 spE0;
         s32 spDC;
         s32 spD8;
+        u32 joystick_held = 0;
 
         if (func_80840A30(play, this, &this->unk_B08, (this->doorType == PLAYER_DOORTYPE_STAIRCASE) ? 0.0f : 12.0f)) {
             if (Player_Action_96 != this->actionFunc) {
@@ -20267,7 +20287,7 @@ void Player_Action_96(Player* this, PlayState* play) {
         if (this->unk_B8E != 0) {
             this->unk_B8E--;
         } else {
-            Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
+            joystick_held = Player_GetMovementSpeedAndYawUnderTheInfluence(this, &speedTarget, &yawTarget, SPEED_MODE_LINEAR, play);
             speedTarget *= 2.6f;
         }
 
@@ -20279,6 +20299,11 @@ void Player_Action_96(Player* this, PlayState* play) {
         if (this->unk_B86[1] != 0) {
             speedTarget = 18.0f;
             Math_StepToC(&this->av1.actionVar1, 4, 1);
+
+            if(Chaos_IsCodeActive(CHAOS_CODE_BEER_GOGGLES) && !joystick_held)
+            {
+                yawTarget += Player_BeerGogglesYawFuckup(0.0f);
+            }
 
             if ((this->stateFlags3 & PLAYER_STATE3_80000) &&
                 (!CHECK_BTN_ALL(sPlayerControlInput->cur.button, BTN_A) ||
@@ -20337,6 +20362,7 @@ void Player_Action_96(Player* this, PlayState* play) {
                 if (this->unk_B86[1] == 0) {
                     this->unk_B0C = 0.0f;
                     if (this->av1.actionVar1 >= 0x36) {
+                        /* spike roll began */
                         Magic_Consume(play, 2, MAGIC_CONSUME_GORON_ZORA);
                         this->unk_B08 = 18.0f;
                         this->unk_B86[1] = 1;
@@ -20527,6 +20553,7 @@ void Player_Action_96(Player* this, PlayState* play) {
             Math_ScaledStepToS(&this->actor.shape.rot.z, 0, 0x190);
 
             this->unk_B86[0] = 0;
+
             if (this->unk_B86[1] != 0) {
                 this->actor.gravity = -1.0f;
                 Math_ScaledStepToS(&this->actor.home.rot.y, yawTarget, 0x190);
