@@ -19875,7 +19875,7 @@ Vec3f D_8085D96C = { 30.0f, 50.0f, 0.0f };
 // Flying as Deku?
 void Player_Action_94(Player* this, PlayState* play) {
     u32 out_of_shape = gChaosContext.link.out_of_shape_state == CHAOS_OUT_OF_SHAPE_STATE_GASPING;
-    u32 need_to_sneeze = gChaosContext.link.sneeze_speed_scale == CHAOS_SNEEZE_STATE_SNEEZE;
+    u32 need_to_sneeze = gChaosContext.link.sneeze_state == CHAOS_SNEEZE_STATE_SNEEZE;
     u32 is_being_kinda_schizo = gChaosContext.link.imaginary_friends_state == CHAOS_IMAGINARY_FRIENDS_STATE_SCHIZO;
 
     gPlayerAction = 94;
@@ -19930,7 +19930,7 @@ void Player_Action_94(Player* this, PlayState* play) {
         this->actor.terminalVelocity = -10.0f;
         this->actor.gravity = -0.5f;
         Player_ResetCylinder(this);
-    } else if (out_of_shape || need_to_sneeze || is_being_kinda_schizo || CHECK_BTN_ALL(sPlayerControlInput->press.button, BTN_A)) {
+    } else if (/* out_of_shape || need_to_sneeze || is_being_kinda_schizo || */ CHECK_BTN_ALL(sPlayerControlInput->press.button, BTN_A)) {
         func_808355D8(play, this, &gPlayerAnim_pn_kakkufinish);
     } else {
         s16 temp_a0;
