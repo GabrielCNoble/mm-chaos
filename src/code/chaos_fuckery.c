@@ -1250,18 +1250,14 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
             GfxPrint_Printf(&gfx_print, "Magic state: %d", gSaveContext.magicState);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "Scene: %d, room: %d", scene, playstate->roomCtx.curRoom.num);
-            // GfxPrint_Printf(&gfx_print, "Scene: %d", playstate->sceneId);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "effect restrictions: %x", gChaosContext.effect_restrictions);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "game mode: %x", gSaveContext.gameMode);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
+            GfxPrint_Printf(&gfx_print, "pause state: %x", playstate->pauseCtx.state);
+            GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "actor count: %x", gChaosContext.actors.spawned_actors);
-            // GfxPrint_Printf(&gfx_print, "%x(%f) %x(%f) %x", player->skelAnime.animation, player->skelAnime.curFrame,
-            //                                                 player->skelAnimeUpper.animation, player->skelAnimeUpper.curFrame,
-            //                                                 gImaginaryFriendAnimations[gChaosContext.link.imaginary_friends_anim_index]);
-            // GfxPrint_Printf(&gfx_print, "%x %x %x", gImaginaryFriendAnimations[0], gImaginaryFriendAnimations[1], gImaginaryFriendAnimations[2]);
-            // GfxPrint_Printf(&gfx_print, "%04x %04x", camera->setting, ((s32)player->currentYaw) & 0xffff);
         }
 
         gfx = GfxPrint_Close(&gfx_print);

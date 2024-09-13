@@ -1088,86 +1088,70 @@ void Play_UpdateMain(PlayState* this) {
     u8 freezeFlashTimer;
     struct ChaosCode *code;
 
-    if(Chaos_IsCodeActive(CHAOS_CODE_LOVELESS_MARRIAGE))
+    if(this->pauseCtx.state == PAUSE_STATE_OFF)
     {
-        Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_RR, 
-            player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z,
-            0, 0, 0, (Rand_S16Offset(0, 24) == 3) ? LIKE_LIKE_TYPE_VORE : 0);
-        Chaos_DeactivateCode(CHAOS_CODE_LOVELESS_MARRIAGE);
-    }
-
-    if(Chaos_IsCodeActive(CHAOS_CODE_STARFOX))
-    {
-        Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_ARWING, 
-            player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z, 0, 0, 0, 0);
-        Chaos_DeactivateCode(CHAOS_CODE_STARFOX);
-    }
-
-    if(Chaos_IsCodeActive(CHAOS_CODE_WALLMASTER))
-    {
-        Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_WALLMAS, 
-            player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z, 
-            0, 0, 0, WALLMASTER_PARAMS((Rand_S16Offset(0, 8) != 0) ? WALLMASTER_TYPE_FAKE : 0, 0, false));
-        Chaos_DeactivateCode(CHAOS_CODE_WALLMASTER);
-    }
-
-    if(Chaos_IsCodeActive(CHAOS_CODE_CHICKEN_ARISE))
-    {
-        if(gChaosContext.chicken.cucco.attackNiwSpawnTimer > 0)
+        if(Chaos_IsCodeActive(CHAOS_CODE_LOVELESS_MARRIAGE))
         {
-            gChaosContext.chicken.cucco.attackNiwSpawnTimer--;
+            Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_RR, 
+                player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z,
+                0, 0, 0, (Rand_S16Offset(0, 24) == 3) ? LIKE_LIKE_TYPE_VORE : 0);
+            Chaos_DeactivateCode(CHAOS_CODE_LOVELESS_MARRIAGE);
         }
 
-        if(gChaosContext.chicken.cucco.unkAttackNiwTimer > 0)
+        if(Chaos_IsCodeActive(CHAOS_CODE_STARFOX))
         {
-            gChaosContext.chicken.cucco.unkAttackNiwTimer--;
+            Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_ARWING, 
+                player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z, 0, 0, 0, 0);
+            Chaos_DeactivateCode(CHAOS_CODE_STARFOX);
         }
 
-        if ((gChaosContext.chicken.cucco.attackNiwSpawnTimer == 0) && (gChaosContext.chicken.cucco.attackNiwCount < 7)) 
+        if(Chaos_IsCodeActive(CHAOS_CODE_WALLMASTER))
         {
-            f32 xView = this->view.at.x - this->view.eye.x;
-            f32 yView = this->view.at.y - this->view.eye.y;
-            f32 zView = this->view.at.z - this->view.eye.z;
-            f32 cucco_x = this->view.eye.x + ((Rand_ZeroOne() - 0.5f) * xView);
-            f32 cucco_y = this->view.eye.y + 50.0f + (yView * 0.5f) + Rand_CenteredFloat(0.3f);
-            f32 cucco_z = this->view.eye.z + ((Rand_ZeroOne() - 0.5f) * zView);
+            Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_WALLMAS, 
+                player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z, 
+                0, 0, 0, WALLMASTER_PARAMS((Rand_S16Offset(0, 8) != 0) ? WALLMASTER_TYPE_FAKE : 0, 0, false));
+            Chaos_DeactivateCode(CHAOS_CODE_WALLMASTER);
+        }
 
-            Actor *cucco = Chaos_SpawnAsChild(&this->actorCtx, &gChaosContext.chicken.cucco.actor, this, ACTOR_EN_ATTACK_NIW, cucco_x,
-                                        cucco_y, cucco_z, 0, 0, 0, ATTACK_NIW_CHAOS);    
+        if(Chaos_IsCodeActive(CHAOS_CODE_CHICKEN_ARISE))
+        {
+            if(gChaosContext.chicken.cucco.attackNiwSpawnTimer > 0)
+            {
+                gChaosContext.chicken.cucco.attackNiwSpawnTimer--;
+            }
 
-            if (cucco != NULL) {
-                gChaosContext.chicken.cucco.attackNiwCount++;
-                gChaosContext.chicken.cucco.attackNiwSpawnTimer = 10;
-                if(Rand_S16Offset(0, 11) == 0)
-                {
-                    Actor_SetScale(cucco, 0.006f);
-                }
-                else
-                {
-                    Actor_SetScale(cucco, 0.018f);
+            if(gChaosContext.chicken.cucco.unkAttackNiwTimer > 0)
+            {
+                gChaosContext.chicken.cucco.unkAttackNiwTimer--;
+            }
+
+            if ((gChaosContext.chicken.cucco.attackNiwSpawnTimer == 0) && (gChaosContext.chicken.cucco.attackNiwCount < 7)) 
+            {
+                f32 xView = this->view.at.x - this->view.eye.x;
+                f32 yView = this->view.at.y - this->view.eye.y;
+                f32 zView = this->view.at.z - this->view.eye.z;
+                f32 cucco_x = this->view.eye.x + ((Rand_ZeroOne() - 0.5f) * xView);
+                f32 cucco_y = this->view.eye.y + 50.0f + (yView * 0.5f) + Rand_CenteredFloat(0.3f);
+                f32 cucco_z = this->view.eye.z + ((Rand_ZeroOne() - 0.5f) * zView);
+
+                Actor *cucco = Chaos_SpawnAsChild(&this->actorCtx, &gChaosContext.chicken.cucco.actor, this, ACTOR_EN_ATTACK_NIW, cucco_x,
+                                            cucco_y, cucco_z, 0, 0, 0, ATTACK_NIW_CHAOS);    
+
+                if (cucco != NULL) {
+                    gChaosContext.chicken.cucco.attackNiwCount++;
+                    gChaosContext.chicken.cucco.attackNiwSpawnTimer = 10;
+                    if(Rand_S16Offset(0, 11) == 0)
+                    {
+                        Actor_SetScale(cucco, 0.006f);
+                    }
+                    else
+                    {
+                        Actor_SetScale(cucco, 0.018f);
+                    }
                 }
             }
         }
     }
-
-    
-
-    // if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
-    // {
-    //     u32 index;
-
-    //     for(index = 0; index < ARRAY_COUNT(gChaosContext.ui.life_meter_offset); index++)
-    //     {
-    //         gChaosContext.ui.life_meter_offset[index][0] = Rand_S16Offset(-16, 32);
-    //         gChaosContext.ui.life_meter_offset[index][1] = Rand_S16Offset(-16, 32);
-    //     }
-
-    //     for(index = 0; index < ARRAY_COUNT(gChaosContext.ui.cbutton_offset); index++)
-    //     {
-    //         gChaosContext.ui.cbutton_offset[index][0] = Rand_S16Offset(-16, 32);
-    //         gChaosContext.ui.cbutton_offset[index][1] = Rand_S16Offset(-16, 32);
-    //     }
-    // }
 
     // if(Chaos_IsCodeActive(CHAOS_CODE_TEXTBOX))
     // {
