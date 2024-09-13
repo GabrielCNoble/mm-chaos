@@ -12455,6 +12455,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // Chaos_ActivateCode(CHAOS_CODE_RANDOM_HEALTH_UP, 1);
         // Chaos_ActivateCode(CHAOS_CODE_JUNK_ITEM, 1);
         // Chaos_ActivateCode(CHAOS_CODE_BEER_GOGGLES, 8);
+        // Chaos_ActivateCode(CHAOS_CODE_DIE, 1);
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_R))
