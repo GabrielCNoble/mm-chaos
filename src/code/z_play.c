@@ -42,6 +42,7 @@ u8 sMotionBlurStatus;
 #include "overlays/actors/ovl_En_Attack_Niw/z_en_attack_niw.h"
 #include "overlays/actors/ovl_En_Rr/z_en_rr.h"
 #include "overlays/actors/ovl_En_Wallmas/z_en_wallmas.h"
+#include "overlays/actors/ovl_En_Rd/z_en_rd.h"
 
 s32 gDbgCamEnabled = false;
 u8 D_801D0D54 = false;
@@ -1111,6 +1112,14 @@ void Play_UpdateMain(PlayState* this) {
                 player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z, 
                 0, 0, 0, WALLMASTER_PARAMS((Rand_S16Offset(0, 8) != 0) ? WALLMASTER_TYPE_FAKE : 0, 0, false));
             Chaos_DeactivateCode(CHAOS_CODE_WALLMASTER);
+        }
+
+        if(Chaos_IsCodeActive(CHAOS_CODE_REDEADASS_GROOVE))
+        {
+            Vec3f player_pos = player->actor.world.pos;
+            player_pos.y += 20.0f;
+            Chaos_SpawnRedeadDanceParty( &this->actorCtx, this, &player_pos);
+            Chaos_DeactivateCode(CHAOS_CODE_REDEADASS_GROOVE);
         }
 
         if(Chaos_IsCodeActive(CHAOS_CODE_CHICKEN_ARISE))

@@ -114,6 +114,8 @@ enum CHAOS_CODES
     CHAOS_CODE_IMAGINARY_FRIENDS,
     /* spawns either a real or a fake wallmaster */
     CHAOS_CODE_WALLMASTER,
+    /* spawns dancing redeads around player */
+    CHAOS_CODE_REDEADASS_GROOVE,
     /* 
         player randomly loses grip, dropping items, falling from ledges/ladders
         TODO: change this one to include items from the inventory. The item should
@@ -199,8 +201,6 @@ enum CHAOS_CODES
     // CHAOS_CODE_BLIZZARD,
     /* spawns the 4 ghost sisters */
     // CHAOS_CODE_HEY_SOUL_SISTERS,
-    /* spawns dancing redeads around player */
-    // CHAOS_CODE_REDEADASS_GROOVE,
     /* spawns hostile redeads around player */
     // CHAOS_CODE_PAIN_IN_THE_REDEADASS,
     /* spawns majora's wrath */
@@ -617,6 +617,8 @@ void Chaos_StepDownDisruptiveEffectProbabiliy(void);
 u16 Chaos_EffectRestrictions(struct PlayState *play);
 
 Actor *Chaos_SpawnActor(ActorContext *context, PlayState *play, s16 actor_id, f32 pos_x, f32 pos_y, f32 pos_z, s16 rot_x, s16 rot_y, s16 rot_z, s32 params);
+
+void Chaos_SpawnRedeadDanceParty(ActorContext *context, PlayState *play, Vec3f *player_pos);
 
 Actor* Chaos_SpawnAsChild(ActorContext* context, Actor* parent, PlayState* play, s16 actor_id, f32 pos_x, f32 pos_y, f32 pos_z, s16 rot_x, s16 rot_y, s16 rot_z, s32 params);
 

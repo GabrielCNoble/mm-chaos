@@ -27,7 +27,22 @@ typedef enum {
     /*  4 */ EN_RD_TYPE_FROZEN, // Unused in the final game
     /*  5 */ EN_RD_TYPE_SQUATTING_DANCE,
     /*  6 */ EN_RD_TYPE_CLAPPING_DANCE,
-    /*  7 */ EN_RD_TYPE_PIROUETTE
+    /*  7 */ EN_RD_TYPE_PIROUETTE,
+    // New Stuff!
+    // this is assigned to Actor.params which is a s16
+    // we can make a shitton of different variants
+    /*  8*/ EN_RD_CHAOS_TYPE_HIT_THE_GRIDDY,
+    /*  9*/ EN_RD_CHAOS_TYPE_CARAMELLDANSEN,
+    /* 10*/ EN_RD_CHAOS_TYPE_BONEZONE,
+    /* 11*/ EN_RD_CHAOS_TYPE_HEADSPIN,
+    /* 12*/ EN_RD_CHAOS_TYPE_FETAL,
+    /* 13*/ EN_RD_CHAOS_TYPE_FLOSS,
+    /* 14*/ EN_RD_CHAOS_TYPE_GRIND,
+    /* 15*/ EN_RD_CHAOS_TYPE_OLDCLASSIC,
+    /* 16*/ EN_RD_CHAOS_TYPE_LUCHTBALLON,
+    /* 17*/ EN_RD_CHAOS_TYPE_GODHAND,
+    
+    /**/    EN_RD_CHAOS_TYPE_LASTDANCEENUM
 } EnRdType;
 
 typedef enum EnRdBodyPart {

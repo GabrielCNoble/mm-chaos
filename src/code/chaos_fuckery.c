@@ -11,6 +11,9 @@
 #include "assets/objects/gameplay_keep/gameplay_keep.h"
 #include "overlays/actors/ovl_En_Arrow/z_en_arrow.h"
 
+// For dance party
+#include "overlays/actors/ovl_En_Rd/z_en_rd.h"
+
 ChaosContext    gChaosContext; 
 u64             gChaosRngState = 1;
 u32             gDisplayEffectInfo = 0;
@@ -80,6 +83,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_RANDOM_HEALTH_DOWN]      = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.001f),
     /* [CHAOS_CODE_IMAGINARY_FRIENDS]       = */ CHAOS_CODE_DEF(5,  12, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1), 0.008f),
     /* [CHAOS_CODE_WALLMASTER]              = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0), 0.0055f),
+    /* [CHAOS_CODE_REDEADASS_GROOVE]        = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0), 0.0095f),
 };
   
 const char *gChaosCodeNames[] = {
@@ -132,6 +136,7 @@ const char *gChaosCodeNames[] = {
     /* [CHAOS_CODE_RANDOM_HEALTH_DOWN]      = */ "Random health down",
     /* [CHAOS_CODE_IMAGINARY_FRIENDS]       = */ "Imaginary friends",
     /* [CHAOS_CODE_WALLMASTER]              = */ "Wallmaster",
+    /* [CHAOS_CODE_REDEADASS_GROOVE]        = */ "Redeadass groove",
 };
 
 enum FAIRY_FOUNTAIN_EXITS
@@ -246,10 +251,11 @@ u8 gBossEntrances[] = {
 };
 
 struct ChaosSpawnActorCodeDef gSpawnActorCodeDefs[] = {
-    { OBJECT_RR, CHAOS_CODE_LOVELESS_MARRIAGE },
-    { OBJECT_NIW, CHAOS_CODE_CHICKEN_ARISE },
-    { OBJECT_ARWING, CHAOS_CODE_STARFOX },
-    { OBJECT_WALLMASTER, CHAOS_CODE_WALLMASTER }
+    { OBJECT_RR,            CHAOS_CODE_LOVELESS_MARRIAGE },
+    { OBJECT_NIW,           CHAOS_CODE_CHICKEN_ARISE },
+    { OBJECT_ARWING,        CHAOS_CODE_STARFOX },
+    { OBJECT_WALLMASTER,    CHAOS_CODE_WALLMASTER },
+    { OBJECT_RD,            CHAOS_CODE_REDEADASS_GROOVE }
 };
 
 #define RANDOM_ENTRANCES_DEF(entrances) {           \
@@ -833,6 +839,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         case CHAOS_CODE_CHICKEN_ARISE:
                         case CHAOS_CODE_STARFOX:
                         case CHAOS_CODE_WALLMASTER:
+                        case CHAOS_CODE_REDEADASS_GROOVE:
                         {
                             u32 index;
                             
@@ -1062,6 +1069,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         case CHAOS_CODE_DIE:
                         case CHAOS_CODE_PLAY_OCARINA:
                         case CHAOS_CODE_SHOCK:
+                        case CHAOS_CODE_REDEADASS_GROOVE:
                             Chaos_StepDownDisruptiveEffectProbabiliy();
                         break;
 
@@ -1577,6 +1585,57 @@ Actor *Chaos_SpawnActor(ActorContext *context, PlayState *play, s16 actor_id, f3
 
     return actor;
 }
+
+#define HALF_DANCE_FLOOR_LENGTH 35.0f
+
+// These are all relative tot he player
+Vec3f DancePositions_FourCorners[] = {
+    {-HALF_DANCE_FLOOR_LENGTH, 0.0f, -HALF_DANCE_FLOOR_LENGTH},
+    { HALF_DANCE_FLOOR_LENGTH, 0.0f, -HALF_DANCE_FLOOR_LENGTH},
+    {-HALF_DANCE_FLOOR_LENGTH, 0.0f,  HALF_DANCE_FLOOR_LENGTH},
+    { HALF_DANCE_FLOOR_LENGTH, 0.0f,  HALF_DANCE_FLOOR_LENGTH},
+};
+
+// Currently unused but could be fun!
+Vec3f DancePositions_VFormation[] = {
+    {-HALF_DANCE_FLOOR_LENGTH, 0.0f, 0.0f},
+    {-0.5f*HALF_DANCE_FLOOR_LENGTH, 0.0f, -0.5f*HALF_DANCE_FLOOR_LENGTH},
+    {0.0f, 0.0f, -HALF_DANCE_FLOOR_LENGTH},
+    { 0.5f*HALF_DANCE_FLOOR_LENGTH, 0.0f, -0.5f*HALF_DANCE_FLOOR_LENGTH},
+    { HALF_DANCE_FLOOR_LENGTH, 0.0f, 0.0f},
+};
+
+void Chaos_SpawnRedeadDanceParty(ActorContext *context, PlayState *play, Vec3f *player_pos)
+{
+    u32 dancerCount = 4;
+    u32 index;
+
+    // Determine if the dancers should be homegenous or all somewhat different.
+    s16 allSameDance = Rand_S16Offset(0, 2); 
+    EnRdType redeadType = EN_RD_CHAOS_TYPE_HIT_THE_GRIDDY;
+    if(allSameDance){
+        redeadType = Rand_S16Offset(EN_RD_CHAOS_TYPE_HIT_THE_GRIDDY, 
+            EN_RD_CHAOS_TYPE_LASTDANCEENUM - EN_RD_CHAOS_TYPE_HIT_THE_GRIDDY - 1
+        );
+    }
+    // Each dancer
+    for(index = 0; index < dancerCount; index++){
+        Vec3f spawnPos;
+        Vec3f* dancerPositionOffsetSrc = &DancePositions_FourCorners[index];
+        Math_Vec3f_Sum(player_pos, dancerPositionOffsetSrc, &spawnPos);
+        if(!allSameDance){
+            // Roll for each dude
+            redeadType = Rand_S16Offset(EN_RD_CHAOS_TYPE_HIT_THE_GRIDDY, 
+                EN_RD_CHAOS_TYPE_LASTDANCEENUM - EN_RD_CHAOS_TYPE_HIT_THE_GRIDDY - 1
+            );
+        }
+        // Spawn em
+        Chaos_SpawnActor(context, play, ACTOR_EN_RD, spawnPos.x, spawnPos.y, spawnPos.z, 0, 0, 0, 
+            redeadType
+        );
+    }
+}
+
 
 Actor* Chaos_SpawnAsChild(ActorContext* context, Actor* parent, PlayState* play, s16 actor_id, f32 pos_x, f32 pos_y, f32 pos_z, s16 rot_x, s16 rot_y, s16 rot_z, s32 params)
 {
@@ -2096,7 +2155,7 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     Chaos_EnableCode(CHAOS_CODE_CHICKEN_ARISE, gChaosContext.disruptive_code_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_STARFOX, gChaosContext.disruptive_code_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_WALLMASTER, gChaosContext.disruptive_code_probability_scale);
-
+    Chaos_EnableCode(CHAOS_CODE_REDEADASS_GROOVE, gChaosContext.disruptive_code_probability_scale);
     // if(has_ocarina)
     // {
         // Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA, 1.0f);
