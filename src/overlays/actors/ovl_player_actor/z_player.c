@@ -15,6 +15,7 @@
 #include "z64shrink_window.h"
 #include "libc64/malloc.h"
 #include "sfx.h"
+#include "fault.h"
 
 #include "overlays/actors/ovl_Arms_Hook/z_arms_hook.h"
 #include "overlays/actors/ovl_Door_Spiral/z_door_spiral.h"
@@ -10845,9 +10846,11 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     if ((PLAYER_GET_INITMODE(&this->actor) != PLAYER_INITMODE_TELESCOPE) &&
         ((gSaveContext.respawnFlag != 2) ||
          (gSaveContext.respawn[RESPAWN_MODE_RETURN].playerParams != PLAYER_PARAMS(0xFF, PLAYER_INITMODE_TELESCOPE)))) {
+
         func_808309CC(play, this);
         SkelAnime_InitPlayer(play, &this->skelAnime, skelHeader, D_8085BE84[PLAYER_ANIMGROUP_wait][this->modelAnimType],
                              1 | 8, this->jointTableBuffer, this->morphTableBuffer, PLAYER_LIMB_MAX);
+
         this->skelAnime.baseTransl = sPlayerSkeletonBaseTransl;
 
         SkelAnime_InitPlayer(play, &this->skelAnimeUpper, skelHeader, func_8082ED20(this), 1 | 8,
@@ -12430,7 +12433,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     {
         // play->nextEntrance = Entrance_Create(gSceneIndex, gEntranceIndex, 0);
 
-        // play->nextEntrance = ENTRANCE(STONE_TOWER, 0);
+        // play->nextEntrance = ENTRANCE(IKANA_CASTLE, 0);
         // Scene_SetExitFade(play);
         // play->transitionTrigger = TRANS_TRIGGER_START;
 
@@ -12456,6 +12459,8 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // Chaos_ActivateCode(CHAOS_CODE_JUNK_ITEM, 1);
         // Chaos_ActivateCode(CHAOS_CODE_BEER_GOGGLES, 8);
         // Chaos_ActivateCode(CHAOS_CODE_DIE, 1);
+        // Actor_Spawn(&play->actorCtx, play, ACTOR_EN_DARK_LINK, 
+        //     this->actor.world.pos.x, this->actor.world.pos.y + 20.0f, this->actor.world.pos.z, 0, 0, 0, 0);
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_R))

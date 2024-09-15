@@ -4769,6 +4769,13 @@ beginseg
 endseg
 
 beginseg
+    name "ovl_En_Dark_Link"
+    compress
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Dark_Link/z_en_dark_link.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Dark_Link/ovl_En_Dark_Link_reloc.o"
+endseg
+
+beginseg
     name "ovl_En_Jgame_Tsn"
     compress
     include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Jgame_Tsn/z_en_jgame_tsn.o"
@@ -5389,6 +5396,14 @@ beginseg
     romalign 0x1000
     number 6
     include "$(BUILD_DIR)/assets/objects/object_arwing/object_arwing.o"
+endseg
+
+beginseg
+    name "object_dark_link"
+    compress
+    romalign 0x1000
+    number 6
+    include "$(BUILD_DIR)/assets/objects/object_dark_link/object_dark_link.o"
 endseg
 
 beginseg

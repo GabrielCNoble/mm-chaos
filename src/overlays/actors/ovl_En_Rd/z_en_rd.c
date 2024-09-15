@@ -202,6 +202,7 @@ static InitChainEntry sInitChain[] = {
 
 void EnRd_Init(Actor* thisx, PlayState* play) {
     EnRd* this = THIS;
+    Player *player = GET_PLAYER(play);
     s32 pad;
 
     Actor_ProcessInitChain(&this->actor, sInitChain);
@@ -265,7 +266,7 @@ void EnRd_Init(Actor* thisx, PlayState* play) {
                 }
                 this->setupDanceFunc = EnRd_SetupPirouette;
                 break;
-
+ 
             // Chaos edition stuff
             case EN_RD_CHAOS_TYPE_HIT_THE_GRIDDY:
             case EN_RD_CHAOS_TYPE_CARAMELLDANSEN:
@@ -541,9 +542,19 @@ void EnRd_SetupChaosDance(EnRd* this){
 
 void EnRd_ChaosDance(EnRd* this, PlayState* play){
     // Mostly copied from EnRd_ClappingDance
+    Player *player = GET_PLAYER(play);
     SkelAnime_Update(&this->skelAnime);
     Math_SmoothStepToS(&this->headRotY, 0, 1, 0x64, 0);
     Math_SmoothStepToS(&this->torsoRotY, 0, 1, 0x64, 0);
+
+    if(this->flags & EN_RD_FLAG_DANCE_LEADER && !(player->stateFlags1 & PLAYER_STATE1_TIME_STOPPED))
+    {
+        player->actor.freezeTimer = Rand_S16Offset(60, 60);
+        Rumble_Request(this->actor.xzDistToPlayer, 255, 20, 150);
+        func_80123E90(play, &this->actor);
+        Actor_PlaySfx(&this->actor, NA_SE_EN_REDEAD_AIM);   
+        this->flags &= ~EN_RD_FLAG_DANCE_LEADER;
+    }
 
     this->isMourning = false;
     // Never stop dancing the chaos dance

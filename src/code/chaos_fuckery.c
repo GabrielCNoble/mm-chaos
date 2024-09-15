@@ -83,7 +83,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_RANDOM_HEALTH_DOWN]      = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.001f),
     /* [CHAOS_CODE_IMAGINARY_FRIENDS]       = */ CHAOS_CODE_DEF(5,  12, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1), 0.008f),
     /* [CHAOS_CODE_WALLMASTER]              = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0), 0.0055f),
-    /* [CHAOS_CODE_REDEADASS_GROOVE]        = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0), 0.0095f),
+    /* [CHAOS_CODE_REDEADASS_GROOVE]        = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0), 0.0055f),
 };
   
 const char *gChaosCodeNames[] = {
@@ -871,57 +871,6 @@ void Chaos_UpdateChaos(PlayState *playstate)
                                 continue;
                             }
                         }
-                            // if(gChaosContext.queued_spawn_actor_code != CHAOS_CODE_NONE || gChaosContext.actors.spawned_actors != 0)
-                            // {
-                            //     continue;
-                            // }
-
-
-
-                            // if(next_code == CHAOS_CODE_LOVELESS_MARRIAGE && gChaosContext.loaded_object_id != OBJECT_RR)
-                            // {
-                            //     if(Chaos_IsCodeInActiveList(CHAOS_CODE_CHICKEN_ARISE))
-                            //     {
-                            //         continue;
-                            //     }
-
-                            //     Object_RequestOverwrite(&playstate->objectCtx, gChaosContext.chaos_keep_slot, OBJECT_RR);
-                            //     gChaosContext.loaded_object_id = OBJECT_RR;
-                            //     gChaosContext.queued_spawn_actor_code = CHAOS_CODE_LOVELESS_MARRIAGE;
-                            //     continue;
-                            // }
-                            // else if(next_code == CHAOS_CODE_CHICKEN_ARISE && gChaosContext.loaded_object_id != OBJECT_NIW)
-                            // {
-                            //     Object_RequestOverwrite(&playstate->objectCtx, gChaosContext.chaos_keep_slot, OBJECT_NIW);
-                            //     gChaosContext.loaded_object_id = OBJECT_NIW;
-                            //     gChaosContext.queued_spawn_actor_code = CHAOS_CODE_CHICKEN_ARISE;
-                            //     continue;
-                            // }
-                            // else if(next_code == CHAOS_CODE_STARFOX && gChaosContext.loaded_object_id != OBJECT_ARWING)
-                            // {
-                            //     if(Chaos_IsCodeInActiveList(CHAOS_CODE_CHICKEN_ARISE))
-                            //     {
-                            //         continue;
-                            //     }
-                                
-                            //     Object_RequestOverwrite(&playstate->objectCtx, gChaosContext.chaos_keep_slot, OBJECT_ARWING);
-                            //     gChaosContext.loaded_object_id = OBJECT_ARWING;
-                            //     gChaosContext.queued_spawn_actor_code = CHAOS_CODE_STARFOX;
-                            //     continue;
-                            // }
-                            // else if(next_code == CHAOS_CODE_WALLMASTER && gChaosContext.loaded_object_id != OBJECT_WALLMASTER)
-                            // {
-                            //     if(Chaos_IsCodeInActiveList(CHAOS_CODE_CHICKEN_ARISE))
-                            //     {
-                            //         continue;
-                            //     }
-                                
-                            //     Object_RequestOverwrite(&playstate->objectCtx, gChaosContext.chaos_keep_slot, OBJECT_WALLMASTER);
-                            //     gChaosContext.loaded_object_id = OBJECT_WALLMASTER;
-                            //     gChaosContext.queued_spawn_actor_code = CHAOS_CODE_WALLMASTER;
-                            //     continue;
-                            // }
-
                         break;
 
                         case CHAOS_CODE_BUCKSHOT_ARROWS:
@@ -1604,11 +1553,13 @@ Vec3f DancePositions_VFormation[] = {
     { 0.5f*HALF_DANCE_FLOOR_LENGTH, 0.0f, -0.5f*HALF_DANCE_FLOOR_LENGTH},
     { HALF_DANCE_FLOOR_LENGTH, 0.0f, 0.0f},
 };
-
+ 
 void Chaos_SpawnRedeadDanceParty(ActorContext *context, PlayState *play, Vec3f *player_pos)
 {
     u32 dancerCount = 4;
+    u32 dance_leader_index = Rand_S16Offset(0, dancerCount - 1);
     u32 index;
+    s16 yaw_to_player;
 
     // Determine if the dancers should be homegenous or all somewhat different.
     s16 allSameDance = Rand_S16Offset(0, 2); 
@@ -1629,9 +1580,12 @@ void Chaos_SpawnRedeadDanceParty(ActorContext *context, PlayState *play, Vec3f *
                 EN_RD_CHAOS_TYPE_LASTDANCEENUM - EN_RD_CHAOS_TYPE_HIT_THE_GRIDDY - 1
             );
         }
+
+        yaw_to_player = Math_Vec3f_Yaw(&spawnPos, player_pos);
+        
         // Spawn em
-        Chaos_SpawnActor(context, play, ACTOR_EN_RD, spawnPos.x, spawnPos.y, spawnPos.z, 0, 0, 0, 
-            redeadType
+        Chaos_SpawnActor(context, play, ACTOR_EN_RD, spawnPos.x, spawnPos.y, spawnPos.z, 0, yaw_to_player, 0, 
+            redeadType | ((index == dance_leader_index) ? (EN_RD_FLAG_DANCE_LEADER << 8) : 0)
         );
     }
 }

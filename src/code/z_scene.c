@@ -116,24 +116,13 @@ void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
         // objectCtx->slots[index].load_pending = false;
     }
 
-    // for(index = 0; index < ARRAY_COUNT(gTestObjectIds); index++)
-    // {
-    //     u32 object_id = gTestObjectIds[index];
-    //     size_t size = gObjectTable[object_id].vromEnd - gObjectTable[object_id].vromStart;
-    //     if(size > largest_size)
-    //     {
-    //         largest_size = size;
-    //         largest_id = object_id;
-    //     }
-    // }
-
-    // spaceSize += (largest_size + 0x3ff) & (~0x3ff);
-
+    // spaceSize += gObjectTable[OBJECT_DARK_LINK].vromEnd - gObjectTable[OBJECT_DARK_LINK].vromStart;
     spaceSize += gChaosContext.chaos_keep_size;
 
     objectCtx->spaceStart = objectCtx->slots[0].segment = THA_AllocTailAlign16(&gameState->tha, spaceSize);
     objectCtx->spaceEnd = (void*)((u32)objectCtx->spaceStart + spaceSize);
     objectCtx->mainKeepSlot = Object_SpawnPersistent(objectCtx, GAMEPLAY_KEEP);
+    // Object_SpawnPersistent(objectCtx, OBJECT_DARK_LINK);
 
     /* allocate enough space for the largest object */
     gChaosContext.chaos_keep_slot = Object_AllocatePersistent(objectCtx, gChaosContext.chaos_keep_largest_object);

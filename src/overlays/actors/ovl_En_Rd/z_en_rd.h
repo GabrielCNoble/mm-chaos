@@ -15,6 +15,7 @@ typedef void (*EnRdSetupDanceFunc)(struct EnRd*);
 #define EN_RD_GET_SWITCH_FLAG(this) ((this)->flags & 0x7F)
 
 #define EN_RD_FLAG_CANNOT_FREEZE_PLAYER (1 << 7)
+#define EN_RD_FLAG_DANCE_LEADER         (1 << 0)
 
 typedef enum {
     /* -3 */ EN_RD_TYPE_GIBDO_RISING_OUT_OF_COFFIN = -3, // Unused OoT leftover
