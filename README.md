@@ -11,5 +11,8 @@ Currently not buildable, sorry :(
 
 Still gotta figure out how to sort out extraction from a modified rom.
 
+## Patching
+The bps patches were created against Majora's Mask (U), so you'll need that.
+
 ## Special thanks 
 Special thanks goes to Aegiker, the Bat Basement community and the Zelda Decompilation server for the invaluable help.
