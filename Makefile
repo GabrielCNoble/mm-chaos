@@ -198,7 +198,8 @@ endif
 # ROM image
 ROM      := $(BUILD_DIR)/mm-$(VERSION).z64
 #ROMC     := $(ROM:.z64=-compressed.z64)
-ROMC	 := mm.us.rev1.rom.z64
+#ROMC	 := mm.us.rev1.rom.z64
+ROMC	 := Majoras_Mask_Chaos_Edition.z64
 ELF      := $(ROM:.z64=.elf)
 MAP      := $(ROM:.z64=.map)
 LDSCRIPT := $(ROM:.z64=.ld)
