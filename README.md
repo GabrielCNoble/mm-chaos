@@ -1,5 +1,7 @@
 # Legend of Zelda: Majora's Mask chaos mod
 
+[The chicken have arisen](/media/thumbnail1.png)
+
 This project is based on the excelent Legend of Zelda: Majora's Mask (US) 1.0 [decompilation project](https://github.com/zeldaret/mm). 
 
 **This repo does not include any assets or assembly code necessary for compiling the ROM. A prior copy of the game is required to extract the required assets.**
