@@ -1,6 +1,6 @@
 # Legend of Zelda: Majora's Mask chaos mod
 
-[The chicken have arisen](/media/thumbnail1.png)
+![The chicken have arisen](/media/thumbnail1.png)
 
 This project is based on the excelent Legend of Zelda: Majora's Mask (US) 1.0 [decompilation project](https://github.com/zeldaret/mm). 
 
