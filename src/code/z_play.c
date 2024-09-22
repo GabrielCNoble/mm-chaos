@@ -1456,17 +1456,63 @@ void Play_UpdateMain(PlayState* this) {
             camera->at.z += pitch_yaw.z * 0.035f;
             camera->roll += Math_SinF(gChaosContext.link.beer_roll) * 350.0f * alpha_scale;
         }
+
+        // View_SetDistortionOrientation(&this->view, Math_SinF(gChaosContext.link.beer_time), Math_CosF(gChaosContext.link.beer_time * 1.57), 0.0f);
+        // View_SetDistortionOrientation(&this->view, 0.0f, 0.0f, 0.0f);
+        // View_SetDistortionScale(&this->view, 1.0f + alpha_scale * 0.5f, 
+        //                                      1.0f + alpha_scale * 0.5f, 
+        //                                      1.0f + (0.7f + Math_CosF(gChaosContext.link.beer_time * 0.25)) * alpha_scale * 0.1f);
+        // View_SetDistortionScale(&this->view, 1.0f, 1.0f, 1.0f + Math_CosF(gChaosContext.link.beer_time * 0.25) * alpha_scale * 0.5f);
+        // View_SetDistortionSpeed(&this->view, 0.05f);
     }
     else if(gChaosContext.link.beer_goggles_state != CHAOS_BEER_GOGGLES_STATE_NONE)
     {
         gChaosContext.link.beer_goggles_state = CHAOS_BEER_GOGGLES_STATE_NONE;
         Play_DisableMotionBlurPriority();
+        // View_ClearDistortion(&this->view);
         gChaosContext.link.beer_sway.x = 0;
         gChaosContext.link.beer_sway.y = 0;
         gChaosContext.link.beer_sway.z = 0;
         gChaosContext.link.beer_time = 0;
         gSfxBeerGogglesFreq = 1.0f;
     }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_SCALE_RANDOM_LIMB))
+    {
+        u32 limb_index = Rand_S16Offset(PLAYER_LIMB_ROOT + 1, PLAYER_LIMB_MAX - 1);
+
+        if(Rand_S16Offset(0, 16) < 11)
+        {
+            gChaosContext.link.limb_scales[limb_index] += 0.1f;
+        }
+        else
+        {
+            gChaosContext.link.limb_scales[limb_index] -= 0.1f;
+        }
+
+        if(gChaosContext.link.limb_scales[limb_index] > 4.0f)
+        {
+            gChaosContext.link.limb_scales[limb_index] = 4.0f;
+        }
+        else if(gChaosContext.link.limb_scales[limb_index] < 0.1f)
+        {
+            gChaosContext.link.limb_scales[limb_index] = 0.1f;
+        }
+
+        Chaos_DeactivateCode(CHAOS_CODE_SCALE_RANDOM_LIMB);
+    }
+
+    // if(Chaos_IsCodeActive(CHAOS_CODE_SHRINK_RANDOM_LIMB))
+    // {
+    //     u32 limb_index = Rand_S16Offset(PLAYER_LIMB_ROOT + 1, PLAYER_LIMB_MAX - 1);
+    //     gChaosContext.link.limb_scales[limb_index] -= 0.1f;
+
+    //     if(gChaosContext.link.limb_scales[limb_index] < 0.1f)
+    //     {
+    //         gChaosContext.link.limb_scales[limb_index] = 0.1f;
+    //     }
+    //     Chaos_DeactivateCode(CHAOS_CODE_SHRINK_RANDOM_LIMB);
+    // }
 
 
     if (!sp5C) {

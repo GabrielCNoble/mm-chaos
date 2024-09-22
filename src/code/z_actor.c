@@ -2277,14 +2277,21 @@ s32 Actor_HasNoRider(PlayState* play, Actor* horse) {
     return false;
 }
 
-void func_800B8D10(PlayState* play, Actor* actor, f32 arg2, s16 arg3, f32 arg4, u32 arg5, u32 arg6) {
+/* Actor_QueuePlayerShove */
+void func_800B8D10(PlayState* play, Actor* actor, f32 xz_speed, s16 hit_angle, f32 y_velocity, u32 shove_type, u32 hit_damage) { 
     Player* player = GET_PLAYER(play);
 
-    player->unk_B74 = arg6;
-    player->unk_B75 = arg5;
-    player->unk_B78 = arg2;
-    player->unk_B76 = arg3;
-    player->unk_B7C = arg4;
+    // player->unk_B74 = arg6;
+    // player->unk_B75 = arg5;
+    // player->unk_B78 = arg2;
+    // player->unk_B76 = arg3;
+    // player->unk_B7C = arg4;
+
+    player->unk_B74 = hit_damage;
+    player->unk_B75 = shove_type;
+    player->unk_B78 = xz_speed;
+    player->unk_B76 = hit_angle;
+    player->unk_B7C = y_velocity;
 }
 
 void func_800B8D50(PlayState* play, Actor* actor, f32 arg2, s16 yaw, f32 arg4, u32 arg5) {
@@ -2310,10 +2317,10 @@ void Player_PlaySfx(Player* player, u16 sfxId) {
     if (player->currentMask == PLAYER_MASK_GIANT) {
         Audio_PlaySfx_AtPosWithPresetLowFreqAndHighReverb(&player->actor.projectedPos, sfxId);
     } else {
-        // AudioSfx_PlaySfx(sfxId, &player->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
-        //                  &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
-        AudioSfx_PlaySfx(sfxId, &player->actor.projectedPos, 4, &gSfxBeerGogglesFreq,
+        AudioSfx_PlaySfx(sfxId, &player->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
                          &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        // AudioSfx_PlaySfx(sfxId, &player->actor.projectedPos, 4, &gSfxBeerGogglesFreq,
+        //                  &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
     }
 }
 
@@ -2842,10 +2849,10 @@ void Actor_UpdateFlaggedAudio(Actor* actor) {
 
     if (sfxId != NA_SE_NONE) {
         if (actor->audioFlags & ACTOR_AUDIO_FLAG_SFX_CENTERED_1) {
-            // AudioSfx_PlaySfx(sfxId, &actor->projectedPos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
-            //                  &gSfxDefaultReverb);
-            AudioSfx_PlaySfx(sfxId, &actor->projectedPos, 4, &gSfxBeerGogglesFreq, &gSfxDefaultFreqAndVolScale,
+            AudioSfx_PlaySfx(sfxId, &actor->projectedPos, 4, &gSfxDefaultFreqAndVolScale, &gSfxDefaultFreqAndVolScale,
                              &gSfxDefaultReverb);
+            // AudioSfx_PlaySfx(sfxId, &actor->projectedPos, 4, &gSfxBeerGogglesFreq, &gSfxDefaultFreqAndVolScale,
+            //                  &gSfxDefaultReverb);
         } else if (actor->audioFlags & ACTOR_AUDIO_FLAG_SFX_CENTERED_2) {
             Audio_PlaySfx(sfxId);
         } else if (actor->audioFlags & ACTOR_AUDIO_FLAG_SFX_CENTERED_3) {

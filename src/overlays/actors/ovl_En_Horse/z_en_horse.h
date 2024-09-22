@@ -45,6 +45,7 @@ typedef void (*EnHorseCsFunc)(struct EnHorse*, PlayState*, CsCmdActorCue*);
 #define ENHORSE_FLAG_29 (1 << 29)              /*  0x20000000 */
 #define ENHORSE_FLAG_30 (1 << 30)              /*  0x40000000 */
 #define ENHORSE_FLAG_31 (1 << 31)              /*  0x80000000 */
+#define ENHORSE_FLAG_SHOVED_PLAYER ENHORSE_FLAG_31
 
 typedef enum EnHorseAction {
     /*  0 */ ENHORSE_ACTION_FROZEN,

@@ -379,6 +379,14 @@ typedef enum
     HIT_TYPE_DRUNK_TRIP         = 5
 }HitType;
 
+// typedef enum
+// {
+//     PLAYER_SHOVE_TYPE_NONE,
+//     PLAYER_SHOVE_TYPE_LIGHT,
+//     PLAYER_SHOVE_TYPE_MID,
+//     PLAYER_SHOVE_TYPE_HEAVY,
+// }PlayerShoveType;
+
 #define LENS_ACTOR_MAX 32
 
 // Target size when activated

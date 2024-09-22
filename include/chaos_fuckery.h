@@ -116,6 +116,8 @@ enum CHAOS_CODES
     CHAOS_CODE_WALLMASTER,
     /* spawns dancing redeads around player */
     CHAOS_CODE_REDEADASS_GROOVE,
+    /* scales up/down a random limb */
+    CHAOS_CODE_SCALE_RANDOM_LIMB,
     /* 
         player randomly loses grip, dropping items, falling from ledges/ladders
         TODO: change this one to include items from the inventory. The item should
@@ -527,6 +529,7 @@ typedef struct ChaosContext
         u8                      random_knockback_timer;
         u8                      magic_gauge_sfx_timer;
         u8                      trap_flap_timer;
+        f32                     limb_scales[PLAYER_LIMB_MAX];
     } link;
 
     struct

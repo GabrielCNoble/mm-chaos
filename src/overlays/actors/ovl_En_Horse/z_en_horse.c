@@ -5,6 +5,7 @@
  */
 
 #include "z_en_horse.h"
+#include "functions.h"
 #include "z64horse.h"
 #include "z64rumble.h"
 #include "z64voice.h"
@@ -2075,6 +2076,12 @@ void EnHorse_SetFollowAnimation(EnHorse* this, PlayState* play) {
         }
     }
 
+    if(!(this->stateFlags & ENHORSE_FLAG_SHOVED_PLAYER))
+    {
+        this->animIndex = ENHORSE_ANIM_GALLOP;
+        animIndex = ENHORSE_ANIM_GALLOP;
+    }
+
     EnHorse_StartMovingAnimation(this, animIndex, -3.0f, 0.0f);
 }
 
@@ -2151,6 +2158,14 @@ void EnHorse_FollowPlayer(EnHorse* this, PlayState* play) {
         }
     }
 
+    if(!(this->stateFlags & ENHORSE_FLAG_SHOVED_PLAYER) && distToPlayer < 50.0f)
+    {
+        Player *player = GET_PLAYER(play);
+        s16 hit_angle = this->actor.yawTowardsPlayer;
+        func_800B8D10(play, NULL, 5.0f, hit_angle, 3.0f, 3, 0);
+        this->stateFlags |= ENHORSE_FLAG_SHOVED_PLAYER;
+    }
+
     if (SkelAnime_Update(&this->skin.skelAnime)) {
         if (this->animIndex == ENHORSE_ANIM_GALLOP) {
             func_8087C1C0(this);
@@ -2160,7 +2175,7 @@ void EnHorse_FollowPlayer(EnHorse* this, PlayState* play) {
 
         this->stateFlags &= ~ENHORSE_TURNING_TO_PLAYER;
 
-        if (distToPlayer < 100.0f) {
+        if (distToPlayer < 100.0f && (this->stateFlags & ENHORSE_FLAG_SHOVED_PLAYER)) {
             EnHorse_StartIdleRidable(this);
         } else {
             EnHorse_SetFollowAnimation(this, play);

@@ -30,7 +30,8 @@
 typedef enum {
     /* 0 */ FS_MENU_MODE_INIT,
     /* 1 */ FS_MENU_MODE_CONFIG,
-    /* 2 */ FS_MENU_MODE_SELECT
+    /* 2 */ FS_MENU_MODE_SELECT,
+    /* 3 */ FS_MENU_MODE_CHAOS_CONFIG,
 } MenuMode;
 
 typedef enum {
@@ -150,8 +151,10 @@ typedef enum {
 } SelectMenuButtonIndex;
 
 typedef enum {
+    // /* 0 */ FS_BTN_CONFIRM_OPTIONS,
     /* 0 */ FS_BTN_CONFIRM_YES,
-    /* 1 */ FS_BTN_CONFIRM_QUIT
+    /* 1 */ FS_BTN_CONFIRM_QUIT,
+    /* 2 */ FS_BTN_CONFIRM_OPTIONS,
 } ConfirmButtonIndex;
 
 typedef enum {
@@ -236,7 +239,7 @@ typedef struct FileSelectState {
     /* 0x244CE */ s16 connectorAlpha[3];
     /* 0x244D4 */ s16 fileInfoAlpha[3];
     /* 0x244DA */ s16 actionButtonAlpha[2];
-    /* 0x244DA */ s16 confirmButtonAlpha[2];
+    /* 0x244DA */ s16 confirmButtonAlpha[3];
     /* 0x244E2 */ s16 optionButtonAlpha;
     /* 0x244E4 */ s16 nameEntryBoxAlpha;
     /* 0x244E6 */ s16 controlsAlpha;
@@ -244,7 +247,7 @@ typedef struct FileSelectState {
     /* 0x244EA */ s16 highlightColor[4];
     /* 0x244F2 */ s16 highlightPulseDir;
     /* 0x244F4 */ s16 unk_244F4;
-    /* 0x244F6 */ s16 confirmButtonTexIndices[2];
+    /* 0x244F6 */ s16 confirmButtonTexIndices[3];
     /* 0x244FA */ s16 inputTimerX;
     /* 0x244FC */ s16 inputTimerY;
     /* 0x244FE */ s16 stickXDir;

@@ -21,6 +21,7 @@ s32 gFramerateDivisor = 1;
 f32 gFramerateDivisorF = 1.0f;
 f32 gFramerateDivisorHalf = 1.0f / 2.0f;
 f32 gFramerateDivisorThird = 1.0f / 3.0f;
+f32 gFrameTime = 1.0f / 60.0f;
 
 SpeedMeter sGameSpeedMeter;
 VisCvg sGameVisCvg;
@@ -33,6 +34,7 @@ void GameState_UpdateFramerateDivisors(s32 divisor) {
     gFramerateDivisorF = divisor;
     gFramerateDivisorHalf = divisor / 2.0f;
     gFramerateDivisorThird = divisor / 3.0f;
+    gFrameTime = (1.0f / 60.0f) * divisor;
 }
 
 void GameState_SetFramerateDivisor(GameState* gameState, s32 divisor) {

@@ -2199,6 +2199,10 @@ s32 Player_OverrideLimbDrawGameplayCommon(PlayState* play, s32 limbIndex, Gfx** 
         } else {
             func_80125500(play, player, limbIndex, pos, rot);
         }
+
+        Matrix_Scale(gChaosContext.link.limb_scales[limbIndex], 
+                     gChaosContext.link.limb_scales[limbIndex], 
+                     gChaosContext.link.limb_scales[limbIndex], MTXMODE_APPLY);
     }
 
     return false;

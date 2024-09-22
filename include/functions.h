@@ -190,6 +190,8 @@ void func_800BE5CC(Actor* actor, ColliderJntSph* collider, s32 colliderIndex);
 s32 Actor_IsSmallChest(struct EnBox* chest);
 void Actor_DrawDamageEffects(PlayState* play, Actor* actor, Vec3f bodyPartsPos[], s16 bodyPartsCount, f32 effectScale, f32 frozenSteamScale, f32 effectAlpha, u8 type);
 void Actor_SpawnIceEffects(PlayState* play, Actor* actor, Vec3f bodyPartsPos[], s32 bodyPartsCount, s32 effectsPerBodyPart, f32 scale, f32 scaleRange);
+/* Actor_QueuePlayerHit */
+void func_800B8D10(PlayState* play, Actor* actor, f32 xz_speed, s16 hit_angle, f32 y_velocity, u32 hit_type, u32 hit_damage); 
 
 void DynaPolyActor_UpdateCarriedActorPos(CollisionContext* colCtx, s32 bgId, Actor* carriedActor);
 void DynaPolyActor_UpdateCarriedActorRotY(CollisionContext* colCtx, s32 bgId, Actor* carriedActor);

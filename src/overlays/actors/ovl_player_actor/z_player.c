@@ -144,6 +144,7 @@ u32 Player_UpdateOutOfShape(Player *this, PlayState *play);
 u32 Player_UpdateSneeze(Player *this, PlayState *play);
 u32 Player_UpdateImaginaryFriends(Player *this, PlayState *play);
 Actor *Player_SpawnOrRespawnArrow(Player *this, PlayState *play, ArrowType arrow_type, Actor *old_arrow);
+void Player_RandomKnockback(PlayState *play, Player *this, s32 hit_type, f32 speed, f32 velocityY, s16 hit_angle, s32 invicibility_timer);
 
 /* action funcs */
 void Player_Action_0(Player* this, PlayState* play);
@@ -5614,9 +5615,8 @@ PlayerAnimationHeader* D_8085D0D4[] = {
     &gPlayerAnim_link_normal_back_hit,
     &gPlayerAnim_link_anchor_back_hitR,
 };
-
 /* Player_HitResponse */
-void func_80833B18(PlayState* play, Player* this, s32 hit_type, f32 speed, f32 velocityY, s16 hit_angle,
+void Player_HitResponse(PlayState* play, Player* this, s32 hit_type, f32 speed, f32 velocityY, s16 hit_angle,
                    s32 invincibilityTimer) {
     PlayerAnimationHeader* anim = NULL;
 
@@ -5625,8 +5625,6 @@ void func_80833B18(PlayState* play, Player* this, s32 hit_type, f32 speed, f32 v
     }
 
     this->unk_B64 = 0;
-
-    Player_PlaySfx(this, NA_SE_PL_DAMAGE);
 
     if (func_808339D4(play, this, -this->actor.colChkInfo.damage) == 0) {
         this->stateFlags2 &= ~PLAYER_STATE2_80;
@@ -5771,6 +5769,19 @@ void func_80833B18(PlayState* play, Player* this, s32 hit_type, f32 speed, f32 v
     if (anim != NULL) {
         Player_Anim_PlayOnceAdjusted(play, this, anim);
     }
+}
+
+void Player_RandomKnockback(PlayState *play, Player *this, s32 hit_type, f32 speed, f32 velocityY, s16 hit_angle, s32 invicibility_timer)
+{
+    if(this->rideActor != NULL)
+    {
+        this->rideActor->child = NULL;
+        this->rideActor = NULL;
+        this->actor.parent = NULL;
+        this->stateFlags1 &= ~PLAYER_STATE1_MOUNTED;
+    }
+
+    Player_HitResponse(play, this, hit_type, speed, velocityY, hit_angle, invicibility_timer);   
 }
 
 s32 func_808340AC(FloorType floorType) {
@@ -5945,11 +5956,18 @@ s32 Player_HandleReceivedAttacks(Player* this, PlayState* play) {
         play->haltAllActors = true;
         Audio_PlaySfx(NA_SE_OC_ABYSS);
     } else if ((this->unk_B75 != 0) && ((this->unk_B75 >= 3) || (this->invincibilityTimer == 0))) {
-        u8 sp6C[] = { 0, 2, 1, 1 };
+        // u8 sp6C[] = { 0, 2, 1, 1 };
+        u8 sp6C[] = { 
+            HIT_TYPE_MELEE_LIGHT, 
+            HIT_TYPE_MELEE_MID, 
+            HIT_TYPE_MELEE_HEAVY, 
+            HIT_TYPE_MELEE_HEAVY 
+        };
         f32 hit_xzspeed = this->unk_B78;
         f32 hit_yvelocity = this->unk_B7C;
         u32 hit_type;
         if (!func_8083456C(play, this)) {
+            /* player is getting shoved */
             if (this->unk_B75 == HIT_TYPE_SHOCK) {
                 this->shockTimer = 40;
             }
@@ -5965,7 +5983,7 @@ s32 Player_HandleReceivedAttacks(Player* this, PlayState* play) {
             }
 
             this->actor.colChkInfo.damage += this->unk_B74;
-            func_80833B18(play, this, hit_type, hit_xzspeed, hit_yvelocity, this->unk_B76, 20);
+            Player_HitResponse(play, this, hit_type, hit_xzspeed, hit_yvelocity, this->unk_B76, 20);
         }
     } else if ((this->shieldQuad.base.acFlags & AC_BOUNCED) || (this->shieldCylinder.base.acFlags & AC_BOUNCED) ||
                ((this->invincibilityTimer < 0) && (this->cylinder.base.acFlags & AC_HIT) &&
@@ -6045,7 +6063,7 @@ s32 Player_HandleReceivedAttacks(Player* this, PlayState* play) {
             hit_yvelocity *= 3.0f;
         }
 
-        func_80833B18(play, this, hit_type, hit_xzspeed, hit_yvelocity, Actor_WorldYawTowardActor(sp60, &this->actor), 20);
+        Player_HitResponse(play, this, hit_type, hit_xzspeed, hit_yvelocity, Actor_WorldYawTowardActor(sp60, &this->actor), 20);
     } else if (this->invincibilityTimer != 0) {
         return false;
     } else {
@@ -6071,7 +6089,7 @@ s32 Player_HandleReceivedAttacks(Player* this, PlayState* play) {
             func_80834534(play, this);
         } else {
             this->actor.colChkInfo.damage = 4;
-            func_80833B18(play, this, (var_v1_2 == BGCHECK_SCENE) ? 0 : 1, 4.0f, 5.0f,
+            Player_HitResponse(play, this, (var_v1_2 == BGCHECK_SCENE) ? 0 : 1, 4.0f, 5.0f,
                           var_a1 ? this->actor.wallYaw : this->actor.shape.rot.y, 20);
             return true;
         }
@@ -10459,7 +10477,7 @@ s32 func_808401F4(PlayState* play, Player* this) {
                 func_8083FFEC(play, this);
                 if (this->actor.colChkInfo.atHitEffect == 1) {
                     this->actor.colChkInfo.damage = 8;
-                    func_80833B18(play, this, 4, 0.0f, 0.0f, this->actor.shape.rot.y, 20);
+                    Player_HitResponse(play, this, 4, 0.0f, 0.0f, this->actor.shape.rot.y, 20);
                     return true;
                 }
             }
@@ -10790,7 +10808,7 @@ void Player_InitMode_4(PlayState* play, Player* this) {
 }
 
 void Player_InitMode_7(PlayState* play, Player* this) {
-    func_80833B18(play, this, 1, 2.0f, 2.0f, this->actor.shape.rot.y + 0x8000, 0);
+    Player_HitResponse(play, this, 1, 2.0f, 2.0f, this->actor.shape.rot.y + 0x8000, 0);
 }
 
 void Player_InitMode_5(PlayState* play, Player* this) {
@@ -10866,11 +10884,12 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     }
 
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_GORON] = ITEM_MASK_GORON;
-    // gSaveContext.save.saveInfo.playerData.owlActivationFlags |= 1 << OWL_WARP_GREAT_BAY_COAST;
+    // gSaveContext.save.saveInfo.playerData.owlActivationFlags |= 1 << OWL_WARP_SOUTHERN_SWAMP;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
-    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_BUNNY] = ITEM_MASK_BUNNY;
-
-    // gSaveContext.save.saveInfo.inventory.questItems = (1 << QUEST_SONG_OATH);
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_DEKU] = ITEM_MASK_DEKU;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] = ITEM_OCARINA_OF_TIME;
+    // gSaveContext.save.saveInfo.inventory.questItems = (1 << QUEST_SONG_SOARING);
+    // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_SONG_EPONA);
     // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_REMAINS_GOHT);
     // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_REMAINS_GYORG);
     // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_REMAINS_ODOLWA);
@@ -12429,7 +12448,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     struct ChaosCode *code = NULL;
     Camera *camera = Play_GetCamera(play, CAM_ID_MAIN);
 
-    if(CHECK_BTN_ANY(input->press.button, BTN_L))
+    if(CHECK_BTN_ANY(input->cur.button, BTN_L))
     {
         // play->nextEntrance = Entrance_Create(gSceneIndex, gEntranceIndex, 0);
 
@@ -12457,14 +12476,19 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // Chaos_ActivateCode(CHAOS_CODE_IMAGINARY_FRIENDS, 5);
         // Chaos_ActivateCode(CHAOS_CODE_RANDOM_HEALTH_UP, 1);
         // Chaos_ActivateCode(CHAOS_CODE_JUNK_ITEM, 1);
-        // Chaos_ActivateCode(CHAOS_CODE_BEER_GOGGLES, 8);
+        // Chaos_ActivateCode(CHAOS_CODE_BEER_GOGGLES, 30);
         // Chaos_ActivateCode(CHAOS_CODE_DIE, 1);
+        // Chaos_ActivateCode(CHAOS_CODE_RANDOM_KNOCKBACK, 5);
+        // gChaosContext.link.random_knockback_timer = 1;
         // Actor_Spawn(&play->actorCtx, play, ACTOR_EN_DARK_LINK, 
         //     this->actor.world.pos.x, this->actor.world.pos.y + 20.0f, this->actor.world.pos.z, 0, 0, 0, 0);
+        // Camera_ChangeSetting(Play_GetCamera(play, CAM_ID_MAIN), CAM_SET_BIRDS_EYE_VIEW_0);
+        // Chaos_ActivateCode(CHAOS_CODE_SCALE_RANDOM_LIMB, 1);
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_R))
     {
+        // Chaos_ActivateCode(CHAOS_CODE_SHRINK_RANDOM_LIMB, 1);
         // Chaos_ActivateCode(CHAOS_CODE_JUNK_ITEM, 1);
         // CutsceneManager_Start(18, NULL);
         // Chaos_ActivateCode(CHAOS_CODE_ACTOR_CHASE, 15);
@@ -12610,21 +12634,21 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
             break;
         }
 
-        if(!(this->stateFlags2 & PLAYER_STATE2_80) & !(this->stateFlags1 & PLAYER_STATE1_800000))
-        {
+        // if(!(this->stateFlags2 & PLAYER_STATE2_80) & !(this->stateFlags1 & PLAYER_STATE1_800000))
+        // {
             if(Chaos_IsCodeActive(CHAOS_CODE_POKE))
             {
-                func_80833B18(play, this, HIT_TYPE_MELEE_LIGHT, 0, 0, 0, 0);
+                Player_RandomKnockback(play, this, HIT_TYPE_MELEE_LIGHT, 0, 0, 0, 0);
             }
 
             if(Chaos_IsCodeActive(CHAOS_CODE_ICE_TRAP))
             {
-                func_80833B18(play, this, HIT_TYPE_FREEZE, 0, 0, 0, 0);
+                Player_RandomKnockback(play, this, HIT_TYPE_FREEZE, 0, 0, 0, 0);
             } 
 
             if(Chaos_IsCodeActive(CHAOS_CODE_SHOCK))
             {
-                func_80833B18(play, this, HIT_TYPE_SHOCK, 0, 0, 0, 0);
+                Player_RandomKnockback(play, this, HIT_TYPE_SHOCK, 0, 0, 0, 0);
             }
 
             // code = Chaos_GetCode(CHAOS_CODE_RANDOM_KNOCKBACK);
@@ -12641,7 +12665,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
                     f32 horizontal_speed = Rand_ZeroOne() * 20.0f;
                     f32 vertical_speed = Rand_ZeroOne() * 20.0f;
                     s16 hit_angle = Rand_Next() % 0xffff;
-                    func_80833B18(play, this, HIT_TYPE_MELEE_HEAVY, horizontal_speed, vertical_speed, hit_angle, 0);
+                    Player_RandomKnockback(play, this, HIT_TYPE_MELEE_HEAVY, horizontal_speed, vertical_speed, hit_angle, 0);
                     Player_PlaySfx(this, NA_SE_SY_OCARINA_ERROR);
                     gChaosContext.link.random_knockback_timer = 2 + Rand_Next() % 160;
                 }
@@ -12663,7 +12687,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
                 Player_GiveAGoddamnItem(play, this, item);
                 Chaos_DeactivateCode(CHAOS_CODE_JUNK_ITEM);
             }
-        }
+        // }
 
         // code = Chaos_GetCode(CHAOS_CODE_TRAP_FLAP);
 
@@ -16025,7 +16049,7 @@ void Player_Action_27(Player* this, PlayState* play) {
     if (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) {
         if (this->fallDistance >= 400) {
             this->actor.colChkInfo.damage = 0x10;
-            func_80833B18(play, this, 1, 4.0f, 5.0f, this->actor.shape.rot.y, 20);
+            Player_HitResponse(play, this, 1, 4.0f, 5.0f, this->actor.shape.rot.y, 20);
         } else {
             func_80836B3C(play, this, 4.0f);
         }
@@ -16045,7 +16069,7 @@ void Player_Action_28(Player* this, PlayState* play) {
         if (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) {
             if (this->unk_AAA > 0x36B0) {
                 this->actor.colChkInfo.damage = 0x10;
-                func_80833B18(play, this, 1, 4.0f, 5.0f, this->actor.shape.rot.y, 20);
+                Player_HitResponse(play, this, 1, 4.0f, 5.0f, this->actor.shape.rot.y, 20);
             } else {
                 func_80836B3C(play, this, 4.0f);
             }
@@ -18361,7 +18385,7 @@ void Player_Action_65(Player* this, PlayState* play) {
                     func_80839E74(this, play);
                 } else {
                     this->actor.colChkInfo.damage = 0;
-                    func_80833B18(play, this, 3, 0.0f, 0.0f, 0, 20);
+                    Player_HitResponse(play, this, 3, 0.0f, 0.0f, 0, 20);
                 }
             } else {
                 if (this->skelAnime.animation == &gPlayerAnim_link_normal_box_kick) {
