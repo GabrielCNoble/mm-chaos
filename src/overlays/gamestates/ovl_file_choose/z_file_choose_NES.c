@@ -2031,7 +2031,7 @@ void FileSelect_FadeInFileInfo(GameState* thisx) {
         this->selectMode++; // SM_CONFIRM_FILE
     }
 
-    this->confirmButtonAlpha[FS_BTN_CONFIRM_OPTIONS] = this->fileInfoAlpha[this->buttonIndex];
+    // this->confirmButtonAlpha[FS_BTN_CONFIRM_OPTIONS] = this->fileInfoAlpha[this->buttonIndex];
     this->confirmButtonAlpha[FS_BTN_CONFIRM_YES] = this->fileInfoAlpha[this->buttonIndex];
     this->confirmButtonAlpha[FS_BTN_CONFIRM_QUIT] = this->fileInfoAlpha[this->buttonIndex];
 }
@@ -2444,7 +2444,7 @@ void FileSelect_InitContext(GameState* thisx) {
     this->buttonIndex = this->selectMode = this->selectedFileIndex = this->copyDestFileIndex =
         this->confirmButtonIndex = 0;
  
-    this->confirmButtonTexIndices[FS_BTN_CONFIRM_OPTIONS] = 4;
+    // this->confirmButtonTexIndices[FS_BTN_CONFIRM_OPTIONS] = 4;
     this->confirmButtonTexIndices[FS_BTN_CONFIRM_YES] = 2;
     this->confirmButtonTexIndices[FS_BTN_CONFIRM_QUIT] = 3;
     this->titleLabel = FS_TITLE_SELECT_FILE;
@@ -2477,7 +2477,7 @@ void FileSelect_InitContext(GameState* thisx) {
                 this->connectorAlpha[0] = this->connectorAlpha[1] = this->connectorAlpha[2] = this->fileInfoAlpha[0] =
                     this->fileInfoAlpha[1] = this->fileInfoAlpha[2] = this->actionButtonAlpha[FS_BTN_ACTION_COPY] =
                         this->actionButtonAlpha[FS_BTN_ACTION_ERASE] = this->confirmButtonAlpha[FS_BTN_CONFIRM_YES] =
-                            this->confirmButtonAlpha[FS_BTN_CONFIRM_QUIT] = this->confirmButtonAlpha[FS_BTN_CONFIRM_OPTIONS] = 
+                            this->confirmButtonAlpha[FS_BTN_CONFIRM_QUIT] /* = this->confirmButtonAlpha[FS_BTN_CONFIRM_OPTIONS] */ = 
                                 this->optionButtonAlpha = this->nameEntryBoxAlpha = this->controlsAlpha = this->emptyFileTextAlpha = 0;
 
     this->windowPosX = 6;

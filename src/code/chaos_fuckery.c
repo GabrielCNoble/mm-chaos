@@ -7,6 +7,7 @@
 #include "z64.h"
 #include "z64cutscene.h"
 #include "z64scene.h"
+#include "z64malloc.h"
 #include "overlays/kaleido_scope/ovl_kaleido_scope/z_kaleido_scope.h"
 #include "assets/objects/gameplay_keep/gameplay_keep.h"
 #include "overlays/actors/ovl_En_Arrow/z_en_arrow.h"
@@ -1204,6 +1205,11 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
         else
         {
             u32 scene = gSaveContext.save.entrance >> 9;
+            size_t largest_free_block;
+            size_t total_free_size;
+            size_t total_alloc_size;
+            ZeldaArena_GetSizes(&largest_free_block, &total_free_size, &total_alloc_size);
+
             GfxPrint_Printf(&gfx_print, "Player state stuff");
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "stateFlags1: %08x", player->stateFlags1);
@@ -1235,6 +1241,10 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
             GfxPrint_Printf(&gfx_print, "actor count: %x", gChaosContext.actors.spawned_actors);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "camera setting: %x, camera mode: %x", camera->setting, camera->mode);
+            GfxPrint_SetPos(&gfx_print, 1, y_pos++);
+            GfxPrint_Printf(&gfx_print, "Chaos object slot size: %d bytes", gChaosContext.chaos_keep_size);
+            GfxPrint_SetPos(&gfx_print, 1, y_pos++);
+            GfxPrint_Printf(&gfx_print, "Allocated: %d, Free: %d", (u32)total_alloc_size, (u32)total_free_size);
         }
 
         gfx = GfxPrint_Close(&gfx_print);

@@ -55,148 +55,6 @@ typedef enum {
     /* 2 */ MOTION_BLUR_PROCESS
 } MotionBlurStatus;
 
-u8 gCanBePushedAroundCodes[] = {
-    CHAOS_CODE_POKE,
-    CHAOS_CODE_RANDOM_KNOCKBACK,
-    CHAOS_CODE_ICE_TRAP,
-    CHAOS_CODE_SHOCK,
-    CHAOS_CODE_LOVELESS_MARRIAGE,
-    CHAOS_CODE_SYKE,
-    CHAOS_CODE_DIE,
-    CHAOS_CODE_ACTOR_CHASE,
-    CHAOS_CODE_OUT_OF_SHAPE
-};
-
-// static struct 
-// {
-//     u8  code;
-//     u16 object_id;
-// } gObjectLoadCodes[] = {
-//     { CHAOS_CODE_LOVELESS_MARRIAGE, OBJECT_RR},
-//     { CHAOS_CODE_CHICKEN_ARISE, OBJECT_NIW}
-// };
-
-// void Play_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
-// {
-//     u32 index;
-//     u32 scene_index;
-//     u32 room_index;
-//     Player *player = GET_PLAYER(this);
-//     Camera *camera = Play_GetCamera(this, CAM_ID_MAIN);
-//     u32 has_ocarina = gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] == ITEM_OCARINA_OF_TIME;
-//     u32 can_be_pushed_around = !(player->stateFlags2 & PLAYER_STATE2_80) && 
-//                         !(player->stateFlags1 & (PLAYER_STATE1_800000 | PLAYER_STATE1_20000000)) &&
-//                         camera->setting != CAM_SET_BOAT_CRUISE;
-    
-//     Chaos_ClearEnabledCodes();
-//     Chaos_EnableCode(CHAOS_CODE_YEET, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_MOON_DANCE, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_ONE_HIT_KO, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_TIMER_UP, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_EARTHQUAKE, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_WEIRD_UI, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_BEER_GOGGLES, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_INVINCIBLE, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_TRAP_FLAP, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_SLIPPERY_FLOORS, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_SLOW_DOWN, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_TERRIBLE_MUSIC, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_INCREDIBLE_KNOCKBACK, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_RANDOM_SCALING, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_BIG_BROTHER, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_WEIRD_SKYBOX, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_CHANGE_HEALTH, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_CHANGE_RUPEE, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_SWAP_HEAL_AND_HURT, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_RANDOM_FIERCE_DEITY, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_JUNK_ITEM, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_RANDOM_HEALTH_UP, 1.0f);
-//     Chaos_EnableCode(CHAOS_CODE_RANDOM_HEALTH_DOWN, 1.0f);
-
-//     if(gSaveContext.save.saveInfo.playerData.isMagicAcquired)
-//     {
-//         Chaos_EnableCode(CHAOS_CODE_CHANGE_MAGIC, 1.0f);
-//     }
-
-//     if(gSaveContext.save.saveInfo.inventory.items[SLOT_BOW] == ITEM_BOW)
-//     {
-//         Chaos_EnableCode(CHAOS_CODE_BOMB_ARROWS, 1.0f);
-//         Chaos_EnableCode(CHAOS_CODE_BUCKSHOT_ARROWS, 1.0f);
-//         Chaos_EnableCode(CHAOS_CODE_WEIRD_ARROWS, 1.0f);
-//     }
-
-//     if(gSaveContext.save.saveInfo.inventory.items[SLOT_BOMB] == ITEM_BOMB ||
-//        gSaveContext.save.saveInfo.inventory.items[SLOT_BOMBCHU] == ITEM_BOMBCHU)
-//     {
-//         Chaos_EnableCode(CHAOS_CODE_RANDOM_BOMB_TIMER, 1.0f);
-//     }
- 
-//     if(can_be_pushed_around)
-//     {
-//         u32 index;
-//         /* if the player has been grabbed, is mounted on epona, 
-//         riding the boat or time is stopped, don't spawn any of those 
-//         effects to avoid leaving the player in an inconsistent state */
-//         Chaos_EnableCode(CHAOS_CODE_POKE, 1.0f);
-//         Chaos_EnableCode(CHAOS_CODE_RANDOM_KNOCKBACK, 1.0f);
-//         Chaos_EnableCode(CHAOS_CODE_ICE_TRAP, 1.0f);
-//         Chaos_EnableCode(CHAOS_CODE_SHOCK, 1.0f);
-//         Chaos_EnableCode(CHAOS_CODE_SYKE, 1.0f);
-//         Chaos_EnableCode(CHAOS_CODE_DIE, 1.0f);
-//         Chaos_EnableCode(CHAOS_CODE_ACTOR_CHASE, 1.0f);
-//         Chaos_EnableCode(CHAOS_CODE_OUT_OF_SHAPE, 1.0f);
-
-//         Chaos_EnableCode(CHAOS_CODE_LOVELESS_MARRIAGE, 1.0f);
-//         Chaos_EnableCode(CHAOS_CODE_CHICKEN_ARISE, 1.0f);
-//         Chaos_EnableCode(CHAOS_CODE_STARFOX, 1.0f);
-
-//         if(has_ocarina)
-//         {
-//             Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA, 1.0f);
-//         }
-//     }
-
-//     scene_index = gSaveContext.save.entrance >> 9;
-//     if(scene_index != ENTR_SCENE_ODOLWAS_LAIR && scene_index != ENTR_SCENE_IGOS_DU_IKANAS_LAIR &&
-//        scene_index != ENTR_SCENE_PIRATES_FORTRESS_INTERIOR || (scene_index == ENTR_SCENE_PIRATES_FORTRESS_INTERIOR &&
-//        this->roomCtx.curRoom.num != 0 && this->roomCtx.curRoom.num != 1 && this->roomCtx.curRoom.num != 2))
-//     {
-//         /* some bosses jump around and may fall out of bounds of low gravity is active */
-//         Chaos_EnableCode(CHAOS_CODE_LOW_GRAVITY, 1.0f);
-//     }
-//     else
-//     {
-//         Chaos_DeactivateCode(CHAOS_CODE_LOW_GRAVITY);
-//     }
-
-//     // if(scene_index != ENTR_SCENE_PIRATES_FORTRESS_INTERIOR || (this->roomCtx.curRoom.num != 14 && this->roomCtx.curRoom.num != 12))
-//     // {
-//     //     /* random fierce deity disallows changing to zora, so only enable it if the player isn't in an underwater section */
-//     //     Chaos_EnableCode(CHAOS_CODE_RANDOM_FIERCE_DEITY);
-//     // }
-//     // else
-//     // {
-//     //     Chaos_DeactivateCode(CHAOS_CODE_RANDOM_FIERCE_DEITY);
-//     // }
-
-//     if(has_ocarina)
-//     {
-//         if(!Map_IsInBossScene(this) && CHECK_WEEKEVENTREG(WEEKEVENTREG_ENTERED_SOUTH_CLOCK_TOWN))
-//         {
-//             /* don't enable entrance rando until the player enters south clock town.
-//             Also don't enable it in boss rooms as it could interact badly with the warp 
-//             out */
-//             Chaos_EnableCode(CHAOS_CODE_ENTRANCE_RANDO, 1.0f);
-//             // Chaos_EnableCode(CHAOS_CODE_SINGLE_ACTION_OWL);
-//             Chaos_UpdateEntrances(this);
-//         }
-//         else
-//         {
-//             Chaos_DeactivateCode(CHAOS_CODE_ENTRANCE_RANDO);
-//         }
-//     }
-// }
-
 void Play_DrawMotionBlur(PlayState* this) {
     GraphicsContext* gfxCtx = this->state.gfxCtx;
     s32 alpha;
@@ -1457,19 +1315,17 @@ void Play_UpdateMain(PlayState* this) {
             camera->roll += Math_SinF(gChaosContext.link.beer_roll) * 350.0f * alpha_scale;
         }
 
-        // View_SetDistortionOrientation(&this->view, Math_SinF(gChaosContext.link.beer_time), Math_CosF(gChaosContext.link.beer_time * 1.57), 0.0f);
-        // View_SetDistortionOrientation(&this->view, 0.0f, 0.0f, 0.0f);
-        // View_SetDistortionScale(&this->view, 1.0f + alpha_scale * 0.5f, 
-        //                                      1.0f + alpha_scale * 0.5f, 
-        //                                      1.0f + (0.7f + Math_CosF(gChaosContext.link.beer_time * 0.25)) * alpha_scale * 0.1f);
-        // View_SetDistortionScale(&this->view, 1.0f, 1.0f, 1.0f + Math_CosF(gChaosContext.link.beer_time * 0.25) * alpha_scale * 0.5f);
-        // View_SetDistortionSpeed(&this->view, 0.05f);
+        View_SetDistortionOrientation(&this->view, Math_SinF(gChaosContext.link.beer_time), Math_CosF(gChaosContext.link.beer_time * 1.57), 0.0f);
+        View_SetDistortionScale(&this->view, 1.0f + alpha_scale * 0.5f, 
+                                             1.0f + alpha_scale * 0.5f, 
+                                             1.0f + (0.7f + Math_CosF(gChaosContext.link.beer_time * 0.25)) * alpha_scale * 0.1f);
+        View_SetDistortionSpeed(&this->view, 0.05f);
     }
     else if(gChaosContext.link.beer_goggles_state != CHAOS_BEER_GOGGLES_STATE_NONE)
     {
         gChaosContext.link.beer_goggles_state = CHAOS_BEER_GOGGLES_STATE_NONE;
         Play_DisableMotionBlurPriority();
-        // View_ClearDistortion(&this->view);
+        View_ClearDistortion(&this->view);
         gChaosContext.link.beer_sway.x = 0;
         gChaosContext.link.beer_sway.y = 0;
         gChaosContext.link.beer_sway.z = 0;

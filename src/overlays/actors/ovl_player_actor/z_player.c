@@ -12483,7 +12483,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // Actor_Spawn(&play->actorCtx, play, ACTOR_EN_DARK_LINK, 
         //     this->actor.world.pos.x, this->actor.world.pos.y + 20.0f, this->actor.world.pos.z, 0, 0, 0, 0);
         // Camera_ChangeSetting(Play_GetCamera(play, CAM_ID_MAIN), CAM_SET_BIRDS_EYE_VIEW_0);
-        // Chaos_ActivateCode(CHAOS_CODE_SCALE_RANDOM_LIMB, 1);
+        // Chaos_ActivateCode(CHAOS_CODE_LOW_GRAVITY, 80);
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_R))
@@ -12505,7 +12505,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // Chaos_ActivateCode(CHAOS_CODE_OUT_OF_SHAPE, 5);
         // Actor_Spawn(&play->actorCtx, play, ACTOR_EN_WALLMAS, 
         //     this->actor.world.pos.x, this->actor.world.pos.y + 20.0f, this->actor.world.pos.z, 0, 0, 0, WALLMASTER_PARAMS(WALLMASTER_TYPE_FAKE, 0, false));
-        // Chaos_ActivateCode(CHAOS_CODE_RANDOM_HEALTH_DOWN, 1);
+        // Chaos_ActivateCode(CHAOS_CODE_LOW_GRAVITY, 50);
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_DDOWN))

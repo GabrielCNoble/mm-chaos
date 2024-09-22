@@ -451,12 +451,12 @@ struct ChaosActor
 typedef struct ChaosContext 
 {
     OSTime                  prev_update_counter; 
+    size_t                  chaos_keep_size;
     u32                     chaos_elapsed_usec; 
     u32                     code_elapsed_usec; 
     f32                     disruptive_code_probability_scale;
     u16                     chaos_timer;
     u16                     effect_restrictions;
-    u16                     chaos_keep_size;
     u16                     chaos_keep_largest_object;
     u8                      active_code_count;
     u8                      update_enabled;
