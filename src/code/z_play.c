@@ -1318,7 +1318,7 @@ void Play_UpdateMain(PlayState* this) {
         View_SetDistortionOrientation(&this->view, Math_SinF(gChaosContext.link.beer_time), Math_CosF(gChaosContext.link.beer_time * 1.57), 0.0f);
         View_SetDistortionScale(&this->view, 1.0f + alpha_scale * 0.5f, 
                                              1.0f + alpha_scale * 0.5f, 
-                                             1.0f + (0.7f + Math_CosF(gChaosContext.link.beer_time * 0.25)) * alpha_scale * 0.1f);
+                                             1.0f + (0.8f + Math_CosF(gChaosContext.link.beer_time * 0.25)) * alpha_scale * 0.1f);
         View_SetDistortionSpeed(&this->view, 0.05f);
     }
     else if(gChaosContext.link.beer_goggles_state != CHAOS_BEER_GOGGLES_STATE_NONE)

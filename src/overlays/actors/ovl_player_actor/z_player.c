@@ -10887,7 +10887,7 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     // gSaveContext.save.saveInfo.playerData.owlActivationFlags |= 1 << OWL_WARP_SOUTHERN_SWAMP;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_DEKU] = ITEM_MASK_DEKU;
-    // gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] = ITEM_OCARINA_OF_TIME;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] = ITEM_NONE;
     // gSaveContext.save.saveInfo.inventory.questItems = (1 << QUEST_SONG_SOARING);
     // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_SONG_EPONA);
     // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_REMAINS_GOHT);
