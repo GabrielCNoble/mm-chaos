@@ -94,8 +94,6 @@ enum CHAOS_CODES
     // CHAOS_CODE_SINGLE_ACTION_OWL,
     /* makes the player pull up the ocarina */
     CHAOS_CODE_PLAY_OCARINA,
-    /* link stops and sneezes */
-    CHAOS_CODE_SNEEZE,
     /* link randomly becomes fierce deity */
     CHAOS_CODE_RANDOM_FIERCE_DEITY,
     /* spawn chicken swarm */
@@ -118,6 +116,11 @@ enum CHAOS_CODES
     CHAOS_CODE_REDEADASS_GROOVE,
     /* scales up/down a random limb */
     CHAOS_CODE_SCALE_RANDOM_LIMB,
+    /* player takes flight like a gossip stone */
+    CHAOS_CODE_LIFTOFF,
+
+    /* snake game with the health meter */
+    // CHAOS_CODE_HEART_SNAKE,
     /* 
         player randomly loses grip, dropping items, falling from ledges/ladders
         TODO: change this one to include items from the inventory. The item should
@@ -193,8 +196,6 @@ enum CHAOS_CODES
     
     /* enemies explode when killed */
     // CHAOS_CODE_VILETILE_ENEMIES,
-    /* all sounds are the same player sound */
-    // CHAOS_CODE_UNORIGINAL,
     /* tatl frequently pipes up with random quest tips */
     // CHAOS_CODE_PARTICIPATION_AWARD,
     /* drop bombs around player */
@@ -211,11 +212,6 @@ enum CHAOS_CODES
     // CHAOS_CODE_TORCH_ENEMIES,
     /* spawns a wasp nest, which when broken spawns three random enemies */
     // CHAOS_CODE_LOTTERY_NEST,
-    
-    /* player takes flight like a gossip stone */
-    // CHAOS_CODE_LIFTOFF,
-    /* warps player to majora's lair, then warps them back out */
-    // CHAOS_CODE_FAKE_MAJORAS_LAIR,
 
     /* camera sees from above (similar to gta) */
     // CHAOS_CODE_BIRDSEYE_VIEW,
@@ -432,6 +428,15 @@ enum CHAOS_IMAGINARY_FRIENDS_STATES
     CHAOS_IMAGINARY_FRIENDS_STATE_NONE,
 };
 
+enum CHAOS_LIFTOFF_STATES
+{
+    CHAOS_LIFTOFF_STATE_NONE,
+    CHAOS_LIFTOFF_STATE_PREPARE,
+    CHAOS_LIFTOFF_STATE_COUNTDOWN,
+    CHAOS_LIFTOFF_STATE_BEGIN_LAUNCH,
+    CHAOS_LIFTOFF_STATE_FLY
+};
+
 #define INVALID_CODE_INDEX      0xff 
 #define MAX_CHAOS_TIMER         8
 #define MIN_CHAOS_TIMER         2
@@ -523,6 +528,8 @@ typedef struct ChaosContext
         u8                      sneeze_state;
         u8                      fierce_deity_counter;
         u8                      prev_link_form;
+        u8                      liftoff_timer;
+        u8                      liftoff_state;
         u16                     syke_health;
         s16                     imaginary_friends_target_yaw;
         u8                      syke;

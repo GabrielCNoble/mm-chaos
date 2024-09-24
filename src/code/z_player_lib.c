@@ -1676,7 +1676,6 @@ PlayerFaceIndices sPlayerFaces[] = {
     { PLAYER_EYES_HALF, PLAYER_MOUTH_HAPPY },
     { PLAYER_EYES_CLOSED, PLAYER_MOUTH_HAPPY }
 };
-
 // Note the correct pointer to pass as the jointTable is the jointTable pointer from the SkelAnime struct, not the
 // buffer from the Player struct itself since that one may be misaligned.
 void Player_DrawImpl(PlayState* play, void** skeleton, Vec3s* jointTable, s32 dListCount, s32 lod,
@@ -1698,7 +1697,6 @@ void Player_DrawImpl(PlayState* play, void** skeleton, Vec3s* jointTable, s32 dL
     // arm_joint->z += Rand_S16Offset(-1800, 3600);
 
     OPEN_DISPS(play->state.gfxCtx);
-
     gfx = POLY_OPA_DISP;
 
     if (eyeIndex < 0 || face < 0) {

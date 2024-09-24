@@ -74,7 +74,6 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_WEIRD_SKYBOX]            = */ CHAOS_CODE_DEF(10, 15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0), 0.006f),
     // /* [CHAOS_CODE_SINGLE_ACTION_OWL]       = */ CHAOS_CODE_DEF(5,  15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.0005f),
     /* [CHAOS_CODE_PLAY_OCARINA]            = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1), 0.004f),
-    /* [CHAOS_CODE_SNEEZE]                  = */ CHAOS_CODE_DEF(5,  15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1), 0.006f),
     /* [CHAOS_CODE_RANDO_FIERCE_DEITY]      = */ CHAOS_CODE_DEF(25, 75, CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1), 0.00098f),
     /* [CHAOS_CODE_CHICKEN_ARISE]           = */ CHAOS_CODE_DEF(15, 23, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0), 0.0055f),
     /* [CHAOS_CODE_STARFOX]                 = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0), 0.0055f),
@@ -86,6 +85,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_WALLMASTER]              = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0), 0.0055f),
     /* [CHAOS_CODE_REDEADASS_GROOVE]        = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0), 0.0055f),
     /* [CHAOS_CODE_SCALE_RANDOM_LIMB]       = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.0016f),
+    /* [CHAOS_CODE_LIFTOFF]                 = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1), 0.0001f),
 };
   
 const char *gChaosCodeNames[] = {
@@ -128,7 +128,6 @@ const char *gChaosCodeNames[] = {
     /* [CHAOS_CODE_WEIRD_SKYBOX]            = */ "Weird skybox",
     // /* [CHAOS_CODE_SINGLE_ACTION_OWL]       = */ "Single action owl",
     /* [CHAOS_CODE_PLAY_OCARINA]            = */ "Play ocarina",
-    /* [CHAOS_CODE_SNEEZE]                  = */ "Sneeze",
     /* [CHAOS_CODE_RANDO_FIERCE_DEITY]      = */ "Random fierce deity",
     /* [CHAOS_CODE_CHICKEN_ARISE]           = */ "Chicken arise",
     /* [CHAOS_CODE_STARFOX]                 = */ "Starfox",
@@ -140,6 +139,8 @@ const char *gChaosCodeNames[] = {
     /* [CHAOS_CODE_WALLMASTER]              = */ "Wallmaster",
     /* [CHAOS_CODE_REDEADASS_GROOVE]        = */ "Redeadass groove",
     /* [CHAOS_CODE_SCALE_RANDOM_LIMB]       = */ "Scale random limb",
+    /* [CHAOS_CODE_LIFTOFF]                 = */ "Liftoff",
+
 };
 
 enum FAIRY_FOUNTAIN_EXITS
@@ -573,6 +574,8 @@ void Chaos_Init(void)
     gChaosContext.link.fierce_deity_state = CHAOS_RANDOM_FIERCE_DEITY_STATE_NONE;
     gChaosContext.link.imaginary_friends_state = CHAOS_IMAGINARY_FRIENDS_STATE_NONE;
     gChaosContext.link.sneeze_state = CHAOS_SNEEZE_STATE_NONE;
+    gChaosContext.link.liftoff_state = CHAOS_LIFTOFF_STATE_NONE;
+    gChaosContext.link.liftoff_timer = 0;
     gChaosContext.link.fierce_deity_counter = 0;
     gChaosContext.link.imaginary_friends_anim_index = 0;
 
@@ -834,21 +837,14 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         break;
 
                         case CHAOS_CODE_OUT_OF_SHAPE:
-                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_SNEEZE) || Chaos_IsCodeInActiveList(CHAOS_CODE_IMAGINARY_FRIENDS))
-                            {
-                                continue;
-                            }
-                        break;
-
-                        case CHAOS_CODE_SNEEZE:
-                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_OUT_OF_SHAPE) || Chaos_IsCodeInActiveList(CHAOS_CODE_IMAGINARY_FRIENDS))
+                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_IMAGINARY_FRIENDS))
                             {
                                 continue;
                             }
                         break;
 
                         case CHAOS_CODE_IMAGINARY_FRIENDS:
-                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_OUT_OF_SHAPE) || Chaos_IsCodeInActiveList(CHAOS_CODE_SNEEZE))
+                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_OUT_OF_SHAPE))
                             {
                                 continue;
                             }
@@ -1024,12 +1020,15 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         }
                         break;
 
+                        // case CHAOS_CODE_LIFTOFF:
+                            // gChaosContext.link.liftoff_timer
+                        // break;
+
                         case CHAOS_CODE_LOVELESS_MARRIAGE:
                         case CHAOS_CODE_WALLMASTER:
                         case CHAOS_CODE_STARFOX:
                         case CHAOS_CODE_POKE:
                         case CHAOS_CODE_IMAGINARY_FRIENDS:
-                        case CHAOS_CODE_SNEEZE:
                         case CHAOS_CODE_OUT_OF_SHAPE:
                         case CHAOS_CODE_JUNK_ITEM:
                         case CHAOS_CODE_ICE_TRAP:
@@ -1038,6 +1037,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         case CHAOS_CODE_PLAY_OCARINA:
                         case CHAOS_CODE_SHOCK:
                         case CHAOS_CODE_REDEADASS_GROOVE:
+                        case CHAOS_CODE_LIFTOFF:
                             Chaos_StepDownDisruptiveEffectProbabiliy();
                         break;
 
@@ -2083,11 +2083,8 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     Chaos_EnableCode(CHAOS_CODE_WEIRD_SKYBOX, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_SWAP_HEAL_AND_HURT, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_RANDOM_FIERCE_DEITY, 1.0f);
-    Chaos_EnableCode(CHAOS_CODE_JUNK_ITEM, gChaosContext.disruptive_code_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_RANDOM_HEALTH_UP, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_RANDOM_HEALTH_DOWN, 1.0f);
-    Chaos_EnableCode(CHAOS_CODE_IMAGINARY_FRIENDS, gChaosContext.disruptive_code_probability_scale);
-    // Chaos_EnableCode(CHAOS_CODE_SNEEZE, gChaosContext.disruptive_code_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_CHANGE_HEALTH, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_SCALE_RANDOM_LIMB, 1.0f);
 
@@ -2141,6 +2138,9 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     Chaos_EnableCode(CHAOS_CODE_STARFOX, gChaosContext.disruptive_code_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_WALLMASTER, gChaosContext.disruptive_code_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_REDEADASS_GROOVE, gChaosContext.disruptive_code_probability_scale);
+    Chaos_EnableCode(CHAOS_CODE_LIFTOFF, gChaosContext.disruptive_code_probability_scale);
+    Chaos_EnableCode(CHAOS_CODE_IMAGINARY_FRIENDS, gChaosContext.disruptive_code_probability_scale);
+    Chaos_EnableCode(CHAOS_CODE_JUNK_ITEM, gChaosContext.disruptive_code_probability_scale);
     // if(has_ocarina)
     // {
         // Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA, 1.0f);

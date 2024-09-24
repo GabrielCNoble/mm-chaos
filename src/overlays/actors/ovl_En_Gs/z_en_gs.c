@@ -785,21 +785,23 @@ s32 func_809995A4(EnGs* this, PlayState* play) {
     static Vec3f sBomb2Accel = { 0.0f, 0.0f, 0.0f };
     s32 sp7C = -1;
 
-    if (this->unk_19D == 0) {
+    if (this->unk_19D == ENGS_LAUNCH_STATE_PREPARE0) {
         this->unk_19A |= 0x100;
         this->unk_1D4 = 40;
-        this->unk_19D++;
+        // this->unk_19D++;
+        this->unk_19D = ENGS_LAUNCH_STATE_PREPARE1;
     }
 
-    if (this->unk_19D == 1) {
+    if (this->unk_19D == ENGS_LAUNCH_STATE_PREPARE1) {
         if (this->unk_1D4-- == 0) {
             this->unk_1D4 = 80;
             this->unk_19A |= 4;
-            this->unk_19D++;
+            // this->unk_19D++;
+            this->unk_19D = ENGS_LAUNCH_STATE_BLINK;
         }
     }
 
-    if (this->unk_19D == 2) {
+    if (this->unk_19D == ENGS_LAUNCH_STATE_BLINK) {
         u8 pad;
 
         this->unk_1D4--;
@@ -827,11 +829,12 @@ s32 func_809995A4(EnGs* this, PlayState* play) {
             this->quakeY = 3;
             this->quakeDuration = 40;
             this->unk_1D4 = 0;
-            this->unk_19D++;
+            // this->unk_19D++;
+            this->unk_19D = ENGS_LAUNCH_STATE_BEGIN_LAUCH;
         }
     }
 
-    if (this->unk_19D == 3) {
+    if (this->unk_19D == ENGS_LAUNCH_STATE_BEGIN_LAUCH) {
         u8 i;
         Vec3f sp6C;
         Vec3f sp60;
@@ -858,7 +861,8 @@ s32 func_809995A4(EnGs* this, PlayState* play) {
             this->actor.gravity = 0.3f;
             this->unk_1DC = 0.0f;
 
-            this->unk_19D++;
+            // this->unk_19D++;
+            this->unk_19D = ENGS_LAUNCH_STATE_FLY;
             this->quakeY = 5;
             this->quakeDuration = 20;
             this->unk_19A |= 1;
@@ -867,7 +871,7 @@ s32 func_809995A4(EnGs* this, PlayState* play) {
         }
     }
 
-    if (this->unk_19D == 4) {
+    if (this->unk_19D == ENGS_LAUNCH_STATE_FLY) {
         Actor_UpdateBgCheckInfo(play, &this->actor, 20.0f, 20.0f, 60.0f, UPDBGCHECKINFO_FLAG_1 | UPDBGCHECKINFO_FLAG_2);
         if (this->actor.bgCheckFlags & (BGCHECKFLAG_WALL | BGCHECKFLAG_CEILING)) {
             Vec3f sp54;

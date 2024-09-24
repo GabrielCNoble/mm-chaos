@@ -18,6 +18,15 @@ typedef enum {
     /* 3 */ ENGS_3
 } EnGsParam;
 
+typedef enum 
+{
+    ENGS_LAUNCH_STATE_PREPARE0,
+    ENGS_LAUNCH_STATE_PREPARE1,
+    ENGS_LAUNCH_STATE_BLINK,
+    ENGS_LAUNCH_STATE_BEGIN_LAUCH,
+    ENGS_LAUNCH_STATE_FLY
+} EnGsLaunchStates;
+
 typedef struct EnGs {
     /* 0x000 */ Actor actor;
     /* 0x144 */ ColliderCylinder collider;
@@ -29,11 +38,11 @@ typedef struct EnGs {
     /* 0x198 */ s16 unk_198;
     /* 0x19A */ s16 unk_19A;
     /* 0x19C */ s8 unk_19C;
-    /* 0x19D */ u8 unk_19D;
+    /* 0x19D */ u8 unk_19D; /* Launch state */
     /* 0x19E */ Vec3s unk_19E[3];
     /* 0x1B0 */ Vec3f unk_1B0[2];
     /* 0x1C8 */ UNK_TYPE1 unk1C8[0xC];
-    /* 0x1D4 */ s16 unk_1D4;
+    /* 0x1D4 */ s16 unk_1D4; /* Launch stat timer */
     /* 0x1D6 */ UNK_TYPE1 unk1D6[0x6];
     /* 0x1DC */ f32 unk_1DC;
     /* 0x1E0 */ f32 unk_1E0;

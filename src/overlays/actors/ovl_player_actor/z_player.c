@@ -140,9 +140,24 @@ typedef struct AnimSfxEntry {
     /* 0x2 */ s16 flags; // negative marks the end
 } AnimSfxEntry;          // size = 0x4
 
+static Color_RGB8 gLiftoffFlashColours[] = {
+    { 255, 50, 50 },
+    { 50, 50, 255 },
+    { 255, 255, 255 },
+};
+
+// Color_RGB8 gLiftoffFlashColorTarget = {255, 255, 255};
+Color_RGB8 gLiftoffFlashColor = {255, 255, 255};
+f32 gLiftoffFlashColorLerp = 0.0f;
+
 u32 Player_UpdateOutOfShape(Player *this, PlayState *play);
 u32 Player_UpdateSneeze(Player *this, PlayState *play);
 u32 Player_UpdateImaginaryFriends(Player *this, PlayState *play);
+u32 Player_UpdateLiftoff(Player *this, PlayState *play);
+u32 Player_IsOutOfShape(Player *this, PlayState *play);
+u32 Player_IsHearingThings(Player *this, PlayState *play);
+u32 Player_IsLiftingOff(Player *this, PlayState *play);
+
 Actor *Player_SpawnOrRespawnArrow(Player *this, PlayState *play, ArrowType arrow_type, Actor *old_arrow);
 void Player_RandomKnockback(PlayState *play, Player *this, s32 hit_type, f32 speed, f32 velocityY, s16 hit_angle, s32 invicibility_timer);
 
@@ -250,6 +265,7 @@ void Player_Action_96(Player* this, PlayState* play);
 void Player_Action_OutOfShape(Player *this, PlayState *play);
 void Player_Action_Sneeze(Player *this, PlayState *play);
 void Player_Action_ImaginaryFriends(Player *this, PlayState *play);
+void Player_Action_Liftoff(Player *this, PlayState *play);
 void Player_Action_CsAction(Player* this, PlayState* play);
 
 s32 Player_UpperAction_0(Player* this, PlayState* play);
@@ -5057,10 +5073,10 @@ s32 Player_GetMovementSpeedAndYawUnderTheInfluence(Player* this, f32* outSpeedTa
         *outSpeedTarget *= gChaosContext.link.out_of_shape_speed_scale;
     }
 
-    if(Chaos_IsCodeActive(CHAOS_CODE_SNEEZE))
-    {
-        *outSpeedTarget *= gChaosContext.link.sneeze_speed_scale;
-    }
+    // if(Chaos_IsCodeActive(CHAOS_CODE_SNEEZE))
+    // {
+    //     *outSpeedTarget *= gChaosContext.link.sneeze_speed_scale;
+    // }
 
     if(Chaos_IsCodeActive(CHAOS_CODE_IMAGINARY_FRIENDS))
     {
@@ -6250,6 +6266,11 @@ void func_80835324(PlayState* play, Player* this, f32 arg2, s16 arg3) {
 }
 
 void func_808353DC(PlayState* play, Player* this) {
+    if(Player_IsLiftingOff(this, play))
+    {
+        return;
+    }
+
     Player_SetAction(play, this, Player_Action_54, 0);
     Player_Anim_PlayLoopSlowMorph(play, this, &gPlayerAnim_link_swimer_swim_wait);
 }
@@ -7115,8 +7136,7 @@ s32 func_808373F8(PlayState* play, Player* this, u16 sfxId) {
     }
 
     if(gChaosContext.link.out_of_shape_state == CHAOS_OUT_OF_SHAPE_STATE_NONE && 
-       gChaosContext.link.imaginary_friends_state == CHAOS_IMAGINARY_FRIENDS_STATE_NONE &&
-       gChaosContext.link.sneeze_state == CHAOS_SNEEZE_STATE_NONE)
+       gChaosContext.link.imaginary_friends_state == CHAOS_IMAGINARY_FRIENDS_STATE_NONE)
     {
         // Deku hopping
         if (this->transformation == PLAYER_FORM_DEKU) {
@@ -8243,6 +8263,11 @@ s32 Player_ActionChange_14(Player* this, PlayState* play) {
     return false;
 }
 
+s32 Player_ActionChange_Chaos(Player *this, PlayState *play)
+{
+    return Player_IsOutOfShape(this, play) || Player_IsHearingThings(this, play) || Player_IsLiftingOff(this, play);
+}
+
 s32 Player_ActionChange_6(Player* this, PlayState* play) {
     if (!D_80862B04 && !(this->stateFlags1 & PLAYER_STATE1_800000) && !func_8082FB68(this)) {
         if ((this->transformation == PLAYER_FORM_ZORA) && (this->stateFlags1 & PLAYER_STATE1_8000000)) {
@@ -8783,6 +8808,11 @@ void func_8083B8D0(PlayState* play, Player* this) {
 void func_8083B930(PlayState* play, Player* this) {
     PlayerAnimationHeader* var_a2;
 
+    if(Player_IsLiftingOff(this, play))
+    {
+        return;
+    }
+
     if ((this->currentBoots < PLAYER_BOOTS_ZORA_UNDERWATER) || !(this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) ||
         (Player_Action_96 == this->actionFunc)) {
         func_8082DE50(play, this);
@@ -8825,6 +8855,11 @@ void func_8083B930(PlayState* play, Player* this) {
 void func_8083BB4C(PlayState* play, Player* this) {
     f32 sp1C = this->actor.depthInWater - this->ageProperties->unk_2C;
     u32 sink_like_a_rock = false;
+
+    if(Player_IsLiftingOff(this, play))
+    {
+        return;
+    }
 
     if (sp1C < 0.0f) {
         this->underwaterTimer = 0;
@@ -8915,6 +8950,11 @@ void func_8083BF54(PlayState* play, Player* this) {
     Vec3f sp84;
     s32 temp_v0;
     s32 var_a2;
+
+    if(this->actionFunc == Player_Action_Liftoff)
+    {
+        return;
+    }
 
     this->actor.terminalVelocity = -20.0f;
     this->actor.gravity = REG(68) / 100.0f;
@@ -10884,9 +10924,10 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     }
 
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_GORON] = ITEM_MASK_GORON;
-    // gSaveContext.save.saveInfo.playerData.owlActivationFlags |= 1 << OWL_WARP_SOUTHERN_SWAMP;
+    // gSaveContext.save.saveInfo.playerData.owlActivationFlags |= 1 << OWL_WARP_GREAT_BAY_COAST;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_DEKU] = ITEM_MASK_DEKU;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_BOW] = ITEM_BOW;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] = ITEM_NONE;
     // gSaveContext.save.saveInfo.inventory.questItems = (1 << QUEST_SONG_SOARING);
     // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_SONG_EPONA);
@@ -10908,6 +10949,7 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     // gSaveContext.save.saveInfo.inventory.items[SLOT_ARROW_FIRE] = ITEM_ARROW_FIRE;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_HOOKSHOT] = ITEM_HOOKSHOT;
     // gSaveContext.save.saveInfo.inventory.ammo[SLOT_BOW] = 30;
+    // gSaveContext.save.saveInfo.inventory.upgrades |= (1 << UPG_QUIVER);
     // SET_EQUIP_VALUE(EQUIP_TYPE_SHIELD, EQUIP_VALUE_SHIELD_MIRROR);
     // Player_SetEquipmentData(play, this);
 
@@ -12483,7 +12525,9 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // Actor_Spawn(&play->actorCtx, play, ACTOR_EN_DARK_LINK, 
         //     this->actor.world.pos.x, this->actor.world.pos.y + 20.0f, this->actor.world.pos.z, 0, 0, 0, 0);
         // Camera_ChangeSetting(Play_GetCamera(play, CAM_ID_MAIN), CAM_SET_BIRDS_EYE_VIEW_0);
-        // Chaos_ActivateCode(CHAOS_CODE_LOW_GRAVITY, 80);
+        // Chaos_ActivateCode(CHAOS_CODE_LIFTOFF, 1);
+        // Chaos_ActivateCode(CHAOS_CODE_BOMB_ARROWS, 120);
+        // Chaos_ActivateCode(CHAOS_CODE_BUCKSHOT_ARROWS, 120);
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_R))
@@ -12505,7 +12549,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // Chaos_ActivateCode(CHAOS_CODE_OUT_OF_SHAPE, 5);
         // Actor_Spawn(&play->actorCtx, play, ACTOR_EN_WALLMAS, 
         //     this->actor.world.pos.x, this->actor.world.pos.y + 20.0f, this->actor.world.pos.z, 0, 0, 0, WALLMASTER_PARAMS(WALLMASTER_TYPE_FAKE, 0, false));
-        // Chaos_ActivateCode(CHAOS_CODE_LOW_GRAVITY, 50);
+        // Chaos_ActivateCode(CHAOS_CODE_DIE, 1);
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_DDOWN))
@@ -12814,8 +12858,6 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         }
     }
 
-    
-
     sPlayerControlInput = input;
     if (this->unk_D6A < 0) {
         this->unk_D6A++;
@@ -12826,8 +12868,9 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     }
 
     Player_UpdateOutOfShape(this, play);
-    Player_UpdateSneeze(this, play);
+    // Player_UpdateSneeze(this, play);
     Player_UpdateImaginaryFriends(this, play);
+    Player_UpdateLiftoff(this, play);
 
     Math_Vec3f_Copy(&this->actor.prevPos, &this->actor.home.pos);
 
@@ -13023,7 +13066,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
                                                                      : &gPlayerAnim_link_derth_rebirth));
                     }
                 } else {
-                    if ((this->actor.parent == NULL) &&
+                    if ((this->actor.parent == NULL) && (this->actionFunc != Player_Action_Liftoff) &&
                         (func_8082DA90(play) || (this->unk_D6B != 0) || !Player_HandleReceivedAttacks(this, play))) {
                         func_8083827C(this, play);
                     } else {
@@ -13452,6 +13495,25 @@ void Player_Draw(Actor* thisx, PlayState* play) {
     s32 spEC = false;
     Vec3f actor_scale = {1, 1, 1};
 
+    if(gChaosContext.link.liftoff_state == CHAOS_LIFTOFF_STATE_FLY)
+    {
+        OPEN_DISPS(play->state.gfxCtx);
+        Gfx_SetupDL25_Xlu(play->state.gfxCtx);
+        Matrix_Push();
+        Matrix_Translate(this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z, MTXMODE_NEW);
+        Matrix_RotateYS(BINANG_ROT180(Camera_GetCamDirYaw(GET_ACTIVE_CAM(play))), MTXMODE_APPLY);
+        Matrix_Scale(0.01f, -0.01f, 1.0f, MTXMODE_APPLY);
+
+        gSPMatrix(POLY_XLU_DISP++, Matrix_NewMtx(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+        gSPSegment(POLY_XLU_DISP++, 0x08,
+                Gfx_TwoTexScroll(play->state.gfxCtx, 0, 0, 0, 0x20, 0x40, 1, 0, -play->gameplayFrames * 40, 0x20, 0x80));
+        gDPSetPrimColor(POLY_XLU_DISP++, 0x80, 0x80, 255, 255, 0, 255);
+        gDPSetEnvColor(POLY_XLU_DISP++, 255, 0, 0, 0);
+        gSPDisplayList(POLY_XLU_DISP++, gEffFire1DL);
+        Matrix_Pop();
+        CLOSE_DISPS(play->state.gfxCtx);
+    }
+
     if(Chaos_IsCodeActive(CHAOS_CODE_RANDOM_SCALING))
     {
         actor_scale.x = 0.05f + Rand_ZeroOne() * 3.45f;
@@ -13468,7 +13530,6 @@ void Player_Draw(Actor* thisx, PlayState* play) {
         s32 i;
 
         OPEN_DISPS(play->state.gfxCtx);
-
         Matrix_Push();
         func_8012C268(&play->state);
         spEC = true;
@@ -13504,6 +13565,8 @@ void Player_Draw(Actor* thisx, PlayState* play) {
     }
 
     if (!(this->stateFlags2 & PLAYER_STATE2_20000000) && (this->unk_ABC > -3900.0f)) {
+        Gfx *liftoff_color_dl;
+
         OPEN_DISPS(play->state.gfxCtx);
 
         if (!spEC) {
@@ -13515,6 +13578,9 @@ void Player_Draw(Actor* thisx, PlayState* play) {
         func_800B8050(&this->actor, play, 0);
         func_800B8118(&this->actor, play, 0);
         func_80122868(play, this);
+
+        POLY_OPA_DISP = Gfx_SetFog(POLY_OPA_DISP, gLiftoffFlashColor.r, gLiftoffFlashColor.g, gLiftoffFlashColor.b, 
+                                                      255, 1500 * (1.0f - gLiftoffFlashColorLerp), 1500);
 
         if (this->stateFlags3 & PLAYER_STATE3_1000) {
             Color_RGB8 spBC;
@@ -13617,6 +13683,9 @@ void Player_Draw(Actor* thisx, PlayState* play) {
                 }
             }
 
+            // POLY_OPA_DISP = Gfx_SetFog(POLY_OPA_DISP, gLiftoffFlashColor.r, gLiftoffFlashColor.g, gLiftoffFlashColor.b, 
+            //                                           255, 1500 * (1.0f - gLiftoffFlashColorLerp), 1500);
+
             if (this->stateFlags2 & PLAYER_STATE2_4000000) {
                 /* draw player reflection? */
                 s16 temp_s0_2 = play->gameplayFrames * 600;
@@ -13658,11 +13727,20 @@ void Player_Draw(Actor* thisx, PlayState* play) {
                 Matrix_Pop();
             }
 
+            // liftoff_color_dl = GRAPH_ALLOC(play->state.gfxCtx, sizeof(Gfx) * 3);
+            // gSPSegment(POLY_OPA_DISP++, 0x0f, OS_K0_TO_PHYSICAL(liftoff_color_dl));
+            // gDPSetPrimColor(liftoff_color_dl++, 0, 0x80, 255, 255, 255, 255);
+            // gDPSetEnvColor(liftoff_color_dl++, 0, 0, 255, 255);
+            // gSPEndDisplayList(liftoff_color_dl++);
+
             Matrix_Push();
             Matrix_Scale(actor_scale.x, actor_scale.y, actor_scale.z, MTXMODE_APPLY);
             Player_DrawGameplay(play, this, lod, gCullBackDList, sp84);
             Matrix_Pop();
         }
+        POLY_OPA_DISP = Play_SetFog(play, POLY_OPA_DISP);
+
+        // gSPFogFactor(POLY_OPA_DISP++, 0, 0);
 
         func_801229A0(play, this);
         if (this->stateFlags2 & PLAYER_STATE2_4000) {
@@ -13685,7 +13763,6 @@ void Player_Draw(Actor* thisx, PlayState* play) {
         }
 
         func_80122D44(play, &this->unk_3D0);
-
         CLOSE_DISPS(play->state.gfxCtx);
     }
 
@@ -14647,26 +14724,26 @@ u32 Player_UpdateOutOfShape(Player *this, PlayState *play)
 
 u32 Player_UpdateSneeze(Player *this, PlayState *play)
 {
-    if(this == GET_PLAYER(play))
-    {
-        if(Chaos_IsCodeActive(CHAOS_CODE_SNEEZE))
-        {
-            gChaosContext.link.sneeze_speed_scale *= 0.8f;
-            gChaosContext.link.sneeze_state = CHAOS_SNEEZE_STATE_SLOWING_DOWN;
+    // if(this == GET_PLAYER(play))
+    // {
+    //     if(Chaos_IsCodeActive(CHAOS_CODE_SNEEZE))
+    //     {
+    //         gChaosContext.link.sneeze_speed_scale *= 0.8f;
+    //         gChaosContext.link.sneeze_state = CHAOS_SNEEZE_STATE_SLOWING_DOWN;
 
-            if(gChaosContext.link.sneeze_speed_scale < 0.1f)
-            {
-                gChaosContext.link.sneeze_speed_scale = 0.0f;
-                gChaosContext.link.sneeze_state = CHAOS_SNEEZE_STATE_SNEEZE;
-                return true;
-            }
-        }
-        else
-        {
-            gChaosContext.link.sneeze_speed_scale = 1.0f;
-            gChaosContext.link.sneeze_state = CHAOS_SNEEZE_STATE_NONE;
-        }
-    }
+    //         if(gChaosContext.link.sneeze_speed_scale < 0.1f)
+    //         {
+    //             gChaosContext.link.sneeze_speed_scale = 0.0f;
+    //             gChaosContext.link.sneeze_state = CHAOS_SNEEZE_STATE_SNEEZE;
+    //             return true;
+    //         }
+    //     }
+    //     else
+    //     {
+    //         gChaosContext.link.sneeze_speed_scale = 1.0f;
+    //         gChaosContext.link.sneeze_state = CHAOS_SNEEZE_STATE_NONE;
+    //     }
+    // }
 
     return false;
 }
@@ -14697,6 +14774,103 @@ u32 Player_UpdateImaginaryFriends(Player *this, PlayState *play)
     return false;
 }
 
+u32 Player_UpdateLiftoff(Player *this, PlayState *play)
+{
+    static Vec3f sDustAccel = { 0.0f, -0.3f, 0.0f };
+    static Color_RGBA8 sDustPrimColor = { 200, 200, 200, 128 };
+    static Color_RGBA8 sDustEnvColor = { 100, 100, 100, 0 };
+
+    if(this == GET_PLAYER(play))
+    {
+        if(Chaos_IsCodeActive(CHAOS_CODE_LIFTOFF))
+        {
+            gChaosContext.link.liftoff_state = CHAOS_LIFTOFF_STATE_PREPARE;
+            Chaos_DeactivateCode(CHAOS_CODE_LIFTOFF);
+        }
+        switch(gChaosContext.link.liftoff_state)
+        {
+            case CHAOS_LIFTOFF_STATE_PREPARE:
+                gChaosContext.link.liftoff_timer = 80;
+                gChaosContext.link.liftoff_state = CHAOS_LIFTOFF_STATE_COUNTDOWN;
+            break;
+
+            case CHAOS_LIFTOFF_STATE_COUNTDOWN:
+                gChaosContext.link.liftoff_timer--;
+                if ((gChaosContext.link.liftoff_timer % 20) < 8) {
+                    if (gChaosContext.link.liftoff_timer < 20) {
+                        if ((gChaosContext.link.liftoff_timer % 20) == 7) {
+                            // func_80999584(&this->unk_1FA, &sFlashColours[0]);
+                            // this->unk_1F4 = this->unk_1FA;
+                            gLiftoffFlashColor = gLiftoffFlashColours[0];
+                            gLiftoffFlashColorLerp = 1.0f;
+                            Audio_PlaySfx(NA_SE_SY_WARNING_COUNT_E);
+                            // this->unk_200 = 0.0f;
+                        }
+                    } else if ((gChaosContext.link.liftoff_timer % 20) == 7) {
+                        // func_80999584(&this->unk_1FA, &sFlashColours[1]);
+                        // this->unk_1F4 = this->unk_1FA;
+                        gLiftoffFlashColor = gLiftoffFlashColours[1];
+                        gLiftoffFlashColorLerp = 1.0f;
+                        Audio_PlaySfx(NA_SE_SY_WARNING_COUNT_N);
+                        // this->unk_200 = 0.0f;
+                    }
+                }
+
+                if(gChaosContext.link.liftoff_timer == 0)
+                {
+                    gChaosContext.link.liftoff_state = CHAOS_LIFTOFF_STATE_BEGIN_LAUNCH;
+                    gChaosContext.link.liftoff_timer = 40;
+                }
+            break;
+
+            case CHAOS_LIFTOFF_STATE_BEGIN_LAUNCH:
+            {
+                u32 index;
+
+                if(gChaosContext.link.liftoff_timer > 0)
+                {
+                    gChaosContext.link.liftoff_timer--;
+                }
+
+                Actor_PlaySfx_Flagged(&this->actor, NA_SE_EV_FIRE_PILLAR - SFX_FLAG);
+
+                for(index = 0; index < 3; index++)
+                {
+                    Vec3f velocity;
+                    Vec3f position;
+                    velocity.x = Rand_CenteredFloat(15.0f);
+                    velocity.y = Rand_ZeroFloat(-1.0f);
+                    velocity.z = Rand_CenteredFloat(15.0f);
+
+                    position.x = this->actor.world.pos.x + (2.0f * velocity.x);
+                    position.y = this->actor.world.pos.y + 7.0f;
+                    position.z = this->actor.world.pos.z + (2.0f * velocity.z);
+
+                    func_800B0EB0(play, &position, &velocity, &sDustAccel, &sDustPrimColor, &sDustEnvColor,
+                                Rand_ZeroFloat(50.0f) + 200.0f, 40, 15);
+                }
+
+                if(gChaosContext.link.liftoff_timer == 0 && !(this->stateFlags1 & PLAYER_STATE1_TIME_STOPPED))
+                {
+                    // s16 start_frame = Animation_GetLastFrame(&gPlayerAnim_link_swimer_swim_down) - 2;
+                    // gChaosContext.link.liftoff_timer = 80;
+                    gChaosContext.link.liftoff_state = CHAOS_LIFTOFF_STATE_FLY;
+                    // PlayerAnimation_Change(play, &this->skelAnime, &gPlayerAnim_link_swimer_swim_down, PLAYER_ANIM_NORMAL_SPEED, start_frame,
+                    //         Animation_GetLastFrame(&gPlayerAnim_link_swimer_swim_down), ANIMMODE_ONCE, 6.0f);
+                }
+            }
+            break;
+        }
+
+        Math_StepToF(&gLiftoffFlashColorLerp, 0.0f, 0.06);
+        // Color_RGB8_Lerp(&gLiftoffFlashColorTarget, &gLiftoffFlashColours[2], gLiftoffFlashColorLerp, &gLiftoffFlashColor);
+
+        return true;
+    }
+
+    return false;
+}
+
 u32 Player_IsOutOfShape(Player *this, PlayState *play)
 {
     return this == GET_PLAYER(play) && 
@@ -14706,15 +14880,15 @@ u32 Player_IsOutOfShape(Player *this, PlayState *play)
 
 u32 Player_NeedsToSneeze(Player *this, PlayState *play)
 {    
-    if(this == GET_PLAYER(play) && Chaos_IsCodeActive(CHAOS_CODE_SNEEZE) && 
-        gChaosContext.link.sneeze_state == CHAOS_SNEEZE_STATE_SNEEZE &&
-        Player_SetAction(play, this, Player_Action_Sneeze, 1))
-    {
-        // gChaosContext.link.sneeze_speed_scale = 1.0f;
-        // Player_SetAction(play, this, Player_Action_Sneeze, 1);
-        Chaos_DeactivateCode(CHAOS_CODE_SNEEZE);
-        return true;
-    }
+    // if(this == GET_PLAYER(play) && Chaos_IsCodeActive(CHAOS_CODE_SNEEZE) && 
+    //     gChaosContext.link.sneeze_state == CHAOS_SNEEZE_STATE_SNEEZE &&
+    //     Player_SetAction(play, this, Player_Action_Sneeze, 1))
+    // {
+    //     // gChaosContext.link.sneeze_speed_scale = 1.0f;
+    //     // Player_SetAction(play, this, Player_Action_Sneeze, 1);
+    //     Chaos_DeactivateCode(CHAOS_CODE_SNEEZE);
+    //     return true;
+    // }
 
     return false;
 }
@@ -14743,6 +14917,26 @@ u32 Player_IsHearingThings(Player *this, PlayState *play)
         end_frame = Animation_GetLastFrame(anim);
         PlayerAnimation_Change(play, &this->skelAnime, anim, 1.0f, 0, end_frame, ANIMMODE_LOOP, -6.0f);
         return true;    
+    }
+
+    return false;
+}
+
+u32 Player_IsLiftingOff(Player *this, PlayState *play)
+{
+    if(this == GET_PLAYER(play) && gChaosContext.link.liftoff_state == CHAOS_LIFTOFF_STATE_FLY)
+    {
+        if(Player_SetAction(play, this, Player_Action_Liftoff, 1))
+        {
+            s16 start_frame = Animation_GetLastFrame(&gPlayerAnim_link_swimer_swim_down) - 2;
+            PlayerAnimation_Change(play, &this->skelAnime, &gPlayerAnim_link_swimer_swim_down, PLAYER_ANIM_NORMAL_SPEED, start_frame,
+                                Animation_GetLastFrame(&gPlayerAnim_link_swimer_swim_down), ANIMMODE_ONCE, 10.0f);
+            gChaosContext.link.liftoff_timer = 0;
+            Player_AnimSfx_PlayVoice(this, NA_SE_VO_LI_FALL_S);
+            Camera_ChangeSetting(Play_GetCamera(play, CAM_ID_MAIN), CAM_SET_FREE0);
+            Player_StopHorizontalMovement(this);
+        }
+        return true;
     }
 
     return false;
@@ -14910,7 +15104,8 @@ void Player_Action_2(Player* this, PlayState* play) {
 
     gPlayerAction = 2;
 
-    if(Player_IsOutOfShape(this, play) || Player_NeedsToSneeze(this, play) || Player_IsHearingThings(this, play))
+    // if(Player_IsOutOfShape(this, play) || Player_NeedsToSneeze(this, play) || Player_IsHearingThings(this, play))
+    if(Player_ActionChange_Chaos(this, play))
     {
         return;
     }
@@ -14978,7 +15173,8 @@ void Player_Action_3(Player* this, PlayState* play) {
 
     gPlayerAction = 3;
 
-    if(Player_IsOutOfShape(this, play) || Player_NeedsToSneeze(this, play) || Player_IsHearingThings(this, play))
+    // if(Player_IsOutOfShape(this, play) || Player_NeedsToSneeze(this, play) || Player_IsHearingThings(this, play))
+    if(Player_ActionChange_Chaos(this, play))
     {
         return;
     }
@@ -15038,7 +15234,8 @@ void Player_Action_4(Player* this, PlayState* play) {
 
     gPlayerAction = 4;
 
-    if(Player_IsOutOfShape(this, play) || Player_NeedsToSneeze(this, play) || Player_IsHearingThings(this, play))
+    // if(Player_IsOutOfShape(this, play) || Player_NeedsToSneeze(this, play) || Player_IsHearingThings(this, play))
+    if(Player_ActionChange_Chaos(this, play))
     {
         return;
     }
@@ -15425,7 +15622,8 @@ void Player_Action_13(Player* this, PlayState* play) {
 
     gPlayerAction = 13;
 
-    if(Player_IsOutOfShape(this, play) || Player_NeedsToSneeze(this, play) || Player_IsHearingThings(this, play))
+    // if(Player_IsOutOfShape(this, play) || Player_NeedsToSneeze(this, play) || Player_IsHearingThings(this, play))
+    if(Player_ActionChange_Chaos(this, play))
     {
         return;
     }
@@ -15567,7 +15765,8 @@ void Player_Action_18(Player* this, PlayState* play) {
     gPlayerAction = 18;
     func_80832F24(this);
 
-    if(Player_IsOutOfShape(this, play) || Player_NeedsToSneeze(this, play) || Player_IsHearingThings(this, play))
+    // if(Player_IsOutOfShape(this, play) || Player_NeedsToSneeze(this, play) || Player_IsHearingThings(this, play))
+    if(Player_ActionChange_Chaos(this, play))
     {
         return;
     }
@@ -15858,6 +16057,11 @@ void Player_Action_25(Player* this, PlayState* play) {
 
     gPlayerAction = 25;
 
+    if(Player_IsLiftingOff(this, play))
+    {
+        return;
+    }
+
     if (func_80123420(this)) {
         this->actor.gravity = -1.2f;
     }
@@ -15955,7 +16159,8 @@ void Player_Action_25(Player* this, PlayState* play) {
     } else {
         func_80837134(play, this);
         Player_UpdateUpperBody(this, play);
-        if(Player_IsOutOfShape(this, play) || Player_NeedsToSneeze(this, play) || Player_IsHearingThings(this, play))
+        // if(Player_IsOutOfShape(this, play) || Player_NeedsToSneeze(this, play) || Player_IsHearingThings(this, play))
+        if(Player_ActionChange_Chaos(this, play))
         {
             return;
         }
@@ -16119,7 +16324,8 @@ void Player_Action_30(Player* this, PlayState* play) {
     s32 temp_v0;
     gPlayerAction = 30;
 
-    if(Player_IsOutOfShape(this, play) || Player_NeedsToSneeze(this, play) || Player_IsHearingThings(this, play))
+    // if(Player_IsOutOfShape(this, play) || Player_NeedsToSneeze(this, play) || Player_IsHearingThings(this, play))
+    if(Player_ActionChange_Chaos(this, play))
     {
         this->stateFlags1 &= ~PLAYER_STATE1_1000;
         return;
@@ -16708,6 +16914,7 @@ void Player_Action_42(Player* this, PlayState* play) {
 
 void Player_Action_43(Player* this, PlayState* play) {
     gPlayerAction = 43;
+
     if (this->stateFlags1 & PLAYER_STATE1_8000000) {
         func_808475B4(this);
         func_8084748C(this, &this->linearVelocity, 0.0f, this->actor.shape.rot.y);
@@ -17558,7 +17765,6 @@ s32 func_80850854(PlayState* play, Player* this) {
 
     if ((this->transformation == PLAYER_FORM_DEKU) && (this->remainingHopsCounter != 0) && 
         gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_GASPING &&
-        gChaosContext.link.sneeze_state != CHAOS_SNEEZE_STATE_SNEEZE &&
         gChaosContext.link.imaginary_friends_state != CHAOS_IMAGINARY_FRIENDS_STATE_SCHIZO &&
         (gSaveContext.save.saveInfo.playerData.health != 0) && (sPlayerControlStickMagnitude != 0.0f)) {
         func_808373F8(play, this, 0);
@@ -17573,6 +17779,11 @@ void Player_Action_54(Player* this, PlayState* play) {
 
     gPlayerAction = 54;
 
+    if(Player_IsLiftingOff(this, play))
+    {
+        return;
+    }
+
     this->stateFlags2 |= PLAYER_STATE2_20;
 
     Player_Anim_PlayLoopOnceFinished(play, this, &gPlayerAnim_link_swimer_swim_wait);
@@ -17582,7 +17793,8 @@ void Player_Action_54(Player* this, PlayState* play) {
         this->av2.actionVar2--;
     }
 
-    if(Player_IsOutOfShape(this, play) || Player_NeedsToSneeze(this, play) || Player_IsHearingThings(this, play))
+    // if(Player_IsOutOfShape(this, play) || Player_NeedsToSneeze(this, play) || Player_IsHearingThings(this, play))
+    if(Player_ActionChange_Chaos(this, play))
     {
         this->currentBoots = PLAYER_BOOTS_ZORA_UNDERWATER;
         return;
@@ -17676,15 +17888,16 @@ void Player_Action_56(Player* this, PlayState* play) {
     s16 sp3E;
     s16 sp3C;
     s16 sp3A;
-    u32 out_of_shape = gChaosContext.link.out_of_shape_state == CHAOS_OUT_OF_SHAPE_STATE_GASPING;
-    u32 need_to_sneeze = gChaosContext.link.sneeze_state == CHAOS_SNEEZE_STATE_SNEEZE;
-    u32 being_kinda_schizo = gChaosContext.link.imaginary_friends_state == CHAOS_IMAGINARY_FRIENDS_STATE_SCHIZO;
+    // u32 out_of_shape = gChaosContext.link.out_of_shape_state == CHAOS_OUT_OF_SHAPE_STATE_GASPING;
+    // u32 need_to_sneeze = gChaosContext.link.sneeze_state == CHAOS_SNEEZE_STATE_SNEEZE;
+    // u32 being_kinda_schizo = gChaosContext.link.imaginary_friends_state == CHAOS_IMAGINARY_FRIENDS_STATE_SCHIZO;
 
     gPlayerAction = 56;
 
     this->stateFlags2 |= PLAYER_STATE2_20;
 
-    if(!out_of_shape && !need_to_sneeze && !being_kinda_schizo)
+    // if(!out_of_shape && !need_to_sneeze && !being_kinda_schizo)
+    if(!Player_ActionChange_Chaos(this, play))
     {
         func_808475B4(this);
         func_8082F164(this, BTN_R);
@@ -17952,7 +18165,8 @@ void Player_Action_60(Player* this, PlayState* play) {
 
     this->stateFlags2 |= PLAYER_STATE2_20;
 
-    if(Player_IsOutOfShape(this, play) || Player_NeedsToSneeze(this, play) || Player_IsHearingThings(this, play))
+    // if(Player_IsOutOfShape(this, play) || Player_NeedsToSneeze(this, play) || Player_IsHearingThings(this, play))
+    if(Player_ActionChange_Chaos(this, play))
     {
         return;
     }
@@ -18976,7 +19190,6 @@ void Player_Action_77(Player* this, PlayState* play) {
 
             if(gChaosContext.link.fierce_deity_state != CHAOS_RANDOM_FIERCE_DEITY_STATE_NONE &&
                 (gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_NONE || 
-                 gChaosContext.link.sneeze_state != CHAOS_SNEEZE_STATE_NONE ||
                  gChaosContext.link.imaginary_friends_state != CHAOS_IMAGINARY_FRIENDS_STATE_NONE))
             {
                 /* player drowned as fierce deity, so deactivate the effect to avoid softlocks */
@@ -19905,7 +20118,7 @@ Vec3f D_8085D96C = { 30.0f, 50.0f, 0.0f };
 // Flying as Deku?
 void Player_Action_94(Player* this, PlayState* play) {
     u32 out_of_shape = gChaosContext.link.out_of_shape_state == CHAOS_OUT_OF_SHAPE_STATE_GASPING;
-    u32 need_to_sneeze = gChaosContext.link.sneeze_state == CHAOS_SNEEZE_STATE_SNEEZE;
+    // u32 need_to_sneeze = gChaosContext.link.sneeze_state == CHAOS_SNEEZE_STATE_SNEEZE;
     u32 is_being_kinda_schizo = gChaosContext.link.imaginary_friends_state == CHAOS_IMAGINARY_FRIENDS_STATE_SCHIZO;
 
     gPlayerAction = 94;
@@ -19914,7 +20127,12 @@ void Player_Action_94(Player* this, PlayState* play) {
         this->boomerangActor = NULL;
     }
 
-    if(out_of_shape || need_to_sneeze || is_being_kinda_schizo)
+    if(Player_IsLiftingOff(this, play))
+    {
+        return;
+    }
+
+    if(out_of_shape || is_being_kinda_schizo)
     {
         sPlayerControlInput->press.button |= BTN_A;
     }
@@ -19960,7 +20178,7 @@ void Player_Action_94(Player* this, PlayState* play) {
         this->actor.terminalVelocity = -10.0f;
         this->actor.gravity = -0.5f;
         Player_ResetCylinder(this);
-    } else if (/* out_of_shape || need_to_sneeze || is_being_kinda_schizo || */ CHECK_BTN_ALL(sPlayerControlInput->press.button, BTN_A)) {
+    } else if (CHECK_BTN_ALL(sPlayerControlInput->press.button, BTN_A)) {
         func_808355D8(play, this, &gPlayerAnim_pn_kakkufinish);
     } else {
         s16 temp_a0;
@@ -20269,7 +20487,8 @@ void Player_Action_96(Player* this, PlayState* play) {
     // u32 is_fierce_deitying = Chaos_IsCodeActive(CHAOS_CODE_RANDOM_FIERCE_DEITY);
     gPlayerAction = 96;
 
-    if(Player_IsOutOfShape(this, play) || Player_NeedsToSneeze(this, play) || Player_IsHearingThings(this, play))
+    // if(Player_IsOutOfShape(this, play) || Player_NeedsToSneeze(this, play) || Player_IsHearingThings(this, play))
+    if(Player_ActionChange_Chaos(this, play))
     {
         return;
     }
@@ -20761,6 +20980,7 @@ void Player_Action_ImaginaryFriends(Player *this, PlayState *play)
     u32 is_being_kinda_schizo = this->skelAnime.animation == gImaginaryFriendAnimations[0] ||
                                 this->skelAnime.animation == gImaginaryFriendAnimations[1] ||
                                 this->skelAnime.animation == gImaginaryFriendAnimations[2];
+    gPlayerAction = 99;
 
     if(this->actor.bgCheckFlags & BGCHECKFLAG_GROUND)
     {
@@ -20817,6 +21037,107 @@ void Player_Action_ImaginaryFriends(Player *this, PlayState *play)
     else
     {
         Player_SetAction(play, this, Player_Action_4, 1);
+    }
+}
+
+void Player_Action_Liftoff(Player *this, PlayState *play)
+{
+    // static Vec3f sDustAccel = { 0.0f, -0.3f, 0.0f };
+    // static Color_RGBA8 sDustPrimColor = { 200, 200, 200, 128 };
+    // static Color_RGBA8 sDustEnvColor = { 100, 100, 100, 0 };
+    Camera *camera = Play_GetCamera(play, CAM_ID_MAIN);
+    u32 bonked_ceiling;
+    // static Vec3f camera_eye;
+
+    PlayerAnimation_Update(play, &this->skelAnime);
+
+    gPlayerAction = 100;
+
+    this->actor.gravity = 0.0f;
+    this->actor.velocity.y += 2.5f;
+    Actor_PlaySfx_Flagged(&this->actor, NA_SE_EV_STONE_LAUNCH - SFX_FLAG);
+    // this->actor.bgCheckFlags &= ~BGCHECKFLAG_GROUND;
+
+    // this->fallStartHeight = this->actor.world.pos.y;
+    // this->actor.world.pos.y += 16.0f;
+    // this->actor.velocity.y += 1.0f;
+    // Actor_UpdateVelocityWithGravity(&this->actor);
+    // Actor_MoveWithGravity(&this->actor);
+
+    // OPEN_DISPS(play->state.gfxCtx);
+
+    // Gfx_SetupDL25_Xlu(play->state.gfxCtx);
+    // Matrix_ReplaceRotation(&play->billboardMtxF);
+    // Matrix_Scale(0.05f, -0.05f, 1.0f, MTXMODE_APPLY);
+
+    // gSPMatrix(POLY_XLU_DISP++, Matrix_NewMtx(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+    // gSPSegment(POLY_XLU_DISP++, 0x08,
+    //         Gfx_TwoTexScroll(play->state.gfxCtx, 0, 0, 0, 0x20, 0x40, 1, 0, -frames * 20, 0x20, 0x80));
+    // gDPSetPrimColor(POLY_XLU_DISP++, 0x80, 0x80, 255, 255, 0, 255);
+    // gDPSetEnvColor(POLY_XLU_DISP++, 255, 0, 0, 0);
+    // gSPDisplayList(POLY_XLU_DISP++, gEffFire1DL);
+    // CLOSE_DISPS(play->state.gfxCtx);
+
+    // if(gChaosContext.link.liftoff_timer == 0)
+    // {
+    //     camera_eye = camera->eye;
+    // }
+
+    gChaosContext.link.liftoff_timer++;
+    bonked_ceiling = this->actor.bgCheckFlags & (BGCHECKFLAG_CEILING);
+
+    if((gChaosContext.link.liftoff_timer >= 20 || bonked_ceiling) && (Rand_Next() % 8) < 5)
+    {
+        Vec3f velocity = {0, 0, 0};
+        Vec3f accel = {0, 0, 0};
+        Vec3f position = this->actor.world.pos;
+        position.x += Rand_Centered() * 60.0f;
+        position.y += 0.0f;
+        position.z += Rand_Centered() * 60.0f;
+        Actor_PlaySfx(&this->actor, NA_SE_IT_BOMB_EXPLOSION);
+        EffectSsBomb2_SpawnLayered(play, &position, &velocity, &accel, 60, 15);
+    }
+
+    if(gChaosContext.link.liftoff_state == CHAOS_LIFTOFF_STATE_FLY)
+    {
+        Vec3f camera_at = camera->at;
+        Vec3f camera_eye = camera->eye;
+        Vec3f camera_eye_end;
+        Vec3f at_increment;
+        Vec3f eye_increment;
+
+        // this->stateFlags1 |= PLAYER_STATE1_40000;
+        this->stateFlags1 &= ~PLAYER_STATE1_SWIMMING;
+
+        if(gChaosContext.link.liftoff_timer == 10 || bonked_ceiling)
+        {
+            Player_AnimSfx_PlayVoice(this, NA_SE_VO_LI_FALL_L);   
+        }
+
+        Math_Vec3f_Diff(&this->actor.world.pos, &camera_at, &at_increment);
+        at_increment.x *= 0.18f;
+        at_increment.y *= 0.18f;
+        at_increment.z *= 0.18f;
+        Math_Vec3f_Sum(&at_increment, &camera_at, &camera_at);
+
+        Math_StepToF(&camera_eye.x, this->actor.world.pos.x, 2.0f);
+        Math_StepToF(&camera_eye.y, this->actor.world.pos.y, 2.0f);
+        Math_StepToF(&camera_eye.z, this->actor.world.pos.z, 2.0f);
+        Play_SetCameraAtEye(play, CAM_ID_MAIN, &camera_at, &camera_eye);
+
+        if(gChaosContext.link.liftoff_timer >= 25 || bonked_ceiling)
+        {   
+            Audio_PlaySfx(NA_SE_OC_ABYSS);
+            func_80169EFC(play);
+            gChaosContext.link.liftoff_state = CHAOS_LIFTOFF_STATE_NONE;
+            gSaveContext.respawnFlag = -6;
+            this->actor.velocity.y = 0.0f;
+            // this->stateFlags1 &= PLAYER_STATE1_40000;
+        }
+        else if(!bonked_ceiling)
+        {
+            Actor_MoveWithGravity(&this->actor);
+        }
     }
 }
 
