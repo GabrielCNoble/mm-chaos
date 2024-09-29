@@ -1,6 +1,6 @@
 CC := gcc
 CFLAGS := -Wall -Wextra -pedantic -std=c99 -g -O2
-PROGRAMS := vtxdis
+PROGRAMS := vtxdis makeverts
 
 all: $(PROGRAMS)
 	$(MAKE) -C ZAPD
@@ -14,6 +14,7 @@ clean:
 	$(MAKE) -C buildtools clean
 
 vtxdis_SOURCES	   := vtxdis.c
+makeverts_SOURCES  := makeverts.c
 
 define COMPILE =
 $(1): $($1_SOURCES)

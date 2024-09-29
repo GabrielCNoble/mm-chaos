@@ -90,8 +90,15 @@ typedef enum {
     /* 4 */ SM_FADE_OUT_FILE_INFO,
     /* 5 */ SM_MOVE_FILE_TO_SLOT,
     /* 6 */ SM_FADE_OUT,
-    /* 7 */ SM_LOAD_GAME
+    /* 7 */ SM_LOAD_GAME,
+            SM_FADE_CHAOS_CONFIG_TO_SELECT,
 } SelectMode;
+
+typedef enum
+{
+    CCM_FADE_SELECT_TO_CONFIG,
+    CCM_CHAOS_OPTIONS, 
+} ChaosConfigMode;
 
 typedef enum {
     /* 0 */ FS_TITLE_SELECT_FILE,   // "Please select a file."
@@ -147,7 +154,8 @@ typedef enum {
     /* 1 */ FS_BTN_SELECT_FILE_2,
     /* 2 */ FS_BTN_SELECT_FILE_3,
     /* 3 */ FS_BTN_SELECT_YES,
-    /* 4 */ FS_BTN_SELECT_QUIT
+    /* 4 */ FS_BTN_SELECT_QUIT,
+            FS_BTN_SELECT_OPTIONS,
 } SelectMenuButtonIndex;
 
 typedef enum {
@@ -155,6 +163,7 @@ typedef enum {
     /* 0 */ FS_BTN_CONFIRM_YES,
     /* 1 */ FS_BTN_CONFIRM_QUIT,
     /* 2 */ FS_BTN_CONFIRM_OPTIONS,
+            FS_BTN_CONFIRM_LAST,
 } ConfirmButtonIndex;
 
 typedef enum {
@@ -224,7 +233,7 @@ typedef struct FileSelectState {
     /* 0x24490 */ UNK_TYPE1 pad24490[0x2];
     /* 0x24492 */ s16 fileNamesY[3];
     /* 0x24498 */ s16 actionTimer;
-    /* 0x2449A */ s16 buttonYOffsets[6];
+    /* 0x2449A */ s16 buttonYOffsets[7];
     /* 0x244A6 */ s16 copyDestFileIndex;
     /* 0x244A8 */ s16 warningLabel;
     /* 0x244AA */ s16 warningButtonIndex;
@@ -239,7 +248,7 @@ typedef struct FileSelectState {
     /* 0x244CE */ s16 connectorAlpha[3];
     /* 0x244D4 */ s16 fileInfoAlpha[3];
     /* 0x244DA */ s16 actionButtonAlpha[2];
-    /* 0x244DA */ s16 confirmButtonAlpha[2];
+    /* 0x244DA */ s16 confirmButtonAlpha[3];
     /* 0x244E2 */ s16 optionButtonAlpha;
     /* 0x244E4 */ s16 nameEntryBoxAlpha;
     /* 0x244E6 */ s16 controlsAlpha;
@@ -247,7 +256,7 @@ typedef struct FileSelectState {
     /* 0x244EA */ s16 highlightColor[4];
     /* 0x244F2 */ s16 highlightPulseDir;
     /* 0x244F4 */ s16 unk_244F4;
-    /* 0x244F6 */ s16 confirmButtonTexIndices[2];
+    /* 0x244F6 */ s16 confirmButtonTexIndices[3];
     /* 0x244FA */ s16 inputTimerX;
     /* 0x244FC */ s16 inputTimerY;
     /* 0x244FE */ s16 stickXDir;
@@ -275,6 +284,8 @@ typedef struct FileSelectState {
     /* 0x2454C */ s16 unk_2454C;
     /* 0x2454E */ s16 unk_2454E;
     /* 0x24550 */ s16 unk_24550;
+                  s16 chaos_config_mode;
+                  s16 chaos_config_scroll;
 } FileSelectState; // size = 0x24558
 
 void FileSelect_Init(GameState* thisx);
@@ -331,5 +342,11 @@ void FileSelect_OptionsWaitForFlashSave(GameState* thisx);
 
 extern u8 D_808141F0[];
 extern s16 D_80814280[];
+
+#define FILE_SELECT_BUTTON_WIDTH                        0x40
+#define FILE_SELECT_BUTTON_HEIGHT                       0x10
+#define FILE_SELECT_WINDOW_CONTENT_VERT_COUNT           964
+#define FILE_SELECT_CHAOS_SETTINGS_MAX_VISIBLE_SETTINGS 5
+#define FILE_SELECT_CHAOS_SETTING_VERT_COUNT            (4 * FILE_SELECT_CHAOS_SETTINGS_MAX_VISIBLE_SETTINGS)
 
 #endif

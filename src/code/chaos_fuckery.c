@@ -6,6 +6,7 @@
 #include "variables.h"
 #include "z64.h"
 #include "z64cutscene.h"
+#include "z64lifemeter.h"
 #include "z64scene.h"
 #include "z64malloc.h"
 #include "overlays/kaleido_scope/ovl_kaleido_scope/z_kaleido_scope.h"
@@ -27,6 +28,10 @@ extern u32      gSceneIndex;
 extern u32      gEntranceIndex;
 ArrowType       gCurrentArrowType = 0;
 u32             gChangeArrowType = 0;
+
+s16             gVertPosRandList[256];
+s16             gTexCoordRandList[256];
+u8              gColorRandList[256];
 
 PlayerAnimationHeader *gImaginaryFriendAnimations[] = {
     &gPlayerAnim_cl_tewofuru,
@@ -72,7 +77,6 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_OUT_OF_SHAPE]            = */ CHAOS_CODE_DEF(5,  12, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1), 0.008f),
     /* [CHAOS_CODE_TUNIC_COLOR]             = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0), 0.006f),
     /* [CHAOS_CODE_WEIRD_SKYBOX]            = */ CHAOS_CODE_DEF(10, 15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0), 0.006f),
-    // /* [CHAOS_CODE_SINGLE_ACTION_OWL]       = */ CHAOS_CODE_DEF(5,  15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.0005f),
     /* [CHAOS_CODE_PLAY_OCARINA]            = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1), 0.004f),
     /* [CHAOS_CODE_RANDO_FIERCE_DEITY]      = */ CHAOS_CODE_DEF(25, 75, CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1), 0.00098f),
     /* [CHAOS_CODE_CHICKEN_ARISE]           = */ CHAOS_CODE_DEF(15, 23, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0), 0.0055f),
@@ -86,6 +90,8 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_REDEADASS_GROOVE]        = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0), 0.0055f),
     /* [CHAOS_CODE_SCALE_RANDOM_LIMB]       = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.0016f),
     /* [CHAOS_CODE_LIFTOFF]                 = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1), 0.0001f),
+    /* [CHAOS_CODE_WEIRD_ROOMS]             = */ CHAOS_CODE_DEF(15, 25, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.005f),
+    /* [CHAOS_CODE_HEART_SNAKE]             = */ CHAOS_CODE_DEF(25, 65, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.0088f),
 };
   
 const char *gChaosCodeNames[] = {
@@ -126,7 +132,6 @@ const char *gChaosCodeNames[] = {
     /* [CHAOS_CODE_OUT_OF_SHAPE]            = */ "Out of shape",
     /* [CHAOS_CODE_TUNIC_COLOR]             = */ "Tunic color",
     /* [CHAOS_CODE_WEIRD_SKYBOX]            = */ "Weird skybox",
-    // /* [CHAOS_CODE_SINGLE_ACTION_OWL]       = */ "Single action owl",
     /* [CHAOS_CODE_PLAY_OCARINA]            = */ "Play ocarina",
     /* [CHAOS_CODE_RANDO_FIERCE_DEITY]      = */ "Random fierce deity",
     /* [CHAOS_CODE_CHICKEN_ARISE]           = */ "Chicken arise",
@@ -140,6 +145,8 @@ const char *gChaosCodeNames[] = {
     /* [CHAOS_CODE_REDEADASS_GROOVE]        = */ "Redeadass groove",
     /* [CHAOS_CODE_SCALE_RANDOM_LIMB]       = */ "Scale random limb",
     /* [CHAOS_CODE_LIFTOFF]                 = */ "Liftoff",
+    /* [CHAOS_CODE_WEIRD_ROOMS]             = */ "Weird rooms",
+    /* [CHAOS_CODE_HEART_SNAKE]             = */ "Heart snake",
 
 };
 
@@ -606,6 +613,16 @@ void Chaos_Init(void)
     }
 
     gChaosContext.chaos_keep_size = (gChaosContext.chaos_keep_size + 0x3ff) & (~0x3ff);
+    gChaosContext.room.vert_list_list[0] = NULL;
+    gChaosContext.room.vert_list_list[1] = NULL;
+    gChaosContext.room.weirdness_behavior = 0;
+
+    for(index = 0; index < ARRAY_COUNT(gVertPosRandList); index++)
+    {
+        gVertPosRandList[index] = (s16)(Rand_Next() % 7) - 3;
+        gTexCoordRandList[index] = Rand_S16Offset(-48, 96);
+        gColorRandList[index] = Rand_S16Offset(-5, 10);
+    }
 }
 
 u8 Chaos_RandomCode(void)
@@ -750,7 +767,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
 
         gChaosContext.code_elapsed_usec -= code_elapsed_seconds * 1000000;
 
-        // return;
+        return;
 
         if(chaos_elapsed_seconds > 0)
         {
@@ -788,7 +805,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                     if(gChaosContext.queued_spawn_actor_code != CHAOS_CODE_NONE &&
                         Object_IsLoaded(&playstate->objectCtx, gChaosContext.chaos_keep_slot))
                     {
-                        /* there's an actor spawn effect "queued" and the object
+                        /* there's an actor spawn effect "queued" and the object                                // last_code->data = Rand_Next() % CHAOS_MOON_MOVE_LAST;
                         is already done loading, so activate it */
                         next_code = gChaosContext.queued_spawn_actor_code;
                         gChaosContext.queued_spawn_actor_code = CHAOS_CODE_NONE;
@@ -845,6 +862,31 @@ void Chaos_UpdateChaos(PlayState *playstate)
 
                         case CHAOS_CODE_IMAGINARY_FRIENDS:
                             if(Chaos_IsCodeInActiveList(CHAOS_CODE_OUT_OF_SHAPE))
+                            {
+                                continue;
+                            }
+                        break;
+
+                        case CHAOS_CODE_RANDOM_HEALTH_UP:
+                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_HEART_SNAKE))
+                            {
+                                continue;
+                            }
+
+                            if(gSaveContext.save.saveInfo.playerData.healthCapacity >= 
+                                LIFEMETER_FULL_HEART_HEALTH * CHAOS_MAX_HEART_CONTAINERS)
+                            {
+                                continue;
+                            }
+                        break;
+
+                        case CHAOS_CODE_RANDOM_HEALTH_DOWN:
+                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_HEART_SNAKE))
+                            {
+                                continue;
+                            }
+
+                            if(gSaveContext.save.saveInfo.playerData.healthCapacity == LIFEMETER_FULL_HEART_HEALTH)
                             {
                                 continue;
                             }
@@ -962,8 +1004,16 @@ void Chaos_UpdateChaos(PlayState *playstate)
                             }
                         break;
 
-                        case CHAOS_CODE_RANDOM_HEALTH_DOWN:
-                            if(gSaveContext.save.saveInfo.playerData.healthCapacity == 16)
+                        case CHAOS_CODE_WEIRD_UI:
+                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_HEART_SNAKE))
+                            {
+                                continue;
+                            }
+                        break;
+
+                        case CHAOS_CODE_HEART_SNAKE:
+                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_WEIRD_UI) || 
+                                gSaveContext.save.saveInfo.playerData.healthCapacity < LIFEMETER_FULL_HEART_HEALTH * 3)
                             {
                                 continue;
                             }
@@ -984,10 +1034,22 @@ void Chaos_UpdateChaos(PlayState *playstate)
                             do
                             {
                                 /* pick a random combination of moon dance move flags */
-                                // last_code->data = Rand_Next() % CHAOS_MOON_MOVE_LAST;
                                 gChaosContext.moon.moon_dance = Rand_Next() % CHAOS_MOON_MOVE_LAST;
                             }
                             while(gChaosContext.moon.moon_dance == 0);
+                        break;
+
+                        case CHAOS_CODE_HEART_SNAKE:
+                            gChaosContext.ui.snake_state = CHAOS_SNAKE_GAME_STATE_INIT;
+                        break;
+
+                        case CHAOS_CODE_WEIRD_ROOMS:
+                            do
+                            {
+                                gChaosContext.room.weirdness_behavior = Rand_Next() % CHAOS_WEIRD_ROOMS_BEHAVIOR_LAST;
+                            }
+                            while(gChaosContext.room.weirdness_behavior == 0);
+                            Chaos_StepDownDisruptiveEffectProbabiliy();
                         break;
 
                         case CHAOS_CODE_RANDOM_KNOCKBACK:
@@ -1142,18 +1204,6 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
                 GfxPrint_Printf(&gfx_print, "%s: %d", gChaosCodeNames[code->code], (u32)code->timer);
                 slot_index++;
             }
-
-            // y_pos = 1;
-            // GfxPrint_SetPos(&gfx_print, 20, y_pos++);
-            // GfxPrint_Printf(&gfx_print, "%08x", player->stateFlags1);
-            // GfxPrint_SetPos(&gfx_print, 20, y_pos++);
-            // GfxPrint_Printf(&gfx_print, "%08x", player->stateFlags2);
-            // GfxPrint_SetPos(&gfx_print, 20, y_pos++);
-            // GfxPrint_Printf(&gfx_print, "%08x", player->stateFlags3);
-            // GfxPrint_SetPos(&gfx_print, 20, y_pos++);
-            // GfxPrint_Printf(&gfx_print, "%02x %02x", (s8)player->csId, (u8)player->csAction);
-            // GfxPrint_SetPos(&gfx_print, 20, y_pos++);
-            // GfxPrint_Printf(&gfx_print, "%04x", camera->setting);
         }
         else if(gChaosEffectPageIndex <= enabled_effects_page_count)
         {
@@ -1288,8 +1338,28 @@ void Chaos_DeactivateCodeAtIndex(u8 index)
     {
         code = gChaosContext.active_codes[index].code;
         gChaosContext.active_code_indices[code] = INVALID_CODE_INDEX;
-
         gChaosContext.active_code_count--;
+
+        switch(code)
+        {
+            case CHAOS_CODE_WEIRD_UI:
+                bzero(gChaosContext.ui.heart_containers, sizeof(gChaosContext.ui.heart_containers));
+            break;
+
+            case CHAOS_CODE_HEART_SNAKE:
+                bzero(gChaosContext.ui.heart_containers, sizeof(gChaosContext.ui.heart_containers));
+                if(gChaosContext.ui.snake_state != CHAOS_SNAKE_GAME_STATE_DIED || 
+                    gChaosContext.ui.snake_state != CHAOS_SNAKE_GAME_STATE_WIN)
+                {
+                    gSaveContext.save.saveInfo.playerData.healthCapacity = LIFEMETER_FULL_HEART_HEALTH * gChaosContext.ui.heart_count;
+
+                    if(gSaveContext.save.saveInfo.playerData.health > gSaveContext.save.saveInfo.playerData.healthCapacity)
+                    {
+                        gSaveContext.save.saveInfo.playerData.health = gSaveContext.save.saveInfo.playerData.healthCapacity;
+                    }
+                }
+            break;
+        }
 
         if(index < gChaosContext.active_code_count)
         {
@@ -2087,6 +2157,7 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     Chaos_EnableCode(CHAOS_CODE_RANDOM_HEALTH_DOWN, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_CHANGE_HEALTH, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_SCALE_RANDOM_LIMB, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_HEART_SNAKE, 1.0f);
 
     if(scene_index == ENTR_SCENE_TERMINA_FIELD)
     {
@@ -2122,9 +2193,6 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
         Chaos_EnableCode(CHAOS_CODE_RANDOM_BOMB_TIMER, 1.0f);
     }
  
-    // if(can_be_pushed_around)
-    // {
-    // u32 index;
     Chaos_EnableCode(CHAOS_CODE_POKE, gChaosContext.disruptive_code_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_RANDOM_KNOCKBACK, gChaosContext.disruptive_code_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_ICE_TRAP, gChaosContext.disruptive_code_probability_scale);
@@ -2141,11 +2209,7 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     Chaos_EnableCode(CHAOS_CODE_LIFTOFF, gChaosContext.disruptive_code_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_IMAGINARY_FRIENDS, gChaosContext.disruptive_code_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_JUNK_ITEM, gChaosContext.disruptive_code_probability_scale);
-    // if(has_ocarina)
-    // {
-        // Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA, 1.0f);
-    // }
-    // }
+    Chaos_EnableCode(CHAOS_CODE_WEIRD_ROOMS, gChaosContext.disruptive_code_probability_scale);
 
     /* some bosses/mini-bosses can fall out of bounds if they jump when low-grav is active,
     so check if we're not in those rooms */
@@ -2175,30 +2239,6 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
         Chaos_DeactivateCode(CHAOS_CODE_LOW_GRAVITY);
     }
 
-    // if(scene_index != ENTR_SCENE_ODOLWAS_LAIR && scene_index != ENTR_SCENE_IGOS_DU_IKANAS_LAIR &&
-    //    scene_index != ENTR_SCENE_PIRATES_FORTRESS_INTERIOR && scene_index != ENTR_SCENE_STONE_TOWER_TEMPLE || 
-    //    (scene_index == ENTR_SCENE_PIRATES_FORTRESS_INTERIOR && this->roomCtx.curRoom.num != 0 && 
-    //    this->roomCtx.curRoom.num != 1 && this->roomCtx.curRoom.num != 2) || 
-    //    (scene_index == ENTR_SCENE_STONE_TOWER_TEMPLE && this->roomCtx.curRoom.num != 10))
-    // {
-    //     /* some bosses jump around and may fall out of bounds of low gravity is active */
-    //     Chaos_EnableCode(CHAOS_CODE_LOW_GRAVITY, 1.0f);
-    // }
-    // else
-    // {
-    //     Chaos_DeactivateCode(CHAOS_CODE_LOW_GRAVITY);
-    // }
-
-    // if(scene_index != ENTR_SCENE_PIRATES_FORTRESS_INTERIOR || (this->roomCtx.curRoom.num != 14 && this->roomCtx.curRoom.num != 12))
-    // {
-    //     /* random fierce deity disallows changing to zora, so only enable it if the player isn't in an underwater section */
-    //     Chaos_EnableCode(CHAOS_CODE_RANDOM_FIERCE_DEITY);
-    // }
-    // else
-    // {
-    //     Chaos_DeactivateCode(CHAOS_CODE_RANDOM_FIERCE_DEITY);
-    // }
-
     if(has_ocarina)
     {
         Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA, gChaosContext.disruptive_code_probability_scale);
@@ -2216,5 +2256,275 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
         {
             Chaos_DeactivateCode(CHAOS_CODE_ENTRANCE_RANDO);
         }
+    }
+}
+
+static u8 gOppositeMoveDirs[] = {
+    /* [CHAOS_SNAKE_MOVE_DIR_RIGHT] =  */ CHAOS_SNAKE_MOVE_DIR_LEFT,
+    /* [CHAOS_SNAKE_MOVE_DIR_LEFT]  =  */ CHAOS_SNAKE_MOVE_DIR_RIGHT,
+    /* [CHAOS_SNAKE_MOVE_DIR_UP]    =  */ CHAOS_SNAKE_MOVE_DIR_DOWN,
+    /* [CHAOS_SNAKE_MOVE_DIR_DOWN]  =  */ CHAOS_SNAKE_MOVE_DIR_UP,
+};
+
+void Chaos_SpawnHeartContainer(PlayState *play)
+{
+    u32 container_index = gChaosContext.ui.heart_count;
+    gChaosContext.ui.heart_containers[container_index].pos_x = Rand_S16Offset(0, CHAOS_MAX_SNAKE_X) * LIFEMETER_HEART_CONTAINER_SIZE;
+    gChaosContext.ui.heart_containers[container_index].pos_y = Rand_S16Offset(CHAOS_MIN_SNAKE_HEART_SPAWN_Y, 
+        CHAOS_MAX_SNAKE_Y - CHAOS_MIN_SNAKE_HEART_SPAWN_Y - 1) * LIFEMETER_HEART_CONTAINER_SIZE;
+
+    gSaveContext.save.saveInfo.playerData.healthCapacity += LIFEMETER_FULL_HEART_HEALTH;
+}
+
+u32 Chaos_UpdateSnakeGame(PlayState *play, Input *input)
+{
+    u32 container_index = 0;
+    GfxPrint gfx_print;
+
+    if(gChaosContext.ui.snake_state == CHAOS_SNAKE_GAME_STATE_INIT)
+    {
+        u32 container_index;
+        gChaosContext.ui.blink_timer = 100;
+        gChaosContext.ui.snake_state = CHAOS_SNAKE_GAME_STATE_PLAY;        
+        gChaosContext.ui.orig_heart_count = gSaveContext.save.saveInfo.playerData.healthCapacity / LIFEMETER_FULL_HEART_HEALTH;
+        gChaosContext.ui.heart_count = 3;
+        gChaosContext.ui.move_timer = 0;
+        gChaosContext.ui.next_move_dir = CHAOS_SNAKE_MOVE_DIR_RIGHT;
+
+        gChaosContext.ui.heart_containers[0].pos_x = CHAOS_MIN_SNAKE_X * LIFEMETER_HEART_CONTAINER_SIZE;
+        gChaosContext.ui.heart_containers[0].pos_y = CHAOS_SNAKE_START_Y * LIFEMETER_HEART_CONTAINER_SIZE;
+        gChaosContext.ui.heart_containers[1].pos_x = (CHAOS_MIN_SNAKE_X + 1) * LIFEMETER_HEART_CONTAINER_SIZE;
+        gChaosContext.ui.heart_containers[1].pos_y = CHAOS_SNAKE_START_Y * LIFEMETER_HEART_CONTAINER_SIZE;
+        gChaosContext.ui.heart_containers[2].pos_x = (CHAOS_MIN_SNAKE_X + 2) * LIFEMETER_HEART_CONTAINER_SIZE;
+        gChaosContext.ui.heart_containers[2].pos_y = CHAOS_SNAKE_START_Y * LIFEMETER_HEART_CONTAINER_SIZE;
+
+        for(container_index = 3; container_index < gChaosContext.ui.orig_heart_count; container_index++)
+        {
+            gChaosContext.ui.heart_containers[container_index].pos_x = Rand_S16Offset(CHAOS_MIN_SNAKE_X, CHAOS_MAX_SNAKE_X - 1) * 
+                LIFEMETER_HEART_CONTAINER_SIZE;
+            gChaosContext.ui.heart_containers[container_index].pos_y = Rand_S16Offset(CHAOS_MIN_SNAKE_HEART_SPAWN_Y, 
+                CHAOS_MAX_SNAKE_Y - CHAOS_MIN_SNAKE_HEART_SPAWN_Y - 1) * LIFEMETER_HEART_CONTAINER_SIZE;
+        }
+
+        gSaveContext.save.saveInfo.playerData.healthCapacity = (gChaosContext.ui.heart_count + 1) * LIFEMETER_FULL_HEART_HEALTH;
+    }
+
+    if(gChaosContext.ui.blink_timer > 0)
+    {
+        u8 remainder = gChaosContext.ui.blink_timer % 10;
+        if(remainder == 5)
+        {
+            gChaosContext.ui.flags |= CHAOS_SNAKE_GAME_FLAG_BLINK;
+        }
+        else if(remainder == 0)
+        {
+            gChaosContext.ui.flags &= ~CHAOS_SNAKE_GAME_FLAG_BLINK;
+        }
+
+        gChaosContext.ui.blink_timer--;
+    }
+    else
+    {
+        gChaosContext.ui.flags &= ~CHAOS_SNAKE_GAME_FLAG_BLINK;
+    }
+
+    if(gChaosContext.ui.snake_state == CHAOS_SNAKE_GAME_STATE_PLAY)
+    {
+        struct HeartContainerPos next_head_pos;
+        struct HeartContainerPos *collect_heart_pos;
+        u8 next_move_dir = CHAOS_SNAKE_MOVE_DIR_NONE;
+        gChaosContext.ui.stick_x = input->cur.stick_x;
+        gChaosContext.ui.stick_y = input->cur.stick_y;
+
+        if(ABS(gChaosContext.ui.stick_x) > ABS(gChaosContext.ui.stick_y))
+        {
+            if(gChaosContext.ui.stick_x > 30)
+            {
+                next_move_dir = CHAOS_SNAKE_MOVE_DIR_RIGHT;
+            }
+            else if(gChaosContext.ui.stick_x < -30)
+            {
+                next_move_dir = CHAOS_SNAKE_MOVE_DIR_LEFT;
+            }
+        }
+        else
+        {
+            if(gChaosContext.ui.stick_y < -30)
+            {
+                next_move_dir = CHAOS_SNAKE_MOVE_DIR_UP;
+            }
+            else if(gChaosContext.ui.stick_y > 30)
+            {
+                next_move_dir = CHAOS_SNAKE_MOVE_DIR_DOWN;
+            }
+        }
+
+        if(next_move_dir != CHAOS_SNAKE_MOVE_DIR_NONE)
+        {
+            gChaosContext.ui.next_move_dir = next_move_dir;
+        }
+
+        if(gChaosContext.ui.move_timer == 0)
+        {
+            gChaosContext.ui.flags &= ~CHAOS_SNAKE_GAME_FLAG_MOVE_FAST;
+            if(gOppositeMoveDirs[gChaosContext.ui.next_move_dir] != gChaosContext.ui.move_dir)
+            {
+                gChaosContext.ui.move_dir = gChaosContext.ui.next_move_dir;
+            }
+
+            if(next_move_dir == gChaosContext.ui.next_move_dir)
+            {
+                gChaosContext.ui.flags |= CHAOS_SNAKE_GAME_FLAG_MOVE_FAST;
+            }
+
+            next_head_pos = gChaosContext.ui.heart_containers[gChaosContext.ui.heart_count - 1];
+
+            switch(gChaosContext.ui.move_dir)
+            {
+                case CHAOS_SNAKE_MOVE_DIR_RIGHT:
+                    next_head_pos.pos_x += LIFEMETER_HEART_CONTAINER_SIZE;
+                break;
+
+                case CHAOS_SNAKE_MOVE_DIR_LEFT:
+                    next_head_pos.pos_x -= LIFEMETER_HEART_CONTAINER_SIZE;
+                break;
+
+                case CHAOS_SNAKE_MOVE_DIR_UP:
+                    next_head_pos.pos_y += LIFEMETER_HEART_CONTAINER_SIZE;
+                break;
+
+                case CHAOS_SNAKE_MOVE_DIR_DOWN:
+                    next_head_pos.pos_y -= LIFEMETER_HEART_CONTAINER_SIZE;
+                break;
+            }
+
+            collect_heart_pos = gChaosContext.ui.heart_containers + gChaosContext.ui.heart_count;
+
+            if(collect_heart_pos->pos_x == next_head_pos.pos_x && collect_heart_pos->pos_y == next_head_pos.pos_y)
+            {
+                Audio_PlaySfx(NA_SE_SY_HP_RECOVER);
+                gChaosContext.ui.heart_count++;
+                if(gChaosContext.ui.heart_count < gChaosContext.ui.orig_heart_count)
+                {
+                    gSaveContext.save.saveInfo.playerData.healthCapacity += LIFEMETER_FULL_HEART_HEALTH;
+                }
+            }
+            else
+            {  
+                u32 self_collision = false;
+
+                for(container_index = 0; container_index < gChaosContext.ui.heart_count - 1; container_index++)
+                {
+                    gChaosContext.ui.heart_containers[container_index] = gChaosContext.ui.heart_containers[container_index + 1];
+                }
+ 
+                gChaosContext.ui.heart_containers[container_index] = next_head_pos;
+
+                for(container_index = 0; container_index < gChaosContext.ui.heart_count - 1; container_index++)
+                {
+                    if(next_head_pos.pos_x == gChaosContext.ui.heart_containers[container_index].pos_x && 
+                       next_head_pos.pos_y == gChaosContext.ui.heart_containers[container_index].pos_y)
+                    {
+                        self_collision = true;
+                        break;
+                    }
+                }
+
+                if(next_head_pos.pos_y > CHAOS_MAX_SNAKE_Y * LIFEMETER_HEART_CONTAINER_SIZE || 
+                   next_head_pos.pos_x > CHAOS_MAX_SNAKE_X * LIFEMETER_HEART_CONTAINER_SIZE ||
+                   next_head_pos.pos_y <= CHAOS_MIN_SNAKE_Y || next_head_pos.pos_x <= CHAOS_MIN_SNAKE_X || self_collision)
+                {
+                    Audio_PlaySfx(NA_SE_SY_ERROR);
+                    gChaosContext.ui.snake_state = CHAOS_SNAKE_GAME_STATE_DIED;
+                    gChaosContext.ui.blink_timer = 100;
+                }
+
+                
+            }
+   
+            if(gChaosContext.ui.heart_count == gChaosContext.ui.orig_heart_count)
+            {
+                Audio_PlayFanfare(NA_BGM_CLEAR_EVENT);
+                gChaosContext.ui.snake_state = CHAOS_SNAKE_GAME_STATE_WIN;
+                gChaosContext.ui.blink_timer = 100;
+            }
+
+            if(gChaosContext.ui.flags & CHAOS_SNAKE_GAME_FLAG_MOVE_FAST)
+            {
+                gChaosContext.ui.move_timer = 5;
+            }
+            else
+            {
+                gChaosContext.ui.move_timer = 10;
+            }
+        }
+
+        
+
+        gChaosContext.ui.move_timer--;
+    }
+
+    if(gChaosContext.ui.snake_state == CHAOS_SNAKE_GAME_STATE_DIED || gChaosContext.ui.snake_state == CHAOS_SNAKE_GAME_STATE_WIN)
+    {
+        gSaveContext.save.saveInfo.playerData.healthCapacity = LIFEMETER_FULL_HEART_HEALTH * gChaosContext.ui.heart_count;
+
+        if(gSaveContext.save.saveInfo.playerData.health > gSaveContext.save.saveInfo.playerData.healthCapacity)
+        {
+            gSaveContext.save.saveInfo.playerData.health = gSaveContext.save.saveInfo.playerData.healthCapacity;
+        }
+
+        if(gChaosContext.ui.blink_timer == 0)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void Chaos_PrintSnakeGameStuff(PlayState *play)
+{
+    if(gChaosContext.ui.snake_state == CHAOS_SNAKE_GAME_STATE_PLAY && gChaosContext.ui.blink_timer > 0)
+    {
+        Gfx *polyOpa;
+        Gfx *gfx;
+        GfxPrint gfx_print;
+        u32 y_pos = 3 << 3;
+        OPEN_DISPS(play->state.gfxCtx);
+
+        gDPSetRenderMode(OVERLAY_DISP++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
+        gDPSetCombineMode(OVERLAY_DISP++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
+        gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 0, 0, 0, 150);
+        gDPFillRectangle(OVERLAY_DISP++, 0, y_pos - 4, SCREEN_WIDTH,  y_pos + (5 << 3));
+        gDPPipeSync(OVERLAY_DISP++);
+
+        polyOpa = POLY_OPA_DISP;
+        gfx = Gfx_Open(polyOpa);
+        // gDPSetRenderMode(OVERLAY_DISP++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
+        // gDPSetCombineMode(OVERLAY_DISP++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
+
+        gSPDisplayList(OVERLAY_DISP++, gfx);
+
+        GfxPrint_Init(&gfx_print);
+        GfxPrint_Open(&gfx_print, gfx);
+        gDPSetRenderMode(gfx_print.dList++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
+        gDPSetCombineMode(gfx_print.dList++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
+        GfxPrint_SetColor(&gfx_print, 255, 255, 255, 255);
+
+        GfxPrint_SetPos(&gfx_print, 6, 4);
+        GfxPrint_Printf(&gfx_print, "Use the stick to move the snake.");
+        GfxPrint_SetPos(&gfx_print, 6, 5);
+        GfxPrint_Printf(&gfx_print, "Collect all containers...");
+        GfxPrint_SetPos(&gfx_print, 6, 6);
+        GfxPrint_Printf(&gfx_print, "or lose them ");
+        GfxPrint_SetColor(&gfx_print, 255, 5, 5, 255);
+        GfxPrint_Printf(&gfx_print, "FOREVER!");
+
+        gfx = GfxPrint_Close(&gfx_print);
+        GfxPrint_Destroy(&gfx_print);
+        gSPEndDisplayList(gfx++);
+        Gfx_Close(polyOpa, gfx);
+        POLY_OPA_DISP = gfx;
+        CLOSE_DISPS(gfxCtx);   
     }
 }

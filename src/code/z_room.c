@@ -2,6 +2,9 @@
 #include "PR/gs2dex.h"
 #include "debug.h"
 #include "sys_ucode.h"
+#include "chaos_fuckery.h"
+
+extern struct ChaosContext gChaosContext;
 
 void Room_Noop(PlayState* play, Room* room, Input* input, s32 arg3) {
 }
@@ -550,7 +553,6 @@ size_t Room_AllocateAndLoad(PlayState* play, RoomContext* roomCtx) {
 s32 Room_StartRoomTransition(PlayState* play, RoomContext* roomCtx, s32 index) {
     if (roomCtx->status == 0) {
         size_t size;
-
         roomCtx->prevRoom = roomCtx->curRoom;
         roomCtx->curRoom.num = index;
         roomCtx->curRoom.segment = NULL;
@@ -564,6 +566,8 @@ s32 Room_StartRoomTransition(PlayState* play, RoomContext* roomCtx, s32 index) {
         DmaMgr_RequestAsync(&roomCtx->dmaRequest, roomCtx->activeRoomVram, play->roomList[index].vromStart, size, 0,
                             &roomCtx->loadQueue, NULL);
         roomCtx->activeMemPage ^= 1;
+
+        gChaosContext.room.vert_list_list[roomCtx->activeMemPage] = NULL;
 
         return 1;
     }

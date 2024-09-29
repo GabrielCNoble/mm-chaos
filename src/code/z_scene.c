@@ -116,13 +116,13 @@ void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
         // objectCtx->slots[index].load_pending = false;
     }
 
-    // spaceSize += gObjectTable[OBJECT_DARK_LINK].vromEnd - gObjectTable[OBJECT_DARK_LINK].vromStart;
+    // spaceSize += gObjectTable[OBJECT_DNS].vromEnd - gObjectTable[OBJECT_DNS].vromStart;
     spaceSize += gChaosContext.chaos_keep_size;
 
     objectCtx->spaceStart = objectCtx->slots[0].segment = THA_AllocTailAlign16(&gameState->tha, spaceSize);
     objectCtx->spaceEnd = (void*)((u32)objectCtx->spaceStart + spaceSize);
     objectCtx->mainKeepSlot = Object_SpawnPersistent(objectCtx, GAMEPLAY_KEEP);
-    // Object_SpawnPersistent(objectCtx, OBJECT_DARK_LINK);
+    // Object_SpawnPersistent(objectCtx, OBJECT_DNS);
 
     /* allocate enough space for the largest object */
     gChaosContext.chaos_keep_slot = Object_AllocatePersistent(objectCtx, gChaosContext.chaos_keep_largest_object);
@@ -660,6 +660,10 @@ void Scene_CommandMapDataChests(PlayState* play, SceneCmd* cmd) {
     MapDisp_InitChestData(play, cmd->mapDataChests.num, cmd->mapDataChests.segment);
 }
 
+void Scene_CommandSetRoomVerts(PlayState *play, SceneCmd *cmd) {
+    gChaosContext.room.vert_list_list[play->roomCtx.activeMemPage] = cmd->room_vert_list_list.segment;
+}
+
 // SceneTableEntry Header Command 0x19: Sets Region Visited Flag
 void Scene_CommandSetRegionVisitedFlag(PlayState* play, SceneCmd* cmd) {
     s16 j = 0;
@@ -732,6 +736,7 @@ void (*sSceneCmdHandlers[SCENE_CMD_MAX])(PlayState*, SceneCmd*) = {
     Scene_CommandMapData,              // SCENE_CMD_ID_MAP_DATA
     Scene_Command1D,                   // SCENE_CMD_ID_UNUSED_1D
     Scene_CommandMapDataChests,        // SCENE_CMD_ID_MAP_DATA_CHESTS
+    Scene_CommandSetRoomVerts,         // SCENE_CMD_ID_SET_ROOM_VERTS
 };
 
 /**

@@ -62,6 +62,7 @@ extern u32                  gPlayerUpperAction;
 #define THIS ((Player*)thisx)
 void Player_SetTunicColor(PlayState *play, Player *this);
 void Player_GiveAGoddamnItem(PlayState *play, Player *this, s16 get_item_id);
+void Player_PushLinkOffEpona(Player *this);
 void Player_Init(Actor* thisx, PlayState* play);
 void Player_Destroy(Actor* thisx, PlayState* play);
 void Player_Update(Actor* thisx, PlayState* play);
@@ -5789,13 +5790,14 @@ void Player_HitResponse(PlayState* play, Player* this, s32 hit_type, f32 speed, 
 
 void Player_RandomKnockback(PlayState *play, Player *this, s32 hit_type, f32 speed, f32 velocityY, s16 hit_angle, s32 invicibility_timer)
 {
-    if(this->rideActor != NULL)
-    {
-        this->rideActor->child = NULL;
-        this->rideActor = NULL;
-        this->actor.parent = NULL;
-        this->stateFlags1 &= ~PLAYER_STATE1_MOUNTED;
-    }
+    // if(this->rideActor != NULL)
+    // {
+    //     this->rideActor->child = NULL;
+    //     this->rideActor = NULL;
+    //     this->actor.parent = NULL;
+    //     this->stateFlags1 &= ~PLAYER_STATE1_MOUNTED;
+    // }
+    Player_PushLinkOffEpona(this);
 
     Player_HitResponse(play, this, hit_type, speed, velocityY, hit_angle, invicibility_timer);   
 }
@@ -10923,6 +10925,7 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
         ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawFeet, this->ageProperties->shadowScale);
     }
 
+    // gSaveContext.save.saveInfo.playerData.healthCapacity = 6 * LIFEMETER_FULL_HEART_HEALTH;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_GORON] = ITEM_MASK_GORON;
     // gSaveContext.save.saveInfo.playerData.owlActivationFlags |= 1 << OWL_WARP_GREAT_BAY_COAST;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
@@ -11128,6 +11131,17 @@ void Player_GiveAGoddamnItem(PlayState *play, Player *this, s16 get_item_id)
     this->stateFlags1 |= (PLAYER_STATE1_400 | PLAYER_STATE1_800 | PLAYER_STATE1_20000000);
     func_8082DAD4(this);
     gSaveContext.save.saveInfo.inventory.upgrades = upgrades;
+}
+
+void Player_PushLinkOffEpona(Player *this)
+{
+    if(this->rideActor != NULL)
+    {
+        this->rideActor->child = NULL;
+        this->rideActor = NULL;
+        this->actor.parent = NULL;
+        this->stateFlags1 &= ~PLAYER_STATE1_MOUNTED;
+    }
 }
 
 void Player_Init(Actor* thisx, PlayState* play) {
@@ -12490,11 +12504,11 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     struct ChaosCode *code = NULL;
     Camera *camera = Play_GetCamera(play, CAM_ID_MAIN);
 
-    if(CHECK_BTN_ANY(input->cur.button, BTN_L))
+    if(CHECK_BTN_ANY(input->press.button, BTN_L))
     {
         // play->nextEntrance = Entrance_Create(gSceneIndex, gEntranceIndex, 0);
 
-        // play->nextEntrance = ENTRANCE(IKANA_CASTLE, 0);
+        // play->nextEntrance = ENTRANCE(SNOWHEAD_TEMPLE, 0);
         // Scene_SetExitFade(play);
         // play->transitionTrigger = TRANS_TRIGGER_START;
 
@@ -12522,12 +12536,14 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // Chaos_ActivateCode(CHAOS_CODE_DIE, 1);
         // Chaos_ActivateCode(CHAOS_CODE_RANDOM_KNOCKBACK, 5);
         // gChaosContext.link.random_knockback_timer = 1;
-        // Actor_Spawn(&play->actorCtx, play, ACTOR_EN_DARK_LINK, 
+        // Actor_Spawn(&play->actorCtx, play, ACTOR_EN_DNS, 
         //     this->actor.world.pos.x, this->actor.world.pos.y + 20.0f, this->actor.world.pos.z, 0, 0, 0, 0);
         // Camera_ChangeSetting(Play_GetCamera(play, CAM_ID_MAIN), CAM_SET_BIRDS_EYE_VIEW_0);
         // Chaos_ActivateCode(CHAOS_CODE_LIFTOFF, 1);
         // Chaos_ActivateCode(CHAOS_CODE_BOMB_ARROWS, 120);
         // Chaos_ActivateCode(CHAOS_CODE_BUCKSHOT_ARROWS, 120);
+        // Chaos_ActivateCode(CHAOS_CODE_HEART_SNAKE, 60);
+        // gChaosContext.ui.snake_state = CHAOS_SNAKE_GAME_STATE_INIT;
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_R))
@@ -12535,7 +12551,10 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // Chaos_ActivateCode(CHAOS_CODE_SHRINK_RANDOM_LIMB, 1);
         // Chaos_ActivateCode(CHAOS_CODE_JUNK_ITEM, 1);
         // CutsceneManager_Start(18, NULL);
-        // Chaos_ActivateCode(CHAOS_CODE_ACTOR_CHASE, 15);
+        // Chaos_ActivateCode(CHAOS_CODE_ACTOR_CHASE, 5);
+        // Chaos_ActivateCode(CHAOS_CODE_WEIRD_ROOMS, 15);
+        // gChaosContext.room.weirdness_behavior = CHAOS_WEIRD_ROOMS_BEHAVIOR_SNAP_TO_PLAYER | CHAOS_WEIRD_ROOMS_BEHAVIOR_WOBBLE;
+        // gChaosContext.room.snap_to_player_timer = 0;
         // Chaos_ActivateCode(CHAOS_CODE_BOMB_ARROWS, 120);
         // Chaos_ActivateCode(CHAOS_CODE_RANDOM_FIERCE_DEITY, 60);
         
@@ -14935,6 +14954,7 @@ u32 Player_IsLiftingOff(Player *this, PlayState *play)
             Player_AnimSfx_PlayVoice(this, NA_SE_VO_LI_FALL_S);
             Camera_ChangeSetting(Play_GetCamera(play, CAM_ID_MAIN), CAM_SET_FREE0);
             Player_StopHorizontalMovement(this);
+            Player_PushLinkOffEpona(this);
         }
         return true;
     }

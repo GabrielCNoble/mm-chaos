@@ -17,6 +17,7 @@ s32 D_808144F10 = 100;
 f32 D_808144F14 = 8.0f;
 f32 D_808144F18 = 100.0f;
 s32 D_808144F1C = 0;
+f32 wave_angle = 0;
 
 static Gfx sScreenFillSetupDL[] = {
     gsDPPipeSync(),
@@ -597,12 +598,12 @@ void FileSelect_SetWindowVtx(GameState* thisx) {
 s16 D_80814620[] = { 8, 8, 8, 0 };
 s16 D_80814628[] = { 12, 12, 12, 0 };
 s16 D_80814630[] = { 12, 12, 12, 0 };
-s16 D_80814638[] = {
-    88, 104, 120, 940, 944, 948,
-};
+s16 D_80814638[] = { 88, 104, 120, 940, 944, 948 };
 s16 D_80814644[] = { 88, 104, 120, 944 };
 s16 D_8081464C[] = { 940, 944 };
-s16 D_80814650[] = { 940, 944 };
+
+/* confirm button vertex offset */
+s16 D_80814650[] = { 940, 944, 948 };
 
 /*
  * fileSelect->windowContentVtx[0]    -> Title Label (4)
@@ -673,60 +674,87 @@ void FileSelect_SetWindowContentVtx(GameState* thisx) {
     s32 posX;
     s32 index;
 
-    this->windowContentVtx = GRAPH_ALLOC(this->state.gfxCtx, 960 * sizeof(Vtx));
+    this->windowContentVtx = GRAPH_ALLOC(this->state.gfxCtx, FILE_SELECT_WINDOW_CONTENT_VERT_COUNT * sizeof(Vtx));
 
     // Initialize all windowContentVtx
-    for (vtxId = 0; vtxId < 960; vtxId += 4) {
+    for (vtxId = 0; vtxId < FILE_SELECT_WINDOW_CONTENT_VERT_COUNT; vtxId += 4) {
         // x-coord (left)
-        this->windowContentVtx[vtxId + 0].v.ob[0] = this->windowContentVtx[vtxId + 2].v.ob[0] = 0x12C;
-        // x-coord (right)
-        this->windowContentVtx[vtxId + 1].v.ob[0] = this->windowContentVtx[vtxId + 3].v.ob[0] =
-            this->windowContentVtx[vtxId + 0].v.ob[0] + 16;
+        this->windowContentVtx[vtxId + 0].v.ob[0] = 0x12C;
+        this->windowContentVtx[vtxId + 0].v.ob[1] = 0;
+        this->windowContentVtx[vtxId + 0].v.ob[2] = 0;
 
-        // y-coord (top)
-        this->windowContentVtx[vtxId + 0].v.ob[1] = this->windowContentVtx[vtxId + 1].v.ob[1] = 0;
-        // y-coord (bottom)
-        this->windowContentVtx[vtxId + 2].v.ob[1] = this->windowContentVtx[vtxId + 3].v.ob[1] =
-            this->windowContentVtx[vtxId + 0].v.ob[1] - 16;
+        this->windowContentVtx[vtxId + 1].v.ob[0] = this->windowContentVtx[vtxId + 0].v.ob[0] + 16;
+        this->windowContentVtx[vtxId + 1].v.ob[1] = 0;
+        this->windowContentVtx[vtxId + 1].v.ob[2] = 0;
 
-        // z-coordinate
-        this->windowContentVtx[vtxId + 0].v.ob[2] = this->windowContentVtx[vtxId + 1].v.ob[2] =
-            this->windowContentVtx[vtxId + 2].v.ob[2] = this->windowContentVtx[vtxId + 3].v.ob[2] = 0;
+        this->windowContentVtx[vtxId + 2].v.ob[0] = 0x12C;
+        this->windowContentVtx[vtxId + 2].v.ob[1] = this->windowContentVtx[vtxId + 0].v.ob[1] - 16;
+        this->windowContentVtx[vtxId + 2].v.ob[2] = 0;
+        
+        this->windowContentVtx[vtxId + 3].v.ob[0] = this->windowContentVtx[vtxId + 0].v.ob[0] + 16;
+        this->windowContentVtx[vtxId + 3].v.ob[1] = this->windowContentVtx[vtxId + 0].v.ob[1] - 16;
+        this->windowContentVtx[vtxId + 3].v.ob[2] = 0;
 
         // flag
-        this->windowContentVtx[vtxId + 0].v.flag = this->windowContentVtx[vtxId + 1].v.flag =
-            this->windowContentVtx[vtxId + 2].v.flag = this->windowContentVtx[vtxId + 3].v.flag = 0;
+        this->windowContentVtx[vtxId + 0].v.flag = 0;
+        this->windowContentVtx[vtxId + 1].v.flag = 0;
+        this->windowContentVtx[vtxId + 2].v.flag = 0;
+        this->windowContentVtx[vtxId + 3].v.flag = 0;
 
         // texture coordinates
-        this->windowContentVtx[vtxId + 0].v.tc[0] = this->windowContentVtx[vtxId + 0].v.tc[1] =
-            this->windowContentVtx[vtxId + 1].v.tc[1] = this->windowContentVtx[vtxId + 2].v.tc[0] = 0;
-        this->windowContentVtx[vtxId + 1].v.tc[0] = this->windowContentVtx[vtxId + 2].v.tc[1] =
-            this->windowContentVtx[vtxId + 3].v.tc[0] = this->windowContentVtx[vtxId + 3].v.tc[1] = 0x200;
+        this->windowContentVtx[vtxId + 0].v.tc[0] = 0;
+        this->windowContentVtx[vtxId + 0].v.tc[1] = 0;
+
+        this->windowContentVtx[vtxId + 1].v.tc[0] = 0x200;
+        this->windowContentVtx[vtxId + 1].v.tc[1] = 0;
+
+        this->windowContentVtx[vtxId + 2].v.tc[0] = 0;
+        this->windowContentVtx[vtxId + 2].v.tc[1] = 0x200;
+
+        this->windowContentVtx[vtxId + 3].v.tc[0] = 0x200;
+        this->windowContentVtx[vtxId + 3].v.tc[1] = 0x200;
 
         // alpha
-        this->windowContentVtx[vtxId + 0].v.cn[0] = this->windowContentVtx[vtxId + 1].v.cn[0] =
-            this->windowContentVtx[vtxId + 2].v.cn[0] = this->windowContentVtx[vtxId + 3].v.cn[0] =
-                this->windowContentVtx[vtxId + 0].v.cn[1] = this->windowContentVtx[vtxId + 1].v.cn[1] =
-                    this->windowContentVtx[vtxId + 2].v.cn[1] = this->windowContentVtx[vtxId + 3].v.cn[1] =
-                        this->windowContentVtx[vtxId + 0].v.cn[2] = this->windowContentVtx[vtxId + 1].v.cn[2] =
-                            this->windowContentVtx[vtxId + 2].v.cn[2] = this->windowContentVtx[vtxId + 3].v.cn[2] =
-                                this->windowContentVtx[vtxId + 0].v.cn[3] = this->windowContentVtx[vtxId + 1].v.cn[3] =
-                                    this->windowContentVtx[vtxId + 2].v.cn[3] =
-                                        this->windowContentVtx[vtxId + 3].v.cn[3] = 255;
+        this->windowContentVtx[vtxId + 0].v.cn[0] = 255;
+        this->windowContentVtx[vtxId + 0].v.cn[1] = 255;
+        this->windowContentVtx[vtxId + 0].v.cn[2] = 255;
+        this->windowContentVtx[vtxId + 0].v.cn[3] = 255;
+
+        this->windowContentVtx[vtxId + 1].v.cn[0] = 255;
+        this->windowContentVtx[vtxId + 1].v.cn[1] = 255;
+        this->windowContentVtx[vtxId + 1].v.cn[2] = 255;
+        this->windowContentVtx[vtxId + 1].v.cn[3] = 255;
+
+        this->windowContentVtx[vtxId + 2].v.cn[0] = 255;
+        this->windowContentVtx[vtxId + 2].v.cn[1] = 255;
+        this->windowContentVtx[vtxId + 2].v.cn[2] = 255;
+        this->windowContentVtx[vtxId + 2].v.cn[3] = 255;
+
+        this->windowContentVtx[vtxId + 3].v.cn[0] = 255;
+        this->windowContentVtx[vtxId + 3].v.cn[1] = 255;
+        this->windowContentVtx[vtxId + 3].v.cn[2] = 255;
+        this->windowContentVtx[vtxId + 3].v.cn[3] = 255;
     }
 
     /** Title Label **/
 
-    // x-coord (left)
-    this->windowContentVtx[0].v.ob[0] = this->windowContentVtx[2].v.ob[0] = this->windowPosX;
-    // x-coord (right)
-    this->windowContentVtx[1].v.ob[0] = this->windowContentVtx[3].v.ob[0] = this->windowContentVtx[0].v.ob[0] + 0x80;
-    // y-coord (top)
-    this->windowContentVtx[0].v.ob[1] = this->windowContentVtx[1].v.ob[1] = 0x48;
-    // y-coord (bottom)
-    this->windowContentVtx[2].v.ob[1] = this->windowContentVtx[3].v.ob[1] = this->windowContentVtx[0].v.ob[1] - 0x10;
-    // texture coordinates
-    this->windowContentVtx[1].v.tc[0] = this->windowContentVtx[3].v.tc[0] = 0x1000;
+    /* top left */
+    this->windowContentVtx[0].v.ob[0] = this->windowPosX;
+    this->windowContentVtx[0].v.ob[1] = 0x48;
+
+    /* top right */
+    this->windowContentVtx[1].v.ob[0] = this->windowContentVtx[0].v.ob[0] + 0x80;
+    this->windowContentVtx[1].v.ob[1] = 0x48;
+    this->windowContentVtx[1].v.tc[0] = 0x1000;
+    
+    /* bottom left */
+    this->windowContentVtx[2].v.ob[0] = this->windowPosX;
+    this->windowContentVtx[2].v.ob[1] = this->windowContentVtx[0].v.ob[1] - 0x10;
+
+    /* bottom right */
+    this->windowContentVtx[3].v.ob[0] = this->windowContentVtx[0].v.ob[0] + 0x80;
+    this->windowContentVtx[3].v.ob[1] = this->windowContentVtx[0].v.ob[1] - 0x10;
+    this->windowContentVtx[3].v.tc[0] = 0x1000;
 
     /** File InfoBox **/
 
@@ -736,23 +764,26 @@ void FileSelect_SetWindowContentVtx(GameState* thisx) {
 
         // Loop through 7 textures
         for (j = 0; j < 7; j++, vtxId += 4) {
-            // x-coord (left)
-            this->windowContentVtx[vtxId + 0].v.ob[0] = this->windowContentVtx[vtxId + 2].v.ob[0] = posX;
-            // x-coord (right)
-            this->windowContentVtx[vtxId + 1].v.ob[0] = this->windowContentVtx[vtxId + 3].v.ob[0] =
-                this->windowContentVtx[vtxId + 0].v.ob[0] + sFileInfoBoxPartWidths[j];
+            
+            /* top left corner */
+            this->windowContentVtx[vtxId + 0].v.ob[0] = posX;
+            this->windowContentVtx[vtxId + 0].v.ob[1] = this->fileNamesY[i] + 0x2C;
 
-            // y-coord(top)
-            this->windowContentVtx[vtxId + 0].v.ob[1] = this->windowContentVtx[vtxId + 1].v.ob[1] =
-                this->fileNamesY[i] + 0x2C;
-            // y-coord (bottom)
-            this->windowContentVtx[vtxId + 2].v.ob[1] = this->windowContentVtx[vtxId + 3].v.ob[1] =
-                this->windowContentVtx[vtxId + 0].v.ob[1] - 0x38;
+            /* top right corner */
+            this->windowContentVtx[vtxId + 1].v.ob[0] = this->windowContentVtx[vtxId + 0].v.ob[0] + sFileInfoBoxPartWidths[j];
+            this->windowContentVtx[vtxId + 1].v.ob[1] = this->fileNamesY[i] + 0x2C;
+            this->windowContentVtx[vtxId + 1].v.tc[0] = sFileInfoBoxPartWidths[j] << 5;
 
-            // texture coordinates
-            this->windowContentVtx[vtxId + 1].v.tc[0] = this->windowContentVtx[vtxId + 3].v.tc[0] =
-                sFileInfoBoxPartWidths[j] << 5;
-            this->windowContentVtx[vtxId + 2].v.tc[1] = this->windowContentVtx[vtxId + 3].v.tc[1] = 0x700;
+            /* bottom left corner */
+            this->windowContentVtx[vtxId + 2].v.ob[0] = posX;
+            this->windowContentVtx[vtxId + 2].v.ob[1] = this->windowContentVtx[vtxId + 0].v.ob[1] - 0x38;
+            this->windowContentVtx[vtxId + 2].v.tc[1] = 0x700;
+            
+            /* bottom right corner */
+            this->windowContentVtx[vtxId + 3].v.ob[0] = this->windowContentVtx[vtxId + 0].v.ob[0] + sFileInfoBoxPartWidths[j];            
+            this->windowContentVtx[vtxId + 3].v.ob[1] = this->windowContentVtx[vtxId + 0].v.ob[1] - 0x38;
+            this->windowContentVtx[vtxId + 3].v.tc[0] = sFileInfoBoxPartWidths[j] << 5;
+            this->windowContentVtx[vtxId + 3].v.tc[1] = 0x700;
 
             // Update X position
             posX += sFileInfoBoxPartWidths[j];
@@ -769,75 +800,80 @@ void FileSelect_SetWindowContentVtx(GameState* thisx) {
 
         /* File Button */
 
-        // x-coord (left)
-        this->windowContentVtx[vtxId + 0].v.ob[0] = this->windowContentVtx[vtxId + 2].v.ob[0] = posX;
-        // x-coord (right)
-        this->windowContentVtx[vtxId + 1].v.ob[0] = this->windowContentVtx[vtxId + 3].v.ob[0] =
-            this->windowContentVtx[vtxId + 0].v.ob[0] + 0x40;
+        /* top left corner */
+        this->windowContentVtx[vtxId + 0].v.ob[0] = posX;
+        this->windowContentVtx[vtxId + 0].v.ob[1] = this->buttonYOffsets[j] + posY;
+        
+        /* top right corner */
+        this->windowContentVtx[vtxId + 1].v.ob[0] = this->windowContentVtx[vtxId + 0].v.ob[0] + 0x40;
+        this->windowContentVtx[vtxId + 1].v.ob[1] = this->buttonYOffsets[j] + posY;
+        this->windowContentVtx[vtxId + 1].v.tc[0] = 0x800;
 
-        // y-coord(top)
-        this->windowContentVtx[vtxId + 0].v.ob[1] = this->windowContentVtx[vtxId + 1].v.ob[1] =
-            this->buttonYOffsets[j] + posY;
-        // y-coord (bottom)
-        this->windowContentVtx[vtxId + 2].v.ob[1] = this->windowContentVtx[vtxId + 3].v.ob[1] =
-            this->windowContentVtx[vtxId + 0].v.ob[1] - 0x10;
+        /* bottom left corner */
+        this->windowContentVtx[vtxId + 2].v.ob[0] = posX;
+        this->windowContentVtx[vtxId + 2].v.ob[1] = this->windowContentVtx[vtxId + 0].v.ob[1] - 0x10;
 
-        // texture coordinates
-        this->windowContentVtx[vtxId + 1].v.tc[0] = this->windowContentVtx[vtxId + 3].v.tc[0] = 0x800;
+        /* bottom right corner */
+        this->windowContentVtx[vtxId + 3].v.ob[0] = this->windowContentVtx[vtxId + 0].v.ob[0] + 0x40;
+        this->windowContentVtx[vtxId + 3].v.ob[1] = this->windowContentVtx[vtxId + 0].v.ob[1] - 0x10;        
+        this->windowContentVtx[vtxId + 3].v.tc[0] = 0x800;
 
         /* File Name Box */
 
-        // x-coord (left)
-        this->windowContentVtx[vtxId + 4].v.ob[0] = this->windowContentVtx[vtxId + 6].v.ob[0] = posX + 0x40;
-        // x-coord (right)
-        this->windowContentVtx[vtxId + 5].v.ob[0] = this->windowContentVtx[vtxId + 7].v.ob[0] =
-            this->windowContentVtx[vtxId + 4].v.ob[0] + 0x6C;
-
-        // y-coord(top)
-        this->windowContentVtx[vtxId + 4].v.ob[1] = this->windowContentVtx[vtxId + 5].v.ob[1] =
-            this->buttonYOffsets[j] + posY;
-        // y-coord (bottom)
-        this->windowContentVtx[vtxId + 6].v.ob[1] = this->windowContentVtx[vtxId + 7].v.ob[1] =
-            this->windowContentVtx[vtxId + 4].v.ob[1] - 0x10;
-
-        // texture coordinates
-        this->windowContentVtx[vtxId + 5].v.tc[0] = this->windowContentVtx[vtxId + 7].v.tc[0] = 0xD80;
+        /* top left corner */
+        this->windowContentVtx[vtxId + 4].v.ob[0] = posX + 0x40;
+        this->windowContentVtx[vtxId + 4].v.ob[1] = this->buttonYOffsets[j] + posY;
+        /* top right corner */
+        this->windowContentVtx[vtxId + 5].v.ob[0] = this->windowContentVtx[vtxId + 4].v.ob[0] + 0x6C;
+        this->windowContentVtx[vtxId + 5].v.ob[1] = this->buttonYOffsets[j] + posY;
+        this->windowContentVtx[vtxId + 5].v.tc[0] = 0xD80;
+        /* bottom left corner */
+        this->windowContentVtx[vtxId + 6].v.ob[0] = posX + 0x40;
+        this->windowContentVtx[vtxId + 6].v.ob[1] = this->windowContentVtx[vtxId + 4].v.ob[1] - 0x10;
+        /* bottom right corner */
+        this->windowContentVtx[vtxId + 7].v.ob[0] = this->windowContentVtx[vtxId + 4].v.ob[0] + 0x6C;
+        this->windowContentVtx[vtxId + 7].v.ob[1] = this->windowContentVtx[vtxId + 4].v.ob[1] - 0x10;
+        this->windowContentVtx[vtxId + 7].v.tc[0] = 0xD80;
 
         /* Connectors */
 
         // x-coord (left)
-        this->windowContentVtx[vtxId + 8].v.ob[0] = this->windowContentVtx[vtxId + 10].v.ob[0] = posX + 0x34;
+        this->windowContentVtx[vtxId + 8].v.ob[0] = posX + 0x34;
+        this->windowContentVtx[vtxId + 10].v.ob[0] = posX + 0x34;
         // x-coord (right)
-        this->windowContentVtx[vtxId + 9].v.ob[0] = this->windowContentVtx[vtxId + 11].v.ob[0] =
-            this->windowContentVtx[vtxId + 8].v.ob[0] + 0x18;
+        this->windowContentVtx[vtxId + 9].v.ob[0] = this->windowContentVtx[vtxId + 8].v.ob[0] + 0x18;
+        this->windowContentVtx[vtxId + 11].v.ob[0] = this->windowContentVtx[vtxId + 8].v.ob[0] + 0x18;
 
         // y-coord(top)
-        this->windowContentVtx[vtxId + 8].v.ob[1] = this->windowContentVtx[vtxId + 9].v.ob[1] =
-            this->buttonYOffsets[j] + posY;
+        this->windowContentVtx[vtxId + 8].v.ob[1] = this->buttonYOffsets[j] + posY;
+        this->windowContentVtx[vtxId + 9].v.ob[1] = this->buttonYOffsets[j] + posY;
         // y-coord (bottom)
-        this->windowContentVtx[vtxId + 10].v.ob[1] = this->windowContentVtx[vtxId + 11].v.ob[1] =
-            this->windowContentVtx[vtxId + 8].v.ob[1] - 0x10;
+        this->windowContentVtx[vtxId + 10].v.ob[1] = this->windowContentVtx[vtxId + 8].v.ob[1] - 0x10;
+        this->windowContentVtx[vtxId + 11].v.ob[1] = this->windowContentVtx[vtxId + 8].v.ob[1] - 0x10;
 
         // texture coordinates
-        this->windowContentVtx[vtxId + 9].v.tc[0] = this->windowContentVtx[vtxId + 11].v.tc[0] = 0x300;
+        this->windowContentVtx[vtxId + 9].v.tc[0] = 0x300;
+        this->windowContentVtx[vtxId + 11].v.tc[0] = 0x300;
 
         /* Blank Button (Owl Save) */
 
         // x-coord (left)
-        this->windowContentVtx[vtxId + 12].v.ob[0] = this->windowContentVtx[vtxId + 14].v.ob[0] = posX + 0xA9;
+        this->windowContentVtx[vtxId + 12].v.ob[0] = posX + 0xA9;
+        this->windowContentVtx[vtxId + 14].v.ob[0] = posX + 0xA9;
         // x-coord (right)
-        this->windowContentVtx[vtxId + 13].v.ob[0] = this->windowContentVtx[vtxId + 15].v.ob[0] =
-            this->windowContentVtx[vtxId + 12].v.ob[0] + 0x34;
+        this->windowContentVtx[vtxId + 13].v.ob[0] = this->windowContentVtx[vtxId + 12].v.ob[0] + 0x34;
+        this->windowContentVtx[vtxId + 15].v.ob[0] = this->windowContentVtx[vtxId + 12].v.ob[0] + 0x34;
 
         // y-coord(top)
-        this->windowContentVtx[vtxId + 12].v.ob[1] = this->windowContentVtx[vtxId + 13].v.ob[1] =
-            this->buttonYOffsets[j] + posY;
+        this->windowContentVtx[vtxId + 12].v.ob[1] = this->buttonYOffsets[j] + posY;
+        this->windowContentVtx[vtxId + 13].v.ob[1] = this->buttonYOffsets[j] + posY;
         // y-coord (bottom)
-        this->windowContentVtx[vtxId + 14].v.ob[1] = this->windowContentVtx[vtxId + 15].v.ob[1] =
-            this->windowContentVtx[vtxId + 12].v.ob[1] - 0x10;
+        this->windowContentVtx[vtxId + 14].v.ob[1] = this->windowContentVtx[vtxId + 12].v.ob[1] - 0x10;
+        this->windowContentVtx[vtxId + 15].v.ob[1] = this->windowContentVtx[vtxId + 12].v.ob[1] - 0x10;
 
         // texture coordinates
-        this->windowContentVtx[vtxId + 13].v.tc[0] = this->windowContentVtx[vtxId + 15].v.tc[0] = 0x680;
+        this->windowContentVtx[vtxId + 13].v.tc[0] = 0x680;
+        this->windowContentVtx[vtxId + 15].v.tc[0] = 0x680;
     }
 
     posY = 44;
@@ -1232,79 +1268,93 @@ void FileSelect_SetWindowContentVtx(GameState* thisx) {
     posX = this->windowPosX - 6;
     posY = -0xC;
 
-    for (j = 0; j < 2; j++, vtxId += 4, posY -= 0x10) {
+    for (j = 0; j < 3; j++, vtxId += 4, posY -= FILE_SELECT_BUTTON_HEIGHT) {
 
-        this->windowContentVtx[vtxId + 0].v.ob[0] = this->windowContentVtx[vtxId + 2].v.ob[0] = posX;
+        this->windowContentVtx[vtxId + 0].v.ob[0] = posX;
+        this->windowContentVtx[vtxId + 0].v.ob[1] = this->buttonYOffsets[j + 3] + posY;
 
-        this->windowContentVtx[vtxId + 1].v.ob[0] = this->windowContentVtx[vtxId + 3].v.ob[0] =
-            this->windowContentVtx[vtxId + 0].v.ob[0] + 0x40;
+        this->windowContentVtx[vtxId + 1].v.ob[0] = this->windowContentVtx[vtxId + 0].v.ob[0] + FILE_SELECT_BUTTON_WIDTH;
+        this->windowContentVtx[vtxId + 1].v.ob[1] = this->buttonYOffsets[j + 3] + posY;
+        this->windowContentVtx[vtxId + 1].v.tc[0] = 0x800;
 
-        this->windowContentVtx[vtxId + 0].v.ob[1] = this->windowContentVtx[vtxId + 1].v.ob[1] =
-            this->buttonYOffsets[j + 3] + posY;
-
-        this->windowContentVtx[vtxId + 2].v.ob[1] = this->windowContentVtx[vtxId + 3].v.ob[1] =
-            this->windowContentVtx[vtxId + 0].v.ob[1] - 0x10;
-
-        this->windowContentVtx[vtxId + 1].v.tc[0] = this->windowContentVtx[vtxId + 3].v.tc[0] = 0x800;
+        this->windowContentVtx[vtxId + 2].v.ob[0] = posX;
+        this->windowContentVtx[vtxId + 2].v.ob[1] = this->windowContentVtx[vtxId + 0].v.ob[1] - FILE_SELECT_BUTTON_HEIGHT;
+        
+        this->windowContentVtx[vtxId + 3].v.ob[0] = this->windowContentVtx[vtxId + 0].v.ob[0] + FILE_SELECT_BUTTON_WIDTH;
+        this->windowContentVtx[vtxId + 3].v.ob[1] = this->windowContentVtx[vtxId + 0].v.ob[1] - FILE_SELECT_BUTTON_HEIGHT;
+        this->windowContentVtx[vtxId + 3].v.tc[0] = 0x800;
     }
 
-    this->windowContentVtx[vtxId + 0].v.ob[0] = this->windowContentVtx[vtxId + 2].v.ob[0] = posX;
+    this->windowContentVtx[vtxId + 0].v.ob[0] = posX;
+    this->windowContentVtx[vtxId + 0].v.ob[1] = this->buttonYOffsets[6] - 0x34;
 
-    this->windowContentVtx[vtxId + 1].v.ob[0] = this->windowContentVtx[vtxId + 3].v.ob[0] =
-        this->windowContentVtx[vtxId + 0].v.ob[0] + 0x40;
+    this->windowContentVtx[vtxId + 1].v.ob[0] = this->windowContentVtx[vtxId + 0].v.ob[0] + FILE_SELECT_BUTTON_WIDTH;
+    this->windowContentVtx[vtxId + 1].v.ob[1] = this->buttonYOffsets[6] - 0x34;
+    this->windowContentVtx[vtxId + 1].v.tc[0] = 0x800;
 
-    this->windowContentVtx[vtxId + 0].v.ob[1] = this->windowContentVtx[vtxId + 1].v.ob[1] =
-        this->buttonYOffsets[5] - 0x34;
+    this->windowContentVtx[vtxId + 2].v.ob[0] = posX;
+    this->windowContentVtx[vtxId + 2].v.ob[1] = this->windowContentVtx[vtxId + 0].v.ob[1] - FILE_SELECT_BUTTON_HEIGHT;
 
-    this->windowContentVtx[vtxId + 2].v.ob[1] = this->windowContentVtx[vtxId + 3].v.ob[1] =
-        this->windowContentVtx[vtxId + 0].v.ob[1] - 0x10;
-
-    this->windowContentVtx[vtxId + 1].v.tc[0] = this->windowContentVtx[vtxId + 3].v.tc[0] = 0x800;
+    this->windowContentVtx[vtxId + 3].v.ob[0] = this->windowContentVtx[vtxId + 0].v.ob[0] + FILE_SELECT_BUTTON_WIDTH;
+    this->windowContentVtx[vtxId + 3].v.ob[1] = this->windowContentVtx[vtxId + 0].v.ob[1] - FILE_SELECT_BUTTON_HEIGHT;
+    this->windowContentVtx[vtxId + 3].v.tc[0] = 0x800;
 
     vtxId += 4;
 
-    if (((this->menuMode == FS_MENU_MODE_CONFIG) && (this->configMode >= 2)) ||
-        ((this->menuMode == FS_MENU_MODE_SELECT) && (this->selectMode == 3))) {
-        if (this->menuMode == FS_MENU_MODE_CONFIG) {
-            if ((this->configMode == 4) || (this->configMode == 7) || (this->configMode == 0x16)) {
+    if (((this->menuMode == FS_MENU_MODE_CONFIG) && (this->configMode >= CM_MAIN_MENU)) ||
+        ((this->menuMode == FS_MENU_MODE_SELECT) && (this->selectMode == SM_CONFIRM_FILE))) 
+    {
+        if (this->menuMode == FS_MENU_MODE_CONFIG) 
+        {
+            if ((this->configMode == CM_SELECT_COPY_SOURCE) || (this->configMode == CM_SELECT_COPY_DEST) || 
+                (this->configMode == CM_ERASE_SELECT)) 
+            {
                 j = D_80814644[this->buttonIndex];
-            } else if ((this->configMode == 0x19) || (this->configMode == 0xC)) {
+            } 
+            else if ((this->configMode == CM_ERASE_CONFIRM) || (this->configMode == CM_COPY_CONFIRM)) 
+            {
                 j = D_8081464C[this->buttonIndex];
-            } else {
+            } 
+            else 
+            {
                 j = D_80814638[this->buttonIndex];
             }
-        } else {
+        } 
+        else 
+        {
             j = D_80814650[this->confirmButtonIndex];
         }
 
-        this->windowContentVtx[vtxId + 0].v.ob[0] = this->windowContentVtx[vtxId + 2].v.ob[0] = this->windowPosX - 0xA;
+        this->windowContentVtx[vtxId + 0].v.ob[0] = this->windowPosX - 0xA;
+        this->windowContentVtx[vtxId + 0].v.ob[1] = this->windowContentVtx[j].v.ob[1] + 4;
 
-        this->windowContentVtx[vtxId + 1].v.ob[0] = this->windowContentVtx[vtxId + 3].v.ob[0] =
-            this->windowContentVtx[vtxId + 0].v.ob[0] + 0x48;
+        this->windowContentVtx[vtxId + 1].v.ob[0] = this->windowContentVtx[vtxId + 0].v.ob[0] + 0x48;
+        this->windowContentVtx[vtxId + 1].v.ob[1] = this->windowContentVtx[j].v.ob[1] + 4;
+        this->windowContentVtx[vtxId + 1].v.tc[0] = 0x900;
 
-        this->windowContentVtx[vtxId + 0].v.ob[1] = this->windowContentVtx[vtxId + 1].v.ob[1] =
-            this->windowContentVtx[j].v.ob[1] + 4;
+        this->windowContentVtx[vtxId + 2].v.ob[0] = this->windowPosX - 0xA;
+        this->windowContentVtx[vtxId + 2].v.ob[1] = this->windowContentVtx[vtxId + 0].v.ob[1] - 0x18;
+        this->windowContentVtx[vtxId + 2].v.tc[1] = 0x300;
 
-        this->windowContentVtx[vtxId + 2].v.ob[1] = this->windowContentVtx[vtxId + 3].v.ob[1] =
-            this->windowContentVtx[vtxId + 0].v.ob[1] - 0x18;
-
-        this->windowContentVtx[vtxId + 1].v.tc[0] = this->windowContentVtx[vtxId + 3].v.tc[0] = 0x900;
-
-        this->windowContentVtx[vtxId + 2].v.tc[1] = this->windowContentVtx[vtxId + 3].v.tc[1] = 0x300;
+        this->windowContentVtx[vtxId + 3].v.ob[0] = this->windowContentVtx[vtxId + 0].v.ob[0] + 0x48;
+        this->windowContentVtx[vtxId + 3].v.ob[1] = this->windowContentVtx[vtxId + 0].v.ob[1] - 0x18;        
+        this->windowContentVtx[vtxId + 3].v.tc[0] = 0x900;
+        this->windowContentVtx[vtxId + 3].v.tc[1] = 0x300;
     }
 
-    this->windowContentVtx[vtxId + 4].v.ob[0] = this->windowContentVtx[vtxId + 6].v.ob[0] = this->windowPosX + 0x3A;
+    this->windowContentVtx[vtxId + 4].v.ob[0] = this->windowPosX + 0x3A;
+    this->windowContentVtx[vtxId + 4].v.ob[1] = this->windowContentVtx[D_80814638[this->warningButtonIndex]].v.ob[1];
 
-    this->windowContentVtx[vtxId + 5].v.ob[0] = this->windowContentVtx[vtxId + 7].v.ob[0] =
-        this->windowContentVtx[vtxId + 4].v.ob[0] + 0x80;
+    this->windowContentVtx[vtxId + 5].v.ob[0] = this->windowContentVtx[vtxId + 4].v.ob[0] + 0x80;
+    this->windowContentVtx[vtxId + 5].v.ob[1] = this->windowContentVtx[D_80814638[this->warningButtonIndex]].v.ob[1];
+    this->windowContentVtx[vtxId + 5].v.tc[0] = 0x1000;
 
-    this->windowContentVtx[vtxId + 4].v.ob[1] = this->windowContentVtx[vtxId + 5].v.ob[1] =
-        this->windowContentVtx[D_80814638[this->warningButtonIndex]].v.ob[1];
+    this->windowContentVtx[vtxId + 6].v.ob[0] = this->windowPosX + 0x3A;
+    this->windowContentVtx[vtxId + 6].v.ob[1] = this->windowContentVtx[vtxId + 4].v.ob[1] - 0x10;
 
-    this->windowContentVtx[vtxId + 6].v.ob[1] = this->windowContentVtx[vtxId + 7].v.ob[1] =
-        this->windowContentVtx[vtxId + 4].v.ob[1] - 0x10;
-
-    this->windowContentVtx[vtxId + 5].v.tc[0] = this->windowContentVtx[vtxId + 7].v.tc[0] = 0x1000;
+    this->windowContentVtx[vtxId + 7].v.ob[0] = this->windowContentVtx[vtxId + 4].v.ob[0] + 0x80;
+    this->windowContentVtx[vtxId + 7].v.ob[1] = this->windowContentVtx[vtxId + 4].v.ob[1] - 0x10;
+    this->windowContentVtx[vtxId + 7].v.tc[0] = 0x1000;
 }
 
 u16 D_80814654[] = {
@@ -1760,6 +1810,8 @@ void FileSelect_DrawWindowContents(GameState* thisx) {
     gDPSetEnvColor(POLY_OPA_DISP++, 0, 0, 0, 0);
     gSPVertex(POLY_OPA_DISP++, &this->windowContentVtx[0x3AC], 20, 0);
 
+    // temp = this->confirmButtonTexIndices[FS_BTN_CONFIRM_OPTIONS];
+
     // draw primary action buttons (copy/erase)
     for (quadVtxIndex = 0, i = 0; i < 2; i++, quadVtxIndex += 4) {
         gDPPipeSync(POLY_OPA_DISP++);
@@ -1771,19 +1823,21 @@ void FileSelect_DrawWindowContents(GameState* thisx) {
         gSP1Quadrangle(POLY_OPA_DISP++, quadVtxIndex, quadVtxIndex + 2, quadVtxIndex + 3, quadVtxIndex + 1, 0);
     }
 
+    gDPPipeSync(POLY_OPA_DISP++);    
+    
+
+    // draw options button
     gDPPipeSync(POLY_OPA_DISP++);
-
-
-    // temp = this->confirmButtonTexIndices[FS_BTN_CONFIRM_OPTIONS];
-    //     gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, this->windowColor[0], this->windowColor[1], this->windowColor[2],
-    //                     this->confirmButtonAlpha[FS_BTN_CONFIRM_OPTIONS]);
-    //     gDPLoadTextureBlock(POLY_OPA_DISP++, sActionButtonTextures[temp], G_IM_FMT_IA, G_IM_SIZ_16b, 64, 16, 0,
-    //                         G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD,
-    //                         G_TX_NOLOD);
-    //     gSP1Quadrangle(POLY_OPA_DISP++, 0, 2, 3, 1, 0);
+    gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, this->windowColor[0], this->windowColor[1], this->windowColor[2],
+                    this->optionButtonAlpha);
+    gDPLoadTextureBlock(POLY_OPA_DISP++, gFileSelOptionsButtonENGTex, G_IM_FMT_IA, G_IM_SIZ_16b, 64, 16, 0,
+                        G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD,
+                        G_TX_NOLOD);
+    // gSP1Quadrangle(POLY_OPA_DISP++, 8, 10, 11, 9, 0);
+    gSP1Quadrangle(POLY_OPA_DISP++, quadVtxIndex, quadVtxIndex + 2, quadVtxIndex + 3, quadVtxIndex + 1, 0);
 
     // draw confirm buttons (yes/quit)
-    for (quadVtxIndex = 0, i = FS_BTN_CONFIRM_YES; i <= FS_BTN_CONFIRM_QUIT; i++, quadVtxIndex += 4) {
+    for (quadVtxIndex = 0, i = FS_BTN_CONFIRM_YES; i <= FS_BTN_CONFIRM_OPTIONS; i++, quadVtxIndex += 4) {
         temp = this->confirmButtonTexIndices[i];
         gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, this->windowColor[0], this->windowColor[1], this->windowColor[2],
                         this->confirmButtonAlpha[i]);
@@ -1793,14 +1847,15 @@ void FileSelect_DrawWindowContents(GameState* thisx) {
         gSP1Quadrangle(POLY_OPA_DISP++, quadVtxIndex, quadVtxIndex + 2, quadVtxIndex + 3, quadVtxIndex + 1, 0);
     }
 
-    // draw options button
-    gDPPipeSync(POLY_OPA_DISP++);
-    gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, this->windowColor[0], this->windowColor[1], this->windowColor[2],
-                    this->optionButtonAlpha);
-    gDPLoadTextureBlock(POLY_OPA_DISP++, gFileSelOptionsButtonENGTex, G_IM_FMT_IA, G_IM_SIZ_16b, 64, 16, 0,
-                        G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD,
-                        G_TX_NOLOD);
-    gSP1Quadrangle(POLY_OPA_DISP++, 8, 10, 11, 9, 0);
+    /* draw chaos options button */
+    // gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, this->windowColor[0], this->windowColor[1], this->windowColor[2],
+    //                 this->confirmButtonAlpha[FS_BTN_CONFIRM_OPTIONS]);
+    // gDPLoadTextureBlock(POLY_OPA_DISP++, sActionButtonTextures[this->confirmButtonTexIndices[FS_BTN_CONFIRM_OPTIONS]], 
+    //     G_IM_FMT_IA, G_IM_SIZ_16b, 64, 16, 0, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, 
+    //     G_TX_NOLOD, G_TX_NOLOD);
+    // gSP1Quadrangle(POLY_OPA_DISP++, 0, 2, 3, 1, 0);
+
+    quadVtxIndex += 4;
 
     // draw highlight over currently selected button
     if (((this->menuMode == FS_MENU_MODE_CONFIG) &&
@@ -1817,8 +1872,10 @@ void FileSelect_DrawWindowContents(GameState* thisx) {
         gDPLoadTextureBlock(POLY_OPA_DISP++, gFileSelBigButtonHighlightTex, G_IM_FMT_I, G_IM_SIZ_8b, 72, 24, 0,
                             G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD,
                             G_TX_NOLOD);
-        gSP1Quadrangle(POLY_OPA_DISP++, 12, 14, 15, 13, 0);
+        // gSP1Quadrangle(POLY_OPA_DISP++, 12, 14, 15, 13, 0);
+        gSP1Quadrangle(POLY_OPA_DISP++, quadVtxIndex, quadVtxIndex + 2, quadVtxIndex + 3, quadVtxIndex + 1, 0);
     }
+    quadVtxIndex += 4;
 
     // draw warning labels
     if (this->warningLabel > FS_WARNING_NONE) {
@@ -1831,7 +1888,8 @@ void FileSelect_DrawWindowContents(GameState* thisx) {
         gDPLoadTextureBlock(POLY_OPA_DISP++, sWarningLabels[this->warningLabel], G_IM_FMT_IA, G_IM_SIZ_8b, 128, 16, 0,
                             G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD,
                             G_TX_NOLOD);
-        gSP1Quadrangle(POLY_OPA_DISP++, 16, 18, 19, 17, 0);
+        // gSP1Quadrangle(POLY_OPA_DISP++, 16, 18, 19, 17, 0);
+        gSP1Quadrangle(POLY_OPA_DISP++, quadVtxIndex, quadVtxIndex + 2, quadVtxIndex + 3, quadVtxIndex + 1, 0);
     }
 
     gDPPipeSync(POLY_OPA_DISP++);
@@ -1861,8 +1919,9 @@ void FileSelect_ConfigModeDraw(GameState* thisx) {
                         this->windowAlpha);
         gDPSetEnvColor(POLY_OPA_DISP++, 0, 0, 0, 0);
 
-        Matrix_Translate(0.0f, 0.0f, -93.6f, MTXMODE_NEW);
+        Matrix_Translate(0.0f, Math_SinF(fmodf(wave_angle, 2.0f * 3.14159265f)) * 30.0f, -93.6f, MTXMODE_NEW);
         Matrix_Scale(0.78f, 0.78f, 0.78f, MTXMODE_APPLY);
+        wave_angle += 0.05f;
 
         if (this->windowRot != 0) {
             Matrix_RotateXFApply(this->windowRot / 100.0f);
@@ -1892,9 +1951,11 @@ void FileSelect_ConfigModeDraw(GameState* thisx) {
                         this->windowAlpha);
         gDPSetEnvColor(POLY_OPA_DISP++, 0, 0, 0, 0);
 
-        Matrix_Translate(0.0f, 0.0f, -93.6f, MTXMODE_NEW);
+        Matrix_Translate(Rand_Centered() * 10.0f, Rand_Centered() * 10.0f, -93.6f, MTXMODE_NEW);
         Matrix_Scale(0.78f, 0.78f, 0.78f, MTXMODE_APPLY);
-        Matrix_RotateXFApply((this->windowRot - 314.0f) / 100.0f);
+        Matrix_RotateXFApply((this->windowRot - 314.0f) / 100.0f + Rand_Centered() * 0.1f);
+        Matrix_RotateYF(Rand_Centered() * 0.1f, MTXMODE_APPLY);
+        Matrix_RotateZF(Rand_Centered() * 0.1f, MTXMODE_APPLY);
 
         gSPMatrix(POLY_OPA_DISP++, Matrix_NewMtx(this->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
 
@@ -1982,7 +2043,8 @@ void FileSelect_FadeMainToSelect(GameState* thisx) {
 
     if (this->actionTimer == 0) {
         this->actionTimer = 4;
-        this->selectMode++; // SM_MOVE_FILE_TO_TOP
+        // this->selectMode++; // SM_MOVE_FILE_TO_TOP
+        this->selectMode = SM_MOVE_FILE_TO_TOP;
         this->confirmButtonIndex = FS_BTN_CONFIRM_YES;
     }
 }
@@ -2003,9 +2065,12 @@ void FileSelect_MoveSelectedFileToTop(GameState* thisx) {
     this->actionTimer--;
 
     if ((this->actionTimer == 0) || (this->buttonYOffsets[this->buttonIndex] == sFileYOffsets[this->buttonIndex])) {
-        this->buttonYOffsets[FS_BTN_SELECT_YES] = this->buttonYOffsets[FS_BTN_SELECT_QUIT] = -24;
+        this->buttonYOffsets[FS_BTN_SELECT_YES] = -4;
+        this->buttonYOffsets[FS_BTN_SELECT_QUIT] = -4;
+        this->buttonYOffsets[FS_BTN_SELECT_OPTIONS] = -4;
         this->actionTimer = 4;
-        this->selectMode++; // SM_FADE_IN_FILE_INFO
+        // this->selectMode++; // SM_FADE_IN_FILE_INFO
+        this->selectMode = SM_FADE_IN_FILE_INFO;
     }
 }
 
@@ -2028,12 +2093,13 @@ void FileSelect_FadeInFileInfo(GameState* thisx) {
     if (this->actionTimer == 0) {
         this->fileInfoAlpha[this->buttonIndex] = 200;
         this->actionTimer = 4;
-        this->selectMode++; // SM_CONFIRM_FILE
+        // this->selectMode++; // SM_CONFIRM_FILE
+        this->selectMode = SM_CONFIRM_FILE;
     }
 
-    // this->confirmButtonAlpha[FS_BTN_CONFIRM_OPTIONS] = this->fileInfoAlpha[this->buttonIndex];
     this->confirmButtonAlpha[FS_BTN_CONFIRM_YES] = this->fileInfoAlpha[this->buttonIndex];
     this->confirmButtonAlpha[FS_BTN_CONFIRM_QUIT] = this->fileInfoAlpha[this->buttonIndex];
+    this->confirmButtonAlpha[FS_BTN_CONFIRM_OPTIONS] = this->fileInfoAlpha[this->buttonIndex];
 }
 
 /**
@@ -2043,6 +2109,7 @@ void FileSelect_FadeInFileInfo(GameState* thisx) {
 void FileSelect_ConfirmFile(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
     Input* input = CONTROLLER1(&this->state);
+    u32 button_index = this->confirmButtonIndex;
 
     if (CHECK_BTN_ALL(input->press.button, BTN_START) || (CHECK_BTN_ALL(input->press.button, BTN_A))) {
         if (this->confirmButtonIndex == FS_BTN_CONFIRM_YES) {
@@ -2053,7 +2120,10 @@ void FileSelect_ConfirmFile(GameState* thisx) {
         }
         else if(this->confirmButtonIndex == FS_BTN_CONFIRM_OPTIONS)
         {
-
+            Audio_PlaySfx(NA_SE_SY_FSEL_DECIDE_L);
+            this->menuMode = FS_MENU_MODE_CHAOS_CONFIG;
+            this->chaos_config_mode = CCM_FADE_SELECT_TO_CONFIG;
+            this->actionTimer = 4;
         }
         else 
         { // FS_BTN_CONFIRM_QUIT
@@ -2065,10 +2135,19 @@ void FileSelect_ConfirmFile(GameState* thisx) {
         Audio_PlaySfx(NA_SE_SY_FSEL_CLOSE);
         // this->selectMode++; // SM_FADE_OUT_FILE_INFO
         this->selectMode = SM_FADE_OUT_FILE_INFO;
-    } else if (ABS_ALT(this->stickAdjY) >= 30) {
+    } 
+    else if (this->stickAdjY <= -30) 
+    {
         Audio_PlaySfx(NA_SE_SY_FSEL_CURSOR);
-        this->confirmButtonIndex ^= 1;
+        button_index = (button_index + 1) % FS_BTN_CONFIRM_LAST;
     }
+    else if (this->stickAdjY >= 30)
+    {
+        Audio_PlaySfx(NA_SE_SY_FSEL_CURSOR);
+        button_index = (button_index - 1) % (-FS_BTN_CONFIRM_LAST);
+    }
+
+    this->confirmButtonIndex = button_index;
 }
 
 /**
@@ -2083,7 +2162,9 @@ void FileSelect_FadeOutFileInfo(GameState* thisx) {
     this->actionTimer--;
 
     if (this->actionTimer == 0) {
-        this->buttonYOffsets[FS_BTN_SELECT_YES] = this->buttonYOffsets[FS_BTN_SELECT_QUIT] = 0;
+        this->buttonYOffsets[FS_BTN_SELECT_YES] = 0;
+        this->buttonYOffsets[FS_BTN_SELECT_QUIT] = 0;
+        this->buttonYOffsets[FS_BTN_SELECT_OPTIONS] = 0;
         this->nameBoxAlpha[this->buttonIndex] = 200;
         this->fileInfoAlpha[this->buttonIndex] = 0;
         this->nextTitleLabel = FS_TITLE_SELECT_FILE;
@@ -2091,8 +2172,9 @@ void FileSelect_FadeOutFileInfo(GameState* thisx) {
         this->selectMode++;
     }
 
-    this->confirmButtonAlpha[FS_BTN_CONFIRM_YES] = this->confirmButtonAlpha[FS_BTN_CONFIRM_QUIT] =
-        this->fileInfoAlpha[this->buttonIndex];
+    this->confirmButtonAlpha[FS_BTN_CONFIRM_YES] = this->fileInfoAlpha[this->buttonIndex];
+    this->confirmButtonAlpha[FS_BTN_CONFIRM_QUIT] = this->fileInfoAlpha[this->buttonIndex];
+    this->confirmButtonAlpha[FS_BTN_CONFIRM_OPTIONS] = this->fileInfoAlpha[this->buttonIndex];
 }
 
 /**
@@ -2120,8 +2202,9 @@ void FileSelect_MoveSelectedFileToSlot(GameState* thisx) {
                 this->fileButtonAlpha[i] = 200;
             }
 
-            this->actionButtonAlpha[FS_BTN_ACTION_COPY] = this->actionButtonAlpha[FS_BTN_ACTION_ERASE] =
-                this->optionButtonAlpha = this->fileButtonAlpha[i];
+            this->actionButtonAlpha[FS_BTN_ACTION_COPY] = this->fileButtonAlpha[i];
+            this->actionButtonAlpha[FS_BTN_ACTION_ERASE] = this->fileButtonAlpha[i];
+            this->optionButtonAlpha = this->fileButtonAlpha[i];
 
             if (!gSaveContext.flashSaveAvailable) {
                 if (NO_FLASH_SLOT_OCCUPIED(sramCtx, i)) {
@@ -2221,6 +2304,11 @@ void FileSelect_LoadGame(GameState* thisx) {
     gSaveContext.save.saveInfo.playerData.tatlTimer = 0;
 }
 
+void FileSelect_FadeChaosConfigToSelect(GameState *thisx)
+{
+    FileSelectState* this = (FileSelectState*)thisx;
+}
+
 void (*sSelectModeUpdateFuncs[])(GameState*) = {
     FileSelect_FadeMainToSelect,       // SM_FADE_MAIN_TO_SELECT
     FileSelect_MoveSelectedFileToTop,  // SM_MOVE_FILE_TO_TOP
@@ -2230,6 +2318,7 @@ void (*sSelectModeUpdateFuncs[])(GameState*) = {
     FileSelect_MoveSelectedFileToSlot, // SM_MOVE_FILE_TO_SLOT
     FileSelect_FadeOut,                // SM_FADE_OUT
     FileSelect_LoadGame,               // SM_LOAD_GAME
+    FileSelect_FadeChaosConfigToSelect
 };
 
 void FileSelect_SelectModeUpdate(GameState* thisx) {
@@ -2278,6 +2367,181 @@ void FileSelect_SelectModeDraw(GameState* thisx) {
     CLOSE_DISPS(this->state.gfxCtx);
 }
 
+void FileSelect_FadeSelectToChaosConfig(GameState *thisx)
+{
+    FileSelectState* this = (FileSelectState*)thisx;
+
+    this->nameBoxAlpha[this->buttonIndex] += 50;
+    this->fileInfoAlpha[this->buttonIndex] -= 100;
+    if(this->fileInfoAlpha[this->buttonIndex] <= 0)
+    {
+        this->fileInfoAlpha[this->buttonIndex] = 0;
+    }
+
+    this->actionTimer--;
+
+    if(this->actionTimer == 0)
+    {
+        this->actionTimer = 4;
+        this->chaos_config_mode = CCM_CHAOS_OPTIONS;
+        this->nameBoxAlpha[this->buttonIndex] = 200;
+    }
+    
+    this->confirmButtonAlpha[FS_BTN_CONFIRM_YES] = this->fileInfoAlpha[this->buttonIndex];
+    this->confirmButtonAlpha[FS_BTN_CONFIRM_QUIT] = this->fileInfoAlpha[this->buttonIndex];
+    this->confirmButtonAlpha[FS_BTN_CONFIRM_OPTIONS] = this->fileInfoAlpha[this->buttonIndex];
+}
+
+void FileSelect_ChaosOptions(GameState *thisx)
+{
+    FileSelectState *this = (FileSelectState *)thisx;
+    Input *input = CONTROLLER1(&this->state);
+    if(CHECK_BTN_ALL(input->press.button, BTN_B))
+    {
+        Audio_PlaySfx(NA_SE_SY_FSEL_CLOSE);
+        this->menuMode = FS_MENU_MODE_SELECT;
+        this->selectMode = SM_FADE_IN_FILE_INFO;
+        this->actionTimer = 4;
+    }
+}
+
+void (*sChaosConfigModeUpdateFuncs[])(GameState *thisx) = {
+    FileSelect_FadeSelectToChaosConfig,
+    FileSelect_ChaosOptions,
+};
+
+void FileSelect_ChaosConfigModeUpdate(GameState *thisx)
+{
+    FileSelectState *this = (FileSelectState *)thisx;
+    sChaosConfigModeUpdateFuncs[this->chaos_config_mode](thisx);
+}
+
+#define MAX_OPTIONS_PER_SCREEN 12
+
+struct test_config_t
+{
+    u32 value;
+} configs[64];
+
+void FileSelect_ChaosConfigSetWindowContentVtx(GameState *thisx)
+{
+    FileSelectState *this = (FileSelectState *)thisx;
+    s32 pos_y = 16;
+    s32 pos_x = this->windowPosX + 64;
+    u32 index;
+    u32 vtx_index = 0;
+    this->windowContentVtx = GRAPH_ALLOC(this->state.gfxCtx, FILE_SELECT_CHAOS_SETTING_VERT_COUNT * sizeof(Vtx));
+
+    for(index = 0; index < FILE_SELECT_CHAOS_SETTINGS_MAX_VISIBLE_SETTINGS; index++)
+    {
+        this->windowContentVtx[vtx_index].v.ob[0] = pos_x;
+        this->windowContentVtx[vtx_index].v.ob[1] = pos_y;
+        this->windowContentVtx[vtx_index].v.ob[2] = 0;
+        this->windowContentVtx[vtx_index].v.cn[0] = 255;
+        this->windowContentVtx[vtx_index].v.cn[1] = 255;
+        this->windowContentVtx[vtx_index].v.cn[2] = 255;
+        this->windowContentVtx[vtx_index].v.cn[3] = 255;
+        this->windowContentVtx[vtx_index].v.tc[0] = 0;
+        this->windowContentVtx[vtx_index].v.tc[1] = 0;
+        vtx_index++;
+
+        this->windowContentVtx[vtx_index].v.ob[0] = pos_x + 120;
+        this->windowContentVtx[vtx_index].v.ob[1] = pos_y;
+        this->windowContentVtx[vtx_index].v.ob[2] = 0;
+        this->windowContentVtx[vtx_index].v.cn[0] = 255;
+        this->windowContentVtx[vtx_index].v.cn[1] = 255;
+        this->windowContentVtx[vtx_index].v.cn[2] = 255;
+        this->windowContentVtx[vtx_index].v.cn[3] = 255;
+        this->windowContentVtx[vtx_index].v.tc[0] = 0x800;
+        this->windowContentVtx[vtx_index].v.tc[1] = 0;
+        vtx_index++;
+
+        this->windowContentVtx[vtx_index].v.ob[0] = pos_x;
+        this->windowContentVtx[vtx_index].v.ob[1] = pos_y - 12;
+        this->windowContentVtx[vtx_index].v.ob[2] = 0;
+        this->windowContentVtx[vtx_index].v.cn[0] = 255;
+        this->windowContentVtx[vtx_index].v.cn[1] = 255;
+        this->windowContentVtx[vtx_index].v.cn[2] = 255;
+        this->windowContentVtx[vtx_index].v.cn[3] = 255;
+        this->windowContentVtx[vtx_index].v.tc[0] = 0;
+        this->windowContentVtx[vtx_index].v.tc[1] = 0x200;
+        vtx_index++;
+
+        this->windowContentVtx[vtx_index].v.ob[0] = pos_x + 120;
+        this->windowContentVtx[vtx_index].v.ob[1] = pos_y - 12;
+        this->windowContentVtx[vtx_index].v.ob[2] = 0;
+        this->windowContentVtx[vtx_index].v.cn[0] = 255;
+        this->windowContentVtx[vtx_index].v.cn[1] = 255;
+        this->windowContentVtx[vtx_index].v.cn[2] = 255;
+        this->windowContentVtx[vtx_index].v.cn[3] = 255;
+        this->windowContentVtx[vtx_index].v.tc[0] = 0x800;
+        this->windowContentVtx[vtx_index].v.tc[1] = 0x200;
+        vtx_index++;
+
+        pos_y -= 12;
+    }
+}
+
+void FileSelect_ChaosConfigModeDraw(GameState *thisx)
+{
+    FileSelectState *this = (FileSelectState *)thisx;
+    u32 quad_offset = 0;
+    u32 index;
+    OPEN_DISPS(this->state.gfxCtx);
+
+    gDPPipeSync(POLY_OPA_DISP++);
+
+    Gfx_SetupDL42_Opa(this->state.gfxCtx);
+    FileSelect_SetView(this, 0.0f, 0.0f, 64.0f);
+    FileSelect_SetWindowVtx(&this->state);
+    FileSelect_SetWindowContentVtx(&this->state);
+
+    gDPSetCombineMode(POLY_OPA_DISP++, G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM);
+    gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, this->windowColor[0], this->windowColor[1], this->windowColor[2],
+                    this->windowAlpha);
+    gDPSetEnvColor(POLY_OPA_DISP++, 0, 0, 0, 0);
+
+    Matrix_Translate(0.0f, 0.0f, -93.6f, MTXMODE_NEW);
+    Matrix_Scale(0.78f, 0.78f, 0.78f, MTXMODE_APPLY);
+    Matrix_RotateXFApply(this->windowRot / 100.0f);
+    gSPMatrix(POLY_OPA_DISP++, Matrix_NewMtx(this->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+
+    gSPVertex(POLY_OPA_DISP++, &this->windowVtx[0], 32, 0);
+    gSPDisplayList(POLY_OPA_DISP++, gFileSelWindow1DL);
+
+    gSPVertex(POLY_OPA_DISP++, &this->windowVtx[32], 32, 0);
+    gSPDisplayList(POLY_OPA_DISP++, gFileSelWindow2DL);
+
+    gSPVertex(POLY_OPA_DISP++, &this->windowVtx[64], 16, 0);
+    gSPDisplayList(POLY_OPA_DISP++, gFileSelWindow3DL);
+
+    FileSelect_DrawWindowContents(&this->state);
+    gDPPipeSync(POLY_OPA_DISP++);
+
+    FileSelect_ChaosConfigSetWindowContentVtx(&this->state);
+
+    gDPSetCombineLERP(POLY_OPA_DISP++, PRIMITIVE, ENVIRONMENT, TEXEL0, ENVIRONMENT, TEXEL0, 0, PRIMITIVE, 0, PRIMITIVE,
+                      ENVIRONMENT, TEXEL0, ENVIRONMENT, TEXEL0, 0, PRIMITIVE, 0);
+    gDPSetEnvColor(POLY_OPA_DISP++, 0, 0, 0, 0);
+    gSPVertex(POLY_OPA_DISP++, &this->windowContentVtx[0], 20, 0);
+
+    for (quad_offset = 0, index = 0; index < 5; index++, quad_offset += 4) 
+    {
+        gDPPipeSync(POLY_OPA_DISP++);
+        gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, this->windowColor[0], this->windowColor[1], this->windowColor[2], 200);
+        gDPLoadTextureBlock(POLY_OPA_DISP++, sActionButtonTextures[0], G_IM_FMT_IA, G_IM_SIZ_16b, 64, 16, 0,
+                            G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD,
+                            G_TX_NOLOD);
+        gSP1Quadrangle(POLY_OPA_DISP++, quad_offset, quad_offset + 2, quad_offset + 3, quad_offset + 1, 0);
+    }
+
+    FileSelect_SetView(this, 0.0f, 0.0f, 64.0f);
+
+    CLOSE_DISPS(this->state.gfxCtx);
+}
+
+
+
 void FileSelect_UpdateAndDrawSkybox(FileSelectState* this) {
     s32 pad;
     f32 eyeX;
@@ -2310,11 +2574,13 @@ void (*gFileSelectDrawFuncs[])(GameState*) = {
     FileSelect_InitModeDraw,   // FS_MENU_MODE_INIT
     FileSelect_ConfigModeDraw, // FS_MENU_MODE_CONFIG
     FileSelect_SelectModeDraw, // FS_MENU_MODE_SELECT
+    FileSelect_ChaosConfigModeDraw
 };
 void (*gFileSelectUpdateFuncs[])(GameState*) = {
     FileSelect_InitModeUpdate,   // FS_MENU_MODE_INIT
     FileSelect_ConfigModeUpdate, // FS_MENU_MODE_CONFIG
     FileSelect_SelectModeUpdate, // FS_MENU_MODE_SELECT
+    FileSelect_ChaosConfigModeUpdate
 };
 
 TexturePtr D_808147B4[] = { gFileSelPleaseWaitENGTex, gFileSelDecideCancelENGTex, gFileSelDecideSaveENGTex };
@@ -2444,7 +2710,7 @@ void FileSelect_InitContext(GameState* thisx) {
     this->buttonIndex = this->selectMode = this->selectedFileIndex = this->copyDestFileIndex =
         this->confirmButtonIndex = 0;
  
-    // this->confirmButtonTexIndices[FS_BTN_CONFIRM_OPTIONS] = 4;
+    this->confirmButtonTexIndices[FS_BTN_CONFIRM_OPTIONS] = 4;
     this->confirmButtonTexIndices[FS_BTN_CONFIRM_YES] = 2;
     this->confirmButtonTexIndices[FS_BTN_CONFIRM_QUIT] = 3;
     this->titleLabel = FS_TITLE_SELECT_FILE;
@@ -2471,22 +2737,50 @@ void FileSelect_InitContext(GameState* thisx) {
     this->windowColor[1] = 150;
     this->windowColor[2] = 255;
 
-    this->windowAlpha = this->titleAlpha[FS_TITLE_CUR] = this->titleAlpha[FS_TITLE_NEXT] = this->fileButtonAlpha[0] =
-        this->fileButtonAlpha[1] = this->fileButtonAlpha[2] = this->nameBoxAlpha[0] = this->nameBoxAlpha[1] =
-            this->nameBoxAlpha[2] = this->nameAlpha[0] = this->nameAlpha[1] = this->nameAlpha[2] =
-                this->connectorAlpha[0] = this->connectorAlpha[1] = this->connectorAlpha[2] = this->fileInfoAlpha[0] =
-                    this->fileInfoAlpha[1] = this->fileInfoAlpha[2] = this->actionButtonAlpha[FS_BTN_ACTION_COPY] =
-                        this->actionButtonAlpha[FS_BTN_ACTION_ERASE] = this->confirmButtonAlpha[FS_BTN_CONFIRM_YES] =
-                            this->confirmButtonAlpha[FS_BTN_CONFIRM_QUIT] /* = this->confirmButtonAlpha[FS_BTN_CONFIRM_OPTIONS] */ = 
-                                this->optionButtonAlpha = this->nameEntryBoxAlpha = this->controlsAlpha = this->emptyFileTextAlpha = 0;
+    this->windowAlpha = 0;
+    this->titleAlpha[FS_TITLE_CUR] = 0;
+    this->titleAlpha[FS_TITLE_NEXT] = 0;
+    this->fileButtonAlpha[0] = 0;
+    this->fileButtonAlpha[1] = 0;
+    this->fileButtonAlpha[2] = 0;
+    this->nameBoxAlpha[0] = 0;
+    this->nameBoxAlpha[1] = 0;
+    this->nameBoxAlpha[2] = 0;
+    this->nameAlpha[0] = 0;
+    this->nameAlpha[1] = 0;
+    this->nameAlpha[2] = 0;
+    this->connectorAlpha[0] = 0;
+    this->connectorAlpha[1] = 0;
+    this->connectorAlpha[2] = 0;
+    this->fileInfoAlpha[0] = 0;
+    this->fileInfoAlpha[1] = 0;
+    this->fileInfoAlpha[2] = 0;
+    this->actionButtonAlpha[FS_BTN_ACTION_COPY] = 0;
+    this->actionButtonAlpha[FS_BTN_ACTION_ERASE] = 0;
+    this->confirmButtonAlpha[FS_BTN_CONFIRM_YES] = 0;
+    this->confirmButtonAlpha[FS_BTN_CONFIRM_QUIT] = 0;
+    this->confirmButtonAlpha[FS_BTN_CONFIRM_OPTIONS] = 0;
+    this->optionButtonAlpha = 0;
+    this->nameEntryBoxAlpha = 0;
+    this->controlsAlpha = 0;
+    this->emptyFileTextAlpha = 0;
+    this->chaos_config_scroll = 0;
 
     this->windowPosX = 6;
     this->actionTimer = 4;
     this->warningLabel = FS_WARNING_NONE;
 
-    this->warningButtonIndex = this->buttonYOffsets[0] = this->buttonYOffsets[1] = this->buttonYOffsets[2] =
-        this->buttonYOffsets[3] = this->buttonYOffsets[4] = this->buttonYOffsets[5] = this->fileNamesY[0] =
-            this->fileNamesY[1] = this->fileNamesY[2] = 0;
+    this->warningButtonIndex = 0;
+    this->buttonYOffsets[0] = 0;
+    this->buttonYOffsets[1] = 0;
+    this->buttonYOffsets[2] = 0;
+    this->buttonYOffsets[3] = 0;
+    this->buttonYOffsets[4] = 0;
+    this->buttonYOffsets[5] = 0;
+    this->buttonYOffsets[6] = 0;
+    this->fileNamesY[0] = 0;
+    this->fileNamesY[1] = 0;
+    this->fileNamesY[2] = 0;
 
     this->unk_2451E[0] = 0;
     this->unk_2451E[1] = 3;

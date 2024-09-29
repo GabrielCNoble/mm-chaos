@@ -49,10 +49,7 @@ enum CHAOS_CODES
     CHAOS_CODE_BUCKSHOT_ARROWS,
     /* gives bombs random timers */
     CHAOS_CODE_RANDOM_BOMB_TIMER,
-    /* spawns like like above player 
-        
-       TODO: make like-like steal more items and teleport them to the curiosity shop
-    */
+    /* spawns like like above player, possibly swalling and voiding them out */
     CHAOS_CODE_LOVELESS_MARRIAGE,
     /* makes the ui behave unpredictably (shake, wave, bounce around) */
     CHAOS_CODE_WEIRD_UI,
@@ -118,9 +115,13 @@ enum CHAOS_CODES
     CHAOS_CODE_SCALE_RANDOM_LIMB,
     /* player takes flight like a gossip stone */
     CHAOS_CODE_LIFTOFF,
-
+    /* affects room geometry */
+    CHAOS_CODE_WEIRD_ROOMS,
     /* snake game with the health meter */
-    // CHAOS_CODE_HEART_SNAKE,
+    CHAOS_CODE_HEART_SNAKE,
+
+
+
     /* 
         player randomly loses grip, dropping items, falling from ledges/ladders
         TODO: change this one to include items from the inventory. The item should
@@ -216,12 +217,15 @@ enum CHAOS_CODES
     /* camera sees from above (similar to gta) */
     // CHAOS_CODE_BIRDSEYE_VIEW,
 
-    /* randomly spawns elegy statue behind player */
-    // CHAOS_CODE_BEN,
-    /* when in goron shape, goron curls up and stays like that */
-    // CHAOS_CODE_SHY_GORON,
     /* makes the player bonk on nothing while rolling */
     // CHAOS_CODE_INVISIBLE_WALL,
+    /* randomly shows a textbox with the question
+        "Who are you talking to?" */
+    // CHAOS_CODE_WHO_ARE_YOU_TALKING_TO,
+    /* spawns a random tree in front of the player */
+    // CHAOS_CODE_TREE,
+    /* simon says, player dies if they fail */
+    // CHAOS_CODE_SIMON_SAYS,
     
     CHAOS_CODE_LAST
 };
@@ -383,19 +387,47 @@ enum CHAOS_ARROW_EFFECTS
     CHAOS_ARROW_EFFECT_BOMB       = 1 << 2
 };
 
-enum CHAOS_UI_EFFECTS
+enum CHAOS_WEIRD_UI_MODES
 {
-    CHAOS_UI_EFFECT_SHAKE   = 1,
-    CHAOS_UI_EFFECT_BOUNCE  = 1 << 1,
-    CHAOS_UI_EFFECT_SPEEN   = 1 << 2
+    CHAOS_WEIRD_UI_MODE_NONE,
+    CHAOS_WEIRD_UI_MODE_WOBBLE,
+    CHAOS_WEIRD_UI_MODE_SNAKE,
+    CHAOS_WEIRD_UI_MODE_LAST
 };
+
+#define CHAOS_MIN_SNAKE_Y               3
+#define CHAOS_MAX_SNAKE_Y               23
+#define CHAOS_MIN_SNAKE_X               1
+#define CHAOS_MAX_SNAKE_X               31
+#define CHAOS_MIN_SNAKE_HEART_SPAWN_Y   6
+#define CHAOS_SNAKE_START_Y             10
+
+#define CHAOS_SNAKE_GAME_FLAG_BLINK         (1)
+#define CHAOS_SNAKE_GAME_FLAG_MOVE_FAST     (1 << 1)
+
+enum CHAOS_SNAKE_GAME_STATES
+{
+    CHAOS_SNAKE_GAME_STATE_NONE = 0,
+    CHAOS_SNAKE_GAME_STATE_INIT,
+    CHAOS_SNAKE_GAME_STATE_PLAY,
+    CHAOS_SNAKE_GAME_STATE_DIED,
+    CHAOS_SNAKE_GAME_STATE_WIN,
+    CHAOS_SNAKE_GAME_STATE_LAST,
+};
+
+enum CHAOS_SNAKE_MOVE_DIRS
+{
+    CHAOS_SNAKE_MOVE_DIR_RIGHT,
+    CHAOS_SNAKE_MOVE_DIR_LEFT,
+    CHAOS_SNAKE_MOVE_DIR_UP,
+    CHAOS_SNAKE_MOVE_DIR_DOWN, 
+    CHAOS_SNAKE_MOVE_DIR_NONE,
+}; 
 
 enum CHAOS_BEER_GOGGLES_STATES
 {
-    // CHAOS_BEER_GOGGLES_STATE_JUST_STARTED_RAMPING_UP,
     CHAOS_BEER_GOGGLES_STATE_RAMPING_UP,
     CHAOS_BEER_GOGGLES_STATE_ACTIVE,
-    // CHAOS_BEER_GOGGLES_STATE_JUST_STARTED_RAMPING_DOWN,
     CHAOS_BEER_GOGGLES_STATE_RAMPING_DOWN,
     CHAOS_BEER_GOGGLES_STATE_NONE
 };
@@ -437,11 +469,19 @@ enum CHAOS_LIFTOFF_STATES
     CHAOS_LIFTOFF_STATE_FLY
 };
 
+enum CHAOS_WEIRD_ROOMS_BEHAVIORS
+{
+    CHAOS_WEIRD_ROOMS_BEHAVIOR_WOBBLE           = 1,
+    CHAOS_WEIRD_ROOMS_BEHAVIOR_SNAP_TO_PLAYER   = 1 << 1,
+    CHAOS_WEIRD_ROOMS_BEHAVIOR_LAST
+};
+
 #define INVALID_CODE_INDEX      0xff 
 #define MAX_CHAOS_TIMER         8
 #define MIN_CHAOS_TIMER         2
 #define CHAOS_SECONDS_TO_FRAMES(seconds)    (((u16)(seconds)) * (20))
 #define CHAOS_MAX_DISRUPTIVE_PROBABILITY_SCALE 7.0f
+#define CHAOS   
 
 #define MAX_SPAWNED_ACTORS  12
 #define ACTOR_DESPAWN_TIMER 10
@@ -450,6 +490,14 @@ struct ChaosActor
 {
     Actor *     actor;
     u16         timer;
+};
+
+#define CHAOS_MAX_HEART_CONTAINERS 64
+
+struct HeartContainerPos
+{
+    s16 pos_x;
+    s16 pos_y;
 };
 
 #define MAX_ACTIVE_CODES 8
@@ -478,6 +526,11 @@ typedef struct ChaosContext
     u8                      queued_spawn_actor_code;
     u8                      loaded_object_id;
     u8                      chaos_keep_slot;
+
+    // RoomVertListList *      room_vert_list_list[2];
+    // u32                     total_room_verts;
+    // u32                     cur_vert_list_index;
+    // u32                     
 
     struct 
     {
@@ -541,45 +594,64 @@ typedef struct ChaosContext
 
     struct
     {
-        struct ChaosActor   slots[MAX_SPAWNED_ACTORS];
-        u8                  spawned_actors;
+        struct ChaosActor       slots[MAX_SPAWNED_ACTORS];
+        u8                      spawned_actors;
     } actors;
 
     struct
     {
-        u8 enabled_scenes[ENTR_SCENE_MAX];
-        u8 enabled_scene_count;
+        u8                      enabled_scenes[ENTR_SCENE_MAX];
+        u8                      enabled_scene_count;
     } entrance;
 
     struct
     {
-        Vec3f               talk_translation;
-        Vec3f               talk_scale;
-        Vec3s               talk_rotation;
+        Vec3f                   talk_translation;
+        Vec3f                   talk_scale;
+        Vec3s                   talk_rotation;
     } npc;
 
     struct
     {
-        EnNiw               cucco;
+        EnNiw                   cucco;
     } chicken;
 
     struct 
     {
-        u8                  change_timer;
+        u8                      change_timer;
     } bgm;
 
-    // struct
-    // {
-    //     s8 life_meter_offset[20][2];
-    //     s8 magic_container_offset[2][2];
-    //     s8 rupee_counter_offest[2][3];
-    //     s8 rupee_icon_offset[2];
-    //     s8 cbutton_offset[8][2];
-    //     s8 bbutton_offset[2][2];
-    //     s8 abutton_offset[2][2];
-    //     s8 start_button_offset[2][2];
-    //     s8 clock_offset[18][2];
-    // } ui;
+    struct
+    {
+        struct HeartContainerPos    heart_containers[CHAOS_MAX_HEART_CONTAINERS];
+        u8                          orig_heart_count;
+        u8                          heart_count;
+        u8                          snake_state;
+        u8                          blink_timer;
+        u8                          move_timer;
+        u8                          next_move_dir;
+        u8                          move_dir;
+        s8                          stick_x;
+        s8                          stick_y;
+        u8                          flags;             
+
+        // s8 life_meter_offset[20][2];
+        // s8 magic_container_offset[2][2];
+        // s8 rupee_counter_offest[2][3];
+        // s8 rupee_icon_offset[2];
+        // s8 cbutton_offset[8][2];
+        // s8 bbutton_offset[2][2];
+        // s8 abutton_offset[2][2];
+        // s8 start_button_offset[2][2];
+        // s8 clock_offset[18][2];
+    } ui;
+
+    struct
+    {
+        RoomVertListList *      vert_list_list[2];
+        u8                      weirdness_behavior;
+        u8                      snap_to_player_timer;
+    } room;
     
 } ChaosContext;
 
@@ -647,5 +719,9 @@ u16 Chaos_RandomEntrance(PlayState *play);
 void Chaos_UpdateEntrances(PlayState *play);
 
 void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this);
+
+u32 Chaos_UpdateSnakeGame(PlayState *play, Input *input);
+
+void Chaos_PrintSnakeGameStuff(PlayState *play);
 
 #endif

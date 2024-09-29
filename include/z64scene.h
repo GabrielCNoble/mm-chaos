@@ -218,6 +218,12 @@ typedef struct {
     /* 0x4 */ void* segment;
 } SCmdMapDataChests; // size = 0x8
 
+typedef struct {
+    u8            code;
+    u8            pad;
+    void *        segment;
+} SCmdRoomVertListList;
+
 typedef enum {
     /* 0 */ ROOM_SHAPE_TYPE_NORMAL,
     /* 1 */ ROOM_SHAPE_TYPE_IMAGE,
@@ -564,7 +570,20 @@ typedef union {
     /* Command: 0x1C */ SCmdMapData             mapData;
     /* Command: 0x1D */ // Unused
     /* Command: 0x1E */ SCmdMapDataChests       mapDataChests;
+    /* Command: 0x1F */ SCmdRoomVertListList    room_vert_list_list;
 } SceneCmd; // size = 0x8
+
+#define ROOM_VERT_LIST(verts) {verts, ARRAY_COUNT(verts)}
+
+typedef struct RoomVertList {
+    void *  verts;
+    u32     count;
+} RoomVertList;
+
+typedef struct{
+    RoomVertList *  room_vert_lists;
+    u32             count;
+} RoomVertListList;
 
 // Sets cursor point options on the world map
 typedef enum RegionId {
@@ -809,7 +828,8 @@ typedef enum {
     /* 0x1C */ SCENE_CMD_ID_MAP_DATA,
     /* 0x1D */ SCENE_CMD_ID_UNUSED_1D,
     /* 0x1E */ SCENE_CMD_ID_MAP_DATA_CHESTS,
-    /* 0x1F */ SCENE_CMD_MAX
+    /* 0x1F */ SCENE_CMD_ID_ROOM_VERT_LIST_LIST,
+    /* 0x20 */ SCENE_CMD_MAX
 } SceneCommandTypeId;
 
 #define SCENE_CMD_SPAWN_LIST(numSpawns, spawnList) \
@@ -906,6 +926,9 @@ typedef enum {
 
 #define SCENE_CMD_MAP_DATA_CHESTS(chestCount, chestInfo) \
     { SCENE_CMD_ID_MAP_DATA_CHESTS, chestCount, CMD_PTR(chestInfo) }
+
+#define SCENE_CMD_ROOM_VERT_LIST_LIST(list_list) \
+    { SCENE_CMD_ID_ROOM_VERT_LIST_LIST, 0, list_list }
 
 #define SCENE_CMD_MINIMAP_INFO SCENE_CMD_MAP_DATA
 #define SCENE_CMD_MINIMAP_COMPASS_ICON_INFO SCENE_CMD_MAP_DATA_CHESTS

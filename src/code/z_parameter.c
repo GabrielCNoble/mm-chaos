@@ -2579,14 +2579,14 @@ u8 Item_Give(PlayState* play, u8 item) {
         INCREMENT_QUEST_HEART_PIECE_COUNT;
         if (EQ_MAX_QUEST_HEART_PIECE_COUNT) {
             RESET_HEART_PIECE_COUNT;
-            gSaveContext.save.saveInfo.playerData.healthCapacity += 0x10;
-            gSaveContext.save.saveInfo.playerData.health += 0x10;
+            gSaveContext.save.saveInfo.playerData.healthCapacity += LIFEMETER_FULL_HEART_HEALTH;
+            gSaveContext.save.saveInfo.playerData.health += LIFEMETER_FULL_HEART_HEALTH;
         }
         return ITEM_NONE;
 
     } else if (item == ITEM_HEART_CONTAINER) {
-        gSaveContext.save.saveInfo.playerData.healthCapacity += 0x10;
-        gSaveContext.save.saveInfo.playerData.health += 0x10;
+        gSaveContext.save.saveInfo.playerData.healthCapacity += LIFEMETER_FULL_HEART_HEALTH;
+        gSaveContext.save.saveInfo.playerData.health += LIFEMETER_FULL_HEART_HEALTH;
         return ITEM_NONE;
 
     } else if ((item >= ITEM_SONG_SONATA) && (item <= ITEM_SONG_LULLABY_INTRO)) {
@@ -3463,7 +3463,7 @@ s32 Health_ChangeBy(PlayState* play, s16 healthChange) {
 }
 
 void Health_GiveHearts(s16 hearts) {
-    gSaveContext.save.saveInfo.playerData.healthCapacity += hearts * 0x10;
+    gSaveContext.save.saveInfo.playerData.healthCapacity += hearts * LIFEMETER_FULL_HEART_HEALTH;
 }
 
 void Rupees_ChangeBy(s16 rupeeChange) {
@@ -7115,15 +7115,14 @@ void Interface_Update(PlayState* play) {
 
     // Update health
     if (gSaveContext.healthAccumulator != 0) {
-        gSaveContext.healthAccumulator -= 4;
-        gSaveContext.save.saveInfo.playerData.health += 4;
+        gSaveContext.healthAccumulator -= LIFEMETER_QUARTER_HEART_HEALTH;
+        gSaveContext.save.saveInfo.playerData.health += LIFEMETER_QUARTER_HEART_HEALTH;
 
-        if ((gSaveContext.save.saveInfo.playerData.health & 0xF) < 4) {
+        if ((gSaveContext.save.saveInfo.playerData.health & (LIFEMETER_FULL_HEART_HEALTH - 1)) < LIFEMETER_QUARTER_HEART_HEALTH) {
             Audio_PlaySfx(NA_SE_SY_HP_RECOVER);
         }
 
-        if (((void)0, gSaveContext.save.saveInfo.playerData.health) >=
-            ((void)0, gSaveContext.save.saveInfo.playerData.healthCapacity)) {
+        if (gSaveContext.save.saveInfo.playerData.health >= gSaveContext.save.saveInfo.playerData.healthCapacity) {
             gSaveContext.save.saveInfo.playerData.health = gSaveContext.save.saveInfo.playerData.healthCapacity;
             gSaveContext.healthAccumulator = 0;
         }

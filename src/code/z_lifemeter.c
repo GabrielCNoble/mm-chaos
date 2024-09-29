@@ -8,6 +8,8 @@
 #include "interface/parameter_static/parameter_static.h"
 #include "chaos_fuckery.h"
 
+extern struct ChaosContext gChaosContext;
+
 s16 sHeartsPrimColors[3][3] = { { 255, 70, 50 }, { 255, 190, 0 }, { 100, 100, 255 } };
 s16 sHeartsEnvColors[3][3] = { { 50, 40, 60 }, { 255, 0, 0 }, { 0, 0, 255 } };
 s16 sHeartsPrimFactors[3][3] = { { 0, 0, 0 }, { 0, 120, -50 }, { -155, 30, 205 } };
@@ -228,14 +230,20 @@ void LifeMeter_Draw(PlayState* play) {
     GraphicsContext* gfxCtx = play->state.gfxCtx;
     InterfaceContext* interfaceCtx = &play->interfaceCtx;
     Vtx* beatingHeartVtx = interfaceCtx->beatingHeartVtx;
-    s32 fractionHeartCount = gSaveContext.save.saveInfo.playerData.health % 0x10;
-    s16 healthCapacity = gSaveContext.save.saveInfo.playerData.healthCapacity / 0x10;
-    s16 fullHeartCount = gSaveContext.save.saveInfo.playerData.health / 0x10;
+    s32 fractionHeartCount = gSaveContext.save.saveInfo.playerData.health % LIFEMETER_FULL_HEART_HEALTH;
+    s16 healthCapacity = gSaveContext.save.saveInfo.playerData.healthCapacity / LIFEMETER_FULL_HEART_HEALTH;
+    s16 fullHeartCount = gSaveContext.save.saveInfo.playerData.health / LIFEMETER_FULL_HEART_HEALTH;
     s32 pad2;
     f32 lifesize = interfaceCtx->lifeSizeChange * 0.1f;
     u32 curCombineModeSet = 0;
     TexturePtr temp = NULL;
-    s32 ddCount = gSaveContext.save.saveInfo.inventory.defenseHearts - 1;
+    s32 defense_hearts_count = gSaveContext.save.saveInfo.inventory.defenseHearts - 1;
+    u32 heart_snake = Chaos_IsCodeActive(CHAOS_CODE_HEART_SNAKE);
+
+    if(heart_snake && (gChaosContext.ui.flags & CHAOS_SNAKE_GAME_FLAG_BLINK))
+    {
+        return;
+    }
 
     OPEN_DISPS(gfxCtx);
 
@@ -249,13 +257,17 @@ void LifeMeter_Draw(PlayState* play) {
 
     for (i = 0; i < healthCapacity; i++) {
 
-        if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
-        {
-            chaos_x = (Rand_ZeroOne() * 2.0f - 1.0f) * 8.0f;
-            chaos_y = (Rand_ZeroOne() * 2.0f - 1.0f) * 8.0f;
-        }
+        // if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+        // {
+        //     chaos_x = (Rand_ZeroOne() * 2.0f - 1.0f) * 8.0f;
+        //     chaos_y = (Rand_ZeroOne() * 2.0f - 1.0f) * 8.0f;
+        // }
 
-        if ((ddCount < 0) || (ddCount < i)) {
+        chaos_x = gChaosContext.ui.heart_containers[i].pos_x;
+        chaos_y = gChaosContext.ui.heart_containers[i].pos_y;
+
+        if ((defense_hearts_count < 0) || (defense_hearts_count < i)) 
+        {
             if (i < fullHeartCount) {
                 if (curColorSet != 0) {
                     curColorSet = 0;
@@ -302,7 +314,9 @@ void LifeMeter_Draw(PlayState* play) {
             } else {
                 heartTex = gHeartEmptyTex;
             }
-        } else {
+        } 
+        else 
+        {
             if (i < fullHeartCount) {
                 if (curColorSet != 4) {
                     curColorSet = 4;
@@ -351,8 +365,9 @@ void LifeMeter_Draw(PlayState* play) {
                                 G_TX_NOLOD, G_TX_NOLOD);
         }
 
-        if (i != fullHeartCount) {
-            if ((ddCount < 0) || (i > ddCount)) {
+        if (i != fullHeartCount || heart_snake) 
+        {
+            if ((defense_hearts_count < 0) || (i > defense_hearts_count)) {
                 if (curCombineModeSet != 1) {
                     curCombineModeSet = 1;
                     Gfx_SetupDL39_Overlay(gfxCtx);
@@ -365,8 +380,16 @@ void LifeMeter_Draw(PlayState* play) {
                 gDPSetCombineLERP(OVERLAY_DISP++, ENVIRONMENT, PRIMITIVE, TEXEL0, PRIMITIVE, TEXEL0, 0, PRIMITIVE, 0,
                                   ENVIRONMENT, PRIMITIVE, TEXEL0, PRIMITIVE, TEXEL0, 0, PRIMITIVE, 0);
             }
-            posY = 26.0f + offsetY + chaos_x;
-            posX = 30.0f + offsetX + chaos_y;
+
+            posX = chaos_x;
+            posY = chaos_y;
+            
+            if(!heart_snake)
+            {
+                posX += 30.0f + offsetX;    
+                posY += 26.0f + offsetY;
+            }
+
             temp_f4 = 1.0f;
             temp_f4 /= 0.68f;
             temp_f4 *= 1 << 10;
@@ -375,10 +398,22 @@ void LifeMeter_Draw(PlayState* play) {
             gSPTextureRectangle(OVERLAY_DISP++, (s32)((posX - halfTexSize) * 4), (s32)((posY - halfTexSize) * 4),
                                 (s32)((posX + halfTexSize) * 4), (s32)((posY + halfTexSize) * 4), G_TX_RENDERTILE, 0, 0,
                                 (s32)temp_f4, (s32)temp_f4);
-        } else {
+        } 
+        else 
+        {
             Mtx* mtx;
+            f32 scale = 1.0f - (0.32f * lifesize);
 
-            if ((ddCount < 0) || (ddCount < i)) {
+            posX = chaos_x;
+            posY = chaos_y;
+
+            if(!heart_snake)
+            {
+                posX += -130.0f + offsetX;    
+                posY += 94.5f + offsetY;
+            }
+
+            if ((defense_hearts_count < 0) || (defense_hearts_count < i)) {
                 if (curCombineModeSet != 2) {
                     curCombineModeSet = 2;
                     Gfx_SetupDL42_Overlay(gfxCtx);
@@ -396,16 +431,15 @@ void LifeMeter_Draw(PlayState* play) {
                 }
             }
             mtx = GRAPH_ALLOC(gfxCtx, sizeof(Mtx));
-            Mtx_SetTranslateScaleMtx(mtx, 1.0f - (0.32f * lifesize), 1.0f - (0.32f * lifesize),
-                                     1.0f - (0.32f * lifesize), -130.0f + offsetX + chaos_x, 94.5f - offsetY + chaos_y, 0.0f);
+            Mtx_SetTranslateScaleMtx(mtx, scale, scale, scale, posX, posY, 0.0f);
             gSPMatrix(OVERLAY_DISP++, mtx, G_MTX_LOAD | G_MTX_MODELVIEW);
             gSPVertex(OVERLAY_DISP++, beatingHeartVtx, 4, 0);
             gSP1Quadrangle(OVERLAY_DISP++, 0, 2, 3, 1, 0);
         }
 
-        offsetX += 10.0f;
+        offsetX += LIFEMETER_HEART_CONTAINER_SIZE;
         if (i == 9) {
-            offsetY += 10.0f;
+            offsetY += LIFEMETER_HEART_CONTAINER_SIZE;
             offsetX = 0.0f;
         }
     }

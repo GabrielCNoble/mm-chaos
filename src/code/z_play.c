@@ -30,6 +30,7 @@ u8 sMotionBlurStatus;
 #include "z64view.h"
 #include "z64vis.h"
 #include "z64visfbuf.h"
+#include "z64lifemeter.h"
 
 #include "overlays/gamestates/ovl_daytelop/z_daytelop.h"
 #include "overlays/gamestates/ovl_opening/z_opening.h"
@@ -926,20 +927,23 @@ const char D_801DFA34[][4] = {
     "h",   "i",  "f",  "fa", "fb", "fc", "fd", "fe",  "ff",  "fg", "fh", "fi", "fj", "fk",
 };
 
-// static u16 gChaosJunkItems[] = {
-//     // GI_RUPEE_GREEN_LOSE,
-//     GI_RECOVERY_HEART,
-//     GI_DEKU_STICKS_1,
-//     GI_DEKU_NUTS_5,
-//     GI_ARROWS_10,
-//     GI_DEKU_NUTS_5,
-//     GI_BOMBS_5,
-//     // GI_SHIELD_DEKU,
-//     GI_SHIELD_HERO,
-// };
+// static s16 vert_pos_rand_list[32];
+// static s16 tex_coord_rand_list[32];
+// static u8 color_rand_list[32];
+
+/* 256 entry list, each */
+extern s16             gVertPosRandList[];
+extern s16             gTexCoordRandList[];
+extern u8              gColorRandList[];
+u8                     vert_pos_rand_index = 0;
+u8                     tex_coord_rand_index = 0;
+u8                     color_rand_index = 0;
+
 
 void Play_UpdateMain(PlayState* this) {
-    s32 pad;
+    // s32 pad;
+    u32 index;
+    void *room_segments[2];
     Input* input = this->state.input;
     Player *player = GET_PLAYER(this);
     Camera *camera = Play_GetCamera(this, CAM_ID_MAIN);
@@ -1018,7 +1022,7 @@ void Play_UpdateMain(PlayState* this) {
                 }
             }
         }
-    }
+    } 
 
     // if(Chaos_IsCodeActive(CHAOS_CODE_TEXTBOX))
     // {
@@ -1028,6 +1032,25 @@ void Play_UpdateMain(PlayState* this) {
     //     CutsceneManager_Queue(CS_ID_GLOBAL_TALK);
     //     Chaos_DeactivateCode(CHAOS_CODE_TEXTBOX);
     // }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    {
+        u32 heart_index;
+        u32 heart_count = gSaveContext.save.saveInfo.playerData.healthCapacity / LIFEMETER_FULL_HEART_HEALTH;
+        for(heart_index = 0; heart_index < heart_count; heart_index++)
+        {
+            gChaosContext.ui.heart_containers[heart_index].pos_x = (Rand_ZeroOne() * 2.0f - 1.0f) * 8.0f;
+            gChaosContext.ui.heart_containers[heart_index].pos_y = (Rand_ZeroOne() * 2.0f - 1.0f) * 8.0f;
+        }
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_HEART_SNAKE))
+    {
+        if(!Chaos_UpdateSnakeGame(this, input))
+        {
+            Chaos_DeactivateCode(CHAOS_CODE_HEART_SNAKE);
+        }
+    }
 
     code = Chaos_GetCode(CHAOS_CODE_TERRIBLE_MUSIC);
 
@@ -1358,18 +1381,98 @@ void Play_UpdateMain(PlayState* this) {
         Chaos_DeactivateCode(CHAOS_CODE_SCALE_RANDOM_LIMB);
     }
 
-    // if(Chaos_IsCodeActive(CHAOS_CODE_SHRINK_RANDOM_LIMB))
-    // {
-    //     u32 limb_index = Rand_S16Offset(PLAYER_LIMB_ROOT + 1, PLAYER_LIMB_MAX - 1);
-    //     gChaosContext.link.limb_scales[limb_index] -= 0.1f;
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_ROOMS))
+    {
+        u8 snap_to_player_timer = 0;
+        room_segments[this->roomCtx.activeMemPage] = this->roomCtx.curRoom.segment;
+        room_segments[this->roomCtx.activeMemPage ^ 1] = this->roomCtx.prevRoom.segment;
 
-    //     if(gChaosContext.link.limb_scales[limb_index] < 0.1f)
-    //     {
-    //         gChaosContext.link.limb_scales[limb_index] = 0.1f;
-    //     }
-    //     Chaos_DeactivateCode(CHAOS_CODE_SHRINK_RANDOM_LIMB);
-    // }
+        // if(gChaosContext.room.weirdness_behavior & CHAOS_WEIRD_ROOMS_BEHAVIOR_SNAP_TO_PLAYER)
+        // {
+        //     snap_to_player_timer = gChaosContext.room.snap_to_player_timer;
+            
+        //     if(gChaosContext.room.snap_to_player_timer == 0)
+        //     {
+        //         gChaosContext.room.snap_to_player_timer = Rand_S16Offset(2, 15);
+        //     }
 
+        //     gChaosContext.room.snap_to_player_timer--;
+        // }
+
+        for(index = 0; index < 2; index++)
+        {
+            if(room_segments[index] != NULL && gChaosContext.room.vert_list_list[index] != NULL /* && player->csId != CS_ID_GLOBAL_DOOR */)
+            {
+                u32 vert_list_index;
+                RoomVertListList *vert_list_list;
+                gSegments[0x03] = OS_K0_TO_PHYSICAL(room_segments[index]);
+                vert_list_list = SEGMENTED_TO_K0(gChaosContext.room.vert_list_list[index]);
+
+                if((gChaosContext.room.weirdness_behavior & CHAOS_WEIRD_ROOMS_BEHAVIOR_SNAP_TO_PLAYER) && 
+                        (this->gameplayFrames % 4) == 0)
+                {
+                    u32 snap_index;
+                    u32 snap_count = Rand_S16Offset(1, 7);
+                    for(snap_index = 0; snap_index < snap_count; snap_index++)
+                    {
+                        u32 vert_list_index = Rand_Next() % vert_list_list->count;
+                        RoomVertList *room_vert_list = SEGMENTED_TO_K0(vert_list_list->room_vert_lists + vert_list_index);
+                        Vtx *vertices = SEGMENTED_TO_K0(room_vert_list->verts);
+                        u32 index = Rand_Next() % room_vert_list->count;
+                        Vtx *vtx = vertices + index;
+                        vtx->v.ob[0] = player->actor.world.pos.x;
+                        vtx->v.ob[1] = player->actor.world.pos.y;
+                        vtx->v.ob[2] = player->actor.world.pos.z;
+                    }
+                }
+
+                for(vert_list_index = 0; vert_list_index < vert_list_list->count; vert_list_index++)
+                {
+                    RoomVertList *room_vert_list = SEGMENTED_TO_K0(vert_list_list->room_vert_lists + vert_list_index);
+                    Vtx *vertices = SEGMENTED_TO_K0(room_vert_list->verts);
+                    u32 vert_count = room_vert_list->count;
+                    u32 rand_count = 0;
+
+                    if(vert_count > 0)
+                    {
+                        if(gChaosContext.room.weirdness_behavior & CHAOS_WEIRD_ROOMS_BEHAVIOR_WOBBLE)
+                        {
+                            while(!(vert_count & 0x2000))
+                            {
+                                rand_count++;
+                                vert_count <<= 1;
+                            }
+
+                            rand_count = 13 - rand_count;
+
+                            if(rand_count > 1)
+                            {
+                                rand_count >>= 1;
+                            }
+
+                            while(rand_count > 0)
+                            {
+                                u32 index = Rand_Next() % room_vert_list->count;
+                                Vtx *vtx = vertices + index;
+                                vtx->v.ob[0] += gVertPosRandList[vert_pos_rand_index++];
+                                vtx->v.ob[1] += gVertPosRandList[vert_pos_rand_index++];
+                                vtx->v.ob[2] += gVertPosRandList[vert_pos_rand_index++];
+
+                                vtx->v.tc[0] += gTexCoordRandList[tex_coord_rand_index++];
+                                vtx->v.tc[1] += gTexCoordRandList[tex_coord_rand_index++];
+                                tex_coord_rand_index++;
+
+                                vtx->v.cn[0] += gColorRandList[color_rand_index++];
+                                vtx->v.cn[1] += gColorRandList[color_rand_index++];
+                                vtx->v.cn[2] += gColorRandList[color_rand_index++];
+                                rand_count--;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     if (!sp5C) {
         Play_UpdateWaterCamera(this, this->cameraPtrs[this->nextCamera]);
@@ -1773,6 +1876,7 @@ SkipPostWorldDraw:
     bzero(inputs, sizeof(inputs));
     PadMgr_GetInput(inputs, false);
     Chaos_PrintCodes(this, &inputs[0]);
+    Chaos_PrintSnakeGameStuff(this);
     
     if(Chaos_CanUpdateChaos(this))
     {

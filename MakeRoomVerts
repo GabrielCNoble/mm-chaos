@@ -1,0 +1,9 @@
+SCENES_PATH := assets/scenes
+SCENE_INCLUDES := $(wildcard ./$(SCENES_PATH)/*/*_room_*.h)
+SCENE_VERTS := $(SCENE_INCLUDES:.h=.txt)
+
+
+%.txt: %.h
+#	grep -r -h -o -E "([a-zA-Z0-9_])*Vtx_([a-fA-F0-9])*" $^ > ./temp/$(notdir $@)
+	grep -r -h -o -E "([a-zA-Z0-9_])*Vtx_([a-fA-F0-9])*" $^| tr '\n' ' ' | xargs -I args ./tools/makeverts temp/$(notdir $@) $(basename $(notdir $@)) args
+all: $(SCENE_VERTS)

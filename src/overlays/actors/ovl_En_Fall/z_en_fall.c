@@ -776,8 +776,10 @@ void EnFall_Moon_ChaosStuff(PlayState *play, EnFall *this)
         {
             if(gChaosContext.moon.moon_dance & CHAOS_MOON_MOVE_BEEGER)
             {
-                f32 scale = 1.0f + Rand_ZeroOne() * 2.0f;
-                Matrix_Scale(scale, scale, scale, MTXMODE_APPLY);
+                // f32 scale = 1.0f + Rand_ZeroOne() * 2.0f;
+                Matrix_Scale(1.0f + Rand_ZeroOne() * 1.5f, 
+                             1.0f + Rand_ZeroOne() * 1.5f,
+                             1.0f + Rand_ZeroOne() * 1.5f, MTXMODE_APPLY);
             }
 
             if(gChaosContext.moon.moon_dance & CHAOS_MOON_MOVE_SPEEN)
