@@ -1026,11 +1026,19 @@ void Play_UpdateMain(PlayState* this) {
 
     // if(Chaos_IsCodeActive(CHAOS_CODE_TEXTBOX))
     // {
-    //     s16 entry_index = Rand_Next() % 4590;
-    //     MessageTableEntry *entry = D_801C6B98 + entry_index;
-    //     Message_StartTextbox(this, entry->textId, &player->actor);
-    //     CutsceneManager_Queue(CS_ID_GLOBAL_TALK);
+    //     s16 entry_index = 0x09E5;
+    //     // MessageTableEntry *entry = D_801C6B98 + entry_index;
+    //     Message_StartTextbox(this, MESSAGE_ID_CONFIRM_SONG_OF_TIME_NORMAL, &player->actor);
+    //     // CutsceneManager_Queue(CS_ID_GLOBAL_TALK);
     //     Chaos_DeactivateCode(CHAOS_CODE_TEXTBOX);
+    // }
+
+    // if(this->msgCtx.currentTextId == MESSAGE_ID_CONFIRM_SONG_OF_TIME_NORMAL)
+    // {
+    //     if(CHECK_BTN_ANY(input->press.button, BTN_A))
+    //     {
+    //         Message_CloseTextbox(this);
+    //     }
     // }
 
     if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))

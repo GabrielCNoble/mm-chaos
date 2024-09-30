@@ -12544,6 +12544,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // Chaos_ActivateCode(CHAOS_CODE_BUCKSHOT_ARROWS, 120);
         // Chaos_ActivateCode(CHAOS_CODE_HEART_SNAKE, 60);
         // gChaosContext.ui.snake_state = CHAOS_SNAKE_GAME_STATE_INIT;
+        // Chaos_ActivateCode(CHAOS_CODE_TEXTBOX, 1);
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_R))

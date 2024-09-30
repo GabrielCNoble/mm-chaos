@@ -767,7 +767,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
 
         gChaosContext.code_elapsed_usec -= code_elapsed_seconds * 1000000;
 
-        return;
+        // return;
 
         if(chaos_elapsed_seconds > 0)
         {
