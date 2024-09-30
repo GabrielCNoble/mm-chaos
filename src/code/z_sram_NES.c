@@ -454,13 +454,13 @@ void Sram_SaveEndOfCycle(PlayState* play) {
 
     for (i = 0; i < SCENE_MAX; i++) {
         gSaveContext.cycleSceneFlags[i].switch0 =
-            ((void)0, gSaveContext.cycleSceneFlags[i].switch0) & sPersistentCycleSceneFlags[i].switch0;
+            gSaveContext.cycleSceneFlags[i].switch0 & sPersistentCycleSceneFlags[i].switch0;
         gSaveContext.cycleSceneFlags[i].switch1 =
-            ((void)0, gSaveContext.cycleSceneFlags[i].switch1) & sPersistentCycleSceneFlags[i].switch1;
+            gSaveContext.cycleSceneFlags[i].switch1 & sPersistentCycleSceneFlags[i].switch1;
         gSaveContext.cycleSceneFlags[i].chest =
-            ((void)0, gSaveContext.cycleSceneFlags[i].chest) & sPersistentCycleSceneFlags[i].chest;
+            gSaveContext.cycleSceneFlags[i].chest & sPersistentCycleSceneFlags[i].chest;
         gSaveContext.cycleSceneFlags[i].collectible =
-            ((void)0, gSaveContext.cycleSceneFlags[i].collectible) & sPersistentCycleSceneFlags[i].collectible;
+            gSaveContext.cycleSceneFlags[i].collectible & sPersistentCycleSceneFlags[i].collectible;
         gSaveContext.cycleSceneFlags[i].clearedRoom = 0;
         gSaveContext.save.saveInfo.permanentSceneFlags[i].unk_14 = 0;
         gSaveContext.save.saveInfo.permanentSceneFlags[i].rooms = 0;

@@ -287,6 +287,7 @@ typedef struct FileSelectState {
                   s16 chaos_config_mode;
                   s16 chaos_config_scroll;
                   s16 chaos_config_box_alpha;
+                  s16 chaos_config_option_index;
 } FileSelectState; // size = 0x24558
 
 void FileSelect_Init(GameState* thisx);
@@ -345,8 +346,8 @@ extern u8 D_808141F0[];
 extern s16 D_80814280[];
 
 
-#define FILE_SELECT_CHAOS_SETTINGS_MAX_VISIBLE_SETTINGS 12
-#define FILE_SELECT_CHAOS_SETTING_VERT_COUNT            (4 * FILE_SELECT_CHAOS_SETTINGS_MAX_VISIBLE_SETTINGS)
+#define FILE_SELECT_CHAOS_SETTINGS_MAX_VISIBLE_SETTINGS 7
+#define FILE_SELECT_CHAOS_SETTING_VERT_COUNT            (4 * FILE_SELECT_CHAOS_SETTINGS_MAX_VISIBLE_SETTINGS + 4)
 #define FILE_SELECT_CHAOS_SETTING_OPTION_WIDTH          0xc4
 #define FILE_SELECT_CHAOS_SETTING_OPTION_HEIGHT         0x0c
 

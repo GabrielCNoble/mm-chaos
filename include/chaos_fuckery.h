@@ -361,6 +361,12 @@ struct ChaosCode
     u8  code;
 };
 
+struct ChaosConfig
+{
+    const char *str;
+    u32         index;
+};
+
 enum CHAOS_MOON_MOVES
 {
     CHAOS_MOON_MOVE_SPEEN    = 1,
