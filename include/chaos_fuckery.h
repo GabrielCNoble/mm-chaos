@@ -84,7 +84,7 @@ enum CHAOS_CODES
     /* link randomly slows down and gasps for air */
     CHAOS_CODE_OUT_OF_SHAPE,
     /* sets tunic to random color */
-    CHAOS_CODE_TUNIC_COLOR,
+    // CHAOS_CODE_TUNIC_COLOR,
     /* makes skybox rotate randomly */
     CHAOS_CODE_WEIRD_SKYBOX,
     /* deactivates a random owl after use */
@@ -119,9 +119,25 @@ enum CHAOS_CODES
     CHAOS_CODE_WEIRD_ROOMS,
     /* snake game with the health meter */
     CHAOS_CODE_HEART_SNAKE,
-
-
-
+    /* makes time flow twice as fast */
+    CHAOS_CODE_FAST_TIME,
+    /* fake moon crash, with a 1/32 change of becoming a real moon crash */
+    CHAOS_CODE_MOON_CRASH,
+    /* makes actors behave like billboards */
+    // CHAOS_CODE_BILLBOARD_ACTORS,
+    /* draws link as a signpost */
+    // CHAOS_CODE_SIGNPOST,
+    /* makes link "buffer" randomly */
+    // CHAOS_CODE_SLOW_CONNECTION,
+    /* makes link run 3x as fast */
+    // CHAOS_CODE_SPEEDBOOST,
+    /* fake random scene transition, with a small chance of being real */
+    // CHAOS_CODE_RANDOM_SCENE_TRANSITION,
+    /* makes link go the opposite direction when going through doors */
+    // CHAOS_CODE_DIRECTIONALLY_CHALLENGED,
+    /* randomly change environment settings */
+    // CHAOS_CODE_WEIRD_ENVIRONMENT,
+    
     /* 
         player randomly loses grip, dropping items, falling from ledges/ladders
         TODO: change this one to include items from the inventory. The item should
@@ -156,7 +172,7 @@ enum CHAOS_CODES
     /* spawn walls of fire around player */
     // CHAOS_CODE_ANTIVIRUS,
     // CHAOS_CODE_SONG_OF_STORMS,
-    // CHAOS_CODE_SIGNPOST,
+    
     // CHAOS_CODE_ROTATE_SLOWLY,
     // CHAOS_CODE_ENVIRONMENT_SETTINGS,
     
@@ -171,7 +187,6 @@ enum CHAOS_CODES
     // CHAOS_CODE_NO_AUTOJUMP,
     // CHAOS_CODE_NO_CLIMB_UP,
     // CHAOS_CODE_NAVI,
-    // CHAOS_CODE_SPEEDBOOST,
     // CHAOS_CODE_EXPLOSIONS,
     // CHAOS_CODE_CARTIDGE_TILTING,
     // CHAOS_CODE_DIVE,
@@ -361,10 +376,20 @@ struct ChaosCode
     u8  code;
 };
 
+enum CHAOS_CONFIGS
+{
+    CHAOS_CONFIG_BEER_GOGGLES_BLUR = 0,
+    CHAOS_CONFIG_IKANA_CLIMB_TREE_ACTOR_CHASE,
+    CHAOS_CONFIG_STONE_TOWER_CLIMB_ACTOR_CHASE,
+    // CHAOS_CONFIG_CHAOS,
+    CHAOS_CONFIG_LAST,
+};
+
 struct ChaosConfig
 {
-    const char *str;
-    u32         index;
+    const char *    label;
+    const char *    description;
+    // u32             bit_index;
 };
 
 enum CHAOS_MOON_MOVES
@@ -456,6 +481,7 @@ enum CHAOS_RANDOM_FIERCE_DEITY_STATES
 {
     CHAOS_RANDOM_FIERCE_DEITY_STATE_NONE,
     CHAOS_RANDOM_FIERCE_DEITY_STATE_SWITCH,
+    CHAOS_RANDOM_FIERCE_DEITY_STATE_WAIT_FOR_FORM,
     CHAOS_RANDOM_FIERCE_DEITY_STATE_FIERCE_DEITY
 };
 
@@ -482,6 +508,12 @@ enum CHAOS_WEIRD_ROOMS_BEHAVIORS
     CHAOS_WEIRD_ROOMS_BEHAVIOR_LAST
 };
 
+enum CHAOS_FAST_TIME_STATES
+{
+    CHAOS_FAST_TIME_STATE_NONE,
+    CHAOS_FAST_TIME_STATE_SPEEDING_UP,
+};
+
 #define INVALID_CODE_INDEX      0xff 
 #define MAX_CHAOS_TIMER         8
 #define MIN_CHAOS_TIMER         2
@@ -491,6 +523,8 @@ enum CHAOS_WEIRD_ROOMS_BEHAVIORS
 
 #define MAX_SPAWNED_ACTORS  12
 #define ACTOR_DESPAWN_TIMER 10
+
+#define CHAOS_FAST_TIME_OFFSET 48
 
 struct ChaosActor
 {
@@ -519,7 +553,7 @@ typedef struct ChaosContext
     u16                     chaos_keep_largest_object;
     u8                      active_code_count;
     u8                      update_enabled;
-    // u8                      effect_restrictions;
+
     struct ChaosCode        active_codes[MAX_ACTIVE_CODES];
     u8                      active_code_indices[CHAOS_CODE_LAST];
 
@@ -532,11 +566,6 @@ typedef struct ChaosContext
     u8                      queued_spawn_actor_code;
     u8                      loaded_object_id;
     u8                      chaos_keep_slot;
-
-    // RoomVertListList *      room_vert_list_list[2];
-    // u32                     total_room_verts;
-    // u32                     cur_vert_list_index;
-    // u32                     
 
     struct 
     {
@@ -553,13 +582,15 @@ typedef struct ChaosContext
 
         u8                  big_brother_state;
         u8                  moon_dance;
-        
+
+        u32                 moon_crash_timer;
+        s32                 moon_crash_time_offset;
     } moon;
 
     struct
     {
         PlayerAnimationHeader * cur_animation;
-        // PlayerAnimationHeader * imaginary_friends_animation;
+
         f32                     cur_animation_frame;
         f32                     cur_animation_play_speed;
         u32                     cur_animation_mode;
@@ -658,6 +689,11 @@ typedef struct ChaosContext
         u8                      weirdness_behavior;
         u8                      snap_to_player_timer;
     } room;
+
+    struct 
+    {
+        u8                      fast_time_state;
+    } time;
     
 } ChaosContext;
 
@@ -729,5 +765,13 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this);
 u32 Chaos_UpdateSnakeGame(PlayState *play, Input *input);
 
 void Chaos_PrintSnakeGameStuff(PlayState *play);
+
+void Chaos_SetConfigFlag(u32 config, u32 value);
+
+u32 Chaos_GetConfigFlag(u32 config);
+
+s32 Chaos_TimeUntilMoonCrash(void);
+
+void Chaos_ClearMoonCrash(void);
 
 #endif

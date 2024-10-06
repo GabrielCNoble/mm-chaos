@@ -49,6 +49,7 @@ s32 gDbgCamEnabled = false;
 u8 D_801D0D54 = false;
 
 extern struct ChaosContext gChaosContext;
+extern u32 gCurrentBgmId;
 
 typedef enum {
     /* 0 */ MOTION_BLUR_OFF,
@@ -590,16 +591,12 @@ void Play_UpdateTransition(PlayState* this) {
                 }
 
                 if ((!(Entrance_GetTransitionFlags(this->nextEntrance + sceneLayer) & 0x8000) ||
-                     ((this->nextEntrance == ENTRANCE(PATH_TO_MOUNTAIN_VILLAGE, 1)) &&
-                      !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_SNOWHEAD_TEMPLE)) ||
-                     ((this->nextEntrance == ENTRANCE(ROAD_TO_SOUTHERN_SWAMP, 1)) &&
-                      !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_WOODFALL_TEMPLE)) ||
-                     ((this->nextEntrance == ENTRANCE(TERMINA_FIELD, 2)) &&
-                      !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_GREAT_BAY_TEMPLE)) ||
-                     ((this->nextEntrance == ENTRANCE(ROAD_TO_IKANA, 1)) &&
-                      !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_STONE_TOWER_TEMPLE))) &&
-                    (!Environment_IsFinalHours(this) || (Entrance_GetSceneId(this->nextEntrance + sceneLayer) < 0) ||
-                     (AudioSeq_GetActiveSeqId(SEQ_PLAYER_BGM_MAIN) != NA_BGM_FINAL_HOURS))) {
+                     ((this->nextEntrance == ENTRANCE(PATH_TO_MOUNTAIN_VILLAGE, 1)) && !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_SNOWHEAD_TEMPLE)) ||
+                     ((this->nextEntrance == ENTRANCE(ROAD_TO_SOUTHERN_SWAMP, 1))   && !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_WOODFALL_TEMPLE)) ||
+                     ((this->nextEntrance == ENTRANCE(TERMINA_FIELD, 2))            && !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_GREAT_BAY_TEMPLE)) ||
+                     ((this->nextEntrance == ENTRANCE(ROAD_TO_IKANA, 1))            && !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_STONE_TOWER_TEMPLE))) &&
+                    (!Environment_IsFinalHours(this) /* || Environment_IsDungeonEntrance(this) && !Audio_IsFinalHours() ||
+                    !Audio_IsFinalHours() */ )) {
                     Audio_MuteAllSeqExceptSystemAndOcarina(20);
                     gSaveContext.seqId = (u8)NA_BGM_DISABLED;
                     gSaveContext.ambienceId = AMBIENCE_ID_DISABLED;
@@ -611,8 +608,13 @@ void Play_UpdateTransition(PlayState* this) {
                     gSaveContext.ambienceId = AMBIENCE_ID_DISABLED;
                 }
 
-                if (Environment_IsFinalHours(this) && (Entrance_GetSceneId(this->nextEntrance + sceneLayer) >= 0) &&
-                    (AudioSeq_GetActiveSeqId(SEQ_PLAYER_BGM_MAIN) == NA_BGM_FINAL_HOURS)) {
+                // if (Environment_IsFinalHours(this) && (Entrance_GetSceneId(this->nextEntrance + sceneLayer) >= 0) &&
+                //     (AudioSeq_GetActiveSeqId(SEQ_PLAYER_BGM_MAIN) == NA_BGM_FINAL_HOURS)) {
+                //     Audio_MuteSfxAndAmbienceSeqExceptSysAndOca(20);
+                // }
+
+                if (Environment_IsFinalHours(this) && Audio_IsFinalHours() /* && 
+                    (Entrance_GetSceneId(this->nextEntrance + sceneLayer) >= 0) */) {
                     Audio_MuteSfxAndAmbienceSeqExceptSysAndOca(20);
                 }
             }
@@ -1060,6 +1062,27 @@ void Play_UpdateMain(PlayState* this) {
         }
     }
 
+    if(Chaos_IsCodeActive(CHAOS_CODE_FAST_TIME))
+    {
+        if(gChaosContext.time.fast_time_state == CHAOS_FAST_TIME_STATE_NONE)
+        {
+            gChaosContext.time.fast_time_state = CHAOS_FAST_TIME_STATE_SPEEDING_UP;
+            Audio_PlaySfx(NA_SE_SY_STOPWATCH_TIMER_3);
+        }
+
+        Chaos_DeactivateCode(CHAOS_CODE_FAST_TIME);
+    }
+
+    if(gChaosContext.time.fast_time_state == CHAOS_FAST_TIME_STATE_SPEEDING_UP)
+    {
+        gSaveContext.save.timeSpeedOffset++;
+        if(gSaveContext.save.timeSpeedOffset >= CHAOS_FAST_TIME_OFFSET)
+        {
+            gSaveContext.save.timeSpeedOffset = CHAOS_FAST_TIME_OFFSET;
+            gChaosContext.time.fast_time_state = CHAOS_FAST_TIME_STATE_NONE;
+        }
+    }
+
     code = Chaos_GetCode(CHAOS_CODE_TERRIBLE_MUSIC);
 
     if(code != NULL)
@@ -1308,7 +1331,10 @@ void Play_UpdateMain(PlayState* this) {
 
         gSfxBeerGogglesFreq = 0.75f * alpha_scale + (1.0f - alpha_scale);
 
-        Play_EnableMotionBlurPriority(gChaosContext.link.beer_alpha);
+        if(Chaos_GetConfigFlag(CHAOS_CONFIG_BEER_GOGGLES_BLUR))
+        {
+            Play_EnableMotionBlurPriority(gChaosContext.link.beer_alpha);   
+        }
         Math_Vec3f_DistXYZAndStoreNormDiff(&camera->eye, &camera->at, 1.0f, &forward_vec);
 
         right_vec.x = forward_vec.y * camera->up.z - forward_vec.z * camera->up.y;
@@ -1355,7 +1381,10 @@ void Play_UpdateMain(PlayState* this) {
     else if(gChaosContext.link.beer_goggles_state != CHAOS_BEER_GOGGLES_STATE_NONE)
     {
         gChaosContext.link.beer_goggles_state = CHAOS_BEER_GOGGLES_STATE_NONE;
-        Play_DisableMotionBlurPriority();
+        if(Chaos_GetConfigFlag(CHAOS_CONFIG_BEER_GOGGLES_BLUR))
+        {
+            Play_DisableMotionBlurPriority();
+        }
         View_ClearDistortion(&this->view);
         gChaosContext.link.beer_sway.x = 0;
         gChaosContext.link.beer_sway.y = 0;
@@ -1495,6 +1524,28 @@ void Play_UpdateMain(PlayState* this) {
             Sram_UpdateWriteToFlashOwlSave(&this->sramCtx);
         } else {
             Sram_UpdateWriteToFlashDefault(&this->sramCtx);
+        }
+    }
+
+    if(!(gChaosContext.effect_restrictions & (CHAOS_CODE_RESTRICTION_FLAG_AFFECT_CUTSCENE |
+                                            CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TRANSITION)))
+    {
+        if(gChaosContext.moon.moon_crash_timer > 0)
+        {
+            s32 time_until_moon_crash = TIME_UNTIL_MOON_CRASH - gChaosContext.moon.moon_crash_time_offset;
+
+            gChaosContext.moon.moon_crash_timer--;
+
+            if(time_until_moon_crash <= 0)
+            {
+                Interface_StartMoonCrash(this);
+                gChaosContext.moon.moon_crash_timer = 0;
+                gChaosContext.moon.moon_crash_time_offset = 0;
+            }
+        }
+        else
+        {
+            gChaosContext.moon.moon_crash_time_offset = 0;
         }
     }
 }
@@ -1741,16 +1792,16 @@ void Play_DrawMain(PlayState* this) {
                 Lights_BindAll(lights, this->lightCtx.listHead, NULL, this);
                 Lights_Draw(lights, gfxCtx);
 
-                if (1) {
+                // if (1) {
                     //! FAKE:
-                    u32 roomDrawFlags = ((1) ? 1 : 0) | (((void)0, 1) ? 2 : 0);
+                    // u32 roomDrawFlags = ((1) ? 1 : 0) | (((void)0, 1) ? 2 : 0);
 
                     Scene_Draw(this);
                     if (this->roomCtx.unk78) {
-                        Room_Draw(this, &this->roomCtx.curRoom, roomDrawFlags & 3);
-                        Room_Draw(this, &this->roomCtx.prevRoom, roomDrawFlags & 3);
+                        Room_Draw(this, &this->roomCtx.curRoom, 3);
+                        Room_Draw(this, &this->roomCtx.prevRoom, 3);
                     }
-                }
+                // }
 
                 if (this->skyboxCtx.shouldDraw) {
                     Vec3f quakeOffset;
@@ -1767,15 +1818,15 @@ void Play_DrawMain(PlayState* this) {
                 }
             }
 
-            if (1) {
+            // if (1) {
                 Environment_FillScreen(gfxCtx, 0, 0, 0, this->bgCoverAlpha, FILL_SCREEN_OPA);
-            }
+            // }
 
-            if (1) {
+            // if (1) {
                 Actor_DrawAll(this, &this->actorCtx);
-            }
+            // }
 
-            if (1) {
+            // if (1) {
                 if (!this->envCtx.sunDisabled) {
                     temp.x = this->view.eye.x + this->envCtx.sunPos.x;
                     temp.y = this->view.eye.y + this->envCtx.sunPos.y;
@@ -1784,9 +1835,9 @@ void Play_DrawMain(PlayState* this) {
                 }
 
                 Environment_DrawCustomLensFlare(this);
-            }
+            // }
 
-            if (1) {
+            // if (1) {
                 if (R_PLAY_FILL_SCREEN_ON) {
                     Environment_FillScreen(gfxCtx, R_PLAY_FILL_SCREEN_R, R_PLAY_FILL_SCREEN_G, R_PLAY_FILL_SCREEN_B,
                                            R_PLAY_FILL_SCREEN_ALPHA, FILL_SCREEN_OPA | FILL_SCREEN_XLU);
@@ -1802,21 +1853,21 @@ void Play_DrawMain(PlayState* this) {
                     default:
                         break;
                 }
-            }
+            // }
 
-            if (1) {
+            // if (1) {
                 if (this->envCtx.sandstormState != SANDSTORM_OFF) {
                     Environment_DrawSandstorm(this, this->envCtx.sandstormState);
                 }
-            }
+            // }
 
             if (this->worldCoverAlpha != 0) {
                 Environment_FillScreen(gfxCtx, 0, 0, 0, this->worldCoverAlpha, FILL_SCREEN_OPA | FILL_SCREEN_XLU);
             }
 
-            if (1) {
+            // if (1) {
                 DebugDisplay_DrawObjects(this);
-            }
+            // }
 
             Play_DrawMotionBlur(this);
 
@@ -1858,9 +1909,9 @@ void Play_DrawMain(PlayState* this) {
             }
 
         PostWorldDraw:
-            if (1) {
+            // if (1) {
                 Play_PostWorldDraw(this);
-            }
+            // }
         }
     }
 
@@ -2530,18 +2581,29 @@ void Play_FillScreen(PlayState* this, s16 fillScreenOn, u8 red, u8 green, u8 blu
     R_PLAY_FILL_SCREEN_ALPHA = alpha;
 }
 
+// u16 sOverridePlayerCsIds[] = {
+//     PLAYER_CS_ID_MASK_TRANSFORMATION,
+//     PLAYER_CS_ID_SONG_WARP,
+//     PLAYER_CS_ID_WARP_PAD_ENTRANCE,
+//     PLAYER_CS_ID_ITEM_OCARINA
+// };
+
 void Play_Init(GameState* thisx) {
     PlayState* this = (PlayState*)thisx;
     GraphicsContext* gfxCtx = this->state.gfxCtx;
-    s32 pad;
+    // s32 pad;
     uintptr_t zAlloc;
     s32 zAllocSize;
     Player* player;
-    u32 *p;
     s32 i;
     s32 spawn;
     u8 sceneLayer;
+    // u32 scene_bgm;
     s32 scene;
+    // u32 index;
+    // s16 cur_cs_id;
+    // u8 override_cutscene = false;
+    // u8 was_playing_last_hours = Audio_IsFinalHours();
 
     if ((gSaveContext.respawnFlag == -4) || (gSaveContext.respawnFlag == -0x63)) {
         if (CHECK_EVENTINF(EVENTINF_TRIGGER_DAYTELOP)) {
@@ -2612,7 +2674,7 @@ void Play_Init(GameState* thisx) {
         gSaveContext.save.entrance =
             Entrance_Create(((void)0, scene), spawn, ((void)0, gSaveContext.save.entrance) & 0xF);
     }
-
+    
     GameState_Realloc(&this->state, 0);
     KaleidoManager_Init(this);
     ShrinkWindow_Init();
@@ -2671,7 +2733,7 @@ void Play_Init(GameState* thisx) {
         gSaveContext.save.isNight = false;
     }
 
-    func_800EDDB0(this);
+    // func_800EDDB0(this);
 
     if (((gSaveContext.gameMode != GAMEMODE_NORMAL) && (gSaveContext.gameMode != GAMEMODE_TITLE_SCREEN)) ||
         (gSaveContext.save.cutsceneIndex >= 0xFFF0)) {
@@ -2748,7 +2810,7 @@ void Play_Init(GameState* thisx) {
     }
 
     TransitionFade_Init(&this->unk_18E48);
-    TransitionFade_SetType(&this->unk_18E48, 3);
+    TransitionFade_SetType(&this->unk_18E48, TRANS_INSTANCE_TYPE_FADE_FLASH);
     TransitionFade_SetColor(&this->unk_18E48, RGBA8(160, 160, 160, 255));
     TransitionFade_Start(&this->unk_18E48);
     VisMono_Init(&sPlayVisMono);
@@ -2767,9 +2829,6 @@ void Play_Init(GameState* thisx) {
     sPlayVisFbufInstance->envColor.b = 0;
     sPlayVisFbufInstance->envColor.a = 0;
     CutsceneFlags_UnsetAll(this);
-
-    // p = (u32 *)THA_GetRemaining(&this->state.tha);
-    // *p = 5;
 
     THA_GetRemaining(&this->state.tha);
     zAllocSize = THA_GetRemaining(&this->state.tha);
@@ -2795,15 +2854,43 @@ void Play_Init(GameState* thisx) {
     if (PLAYER_GET_BG_CAM_INDEX(&player->actor) != 0xFF) {
         Camera_ChangeActorCsCamIndex(&this->mainCamera, PLAYER_GET_BG_CAM_INDEX(&player->actor));
     }
-
+    
     CutsceneManager_StoreCamera(&this->mainCamera);
     Interface_SetSceneRestrictions(this);
+    gSaveContext.respawnFlag = 0;
+    Cutscene_HandleEntranceTriggers(this);
     Environment_PlaySceneSequence(this);
     gSaveContext.seqId = this->sceneSequences.seqId;
     gSaveContext.ambienceId = this->sceneSequences.ambienceId;
     AnimationContext_Update(this, &this->animationCtx);
-    Cutscene_HandleEntranceTriggers(this);
-    gSaveContext.respawnFlag = 0;
+    // Cutscene_HandleEntranceTriggers(this);
     sBombersNotebookOpen = false;
     BombersNotebook_Init(&sBombersNotebook);
+
+    // cur_cs_id = CutsceneManager_GetCurrentCsId();
+    // override_cutscene = /* this->csCtx.state == CS_STATE_IDLE || */ cur_cs_id == CS_ID_NONE;
+
+    // for(index = 0; index < ARRAY_COUNT(sOverridePlayerCsIds); index++)
+    // {
+    //     override_cutscene |= cur_cs_id == this->playerCsIds[sOverridePlayerCsIds[index]];
+    // }
+
+    // if(Environment_IsFinalHours(this) && override_cutscene)
+    // {
+    //     if ((this->sceneId != SCENE_00KEIKOKU || gSaveContext.sceneLayer != 1) /* && !was_playing_last_hours*/ )
+    //     {
+    //         // SEQCMD_STOP_SEQUENCE(SEQ_PLAYER_AMBIENCE, 0);
+    //         // // SEQCMD_STOP_SEQUENCE(SEQ_PLAYER_BGM_MAIN, 0);
+    //         // if(this->sceneSequences.seqId != NA_BGM_GENERAL_SFX)
+    //         // {
+    //             // AudioSeq_ProcessSeqCmds();
+    //             // AudioSeq_ResetActiveSequences();
+    //         // }
+    //         Audio_ClearObjSoundMainBgmSeqId();
+    //         Audio_ClearPrevMainBgmSeqId();
+    //         Audio_PlaySceneSequence(NA_BGM_FINAL_HOURS, CURRENT_DAY - 1);
+    //         // Audio_StartSceneSequence(NA_BGM_FINAL_HOURS);
+    //         // SEQCMD_SET_SEQPLAYER_IO(SEQ_PLAYER_BGM_MAIN, 4, CURRENT_DAY - 1);
+    //     }
+    // }
 }

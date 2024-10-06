@@ -4,6 +4,7 @@
 #include "sys_flashrom.h"
 #include "z64horse.h"
 #include "overlays/gamestates/ovl_file_choose/z_file_select.h"
+#include "chaos_fuckery.h"
 
 void Sram_SyncWriteToFlash(SramContext* sramCtx, s32 curPage, s32 numPages);
 void func_80147314(SramContext* sramCtx, s32 fileNum);
@@ -649,6 +650,7 @@ void Sram_SaveEndOfCycle(PlayState* play) {
     gSaveContext.rupeeAccumulator = 0;
 
     Horse_ResetHorseData(play);
+    Chaos_ClearMoonCrash();
 }
 
 void Sram_IncrementDay(void) {
@@ -941,6 +943,13 @@ void Sram_InitNewSave(void) {
 
     gSaveContext.nextCutsceneIndex = 0;
     gSaveContext.save.saveInfo.playerData.magicLevel = 0;
+    
+    Chaos_SetConfigFlag(CHAOS_CONFIG_BEER_GOGGLES_BLUR, true);
+    Chaos_SetConfigFlag(CHAOS_CONFIG_IKANA_CLIMB_TREE_ACTOR_CHASE, false);
+    Chaos_SetConfigFlag(CHAOS_CONFIG_STONE_TOWER_CLIMB_ACTOR_CHASE, false);
+
+    gSaveContext.save.moon_crash_count = 0;
+
     Sram_GenerateRandomSaveFields();
 }
 
@@ -1987,6 +1996,36 @@ void Sram_UpdateWriteToFlashOwlSave(SramContext* sramCtx) {
         SysFlashrom_ReadData(sramCtx->saveBuf, sramCtx->curPage, sramCtx->numPages);
         Lib_MemCpy(&gSaveContext, sramCtx->saveBuf, offsetof(SaveContext, fileNum));
     }
+}
+
+void Sram_LoadChaosConfig(SramContext *sram_ctx, u8 file_index)
+{
+    Save *save;
+    SysFlashrom_ReadData(sram_ctx->saveBuf, gFlashSaveStartPages[file_index << 1],
+            gFlashSaveNumPages[file_index << 1]);
+
+    save = (Save *)sram_ctx->saveBuf;
+    gSaveContext.save.chaos_config[0] = save->chaos_config[0];
+    gSaveContext.save.chaos_config[1] = save->chaos_config[1];
+    gSaveContext.save.chaos_config[2] = save->chaos_config[2];
+    gSaveContext.save.chaos_config[3] = save->chaos_config[3];
+}
+
+void Sram_SaveChaosConfig(SramContext *sram_ctx, u8 file_index)
+{
+    Save *save = (Save *)sram_ctx->saveBuf;
+    save->chaos_config[0] = gSaveContext.save.chaos_config[0];
+    save->chaos_config[1] = gSaveContext.save.chaos_config[1];
+    save->chaos_config[2] = gSaveContext.save.chaos_config[2];
+    save->chaos_config[3] = gSaveContext.save.chaos_config[3];
+
+    save->saveInfo.checksum = 0;
+    save->saveInfo.checksum = Sram_CalcChecksum(save, sizeof(Save));
+    SysFlashrom_WriteDataSync(sram_ctx->saveBuf, gFlashSaveStartPages[file_index * 2],
+            gFlashSaveNumPages[file_index * 2]);
+        
+    // SysFlashrom_WriteDataSync(sram_ctx->saveBuf, gFlashSaveStartPages[file_index * 2 + 1],
+    //         gFlashSaveNumPages[file_index * 2 + 1]);
 }
 
 void func_80147314(SramContext* sramCtx, s32 fileNum) {

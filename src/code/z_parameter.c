@@ -4659,6 +4659,31 @@ void Interface_DrawPauseMenuEquippingIcons(PlayState* play) {
 /**
  * Draws either the analog three-day clock or the digital final-hours clock
  */
+
+struct ClockColorConfig
+{
+    Color_RGB16 prim_target[2];
+    Color_RGB16 env_target[2];
+};
+
+struct ClockColorConfig sClockInvDiamondColor = {
+    {{100, 205, 255},   {0, 155, 255}},
+    {{30, 30, 100},     {0, 0, 0}}
+};
+
+struct ClockColorConfig sClockFastDiamondColor = {
+    {{255, 30, 0},   {255, 50, 0}},
+    {{100, 30, 0},     {0, 0, 0}}
+};
+
+struct ClockColorConfig sFinalHoursClock = {
+    {{255, 0, 0},       {0, 0, 0}},
+    {{100, 30, 100},    {0, 0, 0}}
+};
+
+Color_RGB16 s3DayClockPrimColor     = {0, 0, 170};
+Color_RGB16 s3DayClockEnvColor      = {0, 0, 0};
+
 void Interface_DrawClock(PlayState* play) {
     static s16 sThreeDayClockAlpha = 255;
     static s16 sClockAlphaTimer1 = 0;
@@ -4684,24 +4709,39 @@ void Interface_DrawClock(PlayState* play) {
         (TexturePtr)0x0000009B,  (TexturePtr)0x00FF0000,
 #endif
     };
-    static s16 sClockInvDiamondPrimRed = 0;
-    static s16 sClockInvDiamondPrimGreen = 155;
-    static s16 sClockInvDiamondPrimBlue = 255;
-    static s16 sClockInvDiamondEnvRed = 0;
-    static s16 sClockInvDiamondEnvGreen = 0;
-    static s16 sClockInvDiamondEnvBlue = 0;
+    // static s16 sClockInvDiamondPrimRed = 0;
+    // static s16 sClockInvDiamondPrimGreen = 155;
+    // static s16 sClockInvDiamondPrimBlue = 255;
+    // static s16 sClockInvDiamondEnvRed = 0;
+    // static s16 sClockInvDiamondEnvGreen = 0;
+    // static s16 sClockInvDiamondEnvBlue = 0;
     static s16 sClockInvDiamondTimer = 15;
     static s16 sClockInvDiamondTargetIndex = 0;
-    static s16 sClockInvDiamondPrimRedTargets[] = { 100, 0 };
-    static s16 sClockInvDiamondPrimGreenTargets[] = { 205, 155 };
-    static s16 sClockInvDiamondPrimBlueTargets[] = { 255, 255 };
-    static s16 sClockInvDiamondEnvRedTargets[] = { 30, 0 };
-    static s16 sClockInvDiamondEnvGreenTargets[] = { 30, 0 };
-    static s16 sClockInvDiamondEnvBlueTargets[] = { 100, 0 };
+
+    // static struct ClockColorConfig sClockInvDiamondColor = {
+    //     {{100, 205, 255},   {0, 155, 255}},
+    //     {{30, 30, 100},     {0, 0, 0}}
+    // };
+
+    // static s16 sClockInvDiamondPrimRedTargets[] = { 100, 0 };
+    // static s16 sClockInvDiamondPrimGreenTargets[] = { 205, 155 };
+    // static s16 sClockInvDiamondPrimBlueTargets[] = { 255, 255 };
+    // static s16 sClockInvDiamondEnvRedTargets[] = { 30, 0 };
+    // static s16 sClockInvDiamondEnvGreenTargets[] = { 30, 0 };
+    // static s16 sClockInvDiamondEnvBlueTargets[] = { 100, 0 };
+
+    // static s16 sClockFastDiamondPrimRedTargets[] = { 255, 0 };
+    // static s16 sClockFastDiamondPrimGreenTargets[] = { 205, 155 };
+    // static s16 sClockFastDiamondPrimBlueTargets[] = { 100, 255 };
+    // static s16 sClockFastDiamondEnvRedTargets[] = { 100, 0 };
+    // static s16 sClockFastDiamondEnvGreenTargets[] = { 30, 0 };
+    // static s16 sClockFastDiamondEnvBlueTargets[] = { 30, 0 };
+
     static s16 sFinalHoursClockDigitsRedTargets[] = { 255, 0 };
     static s16 sFinalHoursClockFrameEnvRedTargets[] = { 100, 0 };
     static s16 sFinalHoursClockFrameEnvGreenTargets[] = { 30, 0 };
     static s16 sFinalHoursClockFrameEnvBlueTargets[] = { 100, 0 };
+
     static TexturePtr sFinalHoursDigitTextures[] = {
         gFinalHoursClockDigit0Tex, gFinalHoursClockDigit1Tex, gFinalHoursClockDigit2Tex, gFinalHoursClockDigit3Tex,
         gFinalHoursClockDigit4Tex, gFinalHoursClockDigit5Tex, gFinalHoursClockDigit6Tex, gFinalHoursClockDigit7Tex,
@@ -4727,6 +4767,7 @@ void Interface_DrawClock(PlayState* play) {
     s16 colorStep;
     s16 finalHoursClockSlots[8];
     s16 index;
+    u32 draw_final_hours_clock = 0;
 
     s16 chaos_x[18];
     s16 chaos_y[18];
@@ -4745,6 +4786,8 @@ void Interface_DrawClock(PlayState* play) {
         bzero(chaos_x, sizeof(chaos_x));
         bzero(chaos_y, sizeof(chaos_y));
     }
+
+    timeUntilMoonCrash = TIME_UNTIL_MOON_CRASH - gChaosContext.moon.moon_crash_time_offset;
 
     OPEN_DISPS(play->state.gfxCtx);
 
@@ -4800,9 +4843,7 @@ void Interface_DrawClock(PlayState* play) {
             gDPSetAlphaCompare(OVERLAY_DISP++, G_AC_THRESHOLD);
             gDPSetRenderMode(OVERLAY_DISP++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
             gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 130, 130, 130, sThreeDayClockAlpha);
-            gDPSetCombineLERP(OVERLAY_DISP++, 0, 0, 0, PRIMITIVE, TEXEL0, 0, PRIMITIVE, 0, 0, 0, 0, PRIMITIVE, TEXEL0,
-                              0, PRIMITIVE, 0);
-
+            gDPSetCombineLERP(OVERLAY_DISP++, 0, 0, 0, PRIMITIVE, TEXEL0, 0, PRIMITIVE, 0, 0, 0, 0, PRIMITIVE, TEXEL0, 0, PRIMITIVE, 0);
             OVERLAY_DISP = Gfx_DrawTexRect4b(OVERLAY_DISP, gThreeDayClockHourLinesTex, 4, 64, 35, 96 + chaos_x[0], 180 + chaos_y[0], 128, 35, 1,
                                              6, 0, 1 << 10, 1 << 10);
 
@@ -4811,8 +4852,7 @@ void Interface_DrawClock(PlayState* play) {
              */
             gDPPipeSync(OVERLAY_DISP++);
             gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 255, 255, 255, sThreeDayClockAlpha);
-            gDPSetCombineLERP(OVERLAY_DISP++, 0, 0, 0, PRIMITIVE, TEXEL0, 0, PRIMITIVE, 0, 0, 0, 0, PRIMITIVE, TEXEL0,
-                              0, PRIMITIVE, 0);
+            gDPSetCombineLERP(OVERLAY_DISP++, 0, 0, 0, PRIMITIVE, TEXEL0, 0, PRIMITIVE, 0, 0, 0, 0, PRIMITIVE, TEXEL0, 0, PRIMITIVE, 0);
 
             //! @bug A texture height of 50 is given below. The texture is only 48 units height
             //!      resulting in this reading into the next texture. This results in a white
@@ -4820,98 +4860,219 @@ void Interface_DrawClock(PlayState* play) {
             //!      covered by the diamond. However, it can be seen by the final-hours clock.
             OVERLAY_DISP = Gfx_DrawTexRect4b(OVERLAY_DISP, gThreeDayClockBorderTex, 4, 64, 50, 96 + chaos_x[1], 168 + chaos_y[1], 128, 50, 1, 6,
                                              0, 1 << 10, 1 << 10);
+            
+            draw_final_hours_clock = (CURRENT_DAY >= 4) || (CURRENT_DAY == 3 && CURRENT_TIME >= (CLOCK_TIME(0, 0) + 5) && 
+                CURRENT_TIME < CLOCK_TIME(6, 0)) || gChaosContext.moon.moon_crash_timer > 0;
 
-            if (((CURRENT_DAY >= 4) || ((CURRENT_DAY == 3) && (CURRENT_TIME >= (CLOCK_TIME(0, 0) + 5)) &&
-                                        (CURRENT_TIME < CLOCK_TIME(6, 0))))) {
+            if (draw_final_hours_clock) 
+            {
                 Gfx_SetupDL42_Overlay(play->state.gfxCtx);
                 gSPMatrix(OVERLAY_DISP++, &gIdentityMtx, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-            } else {
+            } 
+            else 
+            {
                 /**
                  * Section: Draw Three-Day Clock's Diamond
                  */
                 gDPPipeSync(OVERLAY_DISP++);
 
-                // Time is slowed down to half speed with inverted song of time
-                if (gSaveContext.save.timeSpeedOffset == -2) {
-                    // Clock diamond is blue and flashes white
-                    colorStep =
-                        ABS_ALT(sClockInvDiamondPrimRed - sClockInvDiamondPrimRedTargets[sClockInvDiamondTargetIndex]) /
-                        sClockInvDiamondTimer;
-                    if (sClockInvDiamondPrimRed >= sClockInvDiamondPrimRedTargets[sClockInvDiamondTargetIndex]) {
-                        sClockInvDiamondPrimRed -= colorStep;
-                    } else {
-                        sClockInvDiamondPrimRed += colorStep;
+                if(gSaveContext.save.timeSpeedOffset == 0)
+                {
+                    // Clock diamond is green for regular timeSpeedOffset
+                    gDPSetCombineMode(OVERLAY_DISP++, G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM);
+                    gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 0, 170, 100, sThreeDayClockAlpha);
+                }
+                else
+                {
+                    struct ClockColorConfig *color_config;
+                    Color_RGB16 *prim_target;
+                    Color_RGB16 *env_target;
+
+                    if(gSaveContext.save.timeSpeedOffset == -2) 
+                    {
+                        color_config = &sClockInvDiamondColor;
+                    }
+                    else
+                    {
+                        color_config = &sClockFastDiamondColor;
                     }
 
-                    colorStep = ABS_ALT(sClockInvDiamondPrimGreen -
-                                        sClockInvDiamondPrimGreenTargets[sClockInvDiamondTargetIndex]) /
-                                sClockInvDiamondTimer;
-                    if (sClockInvDiamondPrimGreen >= sClockInvDiamondPrimGreenTargets[sClockInvDiamondTargetIndex]) {
-                        sClockInvDiamondPrimGreen -= colorStep;
-                    } else {
-                        sClockInvDiamondPrimGreen += colorStep;
+                    prim_target = color_config->prim_target + sClockInvDiamondTargetIndex;
+                    env_target = color_config->env_target + sClockInvDiamondTargetIndex;
+                    
+                    colorStep = ABS_ALT(s3DayClockPrimColor.r - prim_target->r) / sClockInvDiamondTimer;
+                    if (s3DayClockPrimColor.r >= prim_target->r) 
+                    {
+                        s3DayClockPrimColor.r -= colorStep;
+                    } 
+                    else 
+                    {
+                        s3DayClockPrimColor.r += colorStep;
                     }
 
-                    colorStep = ABS_ALT(sClockInvDiamondPrimBlue -
-                                        sClockInvDiamondPrimBlueTargets[sClockInvDiamondTargetIndex]) /
-                                sClockInvDiamondTimer;
-                    if (sClockInvDiamondPrimBlue >= sClockInvDiamondPrimBlueTargets[sClockInvDiamondTargetIndex]) {
-                        sClockInvDiamondPrimBlue -= colorStep;
-                    } else {
-                        sClockInvDiamondPrimBlue += colorStep;
+                    colorStep = ABS_ALT(s3DayClockPrimColor.g - prim_target->g) / sClockInvDiamondTimer;
+                    if (s3DayClockPrimColor.g >= prim_target->g) 
+                    {
+                        s3DayClockPrimColor.g -= colorStep;
+                    } 
+                    else 
+                    {
+                        s3DayClockPrimColor.g += colorStep;
                     }
 
-                    colorStep =
-                        ABS_ALT(sClockInvDiamondEnvRed - sClockInvDiamondEnvRedTargets[sClockInvDiamondTargetIndex]) /
-                        sClockInvDiamondTimer;
-                    if (sClockInvDiamondEnvRed >= sClockInvDiamondEnvRedTargets[sClockInvDiamondTargetIndex]) {
-                        sClockInvDiamondEnvRed -= colorStep;
-                    } else {
-                        sClockInvDiamondEnvRed += colorStep;
+                    colorStep = ABS_ALT(s3DayClockPrimColor.b - prim_target->b) / sClockInvDiamondTimer;
+                    if (s3DayClockPrimColor.b >= prim_target->b) 
+                    {
+                        s3DayClockPrimColor.b -= colorStep;
+                    } 
+                    else 
+                    {
+                        s3DayClockPrimColor.b += colorStep;
                     }
 
-                    colorStep = ABS_ALT(sClockInvDiamondEnvGreen -
-                                        sClockInvDiamondEnvGreenTargets[sClockInvDiamondTargetIndex]) /
-                                sClockInvDiamondTimer;
-                    if (sClockInvDiamondEnvGreen >= sClockInvDiamondEnvGreenTargets[sClockInvDiamondTargetIndex]) {
-                        sClockInvDiamondEnvGreen -= colorStep;
-                    } else {
-                        sClockInvDiamondEnvGreen += colorStep;
+                    colorStep = ABS_ALT(s3DayClockEnvColor.r - env_target->r) / sClockInvDiamondTimer;
+                    if (s3DayClockEnvColor.r >= env_target->r) 
+                    {
+                        s3DayClockEnvColor.r -= colorStep;
+                    } 
+                    else 
+                    {
+                        s3DayClockEnvColor.r += colorStep;
                     }
 
-                    colorStep =
-                        ABS_ALT(sClockInvDiamondEnvBlue - sClockInvDiamondEnvBlueTargets[sClockInvDiamondTargetIndex]) /
-                        sClockInvDiamondTimer;
-                    if (sClockInvDiamondEnvBlue >= sClockInvDiamondEnvBlueTargets[sClockInvDiamondTargetIndex]) {
-                        sClockInvDiamondEnvBlue -= colorStep;
-                    } else {
-                        sClockInvDiamondEnvBlue += colorStep;
+                    colorStep = ABS_ALT(s3DayClockEnvColor.g - env_target->g) / sClockInvDiamondTimer;
+                    if (s3DayClockEnvColor.g >= env_target->g) 
+                    {
+                        s3DayClockEnvColor.g -= colorStep;
+                    } 
+                    else 
+                    {
+                        s3DayClockEnvColor.g += colorStep;
+                    }
+
+                    colorStep = ABS_ALT(s3DayClockEnvColor.b - env_target->b) / sClockInvDiamondTimer;
+                    if (s3DayClockEnvColor.b >= env_target->b) 
+                    {
+                        s3DayClockEnvColor.b -= colorStep;
+                    } 
+                    else 
+                    {
+                        s3DayClockEnvColor.b += colorStep;
                     }
 
                     sClockInvDiamondTimer--;
 
-                    if (sClockInvDiamondTimer == 0) {
-                        sClockInvDiamondPrimRed = sClockInvDiamondPrimRedTargets[sClockInvDiamondTargetIndex];
-                        sClockInvDiamondPrimGreen = sClockInvDiamondPrimGreenTargets[sClockInvDiamondTargetIndex];
-                        sClockInvDiamondPrimBlue = sClockInvDiamondPrimBlueTargets[sClockInvDiamondTargetIndex];
-                        sClockInvDiamondEnvRed = sClockInvDiamondEnvRedTargets[sClockInvDiamondTargetIndex];
-                        sClockInvDiamondEnvGreen = sClockInvDiamondEnvGreenTargets[sClockInvDiamondTargetIndex];
-                        sClockInvDiamondEnvBlue = sClockInvDiamondEnvBlueTargets[sClockInvDiamondTargetIndex];
-                        sClockInvDiamondTimer = 15;
+                    if (sClockInvDiamondTimer == 0) 
+                    {
+                        s3DayClockPrimColor = *prim_target;
+                        s3DayClockEnvColor = *env_target;
+
+                        if(gSaveContext.save.timeSpeedOffset == -2)
+                        {
+                            sClockInvDiamondTimer = 15;
+                        }
+                        else
+                        {
+                            sClockInvDiamondTimer = 4;
+                        }
+                        
                         sClockInvDiamondTargetIndex ^= 1;
                     }
 
                     gDPSetCombineLERP(OVERLAY_DISP++, PRIMITIVE, ENVIRONMENT, TEXEL0, ENVIRONMENT, TEXEL0, 0, PRIMITIVE,
                                       0, PRIMITIVE, ENVIRONMENT, TEXEL0, ENVIRONMENT, TEXEL0, 0, PRIMITIVE, 0);
-                    gDPSetPrimColor(OVERLAY_DISP++, 0, 0, sClockInvDiamondPrimRed, sClockInvDiamondPrimGreen, 255,
-                                    sThreeDayClockAlpha);
-                    gDPSetEnvColor(OVERLAY_DISP++, sClockInvDiamondEnvRed, sClockInvDiamondEnvGreen,
-                                   sClockInvDiamondEnvBlue, 0);
-                } else {
-                    // Clock diamond is green for regular timeSpeedOffset
-                    gDPSetCombineMode(OVERLAY_DISP++, G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM);
-                    gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 0, 170, 100, sThreeDayClockAlpha);
+                    gDPSetPrimColor(OVERLAY_DISP++, 0, 0, s3DayClockPrimColor.r, s3DayClockPrimColor.g,
+                                                          s3DayClockPrimColor.b, sThreeDayClockAlpha);
+                    gDPSetEnvColor(OVERLAY_DISP++, s3DayClockEnvColor.r, s3DayClockEnvColor.g,
+                                                   s3DayClockEnvColor.b, 0);
                 }
+
+                // Time is slowed down to half speed with inverted song of time
+                // if (gSaveContext.save.timeSpeedOffset == -2) {
+                //     // Clock diamond is blue and flashes white
+                //     colorStep =
+                //         ABS_ALT(sClockInvDiamondPrimRed - sClockInvDiamondPrimRedTargets[sClockInvDiamondTargetIndex]) /
+                //         sClockInvDiamondTimer;
+                //     if (sClockInvDiamondPrimRed >= sClockInvDiamondPrimRedTargets[sClockInvDiamondTargetIndex]) {
+                //         sClockInvDiamondPrimRed -= colorStep;
+                //     } else {
+                //         sClockInvDiamondPrimRed += colorStep;
+                //     }
+
+                //     colorStep = ABS_ALT(sClockInvDiamondPrimGreen -
+                //                         sClockInvDiamondPrimGreenTargets[sClockInvDiamondTargetIndex]) /
+                //                 sClockInvDiamondTimer;
+                //     if (sClockInvDiamondPrimGreen >= sClockInvDiamondPrimGreenTargets[sClockInvDiamondTargetIndex]) {
+                //         sClockInvDiamondPrimGreen -= colorStep;
+                //     } else {
+                //         sClockInvDiamondPrimGreen += colorStep;
+                //     }
+
+                //     colorStep = ABS_ALT(sClockInvDiamondPrimBlue -
+                //                         sClockInvDiamondPrimBlueTargets[sClockInvDiamondTargetIndex]) /
+                //                 sClockInvDiamondTimer;
+                //     if (sClockInvDiamondPrimBlue >= sClockInvDiamondPrimBlueTargets[sClockInvDiamondTargetIndex]) {
+                //         sClockInvDiamondPrimBlue -= colorStep;
+                //     } else {
+                //         sClockInvDiamondPrimBlue += colorStep;
+                //     }
+
+                //     colorStep =
+                //         ABS_ALT(sClockInvDiamondEnvRed - sClockInvDiamondEnvRedTargets[sClockInvDiamondTargetIndex]) /
+                //         sClockInvDiamondTimer;
+                //     if (sClockInvDiamondEnvRed >= sClockInvDiamondEnvRedTargets[sClockInvDiamondTargetIndex]) {
+                //         sClockInvDiamondEnvRed -= colorStep;
+                //     } else {
+                //         sClockInvDiamondEnvRed += colorStep;
+                //     }
+
+                //     colorStep = ABS_ALT(sClockInvDiamondEnvGreen -
+                //                         sClockInvDiamondEnvGreenTargets[sClockInvDiamondTargetIndex]) /
+                //                 sClockInvDiamondTimer;
+                //     if (sClockInvDiamondEnvGreen >= sClockInvDiamondEnvGreenTargets[sClockInvDiamondTargetIndex]) {
+                //         sClockInvDiamondEnvGreen -= colorStep;
+                //     } else {
+                //         sClockInvDiamondEnvGreen += colorStep;
+                //     }
+
+                //     colorStep =
+                //         ABS_ALT(sClockInvDiamondEnvBlue - sClockInvDiamondEnvBlueTargets[sClockInvDiamondTargetIndex]) /
+                //         sClockInvDiamondTimer;
+                //     if (sClockInvDiamondEnvBlue >= sClockInvDiamondEnvBlueTargets[sClockInvDiamondTargetIndex]) {
+                //         sClockInvDiamondEnvBlue -= colorStep;
+                //     } else {
+                //         sClockInvDiamondEnvBlue += colorStep;
+                //     }
+
+                //     sClockInvDiamondTimer--;
+
+                //     if (sClockInvDiamondTimer == 0) {
+                //         sClockInvDiamondPrimRed = sClockInvDiamondPrimRedTargets[sClockInvDiamondTargetIndex];
+                //         sClockInvDiamondPrimGreen = sClockInvDiamondPrimGreenTargets[sClockInvDiamondTargetIndex];
+                //         sClockInvDiamondPrimBlue = sClockInvDiamondPrimBlueTargets[sClockInvDiamondTargetIndex];
+                //         sClockInvDiamondEnvRed = sClockInvDiamondEnvRedTargets[sClockInvDiamondTargetIndex];
+                //         sClockInvDiamondEnvGreen = sClockInvDiamondEnvGreenTargets[sClockInvDiamondTargetIndex];
+                //         sClockInvDiamondEnvBlue = sClockInvDiamondEnvBlueTargets[sClockInvDiamondTargetIndex];
+                //         sClockInvDiamondTimer = 15;
+                //         sClockInvDiamondTargetIndex ^= 1;
+                //     }
+
+                //     gDPSetCombineLERP(OVERLAY_DISP++, PRIMITIVE, ENVIRONMENT, TEXEL0, ENVIRONMENT, TEXEL0, 0, PRIMITIVE,
+                //                       0, PRIMITIVE, ENVIRONMENT, TEXEL0, ENVIRONMENT, TEXEL0, 0, PRIMITIVE, 0);
+                //     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, sClockInvDiamondPrimRed, sClockInvDiamondPrimGreen, 255,
+                //                     sThreeDayClockAlpha);
+                //     gDPSetEnvColor(OVERLAY_DISP++, sClockInvDiamondEnvRed, sClockInvDiamondEnvGreen,
+                //                    sClockInvDiamondEnvBlue, 0);
+                // } 
+                // else if (gSaveContext.save.timeSpeedOffset == CHAOS_FAST_TIME_OFFSET)
+                // {
+
+                // }
+                // else {
+                //     // Clock diamond is green for regular timeSpeedOffset
+                //     gDPSetCombineMode(OVERLAY_DISP++, G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM);
+                //     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 0, 170, 100, sThreeDayClockAlpha);
+                // }
 
                 OVERLAY_DISP = Gfx_DrawTexRectIA8(OVERLAY_DISP, gThreeDayClockDiamondTex, 40, 32, 140 + chaos_x[2], 190 + chaos_y[2], 40, 32,
                                                   1 << 10, 1 << 10);
@@ -5091,46 +5252,92 @@ void Interface_DrawClock(PlayState* play) {
             gSPDisplayList(OVERLAY_DISP++, D_0E000000.setScissor);
 
             // Final Hours
-            if ((CURRENT_DAY >= 4) ||
-                ((CURRENT_DAY == 3) && (CURRENT_TIME >= (CLOCK_TIME(0, 0) + 5)) && (CURRENT_TIME < CLOCK_TIME(6, 0)))) {
-                if (CURRENT_TIME >= CLOCK_TIME(5, 0)) {
+            if (draw_final_hours_clock) 
+            {
+                // if (CURRENT_TIME >= CLOCK_TIME(5, 0)) 
+                if(timeUntilMoonCrash <= CLOCK_TIME(1, 0)) 
+                {
                     // The Final Hours clock will flash red
 
-                    colorStep = ABS_ALT(sFinalHoursClockDigitsRed -
-                                        sFinalHoursClockDigitsRedTargets[sFinalHoursClockColorTargetIndex]) /
-                                sFinalHoursClockColorTimer;
-                    if (sFinalHoursClockDigitsRed >=
-                        sFinalHoursClockDigitsRedTargets[sFinalHoursClockColorTargetIndex]) {
+                    // colorStep = ABS_ALT(sFinalHoursClockDigitsRed - 
+                    //                     sFinalHoursClockDigitsRedTargets[sFinalHoursClockColorTargetIndex]) /
+                    //             sFinalHoursClockColorTimer;
+                    // if (sFinalHoursClockDigitsRed >=
+                    //     sFinalHoursClockDigitsRedTargets[sFinalHoursClockColorTargetIndex]) {
+                    //     sFinalHoursClockDigitsRed -= colorStep;
+                    // } else {
+                    //     sFinalHoursClockDigitsRed += colorStep;
+                    // }
+
+                    // colorStep = ABS_ALT(sFinalHoursClockFrameEnvRed -
+                    //                     sFinalHoursClockFrameEnvRedTargets[sFinalHoursClockColorTargetIndex]) /
+                    //             sFinalHoursClockColorTimer;
+                    // if (sFinalHoursClockFrameEnvRed >=
+                    //     sFinalHoursClockFrameEnvRedTargets[sFinalHoursClockColorTargetIndex]) {
+                    //     sFinalHoursClockFrameEnvRed -= colorStep;
+                    // } else {
+                    //     sFinalHoursClockFrameEnvRed += colorStep;
+                    // }
+
+                    // colorStep = ABS_ALT(sFinalHoursClockFrameEnvGreen -
+                    //                     sFinalHoursClockFrameEnvGreenTargets[sFinalHoursClockColorTargetIndex]) /
+                    //             sFinalHoursClockColorTimer;
+                    // if (sFinalHoursClockFrameEnvGreen >=
+                    //     sFinalHoursClockFrameEnvGreenTargets[sFinalHoursClockColorTargetIndex]) {
+                    //     sFinalHoursClockFrameEnvGreen -= colorStep;
+                    // } else {
+                    //     sFinalHoursClockFrameEnvGreen += colorStep;
+                    // }
+
+                    // colorStep = ABS_ALT(sFinalHoursClockFrameEnvBlue -
+                    //                     sFinalHoursClockFrameEnvBlueTargets[sFinalHoursClockColorTargetIndex]) /
+                    //             sFinalHoursClockColorTimer;
+                    // if (sFinalHoursClockFrameEnvBlue >=
+                    //     sFinalHoursClockFrameEnvBlueTargets[sFinalHoursClockColorTargetIndex]) {
+                    //     sFinalHoursClockFrameEnvBlue -= colorStep;
+                    // } else {
+                    //     sFinalHoursClockFrameEnvBlue += colorStep;
+                    // }
+
+                    // sFinalHoursClockColorTimer--;
+
+                    // if (sFinalHoursClockColorTimer == 0) {
+                    //     sFinalHoursClockDigitsRed = sFinalHoursClockDigitsRedTargets[sFinalHoursClockColorTargetIndex];
+                    //     sFinalHoursClockFrameEnvRed =
+                    //         sFinalHoursClockFrameEnvRedTargets[sFinalHoursClockColorTargetIndex];
+                    //     sFinalHoursClockFrameEnvGreen =
+                    //         sFinalHoursClockFrameEnvGreenTargets[sFinalHoursClockColorTargetIndex];
+                    //     sFinalHoursClockFrameEnvBlue =
+                    //         sFinalHoursClockFrameEnvBlueTargets[sFinalHoursClockColorTargetIndex];
+                    //     sFinalHoursClockColorTimer = 6;
+                    //     sFinalHoursClockColorTargetIndex ^= 1;
+                    // }
+                    Color_RGB16 *clock_prim = sFinalHoursClock.prim_target + sFinalHoursClockColorTargetIndex;
+                    Color_RGB16 *clock_env = sFinalHoursClock.env_target + sFinalHoursClockColorTargetIndex;
+
+                    colorStep = ABS_ALT(sFinalHoursClockDigitsRed - clock_prim->r) / sFinalHoursClockColorTimer;
+                    if (sFinalHoursClockDigitsRed >= clock_prim->r) {
                         sFinalHoursClockDigitsRed -= colorStep;
                     } else {
                         sFinalHoursClockDigitsRed += colorStep;
                     }
 
-                    colorStep = ABS_ALT(sFinalHoursClockFrameEnvRed -
-                                        sFinalHoursClockFrameEnvRedTargets[sFinalHoursClockColorTargetIndex]) /
-                                sFinalHoursClockColorTimer;
-                    if (sFinalHoursClockFrameEnvRed >=
-                        sFinalHoursClockFrameEnvRedTargets[sFinalHoursClockColorTargetIndex]) {
+                    colorStep = ABS_ALT(sFinalHoursClockFrameEnvRed - clock_env->r) / sFinalHoursClockColorTimer;
+                    if (sFinalHoursClockFrameEnvRed >= clock_env->r) {
                         sFinalHoursClockFrameEnvRed -= colorStep;
                     } else {
                         sFinalHoursClockFrameEnvRed += colorStep;
                     }
 
-                    colorStep = ABS_ALT(sFinalHoursClockFrameEnvGreen -
-                                        sFinalHoursClockFrameEnvGreenTargets[sFinalHoursClockColorTargetIndex]) /
-                                sFinalHoursClockColorTimer;
-                    if (sFinalHoursClockFrameEnvGreen >=
-                        sFinalHoursClockFrameEnvGreenTargets[sFinalHoursClockColorTargetIndex]) {
+                    colorStep = ABS_ALT(sFinalHoursClockFrameEnvGreen - clock_env->g) / sFinalHoursClockColorTimer;
+                    if (sFinalHoursClockFrameEnvGreen >= clock_env->g) {
                         sFinalHoursClockFrameEnvGreen -= colorStep;
                     } else {
                         sFinalHoursClockFrameEnvGreen += colorStep;
                     }
 
-                    colorStep = ABS_ALT(sFinalHoursClockFrameEnvBlue -
-                                        sFinalHoursClockFrameEnvBlueTargets[sFinalHoursClockColorTargetIndex]) /
-                                sFinalHoursClockColorTimer;
-                    if (sFinalHoursClockFrameEnvBlue >=
-                        sFinalHoursClockFrameEnvBlueTargets[sFinalHoursClockColorTargetIndex]) {
+                    colorStep = ABS_ALT(sFinalHoursClockFrameEnvBlue - clock_env->b) / sFinalHoursClockColorTimer;
+                    if (sFinalHoursClockFrameEnvBlue >= clock_env->b) {
                         sFinalHoursClockFrameEnvBlue -= colorStep;
                     } else {
                         sFinalHoursClockFrameEnvBlue += colorStep;
@@ -5139,16 +5346,22 @@ void Interface_DrawClock(PlayState* play) {
                     sFinalHoursClockColorTimer--;
 
                     if (sFinalHoursClockColorTimer == 0) {
-                        sFinalHoursClockDigitsRed = sFinalHoursClockDigitsRedTargets[sFinalHoursClockColorTargetIndex];
-                        sFinalHoursClockFrameEnvRed =
-                            sFinalHoursClockFrameEnvRedTargets[sFinalHoursClockColorTargetIndex];
-                        sFinalHoursClockFrameEnvGreen =
-                            sFinalHoursClockFrameEnvGreenTargets[sFinalHoursClockColorTargetIndex];
-                        sFinalHoursClockFrameEnvBlue =
-                            sFinalHoursClockFrameEnvBlueTargets[sFinalHoursClockColorTargetIndex];
+                        sFinalHoursClockDigitsRed = clock_prim->r;
+                        sFinalHoursClockFrameEnvRed = clock_env->r;
+                        sFinalHoursClockFrameEnvGreen = clock_env->g;
+                        sFinalHoursClockFrameEnvBlue = clock_env->b;
                         sFinalHoursClockColorTimer = 6;
                         sFinalHoursClockColorTargetIndex ^= 1;
                     }
+                }
+                else
+                {
+                    sFinalHoursClockDigitsRed = 0;
+                    sFinalHoursClockFrameEnvRed = 0;
+                    sFinalHoursClockFrameEnvGreen = 0;
+                    sFinalHoursClockFrameEnvBlue = 0;
+                    sFinalHoursClockColorTimer = 6;
+                    sFinalHoursClockColorTargetIndex = 0;
                 }
 
                 sp1E6 = sThreeDayClockAlpha;
@@ -5173,7 +5386,7 @@ void Interface_DrawClock(PlayState* play) {
                 OVERLAY_DISP = Gfx_DrawTexRect4b(OVERLAY_DISP, gFinalHoursClockFrameTex, 3, 80, 13, 119 + chaos_x[9], 202 + chaos_y[9], 80, 13, 0,
                                                  0, 0, 1 << 10, 1 << 10);
 
-                timeUntilMoonCrash = TIME_UNTIL_MOON_CRASH;
+                // timeUntilMoonCrash = TIME_UNTIL_MOON_CRASH - gChaosContext.moon.moon_crash_time_offset;
                 timeInMinutes = TIME_TO_MINUTES_F(timeUntilMoonCrash);
 
                 // digits for hours
@@ -5959,18 +6172,18 @@ void Interface_DrawTimers(PlayState* play) {
                 case TIMER_STATE_MOVING_TIMER:
                     // Move the timer from the center of the screen to the timer location where it will count.
                     if (sTimerId == TIMER_ID_MOON_CRASH) {
-                        j = ((((void)0, gSaveContext.timerX[sTimerId]) - R_MOON_CRASH_TIMER_X) / sTimerStateTimer);
+                        j = (gSaveContext.timerX[sTimerId] - R_MOON_CRASH_TIMER_X) / sTimerStateTimer;
                         gSaveContext.timerX[sTimerId] = ((void)0, gSaveContext.timerX[sTimerId]) - j;
-                        j = ((((void)0, gSaveContext.timerY[sTimerId]) - R_MOON_CRASH_TIMER_Y) / sTimerStateTimer);
-                        gSaveContext.timerY[sTimerId] = ((void)0, gSaveContext.timerY[sTimerId]) - j;
+                        j = (gSaveContext.timerY[sTimerId] - R_MOON_CRASH_TIMER_Y) / sTimerStateTimer;
+                        gSaveContext.timerY[sTimerId] = gSaveContext.timerY[sTimerId] - j;
                     } else {
-                        j = ((((void)0, gSaveContext.timerX[sTimerId]) - 26) / sTimerStateTimer);
-                        gSaveContext.timerX[sTimerId] = ((void)0, gSaveContext.timerX[sTimerId]) - j;
+                        j = (gSaveContext.timerX[sTimerId] - 26) / sTimerStateTimer;
+                        gSaveContext.timerX[sTimerId] = gSaveContext.timerX[sTimerId] - j;
 
                         j = (gSaveContext.save.saveInfo.playerData.healthCapacity > 0xA0)
-                                ? ((((void)0, gSaveContext.timerY[sTimerId]) - 54) / sTimerStateTimer)
-                                : ((((void)0, gSaveContext.timerY[sTimerId]) - 46) / sTimerStateTimer);
-                        gSaveContext.timerY[sTimerId] = ((void)0, gSaveContext.timerY[sTimerId]) - j;
+                                ? ((gSaveContext.timerY[sTimerId] - 54) / sTimerStateTimer)
+                                : ((gSaveContext.timerY[sTimerId] - 46) / sTimerStateTimer);
+                        gSaveContext.timerY[sTimerId] = gSaveContext.timerY[sTimerId] - j;
                     }
 
                     sTimerStateTimer--;
@@ -6033,8 +6246,8 @@ void Interface_DrawTimers(PlayState* play) {
                     osTime = osGetTime();
 
                     gSaveContext.timerStopTimes[sTimerId] =
-                        OSTIME_TO_TIMER(osTime - ((void)0, gSaveContext.timerStartOsTimes[sTimerId]) -
-                                        ((void)0, gSaveContext.timerPausedOsTimes[sTimerId]));
+                        OSTIME_TO_TIMER(osTime - gSaveContext.timerStartOsTimes[sTimerId] -
+                                        gSaveContext.timerPausedOsTimes[sTimerId]);
 
                     gSaveContext.timerStates[sTimerId] = TIMER_STATE_OFF;
 

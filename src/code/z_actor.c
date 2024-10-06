@@ -2525,7 +2525,7 @@ Actor* Actor_UpdateActor(UpdateActor_Params* params) {
     {
         Vec3f actor_player_vec;
         Math_Vec3f_DistXYZAndStoreNormDiff(&actor->world.pos, &params->player->actor.world.pos, 1.0f, &actor_player_vec);
-        Math_Vec3f_Scale(&actor_player_vec, 6.0f);
+        Math_Vec3f_Scale(&actor_player_vec, 6.8f);
         Math_Vec3f_Sum(&actor->world.pos, &actor_player_vec, &actor->world.pos);
     }
 

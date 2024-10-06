@@ -12,6 +12,8 @@
 #include "z64view.h"
 #include "interface/parameter_static/parameter_static.h"
 #include "misc/title_static/title_static.h"
+#include "interface/message_static/message_static.h"
+#include "chaos_fuckery.h"
 
 s32 D_808144F10 = 100;
 f32 D_808144F14 = 8.0f;
@@ -19,25 +21,7 @@ f32 D_808144F18 = 100.0f;
 s32 D_808144F1C = 0;
 f32 wave_angle = 0;
 
-struct test_config_t
-{
-    char *  txt;
-    u32     enabled;
-} test_configs[] = {
-    {"blah", 0},
-    {"bleh", 0},
-    {"bloh", 0},
-    {"bluh", 0},
-    {"blih", 1},
-    {"ass", 0},
-    {"piss", 0},
-    {"shit", 1},
-    {"ballz", 1},
-    {"cork", 0},
-    {"ahASKDH", 0},
-    {"LHLUAHWLFKUHAW", 0},
-    {"AAAAAAAAAAA", 0},
-};
+extern struct ChaosConfig gChaosConfigs[];
 
 static Gfx sScreenFillSetupDL[] = {
     gsDPPipeSync(),
@@ -1453,8 +1437,8 @@ void FileSelect_SetWindowContentVtx(GameState* thisx) {
     if(this->menuMode == FS_MENU_MODE_CHAOS_CONFIG)
     {
         /* effect config buttons */
-        posX = this->windowPosX;
-        posY = 0x16;
+        posX = this->windowPosX - 4;
+        posY = 0x1a;
         vtxId = FILE_SELECT_WINDOW_CONTENT_VERT_COUNT; 
         
         for(i = 0; i < FILE_SELECT_CHAOS_SETTINGS_MAX_VISIBLE_SETTINGS; i++, vtxId += 4)
@@ -1466,57 +1450,83 @@ void FileSelect_SetWindowContentVtx(GameState* thisx) {
             this->windowContentVtx[vtxId + 0].v.tc[1] = TC_10_5(0, 0);
 
             /* top-right corner */
-            this->windowContentVtx[vtxId + 1].v.ob[0] = posX + FILE_SELECT_CHAOS_SETTING_OPTION_WIDTH - 6;
+            this->windowContentVtx[vtxId + 1].v.ob[0] = posX + FILE_SELECT_CHAOS_SETTING_OPTION_WIDTH + 2;
             this->windowContentVtx[vtxId + 1].v.ob[1] = posY;
-            this->windowContentVtx[vtxId + 1].v.tc[0] = TC_10_5(52, 0);
+            this->windowContentVtx[vtxId + 1].v.tc[0] = TC_10_5(51, 0);
             this->windowContentVtx[vtxId + 1].v.tc[1] = TC_10_5(0, 0);
 
             /* bottom-left corner */
             this->windowContentVtx[vtxId + 2].v.ob[0] = posX;
             this->windowContentVtx[vtxId + 2].v.ob[1] = posY - FILE_SELECT_CHAOS_SETTING_OPTION_HEIGHT;
             this->windowContentVtx[vtxId + 2].v.tc[0] = TC_10_5(0, 0);
-            this->windowContentVtx[vtxId + 2].v.tc[1] = TC_10_5(16, 0);
+            this->windowContentVtx[vtxId + 2].v.tc[1] = TC_10_5(15, 0);
             
             /* bottom-right corner */
-            this->windowContentVtx[vtxId + 3].v.ob[0] = posX + FILE_SELECT_CHAOS_SETTING_OPTION_WIDTH - 6;            
+            this->windowContentVtx[vtxId + 3].v.ob[0] = posX + FILE_SELECT_CHAOS_SETTING_OPTION_WIDTH + 2;            
             this->windowContentVtx[vtxId + 3].v.ob[1] = posY - FILE_SELECT_CHAOS_SETTING_OPTION_HEIGHT;
-            this->windowContentVtx[vtxId + 3].v.tc[0] = TC_10_5(52, 0);
-            this->windowContentVtx[vtxId + 3].v.tc[1] = TC_10_5(16, 0);
+            this->windowContentVtx[vtxId + 3].v.tc[0] = TC_10_5(51, 0);
+            this->windowContentVtx[vtxId + 3].v.tc[1] = TC_10_5(15, 0);
 
-            posY -= FILE_SELECT_CHAOS_SETTING_OPTION_HEIGHT;
+            posY -= FILE_SELECT_CHAOS_SETTING_OPTION_HEIGHT + 1;
         }
 
         /* highlighted chaos option */
-
+ 
         chaos_config_vtx = this->windowContentVtx + FILE_SELECT_WINDOW_CONTENT_VERT_COUNT + this->chaos_config_option_index * 4;
 
-        posX = this->windowPosX - 4;
+        // posX = this->windowPosX - 24; 
+        posX = -24;
         posY = 0x16;
         /* top-left corner */
-        this->windowContentVtx[vtxId + 0].v.ob[0] = chaos_config_vtx[0].v.ob[0] - 8;
+        this->windowContentVtx[vtxId + 0].v.ob[0] = chaos_config_vtx[0].v.ob[0] + posX - 8;
         this->windowContentVtx[vtxId + 0].v.ob[1] = chaos_config_vtx[0].v.ob[1] + 4;
+        this->windowContentVtx[vtxId + 0].v.tc[0] = -TC_10_5(4, 0);
+        this->windowContentVtx[vtxId + 0].v.tc[1] = TC_10_5(0, 0);
+
+        /* top-right corner */
+        this->windowContentVtx[vtxId + 1].v.ob[0] = chaos_config_vtx[1].v.ob[0] + posX + 36;
+        this->windowContentVtx[vtxId + 1].v.ob[1] = chaos_config_vtx[1].v.ob[1] + 4;
+        this->windowContentVtx[vtxId + 1].v.tc[0] = TC_10_5(71, 0);
+        this->windowContentVtx[vtxId + 1].v.tc[1] = TC_10_5(0, 0);
+
+        /* bottom-left corner */
+        this->windowContentVtx[vtxId + 2].v.ob[0] = chaos_config_vtx[2].v.ob[0] + posX - 8;
+        this->windowContentVtx[vtxId + 2].v.ob[1] = chaos_config_vtx[2].v.ob[1] - 8;
+        this->windowContentVtx[vtxId + 2].v.tc[0] = -TC_10_5(4, 0);
+        this->windowContentVtx[vtxId + 2].v.tc[1] = TC_10_5(23, 0);
+        
+        /* bottom-right corner */
+        this->windowContentVtx[vtxId + 3].v.ob[0] = chaos_config_vtx[3].v.ob[0] + posX + 36;            
+        this->windowContentVtx[vtxId + 3].v.ob[1] = chaos_config_vtx[3].v.ob[1] - 8;
+        this->windowContentVtx[vtxId + 3].v.tc[0] = TC_10_5(71, 0);
+        this->windowContentVtx[vtxId + 3].v.tc[1] = TC_10_5(23, 0);
+
+
+        vtxId += 4;
+
+        /* top-left corner */
+        this->windowContentVtx[vtxId + 0].v.ob[0] = -0x80;
+        this->windowContentVtx[vtxId + 0].v.ob[1] = 0x30;
         this->windowContentVtx[vtxId + 0].v.tc[0] = TC_10_5(0, 0);
         this->windowContentVtx[vtxId + 0].v.tc[1] = TC_10_5(0, 0);
 
         /* top-right corner */
-        this->windowContentVtx[vtxId + 1].v.ob[0] = chaos_config_vtx[1].v.ob[0] + 12;
-        this->windowContentVtx[vtxId + 1].v.ob[1] = chaos_config_vtx[1].v.ob[1] + 4;
-        this->windowContentVtx[vtxId + 1].v.tc[0] = TC_10_5(72, 0);
+        this->windowContentVtx[vtxId + 1].v.ob[0] = 0x80;
+        this->windowContentVtx[vtxId + 1].v.ob[1] = 0x30;
+        this->windowContentVtx[vtxId + 1].v.tc[0] = TC_10_5(127, 0);
         this->windowContentVtx[vtxId + 1].v.tc[1] = TC_10_5(0, 0);
 
         /* bottom-left corner */
-        this->windowContentVtx[vtxId + 2].v.ob[0] = chaos_config_vtx[2].v.ob[0] - 8;
-        this->windowContentVtx[vtxId + 2].v.ob[1] = chaos_config_vtx[2].v.ob[1] - 4;
+        this->windowContentVtx[vtxId + 2].v.ob[0] = -0x80;
+        this->windowContentVtx[vtxId + 2].v.ob[1] = -0x30;
         this->windowContentVtx[vtxId + 2].v.tc[0] = TC_10_5(0, 0);
-        this->windowContentVtx[vtxId + 2].v.tc[1] = TC_10_5(24, 0);
+        this->windowContentVtx[vtxId + 2].v.tc[1] = TC_10_5(63, 0);
         
         /* bottom-right corner */
-        this->windowContentVtx[vtxId + 3].v.ob[0] = chaos_config_vtx[3].v.ob[0] + 12;            
-        this->windowContentVtx[vtxId + 3].v.ob[1] = chaos_config_vtx[3].v.ob[1] - 4;
-        this->windowContentVtx[vtxId + 3].v.tc[0] = TC_10_5(72, 0);
-        this->windowContentVtx[vtxId + 3].v.tc[1] = TC_10_5(24, 0);
-
-        posY -= FILE_SELECT_CHAOS_SETTING_OPTION_HEIGHT;
+        this->windowContentVtx[vtxId + 3].v.ob[0] = 0x80;            
+        this->windowContentVtx[vtxId + 3].v.ob[1] = -0x30;
+        this->windowContentVtx[vtxId + 3].v.tc[0] = TC_10_5(127, 0);
+        this->windowContentVtx[vtxId + 3].v.tc[1] = TC_10_5(63, 0);
     }
 }
 
@@ -1947,12 +1957,10 @@ void FileSelect_DrawWindowContents(GameState* thisx) {
 
     if(this->chaos_config_box_alpha > 0)
     {
-        Gfx *text_draw_list_start;
         Gfx *text_draw_list;
         u32 pos_x;
         u32 pos_y;
-        // gSPBranchList(overlay_disp, text_draw_list);
-        // OVERLAY_DISP = text_draw_list;
+        u32 config_count;
 
         /* draw chaos config box */
         gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, this->windowColor[0], this->windowColor[1], this->windowColor[2], this->chaos_config_box_alpha);
@@ -1981,6 +1989,13 @@ void FileSelect_DrawWindowContents(GameState* thisx) {
             gSP1Quadrangle(POLY_OPA_DISP++, quadVtxIndex, quadVtxIndex + 2, quadVtxIndex + 3, quadVtxIndex + 1, 0);
         }
 
+        config_count = FILE_SELECT_CHAOS_SETTINGS_MAX_VISIBLE_SETTINGS;
+
+        if(config_count > CHAOS_CONFIG_LAST)
+        {
+            config_count = CHAOS_CONFIG_LAST;
+        } 
+ 
         /* draw chaos config buttons */
         gDPPipeSync(POLY_OPA_DISP++);
         gDPLoadTextureBlock(POLY_OPA_DISP++, gFileSelBlankButtonTex, G_IM_FMT_IA, G_IM_SIZ_16b, 52, 16, 0,
@@ -1988,15 +2003,17 @@ void FileSelect_DrawWindowContents(GameState* thisx) {
         gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, this->windowColor[0], this->windowColor[1], this->windowColor[2], this->chaos_config_box_alpha);
         gSPVertex(POLY_OPA_DISP++, &this->windowContentVtx[FILE_SELECT_WINDOW_CONTENT_VERT_COUNT], 
             FILE_SELECT_CHAOS_SETTINGS_MAX_VISIBLE_SETTINGS * 4, 0);
-        gDPSetScissor(POLY_OPA_DISP++, G_SC_NON_INTERLACE, 60, 76, 600, 184);
-        for(quadVtxIndex = 0, i = 0; i < FILE_SELECT_CHAOS_SETTINGS_MAX_VISIBLE_SETTINGS; i++, quadVtxIndex += 4)
+        gDPSetScissor(POLY_OPA_DISP++, G_SC_NON_INTERLACE, 60, 76, 300, 192);
+        for(quadVtxIndex = 0, i = 0; i < config_count; i++, quadVtxIndex += 4)
         {
             gSP1Quadrangle(POLY_OPA_DISP++, quadVtxIndex, quadVtxIndex + 2, quadVtxIndex + 3, quadVtxIndex + 1, 0);
         }
         gDPPipeSync(POLY_OPA_DISP++);
 
+
         // draw highlight over currently selected button
-        gSPVertex(POLY_OPA_DISP++, &this->windowContentVtx[FILE_SELECT_WINDOW_CONTENT_VERT_COUNT + quadVtxIndex], 4, 0);
+        quadVtxIndex = FILE_SELECT_CHAOS_SETTINGS_MAX_VISIBLE_SETTINGS * 4;
+        gSPVertex(POLY_OPA_DISP++, &this->windowContentVtx[FILE_SELECT_WINDOW_CONTENT_VERT_COUNT + quadVtxIndex], 8, 0);
         gDPSetCombineLERP(POLY_OPA_DISP++, 1, 0, PRIMITIVE, 0, TEXEL0, 0, PRIMITIVE, 0, 1, 0, PRIMITIVE, 0, 
                         TEXEL0, 0, PRIMITIVE, 0);
         gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, this->highlightColor[0], this->highlightColor[1],
@@ -2004,46 +2021,85 @@ void FileSelect_DrawWindowContents(GameState* thisx) {
         gDPLoadTextureBlock(POLY_OPA_DISP++, gFileSelBigButtonHighlightTex, G_IM_FMT_I, G_IM_SIZ_8b, 72, 24, 0,
                             G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
         gSP1Quadrangle(POLY_OPA_DISP++, 0, 2, 3, 1, 0);
-        
+
 
         /* draw chaos config text */
         text_draw_list = POLY_XLU_DISP;
         gSPDisplayList(POLY_OPA_DISP++, text_draw_list);
-        gDPSetScissor(text_draw_list++, G_SC_NON_INTERLACE, 60, 76, 600, 184);
+        gDPSetScissor(text_draw_list++, G_SC_NON_INTERLACE, 60, 76, 400, 192);
         GfxPrint_Init(&gfx_print);
-        GfxPrint_Open(&gfx_print, text_draw_list);     
-        // GfxPrint_SetColor(&gfx_print, 120, 120, 120, 120);
-        GfxPrint_SetBasePosPx(&gfx_print, 0, 0); 
+        GfxPrint_Open(&gfx_print, text_draw_list);
+        // gDPSetDepthSource(gfx_print.dList++, G_ZS_PRIM);
+        // gDPSetPrimDepth(gfx_print.dList++, 0x4000, 0);     
+        // gDPSetEnvColor(gfx_print.dList++, 0, 0, 0, 10);
+        // GfxPrint_SetBasePosPx(&gfx_print, 0, 0); 
+        // gfx_print.flags |= GFXP_FLAG_BLEND;
         pos_x = 260;
-        pos_y = 398;
-        for(quadVtxIndex = 0, i = 0; i < FILE_SELECT_CHAOS_SETTINGS_MAX_VISIBLE_SETTINGS; i++, pos_y += (FILE_SELECT_CHAOS_SETTING_OPTION_HEIGHT + 4) * 3 + 1)
+        pos_y = 384; 
+        gfx_print.wrap_start = 66 << 2;
+        gfx_print.wrap_size = 198 << 2;
+        // for(quadVtxIndex = 0, i = 0; i < config_count; i++, pos_y += (FILE_SELECT_CHAOS_SETTING_OPTION_HEIGHT + 4) * 3)
+        for(quadVtxIndex = 0, i = 0; i < config_count; i++, pos_y += (FILE_SELECT_CHAOS_SETTING_OPTION_HEIGHT << 2) + 4)
         {
-            struct test_config_t *config = test_configs + i + this->chaos_config_scroll;
+            u32 config_index = i + this->chaos_config_scroll;
+            struct ChaosConfig *config = gChaosConfigs + config_index;
+            // struct ChaosConfig *config = gChaosConfigs;
+            // GfxTextSize text_size;
+            // GfxPrint_CalcWrappedTextDimensions(&gfx_print, &text_size, config->label);
             gfx_print.posX = pos_x;
             gfx_print.posY = pos_y;
-            if(config->enabled)
+
+            if(Chaos_GetConfigFlag(config_index))
             {
-                GfxPrint_SetColor(&gfx_print, 255, 255, 255, 255);
+                GfxPrint_SetColor(&gfx_print, 255, 255, 255, 220);
             }
             else
             {
-                GfxPrint_SetColor(&gfx_print, 120, 120, 120, 120);
+                GfxPrint_SetColor(&gfx_print, 120, 120, 120, 220);
             }
-            GfxPrint_Printf(&gfx_print, "%s ", config->txt);
+
+            // gfx_print.posY += (FILE_SELECT_CHAOS_SETTING_OPTION_HEIGHT << 1) >> ((text_size.lines - 1));
+            GfxPrint_Printf(&gfx_print, config->label);
         }
 
         text_draw_list = GfxPrint_Close(&gfx_print);
         gDPPipeSync(text_draw_list++);
-        gDPSetCombineMode(text_draw_list++, G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM);
-        gDPSetOtherMode(text_draw_list++, G_AD_PATTERN | G_CD_MAGICSQ | G_CK_NONE | G_TC_FILT | G_TF_BILERP | G_TT_NONE | G_TL_TILE |
-                             G_TD_CLAMP | G_TP_PERSP | G_CYC_1CYCLE | G_PM_NPRIMITIVE,
-                         G_AC_NONE | G_ZS_PIXEL | G_RM_XLU_SURF | G_RM_XLU_SURF2);
         gSPEndDisplayList(text_draw_list++);
         POLY_XLU_DISP = text_draw_list;
 
         gDPPipeSync(POLY_OPA_DISP++);
         gDPSetScissor(POLY_OPA_DISP++, G_SC_NON_INTERLACE, 0, 0, 0xffff, 0xffff);
+        gDPSetCombineMode(POLY_OPA_DISP++, G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM);
+        gDPSetOtherMode(POLY_OPA_DISP++, G_AD_PATTERN | G_CD_MAGICSQ | G_CK_NONE | G_TC_FILT | G_TF_BILERP | G_TT_NONE | G_TL_TILE |
+                             G_TD_CLAMP | G_TP_PERSP | G_CYC_1CYCLE | G_PM_NPRIMITIVE,
+                         G_AC_NONE | G_ZS_PIXEL | G_RM_XLU_SURF | G_RM_XLU_SURF2);
         gDPPipeSync(POLY_OPA_DISP++);
+
+        // gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, 0, 0, 0, 200);
+        // gDPSetDepthSource(POLY_OPA_DISP++, G_ZS_PRIM);
+        // gDPSetPrimDepth(POLY_OPA_DISP++, 0, 10);
+        // gDPSetCombineMode(POLY_OPA_DISP++, G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM);
+        // gDPSetRenderMode(POLY_OPA_DISP++, G_RM_ZB_XLU_SURF, G_RM_ZB_XLU_SURF2);
+        // gDPLoadTextureBlock(POLY_OPA_DISP++, gMessageDefaultBackgroundTex, G_IM_FMT_IA, G_IM_SIZ_16b, 128, 64, 0,
+        //                     G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
+        // gSP1Quadrangle(POLY_OPA_DISP++, 4, 6, 7, 5, 0);
+        // gDPPipeSync(POLY_OPA_DISP++);
+
+        // text_draw_list = POLY_XLU_DISP;
+        // gSPDisplayList(POLY_OPA_DISP++, text_draw_list);
+        // // gDPSetScissor(text_draw_list++, G_SC_NON_INTERLACE, 60, 76, 400, 192);
+        // GfxPrint_Init(&gfx_print);
+        // GfxPrint_Open(&gfx_print, text_draw_list);
+        // GfxPrint_SetColor(&gfx_print, 255, 255, 255, 255);
+        // // gDPSetPrimDepth(gfx_print.dList++, 0, 0);
+        // // gfx_print.posX = 64 << 2;
+        // // gfx_print.posY = 50 << 2;
+        // GfxPrint_SetPos(&gfx_print, 10, 5);
+        // GfxPrint_Printf(&gfx_print, "SHIT");
+
+        // text_draw_list = GfxPrint_Close(&gfx_print);
+        // gSPEndDisplayList(text_draw_list++);
+        // POLY_XLU_DISP = text_draw_list;
     }
 
     temp += 28 * 3;
@@ -2350,6 +2406,7 @@ void FileSelect_FadeMainToSelect(GameState* thisx) {
         this->selectMode = SM_MOVE_FILE_TO_TOP;
         this->confirmButtonIndex = FS_BTN_CONFIRM_YES;
         this->titleAlpha[FS_TITLE_CUR] = 0;
+        Sram_LoadChaosConfig(&this->sramCtx, this->buttonIndex);
     }
 }
 
@@ -2557,7 +2614,8 @@ void FileSelect_FadeOut(GameState* thisx) {
 
     if (this->screenFillAlpha >= 255) {
         this->screenFillAlpha = 255;
-        this->selectMode++; // SM_LOAD_GAME
+        // this->selectMode++; // SM_LOAD_GAME
+        this->selectMode = SM_LOAD_GAME;
     }
 }
 
@@ -2697,6 +2755,7 @@ void FileSelect_FadeSelectToChaosConfig(GameState *thisx)
         this->chaos_config_mode = CCM_CHAOS_OPTIONS;
         this->chaos_config_box_alpha = 200;
         this->chaos_config_option_index = 0;
+        this->chaos_config_scroll = 0;
         // this->nameBoxAlpha[this->buttonIndex] = 200;
     }
     
@@ -2716,23 +2775,27 @@ void FileSelect_ChaosOptions(GameState *thisx)
         this->menuMode = FS_MENU_MODE_SELECT;
         this->selectMode = SM_FADE_IN_FILE_INFO;
         this->actionTimer = 4;
+        Sram_SaveChaosConfig(&this->sramCtx, this->buttonIndex);
     }
     else if(CHECK_BTN_ALL(input->press.button, BTN_A))
     {
-        test_configs[this->chaos_config_option_index + this->chaos_config_scroll].enabled ^= 1;
+        // test_configs[this->chaos_config_option_index + this->chaos_config_scroll].enabled ^= 1;
+        u32 config_index = this->chaos_config_option_index + this->chaos_config_scroll;
+        // struct ChaosConfig *config = gChaosConfigs + config_index;
+        Chaos_SetConfigFlag(config_index, !Chaos_GetConfigFlag(config_index));
         Audio_PlaySfx(NA_SE_SY_FSEL_DECIDE_L);
     }
-    else if(this->stickAdjY < -30)
+    else if(this->stickAdjY < -30) 
     {
         if(this->chaos_config_option_index == FILE_SELECT_CHAOS_SETTINGS_MAX_VISIBLE_SETTINGS - 1)
         {
-            if(this->chaos_config_scroll + FILE_SELECT_CHAOS_SETTINGS_MAX_VISIBLE_SETTINGS < ARRAY_COUNT(test_configs))
+            if(this->chaos_config_scroll + FILE_SELECT_CHAOS_SETTINGS_MAX_VISIBLE_SETTINGS < CHAOS_CONFIG_LAST)
             {
                 this->chaos_config_scroll++;
                 Audio_PlaySfx(NA_SE_SY_FSEL_CURSOR);
             }
-        }
-        else
+        } 
+        else if(this->chaos_config_option_index < CHAOS_CONFIG_LAST - 1)
         {
             this->chaos_config_option_index++;
             Audio_PlaySfx(NA_SE_SY_FSEL_CURSOR);

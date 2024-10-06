@@ -12097,7 +12097,7 @@ void Player_UpdateCamAndSeqModes(PlayState* play, Player* this) {
             Camera_ChangeMode(camera, camMode);
         }
 
-        if (play->actorCtx.targetCtx.bgmEnemy != NULL) {
+        if (play->actorCtx.targetCtx.bgmEnemy != NULL && (AudioSeq_GetActiveSeqId(SEQ_PLAYER_BGM_MAIN) & 0xff) != NA_BGM_FINAL_HOURS) {
             seqMode = SEQ_MODE_ENEMY;
             Audio_UpdateEnemyBgmVolume(sqrtf(play->actorCtx.targetCtx.bgmEnemy->xyzDistToPlayerSq));
         }
@@ -12529,11 +12529,11 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // this->actor.parent = NULL;
 
         // Player_GiveAGoddamnItem(play, this, GI_DEKU_STICKS_1);
-        // Chaos_ActivateCode(CHAOS_CODE_IMAGINARY_FRIENDS, 5);
+        // Chaos_ActivateCode(CHAOS_CODE_RANDOM_FIERCE_DEITY, 5);
         // Chaos_ActivateCode(CHAOS_CODE_RANDOM_HEALTH_UP, 1);
         // Chaos_ActivateCode(CHAOS_CODE_JUNK_ITEM, 1);
         // Chaos_ActivateCode(CHAOS_CODE_BEER_GOGGLES, 30);
-        // Chaos_ActivateCode(CHAOS_CODE_DIE, 1);
+        // Chaos_ActivateCode(CHAOS_CODE_DIE, 1);   
         // Chaos_ActivateCode(CHAOS_CODE_RANDOM_KNOCKBACK, 5);
         // gChaosContext.link.random_knockback_timer = 1;
         // Actor_Spawn(&play->actorCtx, play, ACTOR_EN_DNS, 
@@ -12544,12 +12544,16 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // Chaos_ActivateCode(CHAOS_CODE_BUCKSHOT_ARROWS, 120);
         // Chaos_ActivateCode(CHAOS_CODE_HEART_SNAKE, 60);
         // gChaosContext.ui.snake_state = CHAOS_SNAKE_GAME_STATE_INIT;
-        // Chaos_ActivateCode(CHAOS_CODE_TEXTBOX, 1);
+        // Chaos_ActivateCode(CHAOS_CODE_FAST_TIME, 1);
+        // gChaosContext.moon.moon_crash_timer = 600;
+        // gChaosContext.moon.moon_crash_time_offset = TIME_UNTIL_MOON_CRASH - 
+        //                         CLOCK_TIME(Rand_S16Offset(0, 5), Rand_S16Offset(0, 59));
+        // gChaosContext.moon.moon_crash_time_offset = TIME_UNTIL_MOON_CRASH - CLOCK_TIME(6, 0);
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_R))
     {
-        // Chaos_ActivateCode(CHAOS_CODE_SHRINK_RANDOM_LIMB, 1);
+        Chaos_ActivateCode(CHAOS_CODE_LOW_GRAVITY, 60);
         // Chaos_ActivateCode(CHAOS_CODE_JUNK_ITEM, 1);
         // CutsceneManager_Start(18, NULL);
         // Chaos_ActivateCode(CHAOS_CODE_ACTOR_CHASE, 5);
@@ -12660,7 +12664,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
                 {
                     if(this->transformation != PLAYER_FORM_FIERCE_DEITY)
                     {
-                        gChaosContext.link.fierce_deity_state = CHAOS_RANDOM_FIERCE_DEITY_STATE_FIERCE_DEITY;
+                        // gChaosContext.link.fierce_deity_state = CHAOS_RANDOM_FIERCE_DEITY_STATE_FIERCE_DEITY;
                         gChaosContext.link.prev_link_form = this->transformation;
                         gSaveContext.save.playerForm = PLAYER_FORM_FIERCE_DEITY;
 
@@ -12673,9 +12677,11 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
                     }
                     else
                     {
-                        gChaosContext.link.fierce_deity_state = CHAOS_RANDOM_FIERCE_DEITY_STATE_NONE;
+                        // gChaosContext.link.fierce_deity_state = CHAOS_RANDOM_FIERCE_DEITY_STATE_NONE;
                         gSaveContext.save.playerForm = gChaosContext.link.prev_link_form;
                     }
+
+                    gChaosContext.link.fierce_deity_state = CHAOS_RANDOM_FIERCE_DEITY_STATE_WAIT_FOR_FORM;
 
                     this->actor.update = Player_WaitForNextForm;
                     this->actor.draw = NULL;
@@ -12687,6 +12693,17 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
                     return;
                 }
             }
+            break;
+
+            case CHAOS_RANDOM_FIERCE_DEITY_STATE_WAIT_FOR_FORM:
+                if(gSaveContext.save.playerForm == PLAYER_FORM_FIERCE_DEITY)
+                {
+                    gChaosContext.link.fierce_deity_state = CHAOS_RANDOM_FIERCE_DEITY_STATE_FIERCE_DEITY;
+                }
+                else
+                {
+                    gChaosContext.link.fierce_deity_state = CHAOS_RANDOM_FIERCE_DEITY_STATE_NONE;
+                }
             break;
 
             case CHAOS_RANDOM_FIERCE_DEITY_STATE_FIERCE_DEITY:
@@ -12853,7 +12870,8 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
 
         if(Chaos_IsCodeActive(CHAOS_CODE_DIE))
         {
-            Health_ChangeBy(play, -gSaveContext.save.saveInfo.playerData.health);
+            s32 damage = -gSaveContext.save.saveInfo.playerData.health * 10;
+            Health_ChangeBy(play, damage);
             Chaos_DeactivateCode(CHAOS_CODE_DIE);
         }
 
@@ -13599,8 +13617,11 @@ void Player_Draw(Actor* thisx, PlayState* play) {
         func_800B8118(&this->actor, play, 0);
         func_80122868(play, this);
 
-        POLY_OPA_DISP = Gfx_SetFog(POLY_OPA_DISP, gLiftoffFlashColor.r, gLiftoffFlashColor.g, gLiftoffFlashColor.b, 
+        if(gChaosContext.link.liftoff_state == CHAOS_LIFTOFF_STATE_COUNTDOWN)
+        {
+            POLY_OPA_DISP = Gfx_SetFog(POLY_OPA_DISP, gLiftoffFlashColor.r, gLiftoffFlashColor.g, gLiftoffFlashColor.b, 
                                                       255, 1500 * (1.0f - gLiftoffFlashColorLerp), 1500);
+        }
 
         if (this->stateFlags3 & PLAYER_STATE3_1000) {
             Color_RGB8 spBC;

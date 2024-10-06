@@ -5,5 +5,6 @@
 #include "functions.h"
 #include "variables.h"
 #include "macros.h"
+#include "stdbool.h"
 
 #endif

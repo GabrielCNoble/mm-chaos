@@ -337,6 +337,8 @@ typedef struct Save {
     /* 0x22 */ u8 hasTatl;          // "bell_flag"
     /* 0x23 */ u8 isOwlSave;
     /* 0x24 */ SaveInfo saveInfo;
+               u32 chaos_config[4];
+               u8  moon_crash_count;
 } Save; // size = 0x100C
 
 typedef struct SaveContext {
@@ -1728,6 +1730,8 @@ void Sram_UpdateWriteToFlashDefault(SramContext* sramCtx);
 void Sram_SetFlashPagesOwlSave(SramContext* sramCtx, s32 curPage, s32 numPages);
 void Sram_StartWriteToFlashOwlSave(SramContext* sramCtx);
 void Sram_UpdateWriteToFlashOwlSave(SramContext* sramCtx);
+void Sram_LoadChaosConfig(SramContext *sram_ctx, u8 file_index);
+void Sram_SaveChaosConfig(SramContext *sram_ctx, u8 file_index);
 
 void SaveContext_Init(void);
 

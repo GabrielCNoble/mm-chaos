@@ -6,8 +6,9 @@
 
 #include "z_bg_lbfshot.h"
 #include "objects/object_lbfshot/object_lbfshot.h"
+#include "chaos_fuckery.h"
 
-#define FLAGS (0x00000000 | ACTOR_FLAG_NO_CHASE)
+#define FLAGS (0x00000000)
 
 #define THIS ((BgLbfshot*)thisx)
 
@@ -38,6 +39,10 @@ void BgLbfshot_Init(Actor* thisx, PlayState* play) {
     this->dyna.actor.uncullZoneForward = 4000.0f;
     DynaPolyActor_Init(&this->dyna, DYNA_TRANSFORM_POS);
     DynaPolyActor_LoadMesh(play, &this->dyna, &object_lbfshot_Colheader_0014D8);
+    if(!Chaos_GetConfigFlag(CHAOS_CONFIG_STONE_TOWER_CLIMB_ACTOR_CHASE))
+    {
+        thisx->flags |= ACTOR_FLAG_NO_CHASE;
+    }
 }
 void BgLbfshot_Destroy(Actor* thisx, PlayState* play) {
     BgLbfshot* this = THIS;

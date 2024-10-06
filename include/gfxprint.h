@@ -24,6 +24,7 @@
 #define GFXP_FLAG_RAINBOW (1 << 1)
 #define GFXP_FLAG_SHADOW (1 << 2)
 #define GFXP_FLAG_UPDATE (1 << 3)
+#define GFXP_FLAG_BLEND  (1 << 4)
 #define GFXP_FLAG_ENLARGE (1 << 6)
 #define GFXP_FLAG_OPEN (1 << 7)
 
@@ -36,8 +37,16 @@ typedef struct GfxPrint {
     /* 0x0E */ u8 baseY;
     /* 0x0F */ u8 flags;
     /* 0x10 */ Color_RGBA8_u32 color;
-    /* 0x14 */ UNK_TYPE1 unk_14[0x1C]; // unused
+               u16 wrap_size;
+               u16 wrap_start;
+    /* 0x14 */ UNK_TYPE1 unk_14[0x10]; // unused
 } GfxPrint; // size = 0x30
+
+typedef struct GfxTextSize
+{
+    u16 lines;
+    u16 length;
+} GfxTextSize;
 
 void GfxPrint_Setup(GfxPrint* this);
 void GfxPrint_SetColor(GfxPrint* this, u32 r, u32 g, u32 b, u32 a);
@@ -54,6 +63,8 @@ void GfxPrint_Destroy(GfxPrint* printer);
 void GfxPrint_Open(GfxPrint* this, Gfx* dList);
 Gfx* GfxPrint_Close(GfxPrint* this);
 s32 GfxPrint_VPrintf(GfxPrint* this, const char* fmt, va_list args);
+void GfxPrint_CalcWrappedTextDimensions(GfxPrint *this, GfxTextSize *text_size, const char *fmt, ...);
 s32 GfxPrint_Printf(GfxPrint* this, const char* fmt, ...);
+s32 GfxPrint_PrintfWrap(GfxPrint *this, const char *fmt, ...);
 
 #endif

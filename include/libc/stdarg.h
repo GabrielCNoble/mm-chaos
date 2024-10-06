@@ -6,6 +6,7 @@
 #ifdef __GNUC__
 #define va_list __builtin_va_list
 #define va_start __builtin_va_start
+#define va_copy  __builtin_va_copy
 #define va_arg __builtin_va_arg
 #define va_end __builtin_va_end
 #else
@@ -18,6 +19,7 @@ typedef char *va_list;
 #define _VA_FP_SAVE_AREA 0x10
 #define _VA_ALIGN(p, a) (((unsigned int)(((char *)p) + ((a) > 4 ? (a) : 4) - 1)) & -((a) > 4 ? (a) : 4))
 #define va_start(vp, parmN) (vp = ((va_list)&parmN + sizeof(parmN)))
+#define va_copy(dst, src) (dst = src)
 
 #define __va_stack_arg(list, mode)                          \
     (                                                       \

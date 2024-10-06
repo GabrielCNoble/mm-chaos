@@ -8,6 +8,7 @@
 #include "z64light.h"
 #include "z64math.h"
 #include "unk.h"
+#include "stdbool.h"
 
 struct GameOverContext;
 struct GraphicsContext;
@@ -286,6 +287,7 @@ void Environment_DisableUnderwaterLights(struct PlayState* play);
 void Environment_Update(struct PlayState* play, EnvironmentContext* envCtx, struct LightContext* lightCtx,
                         struct PauseContext* pauseCtx, struct MessageContext* msgCtx, struct GameOverContext* gameOverCtx,
                         struct GraphicsContext* gfxCtx);
+bool Environment_StartFinalHoursBgm(struct PlayState *play);
 void Environment_DrawSunLensFlare(struct PlayState* play, EnvironmentContext* envCtx, struct View* view, struct GraphicsContext* gfxCtx, Vec3f vec);
 void Environment_DrawLensFlare(struct PlayState* play, EnvironmentContext* envCtx, struct View* view, struct GraphicsContext* gfxCtx, Vec3f pos, f32 scale, f32 colorIntensity, s16 glareStrength, u8 isSun);
 void Environment_DrawRain(struct PlayState* play, struct View* view, struct GraphicsContext* gfxCtx);
@@ -314,6 +316,7 @@ void Environment_StartTime(void);
 u8 Environment_IsTimeStopped(void);
 u32 Environment_GetStormState(struct PlayState* play);
 u8 Environment_IsFinalHours(struct PlayState* play);
+u8 Environment_IsDungeonEntrance(struct PlayState* play);
 u16 Environment_GetTimeSpeed(struct PlayState* play);
 void Environment_SetTimeJump(f32 minutes);
 u8 func_800FE6F8(struct PlayState* play, s16 timeAdvanceScaling, s16 nextTimeLimit);

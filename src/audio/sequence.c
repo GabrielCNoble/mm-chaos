@@ -23,7 +23,6 @@
 #define SEQCMD_SET_SEQPLAYER_VOLUME_NOW(seqPlayerIndex, duration, volume)                          \
     AudioSeq_ProcessSeqCmd((SEQCMD_OP_SET_SEQPLAYER_VOLUME << 28) | ((u8)(seqPlayerIndex) << 24) | \
                            ((u8)(duration) << 16) | ((u8)((volume)*127.0f)));
-
 u8 sSeqCmdWritePos = 0;
 u8 sSeqCmdReadPos = 0;
 u8 sStartSeqDisabled = 0;
@@ -114,10 +113,14 @@ void AudioSeq_ProcessSeqCmd(u32 cmd) {
             // `fadeTimer` is only shifted 13 bits instead of 16 bits.
             // `fadeTimer` continues to be scaled in `AudioSeq_StartSequence`
             fadeTimer = (cmd & 0xFF0000) >> 13;
+
             if (!gActiveSeqs[seqPlayerIndex].isWaitingForFonts && !sStartSeqDisabled) {
-                if (seqArgs < 0x80) {
+                if (seqArgs < 0x80) 
+                {
                     AudioSeq_StartSequence(seqPlayerIndex, seqId, seqArgs, fadeTimer);
-                } else {
+                } 
+                else 
+                {
                     // Store the cmd to be called again once the fonts are loaded
                     // but changes the command so that next time, the (seqArgs < 0x80) case is taken
                     gActiveSeqs[seqPlayerIndex].startAsyncSeqCmd =
@@ -522,7 +525,7 @@ void AudioSeq_UpdateActiveSequences(void) {
     u8 channelIndex;
 
     for (seqPlayerIndex = 0; seqPlayerIndex < SEQ_PLAYER_MAX; seqPlayerIndex++) {
-
+            
         // The seqPlayer has finished initializing and is currently playing the active sequences
         if (gActiveSeqs[seqPlayerIndex].isSeqPlayerInit && gAudioCtx.seqPlayers[seqPlayerIndex].enabled) {
             gActiveSeqs[seqPlayerIndex].isSeqPlayerInit = false;

@@ -1,6 +1,6 @@
 #include "prevent_bss_reordering.h"
 #include "prevent_bss_reordering2.h"
-
+#include "chaos_fuckery.h"
 #include "PR/ultratypes.h"
 
 // Variables are put before most headers as a hacky way to bypass bss reordering
@@ -34,6 +34,7 @@ u16 sCurTextId = 0;
 u16 sCurOcarinaAction = 0;
 u8 gOpeningEntranceIndex = 0;
 u8 sCutsceneStoredPlayerForm = 0;
+extern struct ChaosContext gChaosContext;
 
 void Cutscene_InitContext(PlayState* play, CutsceneContext* csCtx) {
     s32 i;
@@ -357,6 +358,8 @@ void CutsceneCmd_Misc(PlayState* play, CutsceneContext* csCtx, CsCmdMisc* cmd) {
         case CS_MISC_RESET_SAVE_FROM_MOON_CRASH:
             if (isFirstFrame) {
                 Sram_ResetSaveFromMoonCrash(&play->sramCtx);
+                gChaosContext.moon.moon_crash_time_offset = 0;
+                gChaosContext.moon.moon_crash_timer = 0;
             }
             break;
 

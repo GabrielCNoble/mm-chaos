@@ -1,6 +1,7 @@
 #include "ultra64.h"
 #include "z64light.h"
 #include "z64math.h"
+#include "chaos_fuckery.h"
 
 typedef enum {
     /* 0x00 */ LIGHTNING_BOLT_START,
@@ -19,6 +20,7 @@ typedef struct {
     /* 0x1F */ u8 delayTimer;
 } LightningBolt; // size = 0x20
 
+extern struct ChaosContext gChaosContext;
 // Variables are put before most headers as a hacky way to bypass bss reordering
 struct LightningStrike;
 
@@ -526,7 +528,7 @@ SkyboxFile sNormalSkyFiles[] = {
 void Environment_UpdatePostmanEvents(PlayState* play);
 void Environment_UpdateRain(PlayState* play);
 void Environment_UpdateTimeBasedSequence(PlayState* play);
-u8 func_800FE5D0(struct PlayState* play);
+u8 Environment_IsDungeonEntrance(struct PlayState* play);
 void Environment_JumpForwardInTime(void);
 
 void Environment_GraphCallback(GraphicsContext* gfxCtx, void* arg) {
@@ -1202,16 +1204,19 @@ void Environment_UpdateTime(PlayState* play, EnvironmentContext* envCtx, PauseCo
 
     if (!sEnvIsTimeStopped && (pauseCtx->state == PAUSE_STATE_OFF) && (gameOverCtx->state == GAMEOVER_INACTIVE)) {
         if ((msgCtx->msgMode == MSGMODE_NONE) || (msgCtx->currentTextId == 0xF7) || (msgCtx->currentTextId == 0x20D2) ||
-            (msgCtx->currentTextId == 0x140C) ||
-            ((msgCtx->currentTextId >= 0x100) && (msgCtx->currentTextId <= 0x200)) ||
-            (gSaveContext.gameMode == GAMEMODE_END_CREDITS)) {
-            if (!FrameAdvance_IsEnabled(play) &&
-                ((play->transitionMode == TRANS_MODE_OFF) || (gSaveContext.gameMode != GAMEMODE_NORMAL))) {
-                if (play->transitionTrigger == TRANS_TRIGGER_OFF) {
-                    if ((CutsceneManager_GetCurrentCsId() == CS_ID_NONE) && !Play_InCsMode(play)) {
+            (msgCtx->currentTextId == 0x140C) || ((msgCtx->currentTextId >= 0x100) && (msgCtx->currentTextId <= 0x200)) ||
+            (gSaveContext.gameMode == GAMEMODE_END_CREDITS)) 
+        {
+            if (!FrameAdvance_IsEnabled(play) && ((play->transitionMode == TRANS_MODE_OFF) || (gSaveContext.gameMode != GAMEMODE_NORMAL))) 
+            {
+                if (play->transitionTrigger == TRANS_TRIGGER_OFF) 
+                {
+                    if ((CutsceneManager_GetCurrentCsId() == CS_ID_NONE) && !Play_InCsMode(play)) 
+                    {
                         gSaveContext.save.time = CURRENT_TIME + (u16)R_TIME_SPEED;
-                        if (R_TIME_SPEED != 0) {
-                            gSaveContext.save.time = CURRENT_TIME + (u16)((void)0, gSaveContext.save.timeSpeedOffset);
+                        if (R_TIME_SPEED != 0) 
+                        {
+                            gSaveContext.save.time = CURRENT_TIME + (u16)gSaveContext.save.timeSpeedOffset;
                         }
                     }
                 }
@@ -1225,12 +1230,13 @@ void Environment_UpdateTime(PlayState* play, EnvironmentContext* envCtx, PauseCo
     }
 
     time = CURRENT_TIME;
+    gSaveContext.save.isNight = (time >= CLOCK_TIME(18, 0)) || (time < CLOCK_TIME(6, 0));
 
-    if ((time >= CLOCK_TIME(18, 0)) || (time < CLOCK_TIME(6, 0))) {
-        gSaveContext.save.isNight = true;
-    } else {
-        gSaveContext.save.isNight = false;
-    }
+    // if ((time >= CLOCK_TIME(18, 0)) || (time < CLOCK_TIME(6, 0))) {
+    //     gSaveContext.save.isNight = true;
+    // } else {
+    //     gSaveContext.save.isNight = false;
+    // }
 }
 
 void func_800F6CEC(PlayState* play, u8 arg1, AdjLightSettings* adjLightSettings, EnvLightSettings* lightSettings) {
@@ -1629,6 +1635,13 @@ void Environment_UpdateSun(PlayState* play) {
             play->envCtx.sunPos.x = -(Math_SinS(temp_a0) * 120.0f) * 25.0f;
             play->envCtx.sunPos.y = Math_CosS(temp_a0) * 120.0f * 25.0f;
             play->envCtx.sunPos.z = Math_CosS(temp_a0) * 20.0f * 25.0f;
+        }
+
+        if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_SKYBOX))
+        {
+            play->envCtx.sunPos.x += Rand_Centered() * 500.0f;
+            play->envCtx.sunPos.y += Rand_Centered() * 500.0f;
+            play->envCtx.sunPos.z += Rand_Centered() * 500.0f;
         }
 
         temp_f0 = play->envCtx.sunPos.y / 25.0f;
@@ -2422,42 +2435,67 @@ void Environment_DrawLightning(PlayState* play, s32 unused) {
     CLOSE_DISPS(play->state.gfxCtx);
 }
 
+u16 sOverridePlayerCsIds[] = {
+    PLAYER_CS_ID_MASK_TRANSFORMATION,
+    PLAYER_CS_ID_SONG_WARP,
+    PLAYER_CS_ID_WARP_PAD_ENTRANCE,
+    PLAYER_CS_ID_ITEM_OCARINA
+};
+
 void Environment_PlaySceneSequence(PlayState* play) {
-    u8 dayMinusOne = ((void)0, gSaveContext.save.day) - 1;
+    u8 dayMinusOne = gSaveContext.save.day - 1;
+    u32 seq_id = play->sceneSequences.seqId;
+    s16 cur_cs_id = CutsceneManager_GetCurrentCsId();
+    u32 override_cutscene = /* play->csCtx.state == CS_STATE_IDLE || */ cur_cs_id == CS_ID_NONE;
+    u32 index;
+
+    for(index = 0; index < ARRAY_COUNT(sOverridePlayerCsIds); index++)
+    {
+        override_cutscene |= cur_cs_id == play->playerCsIds[sOverridePlayerCsIds[index]];
+    }
 
     if (dayMinusOne >= 3) {
         dayMinusOne = 0;
     }
-
+    
     if (play->envCtx.timeSeqState != TIMESEQ_REQUEST) {
         play->envCtx.timeSeqState = TIMESEQ_DISABLED;
-        if (((void)0, gSaveContext.forcedSeqId) != NA_BGM_GENERAL_SFX) {
+        if (gSaveContext.forcedSeqId != NA_BGM_GENERAL_SFX) {
             play->envCtx.timeSeqState = TIMESEQ_REQUEST;
-            SEQCMD_PLAY_SEQUENCE(SEQ_PLAYER_BGM_MAIN, 0, ((void)0, gSaveContext.forcedSeqId) + SEQ_FLAG_ASYNC);
+            SEQCMD_PLAY_SEQUENCE(SEQ_PLAYER_BGM_MAIN, 0, gSaveContext.forcedSeqId + SEQ_FLAG_ASYNC);
             gSaveContext.forcedSeqId = NA_BGM_GENERAL_SFX;
-        } else if (!Environment_IsFinalHours(play) || func_800FE5D0(play) ||
-                   (AudioSeq_GetActiveSeqId(SEQ_PLAYER_BGM_MAIN) != NA_BGM_FINAL_HOURS)) {
+        }
+        else if(Environment_IsFinalHours(play) && override_cutscene && 
+            (play->sceneId != SCENE_00KEIKOKU || gSaveContext.sceneLayer != 1) && !Audio_IsFinalHours())
+        {
+            // SEQCMD_STOP_SEQUENCE(SEQ_PLAYER_BGM_SUB, 0);
+            SEQCMD_STOP_SEQUENCE(SEQ_PLAYER_AMBIENCE, 0);
+            Audio_ClearObjSoundMainBgmSeqId();
+            Audio_ClearPrevMainBgmSeqId();
+            Audio_PlaySceneSequence(NA_BGM_FINAL_HOURS, dayMinusOne);
+        }
+        else if (!override_cutscene || !Environment_IsFinalHours(play))
+        {    
             if (play->sceneSequences.seqId == NA_BGM_NO_MUSIC) {
                 if (play->sceneSequences.ambienceId == AMBIENCE_ID_13) {
                     return;
                 }
-                if (play->sceneSequences.ambienceId != ((void)0, gSaveContext.ambienceId)) {
+                if (play->sceneSequences.ambienceId != gSaveContext.ambienceId) {
                     Audio_PlayAmbience(play->sceneSequences.ambienceId);
                 }
             } else if (play->sceneSequences.ambienceId == AMBIENCE_ID_13) {
-                if (play->sceneSequences.seqId != ((void)0, gSaveContext.seqId)) {
+                if (play->sceneSequences.seqId != gSaveContext.seqId) {
                     Audio_PlaySceneSequence(play->sceneSequences.seqId, dayMinusOne);
                 }
             } else if ((CURRENT_TIME >= CLOCK_TIME(6, 0)) && (CURRENT_TIME <= CLOCK_TIME(17, 10))) {
                 if (gSceneSeqState != SCENESEQ_DEFAULT) {
                     Audio_PlayMorningSceneSequence(play->sceneSequences.seqId, dayMinusOne);
-                } else if ((CURRENT_TIME >= CLOCK_TIME(6, 1)) &&
-                           (play->sceneSequences.seqId != ((void)0, gSaveContext.seqId))) {
+                } else if ((CURRENT_TIME >= CLOCK_TIME(6, 1)) && (play->sceneSequences.seqId != gSaveContext.seqId)) {
                     Audio_PlaySceneSequence(play->sceneSequences.seqId, dayMinusOne);
                 }
                 play->envCtx.timeSeqState = TIMESEQ_FADE_DAY_BGM;
             } else {
-                if (play->sceneSequences.ambienceId != ((void)0, gSaveContext.ambienceId)) {
+                if (play->sceneSequences.ambienceId != gSaveContext.ambienceId) {
                     Audio_PlayAmbience(play->sceneSequences.ambienceId);
                 }
                 if ((CURRENT_TIME > CLOCK_TIME(17, 10)) && (CURRENT_TIME < CLOCK_TIME(19, 0))) {
@@ -2474,11 +2512,15 @@ void Environment_PlaySceneSequence(PlayState* play) {
     }
 }
 
-void Environment_UpdateTimeBasedSequence(PlayState* play) {
-    s32 pad;
+u16 sPrioOverFinalHoursBgm[] = {
+    NA_BGM_MINI_BOSS,
+    NA_BGM_BOSS,
+    NA_BGM_CLEAR_BOSS,
+};
 
-    //! FAKE:
-    if (gSaveContext.sceneLayer) {}
+void Environment_UpdateTimeBasedSequence(PlayState* play) {
+    s32 dayMinusOne = CURRENT_DAY - 1;
+    s32 time_until_moon_crash = TIME_UNTIL_MOON_CRASH - gChaosContext.moon.moon_crash_time_offset;
 
     if ((play->csCtx.state == CS_STATE_IDLE) && !(play->actorCtx.flags & ACTORCTX_FLAG_TELESCOPE_ON)) {
         switch (play->envCtx.timeSeqState) {
@@ -2488,13 +2530,13 @@ void Environment_UpdateTimeBasedSequence(PlayState* play) {
             case TIMESEQ_FADE_DAY_BGM:
                 if (CURRENT_TIME > CLOCK_TIME(17, 10)) {
                     SEQCMD_STOP_SEQUENCE(SEQ_PLAYER_BGM_MAIN, 240);
-                    play->envCtx.timeSeqState++;
+                    play->envCtx.timeSeqState = TIMESEQ_NIGHT_BEGIN_SFX;
                 }
                 break;
 
             case TIMESEQ_NIGHT_BEGIN_SFX:
                 if (CURRENT_TIME >= CLOCK_TIME(18, 0)) {
-                    play->envCtx.timeSeqState++;
+                    play->envCtx.timeSeqState = TIMESEQ_EARLY_NIGHT_CRITTERS;
                 }
                 break;
 
@@ -2503,31 +2545,31 @@ void Environment_UpdateTimeBasedSequence(PlayState* play) {
                     Audio_PlayAmbience(play->sceneSequences.ambienceId);
                     Audio_SetAmbienceChannelIO(AMBIENCE_CHANNEL_CRITTER_0, 1, 1);
                 }
-                play->envCtx.timeSeqState++;
+                play->envCtx.timeSeqState = TIMESEQ_NIGHT_DELAY;
                 break;
 
             case TIMESEQ_NIGHT_DELAY:
                 if (CURRENT_TIME >= CLOCK_TIME(19, 0)) {
-                    play->envCtx.timeSeqState++;
+                    play->envCtx.timeSeqState = TIMESEQ_NIGHT_CRITTERS;
                 }
                 break;
 
             case TIMESEQ_NIGHT_CRITTERS:
                 Audio_SetAmbienceChannelIO(AMBIENCE_CHANNEL_CRITTER_0, 1, 0);
                 Audio_SetAmbienceChannelIO(AMBIENCE_CHANNEL_CRITTER_1 << 4 | AMBIENCE_CHANNEL_CRITTER_3, 1, 1);
-                play->envCtx.timeSeqState++;
+                play->envCtx.timeSeqState = TIMESEQ_DAY_BEGIN_SFX;
                 break;
 
             case TIMESEQ_DAY_BEGIN_SFX:
                 if ((CURRENT_TIME < CLOCK_TIME(19, 0)) && (CURRENT_TIME >= CLOCK_TIME(5, 0))) {
-                    play->envCtx.timeSeqState++;
+                    play->envCtx.timeSeqState = TIMESEQ_MORNING_CRITTERS;
                 }
                 break;
 
             case TIMESEQ_MORNING_CRITTERS:
                 Audio_SetAmbienceChannelIO(AMBIENCE_CHANNEL_CRITTER_1 << 4 | AMBIENCE_CHANNEL_CRITTER_3, 1, 0);
                 Audio_SetAmbienceChannelIO(AMBIENCE_CHANNEL_CRITTER_4 << 4 | AMBIENCE_CHANNEL_CRITTER_5, 1, 1);
-                play->envCtx.timeSeqState++;
+                play->envCtx.timeSeqState = TIMESEQ_DAY_DELAY;
                 break;
 
             case TIMESEQ_DAY_DELAY:
@@ -2538,15 +2580,41 @@ void Environment_UpdateTimeBasedSequence(PlayState* play) {
         }
     }
 
-    if ((play->envCtx.timeSeqState != TIMESEQ_REQUEST) && (((void)0, gSaveContext.save.day) == 3) &&
-        (CURRENT_TIME < CLOCK_TIME(6, 0)) && !func_800FE5D0(play) && (play->transitionTrigger == TRANS_TRIGGER_OFF) &&
-        (play->transitionMode == TRANS_MODE_OFF) && (play->csCtx.state == CS_STATE_IDLE) &&
-        ((play->sceneId != SCENE_00KEIKOKU) || (((void)0, gSaveContext.sceneLayer) != 1)) &&
-        (CutsceneManager_GetCurrentCsId() == CS_ID_NONE) &&
-        (AudioSeq_GetActiveSeqId(SEQ_PLAYER_BGM_MAIN) != NA_BGM_FINAL_HOURS) &&
-        (AudioSeq_GetActiveSeqId(SEQ_PLAYER_BGM_MAIN) != NA_BGM_SONG_OF_SOARING)) {
-        SEQCMD_STOP_SEQUENCE(SEQ_PLAYER_AMBIENCE, 0);
-        Audio_PlaySceneSequence(NA_BGM_FINAL_HOURS, 3 - 1);
+    if(Environment_IsFinalHours(play))
+    {
+        if ((play->envCtx.timeSeqState != TIMESEQ_REQUEST) && (play->transitionTrigger == TRANS_TRIGGER_OFF) && 
+            (play->transitionMode == TRANS_MODE_OFF) && (play->sceneId != SCENE_00KEIKOKU || gSaveContext.sceneLayer != 1) &&
+            (play->csCtx.state == CS_STATE_IDLE) && (CutsceneManager_GetCurrentCsId() == CS_ID_NONE) && 
+            !Audio_IsFinalHoursOrSoaring()) 
+        {
+            u32 main_bgm = AudioSeq_GetActiveSeqId(SEQ_PLAYER_BGM_MAIN) & 0xff;
+            u32 has_priority = false;
+            u32 index;
+
+            for(index = 0; index < ARRAY_COUNT(sPrioOverFinalHoursBgm); index++)
+            {
+                /* make some bgms have priority over the final hours bgm */
+                has_priority |= main_bgm == sPrioOverFinalHoursBgm[index];
+            }
+
+            if(!has_priority)
+            {
+                SEQCMD_STOP_SEQUENCE(SEQ_PLAYER_AMBIENCE, 0);
+                Audio_ClearPrevMainBgmSeqId();
+                Audio_PlaySceneSequence(NA_BGM_FINAL_HOURS, 3 - 1);
+            }
+        }
+    }
+    else if(Audio_IsFinalHours())
+    {
+        Audio_ClearObjSoundMainBgmSeqId();
+        Audio_ClearPrevMainBgmSeqId();
+        AudioSeq_StopSequence(SEQ_PLAYER_BGM_MAIN, 10);
+        gSaveContext.seqId = (u8)NA_BGM_DISABLED;
+        gSaveContext.ambienceId = AMBIENCE_ID_DISABLED;
+        Environment_PlaySceneSequence(play);
+        gSaveContext.seqId = play->sceneSequences.seqId;
+        gSaveContext.ambienceId = play->sceneSequences.ambienceId;
     }
 }
 
@@ -3041,13 +3109,15 @@ void Environment_ForcePlaySequence(u16 seqId) {
 }
 
 s32 Environment_IsForcedSequenceDisabled(void) {
-    s32 isDisabled = false;
+    // s32 isDisabled = false;
 
-    if (gSaveContext.forcedSeqId != NA_BGM_GENERAL_SFX) {
-        isDisabled = true;
-    }
+    // if (gSaveContext.forcedSeqId != NA_BGM_GENERAL_SFX) {
+    //     isDisabled = true;
+    // }
 
-    return isDisabled;
+    // return isDisabled;
+
+    return gSaveContext.forcedSeqId != NA_BGM_GENERAL_SFX;
 }
 
 void Environment_PlayStormNatureAmbience(PlayState* play) {
@@ -3374,23 +3444,31 @@ u32 Environment_GetStormState(PlayState* play) {
 }
 
 u8 Environment_IsFinalHours(PlayState* play) {
-    u8 ret = false;
+    // s32 time_until_moon_crash = TIME_UNTIL_MOON_CRASH - gChaosContext.moon.moon_crash_time_offset;
+    // u8 ret = false;
 
-    if ((gSaveContext.save.day == 3) && (CURRENT_TIME < CLOCK_TIME(6, 0))) {
-        ret = true;
-    }
+    // if ((gSaveContext.save.day == 3) && (CURRENT_TIME < CLOCK_TIME(6, 0))) {
+    //     ret = true;
+    // }
 
-    return ret;
+    // return ret;
+
+    // return (gSaveContext.save.day == 3) && (CURRENT_TIME < CLOCK_TIME(6, 0)) ||
+    //     time_until_moon_crash < CLOCK_TIME(6, 0);
+
+    return Chaos_TimeUntilMoonCrash() < CLOCK_TIME(6, 0);
 }
 
-u8 func_800FE5D0(PlayState* play) {
-    u8 ret = false;
+u8 Environment_IsDungeonEntrance(PlayState* play) {
+    // u8 ret = false;
 
-    if (Entrance_GetSceneId(((void)0, gSaveContext.save.entrance)) < 0) {
-        ret = true;
-    }
+    // if (Entrance_GetSceneId(gSaveContext.save.entrance) < 0) {
+    //     ret = true;
+    // }
 
-    return ret;
+    // return ret;
+
+    return Entrance_GetSceneId(gSaveContext.save.entrance) < 0;
 }
 
 u32 func_800FE610(PlayState* play) {
@@ -3557,7 +3635,7 @@ void Environment_NewDay(EnvironmentContext* envCtx) {
         envCtx->changeSkyboxNextConfig = SKYBOX_CONFIG_0;
     }
 
-    switch (((void)0, gSaveContext.save.day)) {
+    switch (gSaveContext.save.day) {
         default:
         case 0:
         case 1:

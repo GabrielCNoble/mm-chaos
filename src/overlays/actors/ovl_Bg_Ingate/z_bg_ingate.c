@@ -185,7 +185,7 @@ void func_80953F9C(BgIngate* this, PlayState* play) {
     if (!CHECK_EVENTINF(EVENTINF_40)) {
 
         if (!CHECK_EVENTINF(EVENTINF_35) && (this->unk160 & 0x10) && (this->unk16C == 0)) {
-            this->dyna.actor.textId = 0x9E3;
+            this->dyna.actor.textId = MESSAGE_ID_WELCOME_TO_THE_BOAT;
             Message_StartTextbox(play, this->dyna.actor.textId, NULL);
             this->unk160 &= ~0x10;
         }
@@ -195,7 +195,7 @@ void func_80953F9C(BgIngate* this, PlayState* play) {
             if (this->timePath->additionalPathIndex != ADDITIONAL_PATH_INDEX_NONE) {
                 func_80953E38(play);
                 Player_SetCsActionWithHaltedActors(play, &this->dyna.actor, PLAYER_CSACTION_WAIT);
-                this->dyna.actor.textId = 0x9E4;
+                this->dyna.actor.textId = MESSAGE_ID_NOW_ARRIVING_AT_DEKU_PALACE_NORMAL;
                 Message_StartTextbox(play, this->dyna.actor.textId, NULL);
                 this->unk16C += 1;
                 SET_WEEKEVENTREG(WEEKEVENTREG_90_40);
@@ -234,7 +234,7 @@ void func_809541B8(BgIngate* this, PlayState* play) {
             (this->dyna.actor.xzDistToPlayer < 40.0f)) {
             if (this->dyna.actor.playerHeightRel > 15.0f) {
                 Player_SetCsActionWithHaltedActors(play, &this->dyna.actor, PLAYER_CSACTION_WAIT);
-                this->dyna.actor.textId = 0x9E6;
+                this->dyna.actor.textId = MESSAGE_ID_ARE_YOU_BOARDING_NORMAL;
                 Message_StartTextbox(play, this->dyna.actor.textId, NULL);
                 this->actionFunc = func_809543D4;
             }
@@ -276,12 +276,14 @@ void func_809543D4(BgIngate* this, PlayState* play) {
 
     if (((talkState == TEXT_STATE_CHOICE) || (talkState == TEXT_STATE_EVENT)) && Message_ShouldAdvance(play)) {
         switch (this->dyna.actor.textId) {
-            case 0x9E4:
-                this->dyna.actor.textId = 0x9E5;
+            case MESSAGE_ID_NOW_ARRIVING_AT_DEKU_PALACE_NORMAL:
+                // this->dyna.actor.textId = MESSAGE_ID_ARE_YOU_DISEMBARKING_NORMAL;
+                this->dyna.actor.textId = (Rand_Next() % 2) ? MESSAGE_ID_ARE_YOU_DISEMBARKING_NORMAL : MESSAGE_ID_ARE_YOU_DISEMBARKING_FLIPPED;
                 Message_ContinueTextbox(play, this->dyna.actor.textId);
                 break;
-            case 0x9E5:
-                if (play->msgCtx.choiceIndex == 0) {
+            case MESSAGE_ID_ARE_YOU_DISEMBARKING_NORMAL:
+            case MESSAGE_ID_ARE_YOU_DISEMBARKING_FLIPPED:
+                if (play->msgCtx.choiceIndex == (this->dyna.actor.textId == MESSAGE_ID_ARE_YOU_DISEMBARKING_FLIPPED)) {
                     Player_SetCsActionWithHaltedActors(play, &this->dyna.actor, PLAYER_CSACTION_END);
                     this->unk160 &= ~0x4;
                     this->actionFunc = func_809541B8;
@@ -297,8 +299,9 @@ void func_809543D4(BgIngate* this, PlayState* play) {
                 }
                 Message_CloseTextbox(play);
                 break;
-            case 0x9E6:
-                if (play->msgCtx.choiceIndex == 0) {
+            case MESSAGE_ID_ARE_YOU_BOARDING_NORMAL:
+            case MESSAGE_ID_ARE_YOU_BOARDING_FLIPPED:
+                if (play->msgCtx.choiceIndex == (this->dyna.actor.textId == MESSAGE_ID_ARE_YOU_BOARDING_FLIPPED)) {
                     func_80953EA4(this, play);
                     CLEAR_WEEKEVENTREG(WEEKEVENTREG_90_40);
                     Audio_PlaySfx_MessageDecide();

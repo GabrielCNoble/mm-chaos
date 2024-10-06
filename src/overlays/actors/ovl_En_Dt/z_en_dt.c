@@ -782,10 +782,24 @@ void EnDt_Update(Actor* thisx, PlayState* play) {
         EnDt_SetupFinalNightState(this, play);
     }
 
-    if (!CHECK_WEEKEVENTREG(WEEKEVENTREG_RESOLVED_MAYOR_MEETING) &&
-        ((gSaveContext.save.day != 3) || ((gSaveContext.save.day == 3) && !gSaveContext.save.isNight))) {
-        Audio_PlaySequenceAtPos(SEQ_PLAYER_BGM_SUB, &gSfxDefaultPos, NA_BGM_MAYORS_OFFICE, 1000.0f);
-        Actor_PlaySfx(&this->actor, NA_SE_EV_CROWD - SFX_FLAG);
+    // if (!CHECK_WEEKEVENTREG(WEEKEVENTREG_RESOLVED_MAYOR_MEETING) &&
+    //     ((gSaveContext.save.day != 3) || ((gSaveContext.save.day == 3) && !gSaveContext.save.isNight))) {
+    //     Audio_PlaySequenceAtPos(SEQ_PLAYER_BGM_SUB, &gSfxDefaultPos, NA_BGM_MAYORS_OFFICE, 1000.0f);
+    //     Actor_PlaySfx(&this->actor, NA_SE_EV_CROWD - SFX_FLAG);
+    // }
+
+    if (!CHECK_WEEKEVENTREG(WEEKEVENTREG_RESOLVED_MAYOR_MEETING)) {
+
+        /* make sure final hours takes over mayor's office bgm */
+        if(!Environment_IsFinalHours(play))
+        {
+            Audio_PlaySequenceAtPos(SEQ_PLAYER_BGM_SUB, &gSfxDefaultPos, NA_BGM_MAYORS_OFFICE, 1000.0f);
+        }
+
+        if(gSaveContext.save.day != 3 || !gSaveContext.save.isNight)
+        {
+            Actor_PlaySfx(&this->actor, NA_SE_EV_CROWD - SFX_FLAG);
+        }
     }
 
     DECR(this->blinkTimer);

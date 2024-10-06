@@ -11,6 +11,7 @@
 #include "z64quake.h"
 
 #include "objects/gameplay_keep/gameplay_keep.h"
+#include "chaos_fuckery.h"
 
 #define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_20 | ACTOR_FLAG_200000 | ACTOR_FLAG_2000000)
 
@@ -933,6 +934,7 @@ void EnTest6_Update(Actor* thisx, PlayState* play) {
 void EnTest6_SharedSoTCutscene(EnTest6* this, PlayState* play) {
     s32 pad[2];
     Player* player = GET_PLAYER(play);
+    u32 *p = NULL;
     f32 yDiff;
     s32 i;
     s32 cueChannel;
@@ -1081,19 +1083,27 @@ void EnTest6_SharedSoTCutscene(EnTest6* this, PlayState* play) {
                 return;
 
             case SOTCS_CUEID_DOUBLE_END:
-                Play_SetRespawnData(play, RESPAWN_MODE_RETURN, ((void)0, gSaveContext.save.entrance), player->unk_3CE,
+                if(Chaos_TimeUntilMoonCrash() <= 0)
+                {
+                    Interface_StartMoonCrash(play);
+                    SET_EVENTINF(EVENTINF_17);
+                }
+                else
+                {
+                    Play_SetRespawnData(play, RESPAWN_MODE_RETURN, ((void)0, gSaveContext.save.entrance), player->unk_3CE,
                                     PLAYER_PARAMS(0xFF, PLAYER_INITMODE_B), &player->unk_3C0, player->unk_3CC);
-                this->drawType = SOTCS_DRAW_TYPE_NONE;
-                play->transitionTrigger = TRANS_TRIGGER_START;
-                play->nextEntrance = gSaveContext.respawn[RESPAWN_MODE_RETURN].entrance;
-                play->transitionType = TRANS_TYPE_FADE_BLACK;
-                if ((CURRENT_TIME > CLOCK_TIME(18, 0)) || (CURRENT_TIME < CLOCK_TIME(6, 0))) {
-                    gSaveContext.respawnFlag = -0x63;
-                    SET_EVENTINF(EVENTINF_TRIGGER_DAYTELOP);
-                } else {
-                    gSaveContext.respawnFlag = 2;
+                    play->transitionTrigger = TRANS_TRIGGER_START;
+                    play->nextEntrance = gSaveContext.respawn[RESPAWN_MODE_RETURN].entrance;
+                    play->transitionType = TRANS_TYPE_FADE_BLACK;
+                    if ((CURRENT_TIME > CLOCK_TIME(18, 0)) || (CURRENT_TIME < CLOCK_TIME(6, 0))) {
+                        gSaveContext.respawnFlag = -0x63;
+                        SET_EVENTINF(EVENTINF_TRIGGER_DAYTELOP);
+                    } else {
+                        gSaveContext.respawnFlag = 2;
+                    }
                 }
                 play->msgCtx.ocarinaMode = OCARINA_MODE_END;
+                this->drawType = SOTCS_DRAW_TYPE_NONE;
                 return;
         }
     } else {
@@ -1161,8 +1171,13 @@ void EnTest6_SharedSoTCutscene(EnTest6* this, PlayState* play) {
                 return;
 
             case SOTCS_CUEID_DOUBLE_END:
-                if (CURRENT_TIME > CLOCK_TIME(12, 0)) {
-                    Play_SetRespawnData(play, RESPAWN_MODE_RETURN, ((void)0, gSaveContext.save.entrance),
+                if(Chaos_TimeUntilMoonCrash() <= 0)
+                {
+                    Interface_StartMoonCrash(play);
+                    SET_EVENTINF(EVENTINF_17);
+                }
+                else if (CURRENT_TIME > CLOCK_TIME(12, 0)) {
+                    Play_SetRespawnData(play, RESPAWN_MODE_RETURN, gSaveContext.save.entrance,
                                         player->unk_3CE, PLAYER_PARAMS(0xFF, PLAYER_INITMODE_B), &player->unk_3C0,
                                         player->unk_3CC);
                     this->drawType = SOTCS_DRAW_TYPE_NONE;
