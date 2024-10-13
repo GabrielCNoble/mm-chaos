@@ -918,7 +918,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_2000000    (1 << 25)
 // Player responding to a received attack
 #define PLAYER_STATE1_4000000    (1 << 26)
-// Swimming?
+// In water?
 #define PLAYER_STATE1_8000000    (1 << 27)
 #define PLAYER_STATE1_SWIMMING PLAYER_STATE1_8000000
 // 
@@ -1037,7 +1037,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE3_20000      (1 << 17)
 // Related to form Deku
 #define PLAYER_STATE3_40000      (1 << 18)
-// 
+// Goron spike rolling
 #define PLAYER_STATE3_80000      (1 << 19)
 // 
 #define PLAYER_STATE3_100000     (1 << 20)
@@ -1224,7 +1224,7 @@ typedef struct Player {
     /* 0xAA5 */ u8 unk_AA5; // First person mode? PlayerUnkAA5 enum
     /* 0xAA6 */ u16 unk_AA6; // flags of some kind (player limb angle reset ignore flags)
     /* 0xAA8 */ s16 unk_AA8;
-    /* 0xAAA */ s16 unk_AAA;
+    /* 0xAAA */ s16 unk_AAA; // zora swim pitch?
     /* 0xAAC */ Vec3s headLimbRot;
     /* 0xAB2 */ Vec3s upperLimbRot;
     /* 0xAB8 */ f32 unk_AB8;
@@ -1249,20 +1249,22 @@ typedef struct Player {
     /* 0xAE7 */ union { 
         s8 iceTrapHaltCounter;
         s8 revivePlayer;
+        s8 goronRollChargeUpCounter;
         s8 actionVar1;
     } av1; // "Action Variable 1": context dependent variable that has different meanings depending on what action is currently running
     /* 0xAE8 */ union { 
         s16 inputMashAccumulator;
         s16 fairyReviveCounter;
         s16 voidOutTimer;
+        s16 goronRollAngularSpeed;
         s16 actionVar2;
     } av2; // "Action Variable 2": context dependent variable that has different meanings depending on what action is currently running
     /* 0xAEC */ f32 unk_AEC;
     /* 0xAF0 */ union {
-                    Vec3f unk_AF0[2];
+                    Vec3f unk_AF0[2]; /* first element is deku flying start position */
                     f32 arr_AF0[6];
                 };
-    /* 0xB08 */ f32 unk_B08;
+    /* 0xB08 */ f32 unk_B08; // goron roll velocity?
     /* 0xB0C */ f32 unk_B0C;
     /* 0xB10 */ f32 unk_B10[6];
     /* 0xB28 */ s16 unk_B28; // Burning stick timer?
@@ -1305,9 +1307,20 @@ typedef struct Player {
     /* 0xB7C */ f32 unk_B7C; // hit y velocity?
     /* 0xB80 */ f32 pushedSpeed; // Pushing player, examples include water currents, floor conveyors, climbing sloped surfaces
     /* 0xB84 */ s16 pushedYaw; // Yaw of direction in which player is being pushed
-    /* 0xB86 */ s16 unk_B86[2]; // unknown length
+    /* 0xB86 */ union
+                {
+                    struct 
+                    {
+                        s16 goronRollAngularVelocity;
+                    };
+                    struct 
+                    {
+                        s16 unk_B86[2];
+                    }; // unknown length
+                };
+    
     /* 0xB8A */ s16 unk_B8A;
-    /* 0xB8C */ s16 unk_B8C;
+    /* 0xB8C */ s16 unk_B8C; // deku fly velocity / frames until being able to steer after reflecting off a wall while rolling?
     /* 0xB8E */ s16 unk_B8E;
     /* 0xB90 */ s16 unk_B90;
     /* 0xB92 */ s16 unk_B92;
@@ -1332,6 +1345,7 @@ typedef struct Player {
     /* 0xD6A */ s8 unk_D6A;
     /* 0xD6B */ u8 unk_D6B;
     /* 0xD6C */ Vec3f unk_D6C; // previous body part 0 position
+                s32 goronRollAngularSpeed;
 } Player; // size = 0xD78
 
 // z_player_call.c functions

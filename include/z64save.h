@@ -7,7 +7,6 @@
 #include "z64inventory.h"
 #include "z64item.h"
 #include "z64math.h"
-
 #include "unk.h"
 
 struct GameState;
@@ -319,6 +318,15 @@ typedef struct SaveInfo {
     /* 0xFE6 */ u16 checksum;                          // "check_sum"
 } SaveInfo; // size = 0xFE8
 
+
+struct ChaosSaveInfo
+{
+    u32 config[4];
+    u8  moon_crash_count;
+    u8  pad0[3];
+    f32 evilness_probability_scale;
+};
+
 typedef struct Save {
     /* 0x00 */ s32 entrance;        // "scene_no"
     /* 0x04 */ u8 equippedMask;     // "player_mask"
@@ -337,8 +345,11 @@ typedef struct Save {
     /* 0x22 */ u8 hasTatl;          // "bell_flag"
     /* 0x23 */ u8 isOwlSave;
     /* 0x24 */ SaveInfo saveInfo;
-               u32 chaos_config[4];
-               u8  moon_crash_count;
+    struct ChaosSaveInfo chaos;
+            //    u32 chaos_config[4];
+            //    u8  moon_crash_count;
+            //    u8  pad0[3];
+            //    f32 evilness_probability_scale;
 } Save; // size = 0x100C
 
 typedef struct SaveContext {

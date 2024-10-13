@@ -6,11 +6,6 @@
 #include "padutils.h"
 #include "overlays/actors/ovl_En_Niw/z_en_niw.h"
 
-/* 
-    random-knockback/poke/shock/ice-trap should not be active when there's a 
-    like-like around. It gets the player stuck midair, in a falling pose
-*/
-
 enum CHAOS_CODES
 {
     CHAOS_CODE_NONE,
@@ -119,25 +114,30 @@ enum CHAOS_CODES
     CHAOS_CODE_WEIRD_ROOMS,
     /* snake game with the health meter */
     CHAOS_CODE_HEART_SNAKE,
-    /* makes time flow twice as fast */
+    /* makes time flow a lot faster */
     CHAOS_CODE_FAST_TIME,
     /* fake moon crash, with a 1/32 change of becoming a real moon crash */
     CHAOS_CODE_MOON_CRASH,
+    /* makes link run 10x as fast */
+    CHAOS_CODE_SPEEDBOOST,
     /* makes actors behave like billboards */
-    // CHAOS_CODE_BILLBOARD_ACTORS,
+    CHAOS_CODE_BILLBOARD_ACTORS,
     /* draws link as a signpost */
-    // CHAOS_CODE_SIGNPOST,
+    CHAOS_CODE_SIGNPOST,
+    /* simon says, player dies if they fail */
+    // CHAOS_CODE_SIMON_SAYS,
     /* makes link "buffer" randomly */
     // CHAOS_CODE_SLOW_CONNECTION,
-    /* makes link run 3x as fast */
-    // CHAOS_CODE_SPEEDBOOST,
     /* fake random scene transition, with a small chance of being real */
     // CHAOS_CODE_RANDOM_SCENE_TRANSITION,
     /* makes link go the opposite direction when going through doors */
     // CHAOS_CODE_DIRECTIONALLY_CHALLENGED,
     /* randomly change environment settings */
     // CHAOS_CODE_WEIRD_ENVIRONMENT,
-    
+    /* sets far plane pretty close to link */
+    // CHAOS_CODE_LOW_RENDER_DISTANCE,
+    /* thick fog */
+    // CHAOS_CODE_SILENT_FIELD,
     /* 
         player randomly loses grip, dropping items, falling from ledges/ladders
         TODO: change this one to include items from the inventory. The item should
@@ -239,8 +239,7 @@ enum CHAOS_CODES
     // CHAOS_CODE_WHO_ARE_YOU_TALKING_TO,
     /* spawns a random tree in front of the player */
     // CHAOS_CODE_TREE,
-    /* simon says, player dies if they fail */
-    // CHAOS_CODE_SIMON_SAYS,
+    
     
     CHAOS_CODE_LAST
 };
@@ -519,7 +518,7 @@ enum CHAOS_FAST_TIME_STATES
 #define MIN_CHAOS_TIMER         2
 #define CHAOS_SECONDS_TO_FRAMES(seconds)    (((u16)(seconds)) * (20))
 #define CHAOS_MAX_DISRUPTIVE_PROBABILITY_SCALE 7.0f
-#define CHAOS   
+#define CHAOS_MAX_BEER_ALPHA 210
 
 #define MAX_SPAWNED_ACTORS  12
 #define ACTOR_DESPAWN_TIMER 10
@@ -551,6 +550,7 @@ typedef struct ChaosContext
     u16                     chaos_timer;
     u16                     effect_restrictions;
     u16                     chaos_keep_largest_object;
+    s16                     input_mash_accumulator;
     u8                      active_code_count;
     u8                      update_enabled;
 
@@ -596,7 +596,7 @@ typedef struct ChaosContext
         u32                     cur_animation_mode;
 
         f32                     out_of_shape_speed_scale;
-        f32                     sneeze_speed_scale;
+        f32                     speed_boost_speed_scale;
         f32                     imaginary_friends_speed_scale;
         f32                     beer_x_offset;
         f32                     beer_y_offset;
@@ -615,7 +615,7 @@ typedef struct ChaosContext
         u8                      fierce_deity_state;
         u8                      imaginary_friends_state;
         u8                      imaginary_friends_anim_index;
-        u8                      sneeze_state;
+        u8                      speed_boost_state;
         u8                      fierce_deity_counter;
         u8                      prev_link_form;
         u8                      liftoff_timer;

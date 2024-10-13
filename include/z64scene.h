@@ -398,10 +398,16 @@ typedef struct {
     /* 0x1 */ u8 room;
 } EntranceEntry; // size = 0x2
 
+enum EntranceBgmFlags
+{
+    ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM = 1
+};
+
 typedef struct {
-    /* 0x0 */ s8 sceneId;
-    /* 0x1 */ s8 spawnNum;
-    /* 0x2 */ u16 flags;
+    /* 0x0 */ s8    sceneId;
+    /* 0x1 */ s8    spawnNum;
+    /* 0x2 */ u16   flags;
+              u16   bgm_flags;
 } EntranceTableEntry; // size = 0x4
 
 typedef struct {
@@ -937,6 +943,8 @@ s32 Object_SpawnPersistent(ObjectContext* objectCtx, s16 id);
 void Object_InitContext(struct GameState* gameState, ObjectContext* objectCtx);
 void Object_UpdateEntries(ObjectContext* objectCtx);
 s32 Object_GetSlot(ObjectContext* objectCtx, s16 objectId);
+void Object_MarkObjectAsLoaded(ObjectContext *ctx, s16 id);
+void Object_MarkObjectAsUnloaded(ObjectContext *ctx, s16 id);
 s32 Object_IsLoaded(ObjectContext* objectCtx, s32 slot);
 void Object_LoadAll(ObjectContext* objectCtx);
 void* Object_RequestOverwrite(ObjectContext* objectCtx, s32 slot, s16 id);
@@ -1017,6 +1025,7 @@ s32 Entrance_GetSceneId(u16 entrance);
 s32 Entrance_GetSceneIdAbsolute(u16 entrance);
 s32 Entrance_GetSpawnNum(u16 entrance);
 s32 Entrance_GetTransitionFlags(u16 entrance);
+s32 Entrance_GetBgmFlags(u16 entrance);
 
 extern SceneTableEntry gSceneTable[SCENE_MAX];
 

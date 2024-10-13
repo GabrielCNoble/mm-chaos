@@ -3,6 +3,8 @@
 
 extern struct ChaosContext gChaosContext;
 
+u8 gLoadedObjects[(OBJECT_LAST_OBJ / 8) + 1];
+
 s32 Object_AllocatePersistent(ObjectContext* objectCtx, s16 id) 
 {
     size_t size = gObjectTable[id].vromEnd - gObjectTable[id].vromStart;
@@ -59,8 +61,6 @@ s32 Object_SpawnPersistent(ObjectContext* objectCtx, s16 id) {
     objectCtx->slots[objectCtx->numEntries].id = id;
     size = gObjectTable[id].vromEnd - gObjectTable[id].vromStart;
 
-    if (1) {}
-
     if (size != 0) {
         DmaMgr_RequestSync(objectCtx->slots[objectCtx->numEntries].segment, gObjectTable[id].vromStart, size);
     }
@@ -72,6 +72,7 @@ s32 Object_SpawnPersistent(ObjectContext* objectCtx, s16 id) {
 
     objectCtx->numEntries++;
     objectCtx->numPersistentEntries = objectCtx->numEntries;
+    Object_MarkObjectAsLoaded(objectCtx, id);
 
     return objectCtx->numEntries - 1;
 }
@@ -116,13 +117,17 @@ void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
         // objectCtx->slots[index].load_pending = false;
     }
 
-    spaceSize += gObjectTable[OBJECT_RR].vromEnd - gObjectTable[OBJECT_RR].vromStart;
+    bzero(gLoadedObjects, sizeof(gLoadedObjects));
+
+    spaceSize += ((gObjectTable[OBJECT_RR].vromEnd - gObjectTable[OBJECT_RR].vromStart) + 0x3ff) & ~0x3ff;
+    // spaceSize += ((gObjectTable[OBJECT_WOOD02].vromEnd - gObjectTable[OBJECT_WOOD02].vromStart) + 0x3ff) & ~0x3ff;
     spaceSize += gChaosContext.chaos_keep_size;
 
     objectCtx->spaceStart = objectCtx->slots[0].segment = THA_AllocTailAlign16(&gameState->tha, spaceSize);
     objectCtx->spaceEnd = (void*)((u32)objectCtx->spaceStart + spaceSize);
     objectCtx->mainKeepSlot = Object_SpawnPersistent(objectCtx, GAMEPLAY_KEEP);
     Object_SpawnPersistent(objectCtx, OBJECT_RR);
+    // Object_SpawnPersistent(objectCtx, OBJECT_WOOD02);
 
     /* allocate enough space for the largest object */
     gChaosContext.chaos_keep_slot = Object_AllocatePersistent(objectCtx, gChaosContext.chaos_keep_largest_object);
@@ -214,6 +219,7 @@ void Object_UpdateEntries(ObjectContext* objectCtx) {
                 size = objectFile->vromEnd - objectFile->vromStart;
 
                 if (size == 0) {
+                    Object_MarkObjectAsUnloaded(objectCtx, id);
                     entry->id = 0;
                 } else {
                     osCreateMesgQueue(&entry->loadQueue, &entry->loadMsg, 1);
@@ -222,6 +228,7 @@ void Object_UpdateEntries(ObjectContext* objectCtx) {
                 }
             } else if (!osRecvMesg(&entry->loadQueue, NULL, OS_MESG_NOBLOCK)) {
                 entry->id = id;
+                Object_MarkObjectAsLoaded(objectCtx, id);
             }
         }
 
@@ -241,6 +248,28 @@ s32 Object_GetSlot(ObjectContext* objectCtx, s16 objectId) {
     return OBJECT_SLOT_NONE;
 }
 
+void Object_MarkObjectAsLoaded(ObjectContext *ctx, s16 id)
+{
+    id = ABS(id);
+    if(id < OBJECT_ID_MAX)
+    {
+        u32 byte_index = id >> 3;
+        u32 bit_index = id & 0x7;
+        gLoadedObjects[byte_index] |= 1 << bit_index;
+    }
+}
+
+void Object_MarkObjectAsUnloaded(ObjectContext *ctx, s16 id)
+{
+    id = ABS(id);
+    if(id < OBJECT_ID_MAX)
+    {
+        u32 byte_index = id >> 3;
+        u32 bit_index = id & 0x7;
+        gLoadedObjects[byte_index] &= ~(1 << bit_index);
+    }
+}
+
 s32 Object_IsLoaded(ObjectContext* objectCtx, s32 slot) {
     return objectCtx->slots[slot].id > 0;
     // if (objectCtx->slots[slot].id > 0) {
@@ -250,10 +279,26 @@ s32 Object_IsLoaded(ObjectContext* objectCtx, s32 slot) {
     // }
 }
 
+s32 Object_IsLoadedById(ObjectContext *objectCtx, s16 id) 
+{
+    id = ABS(id);
+    if(id > 0 && id < OBJECT_ID_MAX)
+    {
+        u32 byte_index = id >> 3;
+        u32 bit_index = id & 0x7;
+
+        return gLoadedObjects[byte_index] & (1 << bit_index);
+    }
+    
+    return false;
+}
+
 void Object_LoadAll(ObjectContext* objectCtx) {
     s32 i;
     s32 id;
     uintptr_t vromSize;
+
+    bzero(gLoadedObjects, sizeof(gLoadedObjects));
 
     for (i = 0; i < objectCtx->numEntries; i++) {
         id = objectCtx->slots[i].id;
@@ -262,8 +307,8 @@ void Object_LoadAll(ObjectContext* objectCtx) {
         if (vromSize == 0) {
             continue;
         }
-
         DmaMgr_RequestSync(objectCtx->slots[i].segment, gObjectTable[id].vromStart, vromSize);
+        Object_MarkObjectAsLoaded(objectCtx, id);
     }
 }
 /* Object_RequestOverwrite? */
@@ -271,6 +316,11 @@ void* Object_RequestOverwrite(ObjectContext* objectCtx, s32 slot, s16 id) {
     uintptr_t addr;
     uintptr_t vromSize;
     RomFile* fileTableEntry;
+
+    if(objectCtx->slots[slot].id > 0)
+    {
+        Object_MarkObjectAsUnloaded(objectCtx, objectCtx->slots[slot].id);
+    }
 
     objectCtx->slots[slot].id = -id;
     // objectCtx->slots[slot].load_pending = false;
@@ -302,6 +352,7 @@ void Scene_CommandSpawnList(PlayState* play, SceneCmd* cmd) {
     }
 
     loadedCount = Object_SpawnPersistent(&play->objectCtx, OBJECT_LINK_CHILD);
+    Object_MarkObjectAsUnloaded(&play->objectCtx, OBJECT_LINK_CHILD);
     objectPtr = play->objectCtx.slots[play->objectCtx.numEntries].segment;
     play->objectCtx.numEntries = loadedCount;
     play->objectCtx.numPersistentEntries = loadedCount;
@@ -408,38 +459,30 @@ void Scene_CommandObjectList(PlayState* play, SceneCmd* cmd) {
     void* nextPtr;
 
     objectEntry = Lib_SegmentedToVirtual(cmd->objectList.segment);
-    // k = 0;
-    // i = play->objectCtx.numPersistentEntries;
     object_list_entry_index = 0;
     non_persistent_entry_index = play->objectCtx.numPersistentEntries;
-    // entry = &play->objectCtx.slots[i];
     entry = &play->objectCtx.slots[non_persistent_entry_index];
     firstObject = &play->objectCtx.slots[0];
 
-    
-    // while (i < play->objectCtx.numEntries) {
     /* look for the first non-persistent entry that doesn't match the object list */
     while (non_persistent_entry_index < play->objectCtx.numEntries) {
         if (entry->id != *objectEntry) {
-            // invalidatedEntry = &play->objectCtx.slots[i];
             /* entry doesn't match */
             invalidatedEntry = &play->objectCtx.slots[non_persistent_entry_index];
 
             /* so nuke everything after it */
             for (j = non_persistent_entry_index; j < play->objectCtx.numEntries; j++) {
+                Object_MarkObjectAsUnloaded(&play->objectCtx, invalidatedEntry->id);
                 invalidatedEntry->id = 0;
                 // invalidatedEntry->request_index = MAX_OBJ_REQUESTS;
                 invalidatedEntry++;
             }
 
-            // play->objectCtx.numEntries = i;
             play->objectCtx.numEntries = non_persistent_entry_index;
             Actor_KillAllWithMissingObject(play, &play->actorCtx);
 
             continue;
         }
-        // i++
-        // k++;
         non_persistent_entry_index++;
         object_list_entry_index++;
         objectEntry++;
@@ -447,18 +490,18 @@ void Scene_CommandObjectList(PlayState* play, SceneCmd* cmd) {
     }
 
     while (object_list_entry_index < cmd->objectList.num) {
-        // nextPtr = func_8012F73C(&play->objectCtx, i, *objectEntry);
-        nextPtr = Object_RequestOverwrite(&play->objectCtx, non_persistent_entry_index, *objectEntry);
+        // if(!Object_IsLoadedById(&play->objectCtx, *objectEntry))
+        // if(Object_GetSlot(&play->objectCtx, *objectEntry) == OBJECT_SLOT_NONE)
+        {
+            nextPtr = Object_RequestOverwrite(&play->objectCtx, non_persistent_entry_index, *objectEntry);
 
-        // if (i < ARRAY_COUNT(play->objectCtx.slots) - 1) {
-        if (non_persistent_entry_index < ARRAY_COUNT(play->objectCtx.slots) - 1) {
-            // firstObject[i + 1].segment = nextPtr;
-            firstObject[non_persistent_entry_index + 1].segment = nextPtr;
+            if (non_persistent_entry_index < ARRAY_COUNT(play->objectCtx.slots) - 1) {
+                firstObject[non_persistent_entry_index + 1].segment = nextPtr;
+            }
+
+            non_persistent_entry_index++;
         }
 
-        // i++;
-        // k++;
-        non_persistent_entry_index++;
         object_list_entry_index++;
         objectEntry++;
     }

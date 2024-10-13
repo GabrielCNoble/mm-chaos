@@ -233,6 +233,7 @@ void LifeMeter_Draw(PlayState* play) {
     s32 fractionHeartCount = gSaveContext.save.saveInfo.playerData.health % LIFEMETER_FULL_HEART_HEALTH;
     s16 healthCapacity = gSaveContext.save.saveInfo.playerData.healthCapacity / LIFEMETER_FULL_HEART_HEALTH;
     s16 fullHeartCount = gSaveContext.save.saveInfo.playerData.health / LIFEMETER_FULL_HEART_HEALTH;
+    s16 health_alpha = interfaceCtx->healthAlpha;
     s32 pad2;
     f32 lifesize = interfaceCtx->lifeSizeChange * 0.1f;
     u32 curCombineModeSet = 0;
@@ -240,9 +241,14 @@ void LifeMeter_Draw(PlayState* play) {
     s32 defense_hearts_count = gSaveContext.save.saveInfo.inventory.defenseHearts - 1;
     u32 heart_snake = Chaos_IsCodeActive(CHAOS_CODE_HEART_SNAKE);
 
-    if(heart_snake && (gChaosContext.ui.flags & CHAOS_SNAKE_GAME_FLAG_BLINK))
+    if(heart_snake)
     {
-        return;
+        if(gChaosContext.ui.flags & CHAOS_SNAKE_GAME_FLAG_BLINK)
+        {
+            return;
+        }
+
+        health_alpha = 255;
     }
 
     OPEN_DISPS(gfxCtx);
@@ -273,7 +279,7 @@ void LifeMeter_Draw(PlayState* play) {
                     curColorSet = 0;
                     gDPPipeSync(OVERLAY_DISP++);
                     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, interfaceCtx->heartsPrimR[0], interfaceCtx->heartsPrimG[0],
-                                    interfaceCtx->heartsPrimB[0], interfaceCtx->healthAlpha);
+                                    interfaceCtx->heartsPrimB[0], health_alpha);
                     gDPSetEnvColor(OVERLAY_DISP++, interfaceCtx->heartsEnvR[0], interfaceCtx->heartsEnvG[0],
                                    interfaceCtx->heartsEnvB[0], 255);
                 }
@@ -282,8 +288,7 @@ void LifeMeter_Draw(PlayState* play) {
                     curColorSet = 1;
                     gDPPipeSync(OVERLAY_DISP++);
                     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, interfaceCtx->beatingHeartPrim[0],
-                                    interfaceCtx->beatingHeartPrim[1], interfaceCtx->beatingHeartPrim[2],
-                                    interfaceCtx->healthAlpha);
+                                    interfaceCtx->beatingHeartPrim[1], interfaceCtx->beatingHeartPrim[2], health_alpha);
                     gDPSetEnvColor(OVERLAY_DISP++, interfaceCtx->beatingHeartEnv[0], interfaceCtx->beatingHeartEnv[1],
                                    interfaceCtx->beatingHeartEnv[2], 255);
                 }
@@ -292,7 +297,7 @@ void LifeMeter_Draw(PlayState* play) {
                     curColorSet = 2;
                     gDPPipeSync(OVERLAY_DISP++);
                     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, interfaceCtx->heartsPrimR[0], interfaceCtx->heartsPrimG[0],
-                                    interfaceCtx->heartsPrimB[0], interfaceCtx->healthAlpha);
+                                    interfaceCtx->heartsPrimB[0], health_alpha);
                     gDPSetEnvColor(OVERLAY_DISP++, interfaceCtx->heartsEnvR[0], interfaceCtx->heartsEnvG[0],
                                    interfaceCtx->heartsEnvB[0], 255);
                 }
@@ -301,7 +306,7 @@ void LifeMeter_Draw(PlayState* play) {
                     curColorSet = 3;
                     gDPPipeSync(OVERLAY_DISP++);
                     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, interfaceCtx->heartsPrimR[1], interfaceCtx->heartsPrimG[1],
-                                    interfaceCtx->heartsPrimB[1], interfaceCtx->healthAlpha);
+                                    interfaceCtx->heartsPrimB[1], health_alpha);
                     gDPSetEnvColor(OVERLAY_DISP++, interfaceCtx->heartsEnvR[1], interfaceCtx->heartsEnvG[1],
                                    interfaceCtx->heartsEnvB[1], 255);
                 }
@@ -322,7 +327,7 @@ void LifeMeter_Draw(PlayState* play) {
                     curColorSet = 4;
                     gDPPipeSync(OVERLAY_DISP++);
                     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, sHeartsDDPrim[0][0], sHeartsDDPrim[0][1], sHeartsDDPrim[0][2],
-                                    interfaceCtx->healthAlpha);
+                                    health_alpha);
                     gDPSetEnvColor(OVERLAY_DISP++, sHeartsDDEnv[0][0], sHeartsDDEnv[0][1], sHeartsDDEnv[0][2], 255);
                 }
             } else if (i == fullHeartCount) {
@@ -330,7 +335,7 @@ void LifeMeter_Draw(PlayState* play) {
                     curColorSet = 5;
                     gDPPipeSync(OVERLAY_DISP++);
                     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, sBeatingHeartsDDPrim[0], sBeatingHeartsDDPrim[1],
-                                    sBeatingHeartsDDPrim[2], interfaceCtx->healthAlpha);
+                                    sBeatingHeartsDDPrim[2], health_alpha);
                     gDPSetEnvColor(OVERLAY_DISP++, sBeatingHeartsDDEnv[0], sBeatingHeartsDDEnv[1],
                                    sBeatingHeartsDDEnv[2], 255);
                 }
@@ -339,14 +344,14 @@ void LifeMeter_Draw(PlayState* play) {
                     curColorSet = 6;
                     gDPPipeSync(OVERLAY_DISP++);
                     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, sHeartsDDPrim[0][0], sHeartsDDPrim[0][1], sHeartsDDPrim[0][2],
-                                    interfaceCtx->healthAlpha);
+                                    health_alpha);
                     gDPSetEnvColor(OVERLAY_DISP++, sHeartsDDEnv[0][0], sHeartsDDEnv[0][1], sHeartsDDEnv[0][2], 255);
                 }
             } else if (curColorSet != 7) {
                 curColorSet = 7;
                 gDPPipeSync(OVERLAY_DISP++);
                 gDPSetPrimColor(OVERLAY_DISP++, 0, 0, sHeartsDDPrim[1][0], sHeartsDDPrim[1][1], sHeartsDDPrim[1][2],
-                                interfaceCtx->healthAlpha);
+                                health_alpha);
                 gDPSetEnvColor(OVERLAY_DISP++, sHeartsDDEnv[1][0], sHeartsDDEnv[1][1], sHeartsDDEnv[1][2], 255);
             }
             if (i < fullHeartCount) {

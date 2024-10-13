@@ -7,6 +7,7 @@ typedef enum {
     /* 0x00 */ LIGHTNING_BOLT_START,
     /* 0x01 */ LIGHTNING_BOLT_WAIT,
     /* 0x02 */ LIGHTNING_BOLT_DRAW,
+               LIGHTNING_BOLT_CHAOS,
     /* 0xFF */ LIGHTNING_BOLT_INACTIVE = 0xFF
 } LightningBoltState;
 
@@ -1244,8 +1245,8 @@ void func_800F6CEC(PlayState* play, u8 arg1, AdjLightSettings* adjLightSettings,
     s32 temp_v1_2;
     s32 temp_v1 = (arg1 % 4);
 
-    if ((((void)0, gSaveContext.save.day) >= 2) && (arg1 >= 4) && (arg1 < 8)) {
-        temp_v1_2 = (((void)0, gSaveContext.save.day) + 1) * 4;
+    if (gSaveContext.save.day >= 2 && (arg1 >= 4) && (arg1 < 8)) {
+        temp_v1_2 = (gSaveContext.save.day + 1) * 4;
         for (phi_t1 = 0; phi_t1 != 3; phi_t1++) {
             adjLightSettings->ambientColor[phi_t1] =
                 lightSettings[temp_v1_2 + temp_v1].ambientColor[phi_t1] - lightSettings[temp_v1].ambientColor[phi_t1];
@@ -2160,19 +2161,23 @@ void Environment_DrawRainImpl(PlayState* play, View* view, GraphicsContext* gfxC
 }
 
 void Environment_DrawRain(PlayState* play, View* view, GraphicsContext* gfxCtx) {
-    if (!(GET_ACTIVE_CAM(play)->stateFlags & CAM_STATE_UNDERWATER) &&
-        (play->envCtx.precipitation[PRECIP_SNOW_CUR] == 0)) {
-        if (play->envCtx.precipitation[PRECIP_SOS_MAX] != 0) {
-            if (play->envCtx.precipitation[PRECIP_SNOW_CUR] == 0) {
-                Environment_DrawRainImpl(play, view, gfxCtx);
-            }
-        } else if (!(GET_ACTIVE_CAM(play)->stateFlags & CAM_STATE_UNDERWATER)) {
-            if ((Environment_GetStormState(play) != STORM_STATE_OFF) &&
-                (play->envCtx.precipitation[PRECIP_SNOW_CUR] == 0)) {
-                Environment_DrawRainImpl(play, view, gfxCtx);
-            }
+    // if (!(GET_ACTIVE_CAM(play)->stateFlags & CAM_STATE_UNDERWATER) && (play->envCtx.precipitation[PRECIP_SNOW_CUR] == 0)) 
+    // {
+        if (play->envCtx.precipitation[PRECIP_SOS_MAX] != 0) 
+        {
+            // if (play->envCtx.precipitation[PRECIP_SNOW_CUR] == 0) 
+            // {
+            Environment_DrawRainImpl(play, view, gfxCtx);
+            // }
+        } 
+        else /* if (!(GET_ACTIVE_CAM(play)->stateFlags & CAM_STATE_UNDERWATER)) */
+        {
+        //     if ((Environment_GetStormState(play) != STORM_STATE_OFF) && (play->envCtx.precipitation[PRECIP_SNOW_CUR] == 0)) 
+        //     {
+            Environment_DrawRainImpl(play, view, gfxCtx);
+        //     }
         }
-    }
+    // }
 }
 
 void Environment_ChangeLightSetting(PlayState* play, u8 lightSetting) {
@@ -2258,8 +2263,14 @@ void Environment_DrawLightningFlash(PlayState* play, u8 red, u8 green, u8 blue, 
 }
 
 void Environment_UpdateLightningStrike(PlayState* play) {
+    u32 bolt_count = 0;
+    u32 chaos_bolt = false;
     if (play->envCtx.lightningState != LIGHTNING_OFF) {
         switch (gLightningStrike.state) {
+            case LIGHTNING_STRIKE_CHAOS:
+                gLightningStrike.delayTimer = 600.0f;
+                bolt_count = 10;
+                chaos_bolt = true;
             case LIGHTNING_STRIKE_WAIT:
                 // every frame theres a 10% chance of the timer advancing 10 units
                 if (Rand_ZeroOne() < 0.1f) {
@@ -2273,12 +2284,11 @@ void Environment_UpdateLightningStrike(PlayState* play) {
                     gLightningStrike.flashGreen = 200;
                     gLightningStrike.flashBlue = 255;
                     gLightningStrike.flashAlphaTarget = 200;
-
                     gLightningStrike.delayTimer = 0.0f;
-                    Environment_AddLightningBolts(
-                        play, (u8)((Rand_ZeroOne() * (ARRAY_COUNT(sLightningBolts) - 0.1f)) + 1.0f));
+                    bolt_count += (u8)((Rand_ZeroOne() * (ARRAY_COUNT(sLightningBolts) - 0.1f)) + 1.0f);
+                    Environment_AddLightningBolts(play, bolt_count, chaos_bolt);
                     sLightningFlashAlpha = 0;
-                    gLightningStrike.state++;
+                    gLightningStrike.state = LIGHTNING_STRIKE_START;
                 }
                 break;
 
@@ -2295,7 +2305,7 @@ void Environment_UpdateLightningStrike(PlayState* play) {
 
                 if (sLightningFlashAlpha >= gLightningStrike.flashAlphaTarget) {
                     Audio_SetAmbienceChannelIO(AMBIENCE_CHANNEL_LIGHTNING, CHANNEL_IO_PORT_0, 0);
-                    gLightningStrike.state++;
+                    gLightningStrike.state = LIGHTNING_STRIKE_END;
                     gLightningStrike.flashAlphaTarget = 0;
                 }
                 break;
@@ -2336,13 +2346,13 @@ void Environment_UpdateLightningStrike(PlayState* play) {
     }
 }
 
-void Environment_AddLightningBolts(PlayState* play, u8 num) {
+void Environment_AddLightningBolts(PlayState* play, u8 num, u8 chaos) {
     s16 boltsAdded = 0;
     s16 i;
 
     for (i = 0; i < ARRAY_COUNT(sLightningBolts); i++) {
         if (sLightningBolts[i].state == LIGHTNING_BOLT_INACTIVE) {
-            sLightningBolts[i].state = LIGHTNING_BOLT_START;
+            sLightningBolts[i].state = chaos ? LIGHTNING_BOLT_CHAOS : LIGHTNING_BOLT_START;
             boltsAdded++;
 
             if (boltsAdded >= num) {
@@ -2367,11 +2377,16 @@ void Environment_DrawLightning(PlayState* play, s32 unused) {
     f32 x;
     f32 z;
     s32 pad[2];
+    f32 position_scale = 9500.0f;
+    f32 offset_scale = 5000.0f;
 
     OPEN_DISPS(play->state.gfxCtx);
 
     for (i = 0; i < ARRAY_COUNT(sLightningBolts); i++) {
         switch (sLightningBolts[i].state) {
+            case LIGHTNING_BOLT_CHAOS:
+                position_scale = 0.0f;
+                offset_scale = 0.1f;
             case LIGHTNING_BOLT_START:
                 dx = play->view.at.x - play->view.eye.x;
                 dz = play->view.at.z - play->view.eye.z;
@@ -2379,26 +2394,26 @@ void Environment_DrawLightning(PlayState* play, s32 unused) {
                 x = dx / sqrtf(SQ(dx) + SQ(dz));
                 z = dz / sqrtf(SQ(dx) + SQ(dz));
 
-                sLightningBolts[i].pos.x = play->view.eye.x + x * 9500.0f;
+                sLightningBolts[i].pos.x = play->view.eye.x + x * position_scale;
                 sLightningBolts[i].pos.y = Rand_ZeroOne() * 1000.0f + 4000.0f;
-                sLightningBolts[i].pos.z = play->view.eye.z + z * 9500.0f;
+                sLightningBolts[i].pos.z = play->view.eye.z + z * position_scale;
 
-                sLightningBolts[i].offset.x = (Rand_ZeroOne() - 0.5f) * 5000.0f;
+                sLightningBolts[i].offset.x = (Rand_ZeroOne() - 0.5f) * offset_scale;
                 sLightningBolts[i].offset.y = 0.0f;
-                sLightningBolts[i].offset.z = (Rand_ZeroOne() - 0.5f) * 5000.0f;
+                sLightningBolts[i].offset.z = (Rand_ZeroOne() - 0.5f) * offset_scale;
 
                 sLightningBolts[i].textureIndex = 0;
                 sLightningBolts[i].pitch = (Rand_ZeroOne() - 0.5f) * 40.0f;
                 sLightningBolts[i].roll = (Rand_ZeroOne() - 0.5f) * 40.0f;
                 sLightningBolts[i].delayTimer = 3 * (i + 1);
-                sLightningBolts[i].state++;
+                sLightningBolts[i].state = LIGHTNING_BOLT_WAIT;
                 break;
 
             case LIGHTNING_BOLT_WAIT:
                 sLightningBolts[i].delayTimer--;
 
                 if (sLightningBolts[i].delayTimer <= 0) {
-                    sLightningBolts[i].state++;
+                    sLightningBolts[i].state = LIGHTNING_BOLT_DRAW;
                 }
                 break;
 
@@ -2447,7 +2462,11 @@ void Environment_PlaySceneSequence(PlayState* play) {
     u32 seq_id = play->sceneSequences.seqId;
     s16 cur_cs_id = CutsceneManager_GetCurrentCsId();
     u32 override_cutscene = /* play->csCtx.state == CS_STATE_IDLE || */ cur_cs_id == CS_ID_NONE;
+    u32 override_final_hours_bgm = Entrance_GetBgmFlags(gSaveContext.save.entrance) & ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM;
+    // u32 scene_layer = 0;
     u32 index;
+
+    //  = Entrance_GetBgmFlags(play->nextEntrance + gSaveContext.nextCutsceneIndex & 0xf) & ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM;
 
     for(index = 0; index < ARRAY_COUNT(sOverridePlayerCsIds); index++)
     {
@@ -2465,16 +2484,19 @@ void Environment_PlaySceneSequence(PlayState* play) {
             SEQCMD_PLAY_SEQUENCE(SEQ_PLAYER_BGM_MAIN, 0, gSaveContext.forcedSeqId + SEQ_FLAG_ASYNC);
             gSaveContext.forcedSeqId = NA_BGM_GENERAL_SFX;
         }
-        else if(Environment_IsFinalHours(play) && override_cutscene && 
-            (play->sceneId != SCENE_00KEIKOKU || gSaveContext.sceneLayer != 1) && !Audio_IsFinalHours())
+        else if(Environment_IsFinalHours(play) && !override_final_hours_bgm)
         {
-            // SEQCMD_STOP_SEQUENCE(SEQ_PLAYER_BGM_SUB, 0);
-            SEQCMD_STOP_SEQUENCE(SEQ_PLAYER_AMBIENCE, 0);
-            Audio_ClearObjSoundMainBgmSeqId();
-            Audio_ClearPrevMainBgmSeqId();
-            Audio_PlaySceneSequence(NA_BGM_FINAL_HOURS, dayMinusOne);
+            if(override_cutscene && (play->sceneId != SCENE_00KEIKOKU || gSaveContext.sceneLayer != 1) && 
+                !Audio_IsFinalHours())
+            {
+                // SEQCMD_STOP_SEQUENCE(SEQ_PLAYER_BGM_SUB, 0);
+                SEQCMD_STOP_SEQUENCE(SEQ_PLAYER_AMBIENCE, 0);
+                Audio_ClearObjSoundMainBgmSeqId();
+                Audio_ClearPrevMainBgmSeqId();
+                Audio_PlaySceneSequence(NA_BGM_FINAL_HOURS, dayMinusOne);
+            }
         }
-        else if (!override_cutscene || !Environment_IsFinalHours(play))
+        else if (!override_cutscene || Environment_IsDungeonEntrance(play) || !Environment_IsFinalHours(play) || override_final_hours_bgm)
         {    
             if (play->sceneSequences.seqId == NA_BGM_NO_MUSIC) {
                 if (play->sceneSequences.ambienceId == AMBIENCE_ID_13) {
@@ -2521,6 +2543,7 @@ u16 sPrioOverFinalHoursBgm[] = {
 void Environment_UpdateTimeBasedSequence(PlayState* play) {
     s32 dayMinusOne = CURRENT_DAY - 1;
     s32 time_until_moon_crash = TIME_UNTIL_MOON_CRASH - gChaosContext.moon.moon_crash_time_offset;
+    u32 override_final_hours_bgm = Entrance_GetBgmFlags(gSaveContext.save.entrance) & ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM;
 
     if ((play->csCtx.state == CS_STATE_IDLE) && !(play->actorCtx.flags & ACTORCTX_FLAG_TELESCOPE_ON)) {
         switch (play->envCtx.timeSeqState) {
@@ -2580,12 +2603,12 @@ void Environment_UpdateTimeBasedSequence(PlayState* play) {
         }
     }
 
-    if(Environment_IsFinalHours(play))
+    if(Environment_IsFinalHours(play) && !override_final_hours_bgm)
     {
         if ((play->envCtx.timeSeqState != TIMESEQ_REQUEST) && (play->transitionTrigger == TRANS_TRIGGER_OFF) && 
             (play->transitionMode == TRANS_MODE_OFF) && (play->sceneId != SCENE_00KEIKOKU || gSaveContext.sceneLayer != 1) &&
             (play->csCtx.state == CS_STATE_IDLE) && (CutsceneManager_GetCurrentCsId() == CS_ID_NONE) && 
-            !Audio_IsFinalHoursOrSoaring()) 
+            /* Environment_IsFinalHours(play) && */ !Audio_IsFinalHoursOrSoaring()) 
         {
             u32 main_bgm = AudioSeq_GetActiveSeqId(SEQ_PLAYER_BGM_MAIN) & 0xff;
             u32 has_priority = false;

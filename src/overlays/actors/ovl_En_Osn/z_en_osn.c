@@ -6,6 +6,9 @@
 
 #include "z_en_osn.h"
 #include "objects/object_osn/object_osn.h"
+#include "chaos_fuckery.h"
+
+extern struct ChaosContext gChaosContext;
 
 #define FLAGS (ACTOR_FLAG_TARGETABLE | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_10)
 
@@ -101,8 +104,8 @@ static AnimationInfo sAnimationInfo[OSN_ANIM_MAX] = {
     { &gHappyMaskSalesmanShakeHeadAnim, 1.0f, 0.0f, 0.0f, ANIMMODE_LOOP, 0.0f },       // OSN_ANIM_SHAKE_HEAD
     { &gHappyMaskSalesmanOrganTalkAnim, 1.0f, 1.0f, 39.0f, ANIMMODE_LOOP, 0.0f },      // OSN_ANIM_ORGAN_TALK
     { &gHappyMaskSalesmanOrganPlayAnim, 1.0f, 1.0f, 70.0f, ANIMMODE_LOOP, 0.0f },      // OSN_ANIM_ORGAN_PLAY
-    { &gHappyMaskSalesmanShakeAnim, 1.0f, 0.0f, 0.0f, ANIMMODE_LOOP, 0.0f },           // OSN_ANIM_SHAKE
-    { &gHappyMaskSalesmanChokeAnim, 1.0f, 0.0f, 0.0f, ANIMMODE_LOOP, 0.0f },           // OSN_ANIM_CHOKE
+    { &gHappyMaskSalesmanShakeAnim, 5.0f, 0.0f, 0.0f, ANIMMODE_LOOP, 0.0f },           // OSN_ANIM_SHAKE
+    { &gHappyMaskSalesmanChokeAnim, 4.0f, 0.0f, 0.0f, ANIMMODE_LOOP, 0.0f },           // OSN_ANIM_CHOKE
     { &gHappyMaskSalesmanDespairAnim, 1.0f, 0.0f, 0.0f, ANIMMODE_LOOP, 0.0f },         // OSN_ANIM_DESPAIR
     { &gHappyMaskSalesmanFastBowsAnim, 1.0f, 0.0f, 0.0f, ANIMMODE_LOOP, 0.0f },        // OSN_ANIM_FAST_BOWS
     { &gHappyMaskSalesmanHandOutAnim, 1.0f, 0.0f, 0.0f, ANIMMODE_LOOP, 0.0f },         // OSN_ANIM_HAND_OUT
@@ -903,12 +906,37 @@ void EnOsn_Init(Actor* thisx, PlayState* play) {
     s32 pad;
     EnOsn* this = THIS;
 
+
+    // sAnimationInfo[OSN_ANIM_IDLE].playSpeed += Rand_ZeroOne() * 7.0f;
+    // sAnimationInfo[OSN_ANIM_ARMS_OUT].playSpeed += Rand_ZeroOne() * 7.0f;
+    // sAnimationInfo[OSN_ANIM_BOWING].playSpeed += Rand_ZeroOne() * 7.0f;
+    // sAnimationInfo[OSN_ANIM_REMINISCE].playSpeed += Rand_ZeroOne() * 7.0f;
+    // sAnimationInfo[OSN_ANIM_HANDS_CLASPED].playSpeed += Rand_ZeroOne() * 7.0f;
+    // sAnimationInfo[OSN_ANIM_BELIEVE].playSpeed += Rand_ZeroOne() * 7.0f;
+    // sAnimationInfo[OSN_ANIM_THINK].playSpeed += Rand_ZeroOne() * 7.0f;
+    // sAnimationInfo[OSN_ANIM_SHAKE_HEAD].playSpeed += Rand_ZeroOne() * 7.0f;
+    // sAnimationInfo[OSN_ANIM_ORGAN_TALK].playSpeed += Rand_ZeroOne() * 7.0f;
+    // sAnimationInfo[OSN_ANIM_ORGAN_PLAY].playSpeed += Rand_ZeroOne() * 7.0f;
+    // sAnimationInfo[OSN_ANIM_SHAKE].playSpeed += Rand_ZeroOne() * 7.0f;
+    // sAnimationInfo[OSN_ANIM_CHOKE].playSpeed += Rand_ZeroOne() * 7.0f;
+    // sAnimationInfo[OSN_ANIM_DESPAIR].playSpeed += Rand_ZeroOne() * 7.0f;
+    // sAnimationInfo[OSN_ANIM_FAST_BOWS].playSpeed += Rand_ZeroOne() * 7.0f;
+    // sAnimationInfo[OSN_ANIM_HAND_OUT].playSpeed += Rand_ZeroOne() * 7.0f;
+    // sAnimationInfo[OSN_ANIM_MASK_LOOK_AT].playSpeed += Rand_ZeroOne() * 7.0f;
+    // sAnimationInfo[OSN_ANIM_TURN_AROUND_START].playSpeed += Rand_ZeroOne() * 7.0f;
+    // sAnimationInfo[OSN_ANIM_TURN_AROUND_LOOP].playSpeed += Rand_ZeroOne() * 7.0f;
+    // sAnimationInfo[OSN_ANIM_WALK_AWAY].playSpeed += Rand_ZeroOne() * 7.0f;
+    // sAnimationInfo[OSN_ANIM_MASK_LOOK_FROM_START].playSpeed += Rand_ZeroOne() * 7.0f;
+    // sAnimationInfo[OSN_ANIM_MASK_LOOK_FROM_LOOP].playSpeed += Rand_ZeroOne() * 7.0f;
+    // sAnimationInfo[OSN_ANIM_HAND_OUT_2].playSpeed += Rand_ZeroOne() * 7.0f;
+
     Actor_ProcessInitChain(&this->actor, sInitChain);
     ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 20.0f);
     SkelAnime_InitFlex(play, &this->skelAnime, &gHappyMaskSalesmanSkel, &gHappyMaskSalesmanIdleAnim, NULL, NULL, 0);
     Collider_InitCylinder(play, &this->collider);
     Collider_SetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
     CollisionCheck_SetInfo2(&this->actor.colChkInfo, &sDamageTable, &sColChkInfoInit);
+
     this->alpha = 255;
 
     switch (ENOSN_GET_TYPE(&this->actor)) {
@@ -972,6 +1000,23 @@ void EnOsn_Update(Actor* thisx, PlayState* play) {
     this->actionFunc(this, play);
     Actor_MoveWithGravity(&this->actor);
     SkelAnime_Update(&this->skelAnime);
+
+    if(this->frown_timer == 0)
+    {
+        if(Rand_ZeroOne() < 0.01)
+        {
+            this->frown_timer = Rand_S16Offset(5, 15);
+        }
+    }
+    else
+    {
+        this->frown_timer--;
+    }
+
+    if(gChaosContext.link.beer_alpha >= 120)
+    {
+        this->frown_timer = 1; 
+    }
 
     if (ENOSN_GET_TYPE(&this->actor) == OSN_TYPE_CHOOSE) {
         if (isSwitchFlagSet) {
@@ -1050,15 +1095,26 @@ void EnOsn_Draw(Actor* thisx, PlayState* play) {
         //     gSPSegment(POLY_OPA_DISP++, 0x08, Lib_SegmentedToVirtual(sEyeClosedHappyTex));
         //     gSPSegment(POLY_OPA_DISP++, 0x09, Lib_SegmentedToVirtual(sSmileTex));
         // }
+
+        if(this->frown_timer > 0)
+        {
+            gSPSegment(POLY_OPA_DISP++, 0x08, Lib_SegmentedToVirtual(sEyeClosedAngryTex));
+            gSPSegment(POLY_OPA_DISP++, 0x09, Lib_SegmentedToVirtual(sFrownTex));
+        }
+        else
+        {
+            gSPSegment(POLY_OPA_DISP++, 0x08, Lib_SegmentedToVirtual(sEyeOpenTex));
+            gSPSegment(POLY_OPA_DISP++, 0x09, Lib_SegmentedToVirtual(sSmileTex));
+        }
         // if((play->gameplayFrames % 80) == 0)
         // {
-            gSPSegment(POLY_OPA_DISP++, 0x08, Lib_SegmentedToVirtual(sEyeClosedAngryTex));
+            
         // }
         // else
         // {
         //     gSPSegment(POLY_OPA_DISP++, 0x08, Lib_SegmentedToVirtual(sEyeOpenTex));
         // }
-        gSPSegment(POLY_OPA_DISP++, 0x09, Lib_SegmentedToVirtual(sSmileTex));
+        // gSPSegment(POLY_OPA_DISP++, 0x09, Lib_SegmentedToVirtual(sSmileTex));
         gDPSetEnvColor(POLY_OPA_DISP++, 255, 255, 255, 255);
         Scene_SetRenderModeXlu(play, 0, 1);
         POLY_OPA_DISP =

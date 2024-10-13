@@ -5669,100 +5669,160 @@ void Message_Update(PlayState* play) {
 
                 choice_index = msgCtx->choiceIndex;
 
-                if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI) &&
-                    msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE && 
-                    Rand_S16Offset(0, 16) == 3)
+                if(msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE && Rand_S16Offset(0, 16) == 3)
                 {
                     choice_index ^= 1;
                 }
 
-                if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) &&
-                    (play->msgCtx.ocarinaMode == OCARINA_MODE_ACTIVE)) {
-                    if (Message_ShouldAdvance(play)) {
+                if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) && (play->msgCtx.ocarinaMode == OCARINA_MODE_ACTIVE)) 
+                {
+                    if (Message_ShouldAdvance(play)) 
+                    {
                         // if (msgCtx->choiceIndex == 0) {
-                        if (choice_index == 0) {
+                        if (choice_index == (play->msgCtx.currentTextId == MESSAGE_ID_CONFIRM_OWL_WARP_FLIPPED)) 
+                        {
                             play->msgCtx.ocarinaMode = OCARINA_MODE_WARP;
-                        } else {
+                        } 
+                        else 
+                        {
                             play->msgCtx.ocarinaMode = OCARINA_MODE_END;
                         }
                         msgCtx->choiceIndex = choice_index;
                         Message_CloseTextbox(play);
                     }
-                } else if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) &&
-                           (play->msgCtx.ocarinaMode == OCARINA_MODE_PROCESS_SOT)) {
-                    if (Message_ShouldAdvance(play)) {
+                } 
+                else if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) && (play->msgCtx.ocarinaMode == OCARINA_MODE_PROCESS_SOT)) 
+                {
+                    if (Message_ShouldAdvance(play)) 
+                    {
                         // if (msgCtx->choiceIndex == 0) {
-                        if (choice_index == (play->msgCtx.currentTextId == MESSAGE_ID_CONFIRM_SONG_OF_TIME_FLIPPED)) {
+                        if (choice_index == (play->msgCtx.currentTextId == MESSAGE_ID_CONFIRM_SONG_OF_TIME_FLIPPED)) 
+                        {
                             Audio_PlaySfx_MessageDecide();
                             msgCtx->msgMode = MSGMODE_NEW_CYCLE_0;
                             msgCtx->decodedTextLen -= 3;
                             msgCtx->unk120D6 = 0;
                             msgCtx->unk120D4 = 0;
-                        } else {
+                        } 
+                        else 
+                        {
                             Audio_PlaySfx_MessageCancel();
                             play->msgCtx.ocarinaMode = OCARINA_MODE_END;
                             Message_CloseTextbox(play);
                         }
                         msgCtx->choiceIndex = choice_index;
                     }
-                } else if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) &&
-                           (play->msgCtx.ocarinaMode == OCARINA_MODE_PROCESS_INVERTED_TIME)) {
-                    if (Message_ShouldAdvance(play)) {
-                        // if (msgCtx->choiceIndex == 0) {
-                        if (choice_index == 0) {
+                } 
+                else if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) && (play->msgCtx.ocarinaMode == OCARINA_MODE_PROCESS_INVERTED_TIME)) 
+                {
+                    if (Message_ShouldAdvance(play)) 
+                    {
+                        s16 text_id = play->msgCtx.currentTextId;
+
+                        if(gSaveContext.save.timeSpeedOffset >= 0 && 
+                            choice_index == (text_id == MESSAGE_ID_CONFIRM_INVERTED_SONG_OF_TIME_SLOW_DOWN_FLIPPED))
+                        {
                             Audio_PlaySfx_MessageDecide();
-                            if (gSaveContext.save.timeSpeedOffset == 0) {
-                                play->msgCtx.ocarinaMode = OCARINA_MODE_APPLY_INV_SOT_SLOW;
-                                gSaveContext.save.timeSpeedOffset = -2;
-                            } else {
-                                play->msgCtx.ocarinaMode = OCARINA_MODE_APPLY_INV_SOT_FAST;
+                            play->msgCtx.ocarinaMode = OCARINA_MODE_APPLY_INV_SOT_SLOW;
+
+                            if(gSaveContext.save.timeSpeedOffset > 0)
+                            {
+                                /* slow down from fast time effect */
                                 gSaveContext.save.timeSpeedOffset = 0;
                             }
-                            Message_CloseTextbox(play);
-                        } else {
+                            else
+                            {
+                                gSaveContext.save.timeSpeedOffset = -2;
+                            }
+                        }
+                        else if(gSaveContext.save.timeSpeedOffset < 0 && 
+                            choice_index == (text_id == MESSAGE_ID_CONFIRM_INVERTED_SONG_OF_TIME_SPEED_UP_FLIPPED))
+                        {
+                            Audio_PlaySfx_MessageDecide();
+                            play->msgCtx.ocarinaMode = OCARINA_MODE_APPLY_INV_SOT_FAST;
+                            gSaveContext.save.timeSpeedOffset = 0;
+                        }
+                        else
+                        {
                             Audio_PlaySfx_MessageCancel();
                             play->msgCtx.ocarinaMode = OCARINA_MODE_END;
-                            Message_CloseTextbox(play);
                         }
+
+                        // if (msgCtx->choiceIndex == 0) {
+                        // {
+                        //     Audio_PlaySfx_MessageDecide();
+                        //     if (gSaveContext.save.timeSpeedOffset == 0) 
+                        //     {
+                        //         play->msgCtx.ocarinaMode = OCARINA_MODE_APPLY_INV_SOT_SLOW;
+                        //         gSaveContext.save.timeSpeedOffset = -2;
+                        //     } 
+                        //     else 
+                        //     {
+                        //         play->msgCtx.ocarinaMode = OCARINA_MODE_APPLY_INV_SOT_FAST;
+                        //         gSaveContext.save.timeSpeedOffset = 0;
+                        //     }
+                        //     Message_CloseTextbox(play);
+                        // } 
+                        // else 
+                        // {
+                        //     Audio_PlaySfx_MessageCancel();
+                        //     play->msgCtx.ocarinaMode = OCARINA_MODE_END;
+                        //     Message_CloseTextbox(play);
+                        // }
+                        Message_CloseTextbox(play);
                         msgCtx->choiceIndex = choice_index;
                     }
-                } else if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) &&
-                           (play->msgCtx.ocarinaMode == OCARINA_MODE_PROCESS_DOUBLE_TIME)) {
-                    if (Message_ShouldAdvance(play)) {
+                } 
+                else if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) && (play->msgCtx.ocarinaMode == OCARINA_MODE_PROCESS_DOUBLE_TIME)) 
+                {
+                    if (Message_ShouldAdvance(play)) 
+                    {
                         // if (msgCtx->choiceIndex == 0) {
-                        if (choice_index == 0) {
+                        if (choice_index == 0) 
+                        {
                             Audio_PlaySfx_MessageDecide();
-                            if (gSaveContext.save.isNight != 0) {
+                            if (gSaveContext.save.isNight != 0) 
+                            {
                                 gSaveContext.save.time = CLOCK_TIME(6, 0);
-                            } else {
+                            } 
+                            else 
+                            {
                                 gSaveContext.save.time = CLOCK_TIME(18, 0);
                             }
                             play->msgCtx.ocarinaMode = OCARINA_MODE_APPLY_DOUBLE_SOT;
                             gSaveContext.timerStates[TIMER_ID_MOON_CRASH] = TIMER_STATE_OFF;
-                        } else {
+                        } 
+                        else 
+                        {
                             Audio_PlaySfx_MessageCancel();
                             play->msgCtx.ocarinaMode = OCARINA_MODE_END;
                         }
                         msgCtx->choiceIndex = choice_index;
                         Message_CloseTextbox(play);
                     }
-                } else if ((msgCtx->textboxEndType != TEXTBOX_ENDTYPE_TWO_CHOICE) ||
-                           (pauseCtx->state != PAUSE_STATE_OWL_WARP_CONFIRM)) {
-                    if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) &&
-                        (play->msgCtx.ocarinaMode == OCARINA_MODE_1B)) {
-                        if (Message_ShouldAdvance(play)) {
+                } 
+                else if ((msgCtx->textboxEndType != TEXTBOX_ENDTYPE_TWO_CHOICE) || (pauseCtx->state != PAUSE_STATE_OWL_WARP_CONFIRM)) 
+                {
+                    if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) && (play->msgCtx.ocarinaMode == OCARINA_MODE_1B)) 
+                    {
+                        if (Message_ShouldAdvance(play)) 
+                        {
                             // if (msgCtx->choiceIndex == 0) {
-                            if (choice_index == (play->msgCtx.currentTextId == MESSAGE_ID_CONFIRM_OWL_WARP_FLIPPED)) {
+                            if (choice_index == (play->msgCtx.currentTextId == MESSAGE_ID_CONFIRM_OWL_WARP_FLIPPED)) 
+                            {
                                 Audio_PlaySfx_MessageDecide();
                                 play->msgCtx.ocarinaMode = OCARINA_MODE_WARP_TO_ENTRANCE;
-                            } else {
+                            } 
+                            else 
+                            {
                                 Audio_PlaySfx_MessageCancel();
                                 play->msgCtx.ocarinaMode = OCARINA_MODE_END;
                             }
                             msgCtx->choiceIndex = choice_index;
                             Message_CloseTextbox(play);
                         }
-                    } else if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_INPUT_BANK) ||
+                    } 
+                    else if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_INPUT_BANK) ||
                                (msgCtx->textboxEndType == TEXTBOX_ENDTYPE_INPUT_DOGGY_RACETRACK_BET) ||
                                (msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) ||
                                (msgCtx->textboxEndType == TEXTBOX_ENDTYPE_THREE_CHOICE) ||
@@ -5816,7 +5876,7 @@ void Message_Update(PlayState* play) {
 
                         u16 text_id = MESSAGE_ID_CONFIRM_OWL_WARP_NORMAL;
 
-                        if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI) && (Rand_Next() % 2) == 0)
+                        if(/* Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI) && */ (Rand_Next() % 2) == 0)
                         {
                             text_id = MESSAGE_ID_CONFIRM_OWL_WARP_FLIPPED;
                         }
@@ -5923,7 +5983,7 @@ void Message_Update(PlayState* play) {
                         // Message_StartTextbox(play, 0x1B8A, NULL);
                         u32 text_id = MESSAGE_ID_CONFIRM_SONG_OF_TIME_NORMAL;
 
-                        if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI) && (Rand_Next() % 2))
+                        if(/* Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI) && */ (Rand_Next() % 2))
                         {
                             text_id = MESSAGE_ID_CONFIRM_SONG_OF_TIME_FLIPPED;
                         }
@@ -5939,9 +5999,13 @@ void Message_Update(PlayState* play) {
                     if (interfaceCtx->restrictions.invSongOfTime == 0) {
                         if (R_TIME_SPEED != 0) {
                             if (gSaveContext.save.timeSpeedOffset == 0) {
-                                Message_StartTextbox(play, MESSAGE_ID_CONFIRM_SONG_OF_SLOW_TIME_SLOW_DOWN_NORMAL, NULL);
+                                s16 message_id = ((Rand_Next() % 2) == 0) ? MESSAGE_ID_CONFIRM_INVERTED_SONG_OF_TIME_SLOW_DOWN_NORMAL : 
+                                                                            MESSAGE_ID_CONFIRM_INVERTED_SONG_OF_TIME_SLOW_DOWN_FLIPPED;
+                                Message_StartTextbox(play, message_id, NULL);
                             } else {
-                                Message_StartTextbox(play, MESSAGE_ID_CONFIRM_SONG_OF_SLOW_TIME_SPEED_UP_NORMAL, NULL);
+                                s16 message_id = ((Rand_Next() % 2) == 0) ? MESSAGE_ID_CONFIRM_INVERTED_SONG_OF_TIME_SPEED_UP_NORMAL : 
+                                                                            MESSAGE_ID_CONFIRM_INVERTED_SONG_OF_TIME_SPEED_UP_FLIPPED;
+                                Message_StartTextbox(play, message_id, NULL);
                             }
                             play->msgCtx.ocarinaMode = OCARINA_MODE_PROCESS_INVERTED_TIME;
                         } else {

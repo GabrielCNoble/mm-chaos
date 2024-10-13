@@ -2795,6 +2795,10 @@ void Actor_Draw(PlayState* play, Actor* actor) {
     }                            
 
     Matrix_SetTranslateRotateYXZ(actor_pos.x, actor_pos.y + (actor->shape.yOffset * actor_scale.y), actor_pos.z, &actor_rotation);
+    if(Chaos_IsCodeActive(CHAOS_CODE_BILLBOARD_ACTORS))
+    {
+        Matrix_ReplaceRotation(&play->billboardMtxF);
+    }
     Matrix_Scale(actor_scale.x, actor_scale.y, actor_scale.z, MTXMODE_APPLY);
     
     Actor_SetObjectDependency(play, actor);

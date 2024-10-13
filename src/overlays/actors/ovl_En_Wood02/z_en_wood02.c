@@ -79,11 +79,13 @@ static InitChainEntry sInitChain[] = {
     ICHAIN_F32(targetArrowOffset, 5600, ICHAIN_STOP),
 };
 
+/* tree barks */
 Gfx* D_808C4D54[] = {
     object_wood02_DL_0078D0, object_wood02_DL_007CA0, object_wood02_DL_008160, object_wood02_DL_000090,
     object_wood02_DL_000340, object_wood02_DL_000340, object_wood02_DL_000700,
 };
 
+/* tree leaves */
 Gfx* D_808C4D70[] = {
     object_wood02_DL_007968,
     object_wood02_DL_007D38,

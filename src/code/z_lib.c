@@ -213,6 +213,33 @@ s32 Math_AsymStepToS(s16* pValue, s16 target, s16 incrStep, s16 decrStep) {
     return false;
 }
 
+s32 Math_AsymStepToS32(s32* pValue, s32 target, s32 incrStep, s32 decrStep) 
+{
+    s32 step = ((target - *pValue) >= 0) ? incrStep : decrStep;
+
+    if (step != 0) 
+    {
+        if (target < *pValue) 
+        {
+            step = -step;
+        }
+
+        *pValue += step;
+
+        if (((*pValue - target) * step) >= 0) 
+        {
+            *pValue = target;
+            return true;
+        }
+    } 
+    else if (target == *pValue) 
+    {
+        return true;
+    }
+
+    return false;
+}
+
 s32 Math_StepUntilF(f32* pValue, f32 limit, f32 step) {
     f32 orig = *pValue;
 

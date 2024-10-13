@@ -6583,6 +6583,23 @@ void Interface_DrawMinigameIcons(PlayState* play) {
     s16 rectY;
     s16 width;
     s16 height;
+    s16 chaos_x[6];
+    s16 chaos_y[6];
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    {
+        u32 index;
+        for(index = 0; index < ARRAY_COUNT(chaos_x); index++)
+        {
+            chaos_x[index] = Rand_S16Offset(-12, 24);
+            chaos_y[index] = Rand_S16Offset(-12, 24);
+        }
+    }
+    else
+    {
+        bzero(chaos_x, sizeof(chaos_x));
+        bzero(chaos_y, sizeof(chaos_y));
+    }
 
     OPEN_DISPS(play->state.gfxCtx);
 
@@ -6602,14 +6619,16 @@ void Interface_DrawMinigameIcons(PlayState* play) {
             // Draw 6 carrots
             for (i = 1; i < 7; i++, rectX += 16) {
                 // Carrot Color (based on availability)
+                s16 chaos_x_offset = chaos_x[i - 1];
+                s16 chaos_y_offset = chaos_y[i - 1];
                 if ((interfaceCtx->numHorseBoosts == 0) || (interfaceCtx->numHorseBoosts < i)) {
                     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 0, 150, 255, interfaceCtx->aAlpha);
                 } else {
                     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 255, 255, 255, interfaceCtx->aAlpha);
                 }
 
-                gSPTextureRectangle(OVERLAY_DISP++, rectX << 2, rectY << 2, (rectX + 16) << 2, (rectY + 16) << 2,
-                                    G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
+                gSPTextureRectangle(OVERLAY_DISP++, (rectX + chaos_x_offset) << 2, (rectY + chaos_y_offset) << 2, 
+                    (rectX + 16 + chaos_x_offset) << 2, (rectY + 16 + chaos_y_offset) << 2, G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
             }
         }
 
@@ -6674,10 +6693,13 @@ void Interface_DrawMinigameIcons(PlayState* play) {
             }
 
             for (i = 0, numDigitsDrawn = 0; i < 4; i++) {
+                s16 chaos_x_offset = chaos_x[i + 6];
+                s16 chaos_y_offset = chaos_y[i + 6];
                 if ((sMinigameScoreDigits[i] != 0) || (numDigitsDrawn != 0) || (i >= 3)) {
                     OVERLAY_DISP = Gfx_DrawTexRectI8(
-                        OVERLAY_DISP, ((u8*)gCounterDigit0Tex + (8 * 16 * sMinigameScoreDigits[i])), 8, 16, rectX,
-                        rectY - 2, 9, 250, (s32)(0.859375f * (1 << 10)), (s32)(0.859375f * (1 << 10)));
+                        OVERLAY_DISP, ((u8*)gCounterDigit0Tex + (8 * 16 * sMinigameScoreDigits[i])), 8, 16, rectX + chaos_x_offset,
+                        rectY - 2 + chaos_y_offset, 9, 250, (s32)(0.859375f * (1 << 10)), (s32)(0.859375f * (1 << 10)));
+
                     rectX += 9;
                     numDigitsDrawn++;
                 }

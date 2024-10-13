@@ -207,6 +207,7 @@ s32 Math_StepToF(f32* pValue, f32 target, f32 step);
 s32 Math_StepUntilAngleS(s16* pValue, s16 target, s16 step);
 s32 Math_StepToAngleS(s16* pValue, s16 target, s16 step);
 s32 Math_AsymStepToS(s16* pValue, s16 target, s16 incrStep, s16 decrStep);
+s32 Math_AsymStepToS32(s32* pValue, s32 target, s32 incrStep, s32 decrStep) ;
 s32 Math_StepUntilF(f32* pValue, f32 limit, f32 step);
 s32 Math_AsymStepToF(f32* pValue, f32 target, f32 incrStep, f32 decrStep);
 s16 Rand_S16Offset(s16 base, s16 range);

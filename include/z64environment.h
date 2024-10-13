@@ -59,7 +59,8 @@ typedef enum {
 typedef enum {
     /* 0 */ LIGHTNING_STRIKE_WAIT, // wait between lightning strikes. request bolts when timer hits 0
     /* 1 */ LIGHTNING_STRIKE_START, // fade in the flash. note: bolts are requested in the previous state
-    /* 2 */ LIGHTNING_STRIKE_END // fade out the flash and go back to wait
+    /* 2 */ LIGHTNING_STRIKE_END, // fade out the flash and go back to wait
+            LIGHTNING_STRIKE_CHAOS,
 } LightningStrikeState;
 
 typedef enum {
@@ -287,12 +288,11 @@ void Environment_DisableUnderwaterLights(struct PlayState* play);
 void Environment_Update(struct PlayState* play, EnvironmentContext* envCtx, struct LightContext* lightCtx,
                         struct PauseContext* pauseCtx, struct MessageContext* msgCtx, struct GameOverContext* gameOverCtx,
                         struct GraphicsContext* gfxCtx);
-bool Environment_StartFinalHoursBgm(struct PlayState *play);
 void Environment_DrawSunLensFlare(struct PlayState* play, EnvironmentContext* envCtx, struct View* view, struct GraphicsContext* gfxCtx, Vec3f vec);
 void Environment_DrawLensFlare(struct PlayState* play, EnvironmentContext* envCtx, struct View* view, struct GraphicsContext* gfxCtx, Vec3f pos, f32 scale, f32 colorIntensity, s16 glareStrength, u8 isSun);
 void Environment_DrawRain(struct PlayState* play, struct View* view, struct GraphicsContext* gfxCtx);
 void Environment_ChangeLightSetting(struct PlayState* play, u8 lightSetting);
-void Environment_AddLightningBolts(struct PlayState* play, u8 num);
+void Environment_AddLightningBolts(struct PlayState* play, u8 num, u8 chaos);
 void Environment_PlaySceneSequence(struct PlayState* play);
 void Environment_DrawCustomLensFlare(struct PlayState* play);
 void Environment_InitGameOverLights(struct PlayState* play);

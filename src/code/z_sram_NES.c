@@ -948,7 +948,8 @@ void Sram_InitNewSave(void) {
     Chaos_SetConfigFlag(CHAOS_CONFIG_IKANA_CLIMB_TREE_ACTOR_CHASE, false);
     Chaos_SetConfigFlag(CHAOS_CONFIG_STONE_TOWER_CLIMB_ACTOR_CHASE, false);
 
-    gSaveContext.save.moon_crash_count = 0;
+    gSaveContext.save.chaos.moon_crash_count = 0;
+    gSaveContext.save.chaos.evilness_probability_scale = 1.0f;
 
     Sram_GenerateRandomSaveFields();
 }
@@ -2005,19 +2006,24 @@ void Sram_LoadChaosConfig(SramContext *sram_ctx, u8 file_index)
             gFlashSaveNumPages[file_index << 1]);
 
     save = (Save *)sram_ctx->saveBuf;
-    gSaveContext.save.chaos_config[0] = save->chaos_config[0];
-    gSaveContext.save.chaos_config[1] = save->chaos_config[1];
-    gSaveContext.save.chaos_config[2] = save->chaos_config[2];
-    gSaveContext.save.chaos_config[3] = save->chaos_config[3];
+    gSaveContext.save.chaos = save->chaos;
+    // gSaveContext.save.chaos_config[0] = save->chaos_config[0];
+    // gSaveContext.save.chaos_config[1] = save->chaos_config[1];
+    // gSaveContext.save.chaos_config[2] = save->chaos_config[2];
+    // gSaveContext.save.chaos_config[3] = save->chaos_config[3];
+    // gSaveContext.save.moon_crash_count = save->moon_crash_count;
+    // gSaveContext.save.evilness_probability_scale = save->evilness_probability_scale;
 }
 
 void Sram_SaveChaosConfig(SramContext *sram_ctx, u8 file_index)
 {
     Save *save = (Save *)sram_ctx->saveBuf;
-    save->chaos_config[0] = gSaveContext.save.chaos_config[0];
-    save->chaos_config[1] = gSaveContext.save.chaos_config[1];
-    save->chaos_config[2] = gSaveContext.save.chaos_config[2];
-    save->chaos_config[3] = gSaveContext.save.chaos_config[3];
+    save->chaos = gSaveContext.save.chaos;
+    // save->chaos_config[0] = gSaveContext.save.chaos_config[0];
+    // save->chaos_config[1] = gSaveContext.save.chaos_config[1];
+    // save->chaos_config[2] = gSaveContext.save.chaos_config[2];
+    // save->chaos_config[3] = gSaveContext.save.chaos_config[3];
+
 
     save->saveInfo.checksum = 0;
     save->saveInfo.checksum = Sram_CalcChecksum(save, sizeof(Save));

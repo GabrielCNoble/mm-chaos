@@ -591,17 +591,18 @@ void Play_UpdateTransition(PlayState* this) {
                 }
 
                 if ((!(Entrance_GetTransitionFlags(this->nextEntrance + sceneLayer) & 0x8000) ||
-                     ((this->nextEntrance == ENTRANCE(PATH_TO_MOUNTAIN_VILLAGE, 1)) && !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_SNOWHEAD_TEMPLE)) ||
-                     ((this->nextEntrance == ENTRANCE(ROAD_TO_SOUTHERN_SWAMP, 1))   && !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_WOODFALL_TEMPLE)) ||
-                     ((this->nextEntrance == ENTRANCE(TERMINA_FIELD, 2))            && !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_GREAT_BAY_TEMPLE)) ||
-                     ((this->nextEntrance == ENTRANCE(ROAD_TO_IKANA, 1))            && !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_STONE_TOWER_TEMPLE))) &&
-                    (!Environment_IsFinalHours(this) /* || Environment_IsDungeonEntrance(this) && !Audio_IsFinalHours() ||
-                    !Audio_IsFinalHours() */ )) {
+                     (this->nextEntrance == ENTRANCE(PATH_TO_MOUNTAIN_VILLAGE, 1) && !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_SNOWHEAD_TEMPLE)) ||
+                     (this->nextEntrance == ENTRANCE(ROAD_TO_SOUTHERN_SWAMP, 1)   && !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_WOODFALL_TEMPLE)) ||
+                     (this->nextEntrance == ENTRANCE(TERMINA_FIELD, 2)            && !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_GREAT_BAY_TEMPLE)) ||
+                     (this->nextEntrance == ENTRANCE(ROAD_TO_IKANA, 1)            && !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_STONE_TOWER_TEMPLE))) &&
+                        !Environment_IsFinalHours(this) || (Entrance_GetSceneId(this->nextEntrance + sceneLayer) < 0 && 
+                            (Entrance_GetBgmFlags(this->nextEntrance + sceneLayer) & ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM)))
+                {
                     Audio_MuteAllSeqExceptSystemAndOcarina(20);
                     gSaveContext.seqId = (u8)NA_BGM_DISABLED;
                     gSaveContext.ambienceId = AMBIENCE_ID_DISABLED;
                 }
-
+  
                 if (Environment_IsForcedSequenceDisabled()) {
                     Audio_MuteAllSeqExceptSystemAndOcarina(20);
                     gSaveContext.seqId = (u8)NA_BGM_DISABLED;
@@ -613,8 +614,8 @@ void Play_UpdateTransition(PlayState* this) {
                 //     Audio_MuteSfxAndAmbienceSeqExceptSysAndOca(20);
                 // }
 
-                if (Environment_IsFinalHours(this) && Audio_IsFinalHours() /* && 
-                    (Entrance_GetSceneId(this->nextEntrance + sceneLayer) >= 0) */) {
+                if (Environment_IsFinalHours(this) && Audio_IsFinalHours() /* && !Environment_IsDungeonEntrance(this) */) 
+                {
                     Audio_MuteSfxAndAmbienceSeqExceptSysAndOca(20);
                 }
             }
@@ -1284,7 +1285,7 @@ void Play_UpdateMain(PlayState* this) {
             SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_SFX, 0, 700);
         }
 
-        if(gChaosContext.link.beer_alpha < 210)
+        if(gChaosContext.link.beer_alpha < CHAOS_MAX_BEER_ALPHA)
         {
             gChaosContext.link.beer_alpha += 5;
         }
@@ -1327,7 +1328,7 @@ void Play_UpdateMain(PlayState* this) {
         Vec3f pitch_yaw;
         f32 offset_x;
         f32 offset_y;
-        f32 alpha_scale = (f32)gChaosContext.link.beer_alpha / 210.0f;
+        f32 alpha_scale = (f32)gChaosContext.link.beer_alpha / (float)CHAOS_MAX_BEER_ALPHA;
 
         gSfxBeerGogglesFreq = 0.75f * alpha_scale + (1.0f - alpha_scale);
 
@@ -2629,8 +2630,8 @@ void Play_Init(GameState* thisx) {
     }
 
     if ((gSaveContext.nextCutsceneIndex == 0xFFEF) || (gSaveContext.nextCutsceneIndex == 0xFFF0)) {
-        scene = ((void)0, gSaveContext.save.entrance) >> 9;
-        spawn = (((void)0, gSaveContext.save.entrance) >> 4) & 0x1F;
+        scene = gSaveContext.save.entrance >> 9;
+        spawn = (gSaveContext.save.entrance >> 4) & 0x1F;
 
         if (CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_SNOWHEAD_TEMPLE)) {
             if (scene == ENTR_SCENE_MOUNTAIN_VILLAGE_WINTER) {
@@ -2666,13 +2667,12 @@ void Play_Init(GameState* thisx) {
         // "First cycle" Termina Field
         if (INV_CONTENT(ITEM_OCARINA_OF_TIME) != ITEM_OCARINA_OF_TIME) {
             if ((scene == ENTR_SCENE_TERMINA_FIELD) &&
-                (((void)0, gSaveContext.save.entrance) != ENTRANCE(TERMINA_FIELD, 10))) {
+                (gSaveContext.save.entrance != ENTRANCE(TERMINA_FIELD, 10))) {
                 gSaveContext.nextCutsceneIndex = 0xFFF4;
             }
         }
         //! FAKE:
-        gSaveContext.save.entrance =
-            Entrance_Create(((void)0, scene), spawn, ((void)0, gSaveContext.save.entrance) & 0xF);
+        gSaveContext.save.entrance = Entrance_Create(scene, spawn, gSaveContext.save.entrance & 0xF);
     }
     
     GameState_Realloc(&this->state, 0);
@@ -2834,7 +2834,6 @@ void Play_Init(GameState* thisx) {
     zAllocSize = THA_GetRemaining(&this->state.tha);
     zAlloc = (uintptr_t)THA_AllocTailAlign16(&this->state.tha, zAllocSize);
 
-    //! @bug: Incorrect ALIGN16s
     ZeldaArena_Init((void*)((zAlloc + 0xf) & ~0xF), (zAllocSize - ((zAlloc + 0xf) & ~0xF)) + zAlloc);
 
     Actor_InitContext(this, &this->actorCtx, this->linkActorEntry);
@@ -2857,13 +2856,13 @@ void Play_Init(GameState* thisx) {
     
     CutsceneManager_StoreCamera(&this->mainCamera);
     Interface_SetSceneRestrictions(this);
-    gSaveContext.respawnFlag = 0;
     Cutscene_HandleEntranceTriggers(this);
     Environment_PlaySceneSequence(this);
     gSaveContext.seqId = this->sceneSequences.seqId;
     gSaveContext.ambienceId = this->sceneSequences.ambienceId;
     AnimationContext_Update(this, &this->animationCtx);
     // Cutscene_HandleEntranceTriggers(this);
+    gSaveContext.respawnFlag = 0;
     sBombersNotebookOpen = false;
     BombersNotebook_Init(&sBombersNotebook);
 

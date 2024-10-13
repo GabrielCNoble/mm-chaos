@@ -37,10 +37,150 @@ static Gfx sScreenFillSetupDL[] = {
 s16 sFileInfoBoxPartWidths[] = {
     36, 36, 36, 36, 24, 28, 28,
 };
+ 
+struct ChaosConfigMenuPartDef
+{
+    // s16 tex_u;
+    // s16 tex_v;
 
-s16 sChaosConfigBoxPartWidths[] = {
-    36, 36, 36, 36, 36, 24
+    struct
+    {
+        s16 tex_u;
+        s16 tex_v;
+
+    } tex_coords[4];
+
+    s16     width;
+} sChaosConfigMenuDef[] = {
+    /* top half */
+    {
+        {
+            {TC_10_5(0, 0),  TC_10_5(0, 0)},
+            {TC_10_5(35, 0), TC_10_5(0, 0)},
+            {TC_10_5(0, 0),  TC_10_5(40, 0)},
+            {TC_10_5(35, 0), TC_10_5(40, 0)}
+        },
+        36
+    },
+
+    {
+        {
+            {TC_10_5(0, 0),  TC_10_5(0, 0)},
+            {TC_10_5(35, 0), TC_10_5(0, 0)},
+            {TC_10_5(0, 0),  TC_10_5(40, 0)},
+            {TC_10_5(35, 0), TC_10_5(40, 0)}
+        },
+        36
+    },
+
+    {
+        {
+            {TC_10_5(0, 0),  TC_10_5(0, 0)},
+            {TC_10_5(35, 0), TC_10_5(0, 0)},
+            {TC_10_5(0, 0),  TC_10_5(40, 0)},
+            {TC_10_5(35, 0), TC_10_5(40, 0)}
+        },
+        36
+    },
+
+    {
+        {
+            {TC_10_5(34, 0),  TC_10_5(0, 0)},
+            {TC_10_5(35, 0), TC_10_5(0, 0)},
+            {TC_10_5(34, 0),  TC_10_5(40, 0)},
+            {TC_10_5(35, 0), TC_10_5(40, 0)}
+        },
+        36
+    },
+
+    {
+        {
+            {TC_10_5(0, 0),  TC_10_5(0, 0)},
+            {TC_10_5(35, 0), TC_10_5(0, 0)},
+            {TC_10_5(0, 0),  TC_10_5(40, 0)},
+            {TC_10_5(35, 0), TC_10_5(40, 0)}
+        },
+        36
+    },
+
+    {
+        {
+            {TC_10_5(0, 0),  TC_10_5(0, 0)},
+            {TC_10_5(23, 0), TC_10_5(0, 0)},
+            {TC_10_5(0, 0),  TC_10_5(40, 0)},
+            {TC_10_5(23, 0), TC_10_5(40, 0)}
+        },
+        24
+    },
+
+
+
+
+    /* bottom half */
+    {
+        {
+            {TC_10_5(0, 0),  TC_10_5(40, 0)},
+            {TC_10_5(35, 0), TC_10_5(40, 0)},
+            {TC_10_5(0, 0),  TC_10_5(20, 0)},
+            {TC_10_5(35, 0), TC_10_5(20, 0)}
+        },
+        36
+    },
+
+    {
+        {
+            {TC_10_5(0, 0),  TC_10_5(40, 0)},
+            {TC_10_5(35, 0), TC_10_5(40, 0)},
+            {TC_10_5(0, 0),  TC_10_5(20, 0)},
+            {TC_10_5(35, 0), TC_10_5(20, 0)}
+        },
+        36
+    },
+
+    {
+        {
+            {TC_10_5(0, 0),  TC_10_5(40, 0)},
+            {TC_10_5(35, 0), TC_10_5(40, 0)},
+            {TC_10_5(0, 0),  TC_10_5(20, 0)},
+            {TC_10_5(35, 0), TC_10_5(20, 0)}
+        },
+        36
+    },
+
+    {
+        {
+            {TC_10_5(34, 0),  TC_10_5(40, 0)},
+            {TC_10_5(35, 0), TC_10_5(40, 0)},
+            {TC_10_5(34, 0),  TC_10_5(20, 0)},
+            {TC_10_5(35, 0), TC_10_5(20, 0)}
+        },
+        36
+    },
+
+    {
+        {
+            {TC_10_5(0, 0),  TC_10_5(40, 0)},
+            {TC_10_5(35, 0), TC_10_5(40, 0)},
+            {TC_10_5(0, 0),  TC_10_5(20, 0)},
+            {TC_10_5(35, 0), TC_10_5(20, 0)}
+        },
+        36
+    },
+
+    {
+        {
+            {TC_10_5(0, 0),  TC_10_5(40, 0)},
+            {TC_10_5(23, 0), TC_10_5(40, 0)},
+            {TC_10_5(0, 0),  TC_10_5(20, 0)},
+            {TC_10_5(23, 0), TC_10_5(20, 0)}
+        },
+        24
+    },
 };
+
+// s16 sChaosConfigBoxPartWidths[] = {
+//     36, 36, 36, 36, 36, 24
+// };
 
 s16 sWindowContentColors[] = { 100, 150, 255 };
 
@@ -803,64 +943,83 @@ void FileSelect_SetWindowContentVtx(GameState* thisx) {
     /* chaos options box (top portion) */
     for (j = 0; j < 6; j++, vtxId += 4) 
     {
+        struct ChaosConfigMenuPartDef *menu_def = sChaosConfigMenuDef + j;
         /* top-left corner */
         this->windowContentVtx[vtxId + 0].v.ob[0] = posX;
         this->windowContentVtx[vtxId + 0].v.ob[1] = this->fileNamesY[0] + 0x2C;
+        this->windowContentVtx[vtxId + 0].v.tc[0] = menu_def->tex_coords[0].tex_u;
+        this->windowContentVtx[vtxId + 0].v.tc[1] = menu_def->tex_coords[0].tex_v;
 
         /* top-right corner */
-        this->windowContentVtx[vtxId + 1].v.ob[0] = this->windowContentVtx[vtxId + 0].v.ob[0] + sChaosConfigBoxPartWidths[j];
+        this->windowContentVtx[vtxId + 1].v.ob[0] = this->windowContentVtx[vtxId + 0].v.ob[0] + menu_def->width;
         this->windowContentVtx[vtxId + 1].v.ob[1] = this->fileNamesY[0] + 0x2C;
+        this->windowContentVtx[vtxId + 1].v.tc[0] = menu_def->tex_coords[1].tex_u;
+        this->windowContentVtx[vtxId + 1].v.tc[1] = menu_def->tex_coords[1].tex_v;
         // this->windowContentVtx[vtxId + 1].v.tc[0] = sFileInfoBoxPartWidths[j] << 5;
-        this->windowContentVtx[vtxId + 1].v.tc[0] = TC_10_5(sChaosConfigBoxPartWidths[j], 0);
+        // this->windowContentVtx[vtxId + 1].v.tc[0] = TC_10_5(sChaosConfigBoxPartWidths[j], 0);
 
         /* bottom-left corner */
         this->windowContentVtx[vtxId + 2].v.ob[0] = posX;
         this->windowContentVtx[vtxId + 2].v.ob[1] = this->windowContentVtx[vtxId + 0].v.ob[1] - 0x28;
+        this->windowContentVtx[vtxId + 2].v.tc[0] = menu_def->tex_coords[2].tex_u;
+        this->windowContentVtx[vtxId + 2].v.tc[1] = menu_def->tex_coords[2].tex_v;
         // this->windowContentVtx[vtxId + 2].v.tc[1] = 0x500;
-        this->windowContentVtx[vtxId + 2].v.tc[1] = TC_10_5(40, 0);
+        // this->windowContentVtx[vtxId + 2].v.tc[1] = TC_10_5(40, 0);
         
         /* bottom-right corner */
-        this->windowContentVtx[vtxId + 3].v.ob[0] = this->windowContentVtx[vtxId + 0].v.ob[0] + sChaosConfigBoxPartWidths[j];            
+        this->windowContentVtx[vtxId + 3].v.ob[0] = this->windowContentVtx[vtxId + 0].v.ob[0] + menu_def->width;
         this->windowContentVtx[vtxId + 3].v.ob[1] = this->windowContentVtx[vtxId + 0].v.ob[1] - 0x28;
+        this->windowContentVtx[vtxId + 3].v.tc[0] = menu_def->tex_coords[3].tex_u;
+        this->windowContentVtx[vtxId + 3].v.tc[1] = menu_def->tex_coords[3].tex_v;
         // this->windowContentVtx[vtxId + 3].v.tc[0] = sFileInfoBoxPartWidths[j] << 5;
-        this->windowContentVtx[vtxId + 3].v.tc[0] = TC_10_5(sChaosConfigBoxPartWidths[j], 0);
+        // this->windowContentVtx[vtxId + 3].v.tc[0] = TC_10_5(sChaosConfigBoxPartWidths[j], 0);
         // this->windowContentVtx[vtxId + 3].v.tc[1] = 0x500;
-        this->windowContentVtx[vtxId + 3].v.tc[1] = TC_10_5(40, 0);
+        // this->windowContentVtx[vtxId + 3].v.tc[1] = TC_10_5(40, 0);
 
         // Update X position
-        posX += sChaosConfigBoxPartWidths[j];
+        posX += menu_def->width;
     }
 
     posX = this->windowPosX - 6; 
-    /* chaos options box (top portion) */
+    /* chaos options box (bottom portion) */
     for (j = 0; j < 6; j++, vtxId += 4) 
     {
+        struct ChaosConfigMenuPartDef *menu_def = sChaosConfigMenuDef + j + 6;
+
         /* top-left corner */
         this->windowContentVtx[vtxId + 0].v.ob[0] = posX;
         this->windowContentVtx[vtxId + 0].v.ob[1] = this->fileNamesY[0] + 4;
-        this->windowContentVtx[vtxId + 0].v.tc[0] = 0;
-        this->windowContentVtx[vtxId + 0].v.tc[1] = TC_10_5(40, 0);
+        this->windowContentVtx[vtxId + 0].v.tc[0] = menu_def->tex_coords[0].tex_u;
+        this->windowContentVtx[vtxId + 0].v.tc[1] = menu_def->tex_coords[0].tex_v;
+        // this->windowContentVtx[vtxId + 0].v.tc[0] = 0;
+        // this->windowContentVtx[vtxId + 0].v.tc[1] = TC_10_5(40, 0);
 
         /* top-right corner */
-        this->windowContentVtx[vtxId + 1].v.ob[0] = this->windowContentVtx[vtxId + 0].v.ob[0] + sChaosConfigBoxPartWidths[j];
+        this->windowContentVtx[vtxId + 1].v.ob[0] = this->windowContentVtx[vtxId + 0].v.ob[0] + menu_def->width;
         this->windowContentVtx[vtxId + 1].v.ob[1] = this->fileNamesY[0] + 4;
-        this->windowContentVtx[vtxId + 1].v.tc[0] = TC_10_5(sChaosConfigBoxPartWidths[j], 0);
-        this->windowContentVtx[vtxId + 1].v.tc[1] = TC_10_5(40, 0);
+        this->windowContentVtx[vtxId + 1].v.tc[0] = menu_def->tex_coords[1].tex_u;
+        this->windowContentVtx[vtxId + 1].v.tc[1] = menu_def->tex_coords[1].tex_v;
+        // this->windowContentVtx[vtxId + 1].v.tc[0] = TC_10_5(sChaosConfigBoxPartWidths[j], 0);
+        // this->windowContentVtx[vtxId + 1].v.tc[1] = TC_10_5(40, 0);
 
         /* bottom-left corner */
         this->windowContentVtx[vtxId + 2].v.ob[0] = posX;
         this->windowContentVtx[vtxId + 2].v.ob[1] = this->windowContentVtx[vtxId + 0].v.ob[1] - 0x46;
-        this->windowContentVtx[vtxId + 2].v.tc[0] = 0;
-        this->windowContentVtx[vtxId + 2].v.tc[1] = TC_10_5(20, 0);
+        this->windowContentVtx[vtxId + 2].v.tc[0] = menu_def->tex_coords[2].tex_u;
+        this->windowContentVtx[vtxId + 2].v.tc[1] = menu_def->tex_coords[2].tex_v;
+        // this->windowContentVtx[vtxId + 2].v.tc[0] = 0;
+        // this->windowContentVtx[vtxId + 2].v.tc[1] = TC_10_5(20, 0);
         
         /* bottom-right corner */
-        this->windowContentVtx[vtxId + 3].v.ob[0] = this->windowContentVtx[vtxId + 0].v.ob[0] + sChaosConfigBoxPartWidths[j];            
+        this->windowContentVtx[vtxId + 3].v.ob[0] = this->windowContentVtx[vtxId + 0].v.ob[0] + menu_def->width;            
         this->windowContentVtx[vtxId + 3].v.ob[1] = this->windowContentVtx[vtxId + 0].v.ob[1] - 0x46;
-        this->windowContentVtx[vtxId + 3].v.tc[0] = TC_10_5(sChaosConfigBoxPartWidths[j], 0);
-        this->windowContentVtx[vtxId + 3].v.tc[1] = TC_10_5(20, 0);
+        this->windowContentVtx[vtxId + 3].v.tc[0] = menu_def->tex_coords[3].tex_u;
+        this->windowContentVtx[vtxId + 3].v.tc[1] = menu_def->tex_coords[3].tex_v;
+        // this->windowContentVtx[vtxId + 3].v.tc[0] = TC_10_5(sChaosConfigBoxPartWidths[j], 0);
+        // this->windowContentVtx[vtxId + 3].v.tc[1] = TC_10_5(20, 0);
 
         // Update X position
-        posX += sChaosConfigBoxPartWidths[j];
+        posX += menu_def->width;
     }
 
     vtxId += 8;
@@ -1475,31 +1634,31 @@ void FileSelect_SetWindowContentVtx(GameState* thisx) {
         chaos_config_vtx = this->windowContentVtx + FILE_SELECT_WINDOW_CONTENT_VERT_COUNT + this->chaos_config_option_index * 4;
 
         // posX = this->windowPosX - 24; 
-        posX = -24;
-        posY = 0x16;
+        // posX = -6;
+        // posY = 32;
         /* top-left corner */
-        this->windowContentVtx[vtxId + 0].v.ob[0] = chaos_config_vtx[0].v.ob[0] + posX - 8;
-        this->windowContentVtx[vtxId + 0].v.ob[1] = chaos_config_vtx[0].v.ob[1] + 4;
-        this->windowContentVtx[vtxId + 0].v.tc[0] = -TC_10_5(4, 0);
+        this->windowContentVtx[vtxId + 0].v.ob[0] = chaos_config_vtx[0].v.ob[0] - 2;
+        this->windowContentVtx[vtxId + 0].v.ob[1] = chaos_config_vtx[0].v.ob[1] + 2;
+        this->windowContentVtx[vtxId + 0].v.tc[0] = TC_10_5(0, 0);
         this->windowContentVtx[vtxId + 0].v.tc[1] = TC_10_5(0, 0);
 
         /* top-right corner */
-        this->windowContentVtx[vtxId + 1].v.ob[0] = chaos_config_vtx[1].v.ob[0] + posX + 36;
-        this->windowContentVtx[vtxId + 1].v.ob[1] = chaos_config_vtx[1].v.ob[1] + 4;
-        this->windowContentVtx[vtxId + 1].v.tc[0] = TC_10_5(71, 0);
+        this->windowContentVtx[vtxId + 1].v.ob[0] = chaos_config_vtx[1].v.ob[0] + 2;
+        this->windowContentVtx[vtxId + 1].v.ob[1] = chaos_config_vtx[1].v.ob[1] + 2;
+        this->windowContentVtx[vtxId + 1].v.tc[0] = TC_10_5(52, 0);
         this->windowContentVtx[vtxId + 1].v.tc[1] = TC_10_5(0, 0);
 
         /* bottom-left corner */
-        this->windowContentVtx[vtxId + 2].v.ob[0] = chaos_config_vtx[2].v.ob[0] + posX - 8;
-        this->windowContentVtx[vtxId + 2].v.ob[1] = chaos_config_vtx[2].v.ob[1] - 8;
-        this->windowContentVtx[vtxId + 2].v.tc[0] = -TC_10_5(4, 0);
-        this->windowContentVtx[vtxId + 2].v.tc[1] = TC_10_5(23, 0);
+        this->windowContentVtx[vtxId + 2].v.ob[0] = chaos_config_vtx[2].v.ob[0] - 2;
+        this->windowContentVtx[vtxId + 2].v.ob[1] = chaos_config_vtx[2].v.ob[1] - 2;
+        this->windowContentVtx[vtxId + 2].v.tc[0] = TC_10_5(0, 0);
+        this->windowContentVtx[vtxId + 2].v.tc[1] = TC_10_5(16, 0);
         
         /* bottom-right corner */
-        this->windowContentVtx[vtxId + 3].v.ob[0] = chaos_config_vtx[3].v.ob[0] + posX + 36;            
-        this->windowContentVtx[vtxId + 3].v.ob[1] = chaos_config_vtx[3].v.ob[1] - 8;
-        this->windowContentVtx[vtxId + 3].v.tc[0] = TC_10_5(71, 0);
-        this->windowContentVtx[vtxId + 3].v.tc[1] = TC_10_5(23, 0);
+        this->windowContentVtx[vtxId + 3].v.ob[0] = chaos_config_vtx[3].v.ob[0] + 2;            
+        this->windowContentVtx[vtxId + 3].v.ob[1] = chaos_config_vtx[3].v.ob[1] - 2;
+        this->windowContentVtx[vtxId + 3].v.tc[0] = TC_10_5(52, 0);
+        this->windowContentVtx[vtxId + 3].v.tc[1] = TC_10_5(16, 0);
 
 
         vtxId += 4;
@@ -1968,10 +2127,11 @@ void FileSelect_DrawWindowContents(GameState* thisx) {
 
         for (quadVtxIndex = 0, i = 0; i < 6; i++, quadVtxIndex += 4) 
         {   
+            struct ChaosConfigMenuPartDef *menu_def = sChaosConfigMenuDef + i;
             gDPPipeSync(POLY_OPA_DISP++);
             gDPLoadTextureBlock(POLY_OPA_DISP++, sChaosConfigBoxTopTextures[i], G_IM_FMT_IA, G_IM_SIZ_16b,
-                                sChaosConfigBoxPartWidths[i], 56, 0, G_TX_NOMIRROR | G_TX_WRAP,
-                                G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
+                                menu_def->width, 56, 0, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, 
+                                G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
 
             gSP1Quadrangle(POLY_OPA_DISP++, quadVtxIndex, quadVtxIndex + 2, quadVtxIndex + 3, quadVtxIndex + 1, 0);
         }
@@ -1981,10 +2141,11 @@ void FileSelect_DrawWindowContents(GameState* thisx) {
 
         for (quadVtxIndex = 0, i = 0; i < 6; i++, quadVtxIndex += 4) 
         {   
+            struct ChaosConfigMenuPartDef *menu_def = sChaosConfigMenuDef + i + 6;
             gDPPipeSync(POLY_OPA_DISP++);
             gDPLoadTextureBlock(POLY_OPA_DISP++, sChaosConfigBoxTopTextures[i], G_IM_FMT_IA, G_IM_SIZ_16b,
-                                sChaosConfigBoxPartWidths[i], 56, 0, G_TX_NOMIRROR | G_TX_WRAP,
-                                G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
+                                menu_def->width, 56, 0, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, 
+                                G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
 
             gSP1Quadrangle(POLY_OPA_DISP++, quadVtxIndex, quadVtxIndex + 2, quadVtxIndex + 3, quadVtxIndex + 1, 0);
         }
@@ -2009,7 +2170,7 @@ void FileSelect_DrawWindowContents(GameState* thisx) {
             gSP1Quadrangle(POLY_OPA_DISP++, quadVtxIndex, quadVtxIndex + 2, quadVtxIndex + 3, quadVtxIndex + 1, 0);
         }
         gDPPipeSync(POLY_OPA_DISP++);
-
+        gDPSetScissor(POLY_OPA_DISP++, G_SC_NON_INTERLACE, 0, 0, 300, 192);
 
         // draw highlight over currently selected button
         quadVtxIndex = FILE_SELECT_CHAOS_SETTINGS_MAX_VISIBLE_SETTINGS * 4;
@@ -2018,7 +2179,7 @@ void FileSelect_DrawWindowContents(GameState* thisx) {
                         TEXEL0, 0, PRIMITIVE, 0);
         gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, this->highlightColor[0], this->highlightColor[1],
                         this->highlightColor[2], this->highlightColor[3]);
-        gDPLoadTextureBlock(POLY_OPA_DISP++, gFileSelBigButtonHighlightTex, G_IM_FMT_I, G_IM_SIZ_8b, 72, 24, 0,
+        gDPLoadTextureBlock(POLY_OPA_DISP++, gFileSelBlankButtonTex, G_IM_FMT_IA, G_IM_SIZ_16b, 52, 16, 0,
                             G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
         gSP1Quadrangle(POLY_OPA_DISP++, 0, 2, 3, 1, 0);
 
@@ -2033,8 +2194,8 @@ void FileSelect_DrawWindowContents(GameState* thisx) {
         // gDPSetPrimDepth(gfx_print.dList++, 0x4000, 0);     
         // gDPSetEnvColor(gfx_print.dList++, 0, 0, 0, 10);
         // GfxPrint_SetBasePosPx(&gfx_print, 0, 0); 
-        // gfx_print.flags |= GFXP_FLAG_BLEND;
-        pos_x = 260;
+        gfx_print.flags |= GFXP_FLAG_BLEND;
+        pos_x = 60 << 2;
         pos_y = 384; 
         gfx_print.wrap_start = 66 << 2;
         gfx_print.wrap_size = 198 << 2;
