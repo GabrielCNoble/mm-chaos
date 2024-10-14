@@ -3315,10 +3315,9 @@ Actor* Actor_RemoveFromCategory(PlayState* play, ActorContext* actorCtx, Actor* 
     actorToRemove->next = NULL;
     actorToRemove->prev = NULL;
 
-    if ((actorToRemove->room == play->roomCtx.curRoom.num) && (
-        // (actorToRemove->category == ACTORCAT_ENEMY && actorCtx->actorLists[ACTORCAT_ENEMY].length == 0) ||
-        // (actorToRemove->category == ACTORCAT_CHAOS && actorCtx->actorLists[ACTORCAT_CHAOS].length == 0))) {
-        (actorToRemove->category == ACTORCAT_ENEMY && actorCtx->actorLists[ACTORCAT_ENEMY].length == 0))) { 
+    if ((actorToRemove->room == play->roomCtx.curRoom.num) && actorToRemove->category == ACTORCAT_ENEMY && 
+            actorCtx->actorLists[ACTORCAT_ENEMY].length == 0) 
+    { 
         Flags_SetClearTemp(play, play->roomCtx.curRoom.num);
     }
 

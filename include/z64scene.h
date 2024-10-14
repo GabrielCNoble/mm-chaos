@@ -801,6 +801,11 @@ typedef enum {
     /* 2 */ NAVI_QUEST_HINTS_DUNGEON
 } NaviQuestHintFileId;
 
+typedef enum {
+    ENTR_TRANSITION_FLAG_SHOW_TITLE_CARD                = 0x4000,
+    ENTR_TRANSITION_FLAG_PRESERVE_SEQS_ON_TRANSITION    = 0x8000,
+}EntranceTransitionFlags;
+
 // SceneTableEntry commands
 typedef enum {
     /* 0x00 */ SCENE_CMD_ID_SPAWN_LIST,

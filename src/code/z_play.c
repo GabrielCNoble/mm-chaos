@@ -590,24 +590,25 @@ void Play_UpdateTransition(PlayState* this) {
                     sceneLayer = (gSaveContext.nextCutsceneIndex & 0xF) + 1;
                 }
 
-                if ((!(Entrance_GetTransitionFlags(this->nextEntrance + sceneLayer) & 0x8000) ||
+                if ((!(Entrance_GetTransitionFlags(this->nextEntrance + sceneLayer) & ENTR_TRANSITION_FLAG_PRESERVE_SEQS_ON_TRANSITION) ||
                      (this->nextEntrance == ENTRANCE(PATH_TO_MOUNTAIN_VILLAGE, 1) && !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_SNOWHEAD_TEMPLE)) ||
                      (this->nextEntrance == ENTRANCE(ROAD_TO_SOUTHERN_SWAMP, 1)   && !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_WOODFALL_TEMPLE)) ||
                      (this->nextEntrance == ENTRANCE(TERMINA_FIELD, 2)            && !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_GREAT_BAY_TEMPLE)) ||
                      (this->nextEntrance == ENTRANCE(ROAD_TO_IKANA, 1)            && !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_STONE_TOWER_TEMPLE))) &&
-                        !Environment_IsFinalHours(this) || (Entrance_GetSceneId(this->nextEntrance + sceneLayer) < 0 && 
-                            (Entrance_GetBgmFlags(this->nextEntrance + sceneLayer) & ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM)))
+                        (!Environment_IsFinalHours(this) || (Entrance_GetSceneId(this->nextEntrance + sceneLayer) < 0 && 
+                            (Entrance_GetBgmFlags(this->nextEntrance + sceneLayer) & ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM)) ||
+                            !Audio_IsFinalHours()) || Environment_IsForcedSequenceDisabled())
                 {
                     Audio_MuteAllSeqExceptSystemAndOcarina(20);
                     gSaveContext.seqId = (u8)NA_BGM_DISABLED;
                     gSaveContext.ambienceId = AMBIENCE_ID_DISABLED;
                 }
   
-                if (Environment_IsForcedSequenceDisabled()) {
-                    Audio_MuteAllSeqExceptSystemAndOcarina(20);
-                    gSaveContext.seqId = (u8)NA_BGM_DISABLED;
-                    gSaveContext.ambienceId = AMBIENCE_ID_DISABLED;
-                }
+                // if (Environment_IsForcedSequenceDisabled()) {
+                //     Audio_MuteAllSeqExceptSystemAndOcarina(20);
+                //     gSaveContext.seqId = (u8)NA_BGM_DISABLED;
+                //     gSaveContext.ambienceId = AMBIENCE_ID_DISABLED;
+                // }
 
                 // if (Environment_IsFinalHours(this) && (Entrance_GetSceneId(this->nextEntrance + sceneLayer) >= 0) &&
                 //     (AudioSeq_GetActiveSeqId(SEQ_PLAYER_BGM_MAIN) == NA_BGM_FINAL_HOURS)) {
@@ -2799,8 +2800,7 @@ void Play_Init(GameState* thisx) {
 
     if (gSaveContext.gameMode != GAMEMODE_TITLE_SCREEN) {
         if (gSaveContext.nextTransitionType == TRANS_NEXT_TYPE_DEFAULT) {
-            this->transitionType =
-                (Entrance_GetTransitionFlags(((void)0, gSaveContext.save.entrance) + sceneLayer) >> 7) & 0x7F;
+            this->transitionType = (Entrance_GetTransitionFlags(gSaveContext.save.entrance + sceneLayer) >> 7) & 0x7F;
         } else {
             this->transitionType = gSaveContext.nextTransitionType;
             gSaveContext.nextTransitionType = TRANS_NEXT_TYPE_DEFAULT;

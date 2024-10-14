@@ -797,7 +797,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
 
         // if(Chaos_GetConfigFlag(CHAOS_CONFIG_CHAOS))
         // {
-        return;
+        // return;
         // }
 
         if(chaos_elapsed_seconds > 0)

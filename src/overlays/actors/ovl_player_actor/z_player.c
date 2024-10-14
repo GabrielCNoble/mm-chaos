@@ -12565,7 +12565,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     {
         // play->nextEntrance = Entrance_Create(gSceneIndex, gEntranceIndex, 0);
 
-        // play->nextEntrance = ENTRANCE(SNOWHEAD_TEMPLE, 0);
+        // play->nextEntrance = ENTRANCE(ZORA_HALL, 1);
         // Scene_SetExitFade(play);
         // play->transitionTrigger = TRANS_TRIGGER_START;
 
@@ -12625,13 +12625,12 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // play->envCtx.precipitation[PRECIP_RAIN_CUR] = 255;
         // play->envCtx.precipitation[PRECIP_SNOW_MAX] = 255;
         // gWeatherMode = WEATHER_MODE_SNOW;
-
-        // Chaos_ActivateCode(CHAOS_CODE_SPEEDBOOST, 10);
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_R))
     {
-        // Chaos_ActivateCode(CHAOS_CODE_WEIRD_UI, 10);
+        // Chaos_ActivateCode(CHAOS_CODE_LOVELESS_MARRIAGE, 1);
+        // Chaos_ActivateCode(CHAOS_CODE_ENTRANCE_RANDO, 10);
         // gChaosContext.ui.snake_state = CHAOS_SNAKE_GAME_STATE_INIT;
         // Audio_PlaySfx(NA_SE_EV_METALDOOR_OPEN);
         // Chaos_ActivateCode(CHAOS_CODE_RANDOM_FIERCE_DEITY, 15);
@@ -15021,14 +15020,22 @@ u32 Player_UpdateOutOfShape(Player *this, PlayState *play)
     {
         if(Chaos_IsCodeActive(CHAOS_CODE_OUT_OF_SHAPE))
         {
-            gChaosContext.link.out_of_shape_state = CHAOS_OUT_OF_SHAPE_STATE_SLOWING_DOWN;
             gChaosContext.link.out_of_shape_speed_scale *= 0.8f;
 
             if(gChaosContext.link.out_of_shape_speed_scale < 0.1f)
             {
+                if(gChaosContext.link.out_of_shape_state != CHAOS_OUT_OF_SHAPE_STATE_GASPING)
+                {
+                    gChaosContext.input_mash_accumulator = 0;
+                }
+
                 gChaosContext.link.out_of_shape_speed_scale = 0.0f;
                 gChaosContext.link.out_of_shape_state = CHAOS_OUT_OF_SHAPE_STATE_GASPING;
                 return true;
+            }
+            else
+            {
+                gChaosContext.link.out_of_shape_state = CHAOS_OUT_OF_SHAPE_STATE_SLOWING_DOWN;
             }
         }
         else
@@ -15084,13 +15091,21 @@ u32 Player_UpdateImaginaryFriends(Player *this, PlayState *play)
         if(Chaos_IsCodeActive(CHAOS_CODE_IMAGINARY_FRIENDS))
         {
             gChaosContext.link.imaginary_friends_speed_scale *= 0.8f;
-            gChaosContext.link.imaginary_friends_state = CHAOS_IMAGINARY_FRIENDS_STATE_SLOWING_DOWN;
 
             if(gChaosContext.link.imaginary_friends_speed_scale < 0.1f)
             {
+                if(gChaosContext.link.imaginary_friends_state != CHAOS_IMAGINARY_FRIENDS_STATE_SCHIZO)
+                {
+                    gChaosContext.input_mash_accumulator = 0;
+                }
+
                 gChaosContext.link.imaginary_friends_speed_scale = 0.0f;
                 gChaosContext.link.imaginary_friends_state = CHAOS_IMAGINARY_FRIENDS_STATE_SCHIZO;
                 return true;
+            }
+            else
+            {
+                gChaosContext.link.imaginary_friends_state = CHAOS_IMAGINARY_FRIENDS_STATE_SLOWING_DOWN;
             }
         }
         else
@@ -15206,7 +15221,7 @@ u32 Player_IsOutOfShape(Player *this, PlayState *play)
         Player_SetAction(play, this, Player_Action_OutOfShape, 1))
     {
         // this->av2.inputMashAccumulator = 0;
-        gChaosContext.input_mash_accumulator = 0;
+        // gChaosContext.input_mash_accumulator = 0;
         return true;
     }
 
@@ -15251,7 +15266,7 @@ u32 Player_IsHearingThings(Player *this, PlayState *play)
         anim = D_8085BE84[PLAYER_ANIMGROUP_45_turn][this->modelAnimType];
         end_frame = Animation_GetLastFrame(anim);
         PlayerAnimation_Change(play, &this->skelAnime, anim, 1.0f, 0, end_frame, ANIMMODE_LOOP, -6.0f);
-        gChaosContext.input_mash_accumulator = 0;
+        // gChaosContext.input_mash_accumulator = 0;
         return true;    
     }
 

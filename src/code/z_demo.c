@@ -1565,9 +1565,7 @@ void Cutscene_HandleEntranceTriggers(PlayState* play) {
     if ((gSaveContext.respawnFlag == 0) || (gSaveContext.respawnFlag == -2)) {
         scene = play->loadedScene;
         if ((scene->titleTextId != 0) && gSaveContext.showTitleCard) {
-            if ((Entrance_GetTransitionFlags(((void)0, gSaveContext.save.entrance) +
-                                             ((void)0, gSaveContext.sceneLayer)) &
-                 0x4000) != 0) {
+            if (Entrance_GetTransitionFlags(gSaveContext.save.entrance + gSaveContext.sceneLayer) & ENTR_TRANSITION_FLAG_SHOW_TITLE_CARD) {
                 Message_DisplaySceneTitleCard(play, scene->titleTextId);
             }
         }

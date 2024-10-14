@@ -669,7 +669,7 @@ void EnRr_ChewPlayer(EnRr* this, PlayState* play) {
             player->stateFlags1 |= PLAYER_STATE1_20000000;
             Actor_PlaySfx(&this->actor, NA_SE_EN_SUISEN_DRINK);
             Audio_PlaySfx(NA_SE_OC_ABYSS);
-            func_80169EFC(play);
+            func_80169FDC(play);
         }
         else
         {
