@@ -134,7 +134,7 @@ void GfxPrint_PrintChar(GfxPrint* this, u8 c) {
                 break;
 
             case '\n':
-                this->posY += 32;
+                this->posY += (this->y_increment != 0) ? this->y_increment : 32;
             case '\r':
                 this->posX = this->baseX;
                 break;
@@ -368,7 +368,7 @@ u32 GfxPrint_PrintStringWrap(GfxPrint *this, const char *str, u32 return_on_perc
             if(used_space + text_length * 32 > this->wrap_size)
             {
                 this->posX = this->wrap_start;
-                this->posY += 32;
+                this->posY += (this->y_increment != 0) ? this->y_increment : 32;
             }
 
             this->callback(this, str + range_start, text_length);

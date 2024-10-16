@@ -2750,9 +2750,8 @@ void Play_Init(GameState* thisx) {
 
     sceneLayer = gSaveContext.sceneLayer;
 
-    Play_SpawnScene(
-        this, Entrance_GetSceneIdAbsolute(((void)0, gSaveContext.save.entrance) + ((void)0, gSaveContext.sceneLayer)),
-        Entrance_GetSpawnNum(((void)0, gSaveContext.save.entrance) + ((void)0, gSaveContext.sceneLayer)));
+    Play_SpawnScene(this, Entrance_GetSceneIdAbsolute(gSaveContext.save.entrance + gSaveContext.sceneLayer),
+        Entrance_GetSpawnNum(gSaveContext.save.entrance + gSaveContext.sceneLayer));
     KaleidoScopeCall_Init(this);
     Interface_Init(this);
 

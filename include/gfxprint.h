@@ -39,7 +39,8 @@ typedef struct GfxPrint {
     /* 0x10 */ Color_RGBA8_u32 color;
                u16 wrap_size;
                u16 wrap_start;
-    /* 0x14 */ UNK_TYPE1 unk_14[0x10]; // unused
+               u16 y_increment;
+    /* 0x14 */ UNK_TYPE1 unk_14[0x0e]; // unused
 } GfxPrint; // size = 0x30
 
 typedef struct GfxTextSize

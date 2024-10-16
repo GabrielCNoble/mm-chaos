@@ -947,6 +947,8 @@ void Sram_InitNewSave(void) {
     Chaos_SetConfigFlag(CHAOS_CONFIG_BEER_GOGGLES_BLUR, true);
     Chaos_SetConfigFlag(CHAOS_CONFIG_IKANA_CLIMB_TREE_ACTOR_CHASE, false);
     Chaos_SetConfigFlag(CHAOS_CONFIG_STONE_TOWER_CLIMB_ACTOR_CHASE, false);
+    Chaos_SetConfigFlag(CHAOS_CONFIG_DETERMINISTIC_EFFECT_RNG, false);
+    Chaos_SetConfigFlag(CHAOS_CONFIG_USE_DISRUPTIVE_EFFECT_PROB, true);
 
     gSaveContext.save.chaos.moon_crash_count = 0;
     gSaveContext.save.chaos.evilness_probability_scale = 1.0f;

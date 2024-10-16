@@ -18,6 +18,7 @@
 
 ChaosContext    gChaosContext; 
 u64             gChaosRngState = 1;
+// u64             gChaosEffectTimeRngState = 2;
 u32             gDisplayEffectInfo = 0;
 u32             gChaosEffectPageIndex = 0;
 u32             gAcceptPageChange = 0;
@@ -38,16 +39,24 @@ u8              gColorRandList[256];
 struct ChaosConfig gChaosConfigs[CHAOS_CONFIG_LAST] = {
     /* [CHAOS_CONFIG_BEER_GOGGLES_BLUR] = */ {
         /* .label = */          "Beer goggles motion blur ",  
-        /* .description = */    "Whether to use the game's motion blur in the beer goggle's effect"
+        /* .description = */    "If enabled, beer goggles effect will use the game's motion blur effect."
     },
     /* [CHAOS_CONFIG_IKANA_CLIMB_TREE_ACTOR_CHASE] = */{
         /* .label = */          "Ikana canyon actor chase", 
-        /* .description = */    "Whether the hookshotable trees in Ikana canyon should chase the player"
+        /* .description = */    "If enabled, Ikana canyon hookshotable trees will chase the player when actor chase activates."
     },
     /* [CHAOS_CONFIG_STONE_TOWER_CLIMB_ACTOR_CHASE] */{
         /* .label = */          "Stone Tower actor chase", 
-        /* .description = */    "Whether hookshot posts and movable block switches should chase the player"
-    }
+        /* .description = */    "If enabled, hookshot posts and movable block switches in Stone Tower climb will chase the player when actor chase activates."
+    },
+    /* [CHAOS_CONFIG_DETERMINISTIC_EFFECT_RNG] */{
+        /* .label = */          "Deterministic effect rng", 
+        /* .description = */    "If enabled, the chaos system will use a separate rng from the game for everything, which will always be initialized to a fixed value."
+    },
+    /* [CHAOS_CONFIG_USE_DISRUPTIVE_EFFECT_PROB] */{
+        /* .label = */          "Use disrupt. effect prob", 
+        /* .description = */    "If enabled, the chaos system will increase the probability of disruptive effects based on how long the player is not affectable by disruptive effects."
+    },
 };
 
 PlayerAnimationHeader *gImaginaryFriendAnimations[] = {
@@ -551,10 +560,39 @@ struct
 /* xorshift* */
 u32 Chaos_Rand(void)
 {
+    // u64 state = *rng_state;
     gChaosRngState ^= gChaosRngState >> 12;
     gChaosRngState ^= gChaosRngState << 25;
     gChaosRngState ^= gChaosRngState >> 27;
     return gChaosRngState * 0x2545F4914F6CDD1DULL;
+}
+
+f32 Chaos_ZeroOne(void)
+{
+    u32 rand_int = Chaos_Rand();
+    union { u32 i; f32 f;} type_pun;
+    type_pun.i = (rand_int >> 9) | 0x3F800000;
+    return type_pun.f - 1.0f;
+}
+
+s16 Chaos_RandS16Offset(s16 base, s16 range)
+{
+    if(Chaos_GetConfigFlag(CHAOS_CONFIG_DETERMINISTIC_EFFECT_RNG))
+    {
+        return (s16)(Chaos_ZeroOne() * range) + base;
+    }
+    
+    return Rand_S16Offset(base, range);
+}
+
+u32 Chaos_RandNext(void)
+{
+    if(Chaos_GetConfigFlag(CHAOS_CONFIG_DETERMINISTIC_EFFECT_RNG))
+    {
+        return Chaos_Rand();
+    }
+    
+    return Rand_Next();
 }
 
 // static u16 gTestObjectIds[] = {
@@ -707,7 +745,10 @@ void Chaos_UpdateChaos(PlayState *playstate)
 
     if(!gRngInitialized)
     {
-        gChaosRngState = Rand_Next();
+        if(!Chaos_GetConfigFlag(CHAOS_CONFIG_DETERMINISTIC_EFFECT_RNG))
+        {
+            gChaosRngState = Rand_Next();
+        }
         gRngInitialized = true;
     }
 
@@ -827,8 +868,10 @@ void Chaos_UpdateChaos(PlayState *playstate)
                 u32 attempts = 0;
                 struct ChaosCodeDef *code_def;
                 code_add_result = CHAOS_ADD_RESULT_NO_SLOTS;
-                gChaosContext.chaos_timer = MIN_CHAOS_TIMER + Rand_Next() % (MAX_CHAOS_TIMER - MIN_CHAOS_TIMER);
-                next_rand = Rand_Next();
+                // gChaosContext.chaos_timer = MIN_CHAOS_TIMER + Rand_Next() % (MAX_CHAOS_TIMER - MIN_CHAOS_TIMER);
+                // next_rand = Rand_Next();
+                gChaosContext.chaos_timer = MIN_CHAOS_TIMER + Chaos_RandNext() % (MAX_CHAOS_TIMER - MIN_CHAOS_TIMER);
+                next_rand = Chaos_RandNext();
                 do
                 {
                     u16 effect_restrictions;
@@ -836,7 +879,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                     if(gChaosContext.queued_spawn_actor_code != CHAOS_CODE_NONE &&
                         Object_IsLoaded(&playstate->objectCtx, gChaosContext.chaos_keep_slot))
                     {
-                        /* there's an actor spawn effect "queued" and the object                                // last_code->data = Rand_Next() % CHAOS_MOON_MOVE_LAST;
+                        /* there's an actor spawn effect "queued" and the object
                         is already done loading, so activate it */
                         next_code = gChaosContext.queued_spawn_actor_code;
                         gChaosContext.queued_spawn_actor_code = CHAOS_CODE_NONE;
@@ -1096,7 +1139,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                             do
                             {
                                 /* pick a random combination of moon dance move flags */
-                                gChaosContext.moon.moon_dance = Rand_Next() % CHAOS_MOON_MOVE_LAST;
+                                gChaosContext.moon.moon_dance = Chaos_RandNext() % CHAOS_MOON_MOVE_LAST;
                             }
                             while(gChaosContext.moon.moon_dance == 0);
                         break;
@@ -1108,7 +1151,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         case CHAOS_CODE_WEIRD_ROOMS:
                             do
                             {
-                                gChaosContext.room.weirdness_behavior = Rand_Next() % CHAOS_WEIRD_ROOMS_BEHAVIOR_LAST;
+                                gChaosContext.room.weirdness_behavior = Chaos_RandNext() % CHAOS_WEIRD_ROOMS_BEHAVIOR_LAST;
                             }
                             while(gChaosContext.room.weirdness_behavior == 0);
                             Chaos_StepDownDisruptiveEffectProbabiliy();
@@ -1153,19 +1196,22 @@ void Chaos_UpdateChaos(PlayState *playstate)
                             /* 1/32 chance of real mooncrash */
                             for(index = 0; index < 8; index++)
                             {
-                                is_real_mooncrash &= ((Rand_Next() % 4) == 0);
+                                is_real_mooncrash &= ((Chaos_RandNext() % 4) == 0);
                             }
 
                             do
                             {
-                                u32 hours_until_crash = Rand_S16Offset(0, 5);
-                                u32 minutes_until_crash = Rand_S16Offset(0, 59);
+                                // u32 hours_until_crash = Rand_S16Offset(0, 5);
+                                // u32 minutes_until_crash = Rand_S16Offset(0, 59);
+                                u32 hours_until_crash = Chaos_RandS16Offset(0, 5);
+                                u32 minutes_until_crash = Chaos_RandS16Offset(0, 59);
                                 s32 time_until_moon_crash;
                                 u32 remaining_frames;
                                 
                                 if(hours_until_crash == 0 && minutes_until_crash == 0)
                                 {
-                                    minutes_until_crash = Rand_S16Offset(20, 59);
+                                    // minutes_until_crash = Rand_S16Offset(20, 59);
+                                    minutes_until_crash = Chaos_RandS16Offset(20, 39);
                                 }
 
                                 time_until_moon_crash = CLOCK_TIME(hours_until_crash, minutes_until_crash);
@@ -1178,7 +1224,8 @@ void Chaos_UpdateChaos(PlayState *playstate)
                                 }
                                 else if(remaining_frames >= 80)
                                 {
-                                    gChaosContext.moon.moon_crash_timer = Rand_S16Offset(40, remaining_frames - 1);
+                                    // gChaosContext.moon.moon_crash_timer = Rand_S16Offset(40, remaining_frames - 1);
+                                    gChaosContext.moon.moon_crash_timer = Chaos_RandS16Offset(40, remaining_frames - 1);
                                 }
                             }
                             while(gChaosContext.moon.moon_crash_timer == 0);
@@ -1630,16 +1677,19 @@ u8 Chaos_CanUpdateChaos(struct PlayState *play)
 
 void Chaos_IncreaseDisruptiveEffectProbability(u8 seconds)
 {
-    if(gChaosContext.disruptive_code_probability_scale < CHAOS_MAX_DISRUPTIVE_PROBABILITY_SCALE)
+    if(Chaos_GetConfigFlag(CHAOS_CONFIG_USE_DISRUPTIVE_EFFECT_PROB))
     {
-        gChaosContext.disruptive_code_probability_scale += (f32)seconds * 0.017f;
-
-        if(gChaosContext.disruptive_code_probability_scale > CHAOS_MAX_DISRUPTIVE_PROBABILITY_SCALE)
+        if(gChaosContext.disruptive_code_probability_scale < CHAOS_MAX_DISRUPTIVE_PROBABILITY_SCALE)
         {
-            gChaosContext.disruptive_code_probability_scale = CHAOS_MAX_DISRUPTIVE_PROBABILITY_SCALE;
+            gChaosContext.disruptive_code_probability_scale += (f32)seconds * 0.017f;
+
+            if(gChaosContext.disruptive_code_probability_scale > CHAOS_MAX_DISRUPTIVE_PROBABILITY_SCALE)
+            {
+                gChaosContext.disruptive_code_probability_scale = CHAOS_MAX_DISRUPTIVE_PROBABILITY_SCALE;
+            }
+            
+            gChaosContext.need_update_distribution = true;
         }
-        
-        gChaosContext.need_update_distribution = true;
     }
 }
 

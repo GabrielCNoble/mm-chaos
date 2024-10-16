@@ -97,7 +97,10 @@ typedef enum {
 typedef enum
 {
     CCM_FADE_SELECT_TO_CONFIG,
-    CCM_CHAOS_OPTIONS, 
+    CCM_CHAOS_OPTIONS,
+    CCM_FADE_IN_CONFIG_DETAILS,
+    CCM_CHAOS_CONFIG_DETAILS,
+    CCM_FADE_OUT_CONFIG_DETAILS,
 } ChaosConfigMode;
 
 typedef enum {
@@ -288,6 +291,8 @@ typedef struct FileSelectState {
                   s16 chaos_config_scroll;
                   s16 chaos_config_box_alpha;
                   s16 chaos_config_option_index;
+                  s16 chaos_config_description_alpha;
+                  u8 *textbox_segment;
 } FileSelectState; // size = 0x24558
 
 void FileSelect_Init(GameState* thisx);
