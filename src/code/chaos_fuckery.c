@@ -675,6 +675,8 @@ void Chaos_Init(void)
     {
         gChaosContext.link.limb_scales[index] = 1.0f;
     }
+    gChaosContext.link.temp_limb_scale = 1.0f;
+    
 
     gChaosContext.chaos_keep_size = (gChaosContext.chaos_keep_size + 0x3ff) & (~0x3ff);
     gChaosContext.room.vert_list_list[0] = NULL;
@@ -1163,6 +1165,12 @@ void Chaos_UpdateChaos(PlayState *playstate)
                             Chaos_StepDownDisruptiveEffectProbabiliy();
                         break;
 
+                        case CHAOS_CODE_RANDOM_SCALING:
+                            gChaosContext.link.temp_limb_scale = gChaosContext.link.limb_scales[0];
+                            gChaosContext.link.scaled_limb_index = 0;
+                            gChaosContext.link.random_scaling_mode = Chaos_RandNext() % CHAOS_RANDOM_SCALING_MODE_LAST;
+                        break;
+
                         case CHAOS_CODE_TRAP_FLAP:
                             /* start yapping immediately */
                             gChaosContext.link.trap_flap_timer = 1;
@@ -1505,6 +1513,10 @@ void Chaos_DeactivateCodeAtIndex(u8 index)
         {
             case CHAOS_CODE_WEIRD_UI:
                 bzero(gChaosContext.ui.heart_containers, sizeof(gChaosContext.ui.heart_containers));
+            break;
+
+            case CHAOS_CODE_RANDOM_SCALING:
+                gChaosContext.link.limb_scales[gChaosContext.link.scaled_limb_index] = gChaosContext.link.temp_limb_scale;
             break;
 
             case CHAOS_CODE_HEART_SNAKE:

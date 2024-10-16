@@ -464,6 +464,13 @@ enum CHAOS_BEER_GOGGLES_STATES
     CHAOS_BEER_GOGGLES_STATE_NONE
 };
 
+enum CHAOS_RANDOM_SCALING_MODES
+{
+    CHAOS_RANDOM_SCALING_MODE_ALL,
+    CHAOS_RANDOM_SCALING_MODE_ROTATE,
+    CHAOS_RANDOM_SCALING_MODE_LAST,
+};
+
 enum CHAOS_OUT_OF_SHAPE_STATES
 {
     CHAOS_OUT_OF_SHAPE_STATE_SLOWING_DOWN,
@@ -629,6 +636,9 @@ typedef struct ChaosContext
         u8                      magic_gauge_sfx_timer;
         u8                      trap_flap_timer;
         f32                     limb_scales[PLAYER_LIMB_MAX];
+        f32                     temp_limb_scale;
+        u8                      random_scaling_mode;
+        u8                      scaled_limb_index;
     } link;
 
     struct

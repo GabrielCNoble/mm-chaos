@@ -905,6 +905,16 @@ void FileSelect_SetWindowContentVtx(GameState* thisx) {
     this->windowContentVtx[3].v.ob[1] = this->windowContentVtx[0].v.ob[1] - 0x10;
     this->windowContentVtx[3].v.tc[0] = 0x1000;
 
+    // if(this->menuMode == FS_MENU_MODE_CHAOS_CONFIG)
+    // {
+    //     this->windowContentVtx[1].v.ob[0] += 0x20;
+
+    //     this->windowContentVtx[2].v.ob[1] -= 0x02;
+
+    //     this->windowContentVtx[3].v.ob[0] += 0x20;
+    //     this->windowContentVtx[3].v.ob[1] -= 0x02;
+    // }
+
     /** File InfoBox **/
 
     // Loop through 3 files
@@ -2042,6 +2052,7 @@ TexturePtr sTitleLabels[] = {
     gFileSelPleaseSelectAFileENGTex, gFileSelOpenThisFileENGTex,    gFileSelCopyWhichFileENGTex,
     gFileSelCopyToWhichFileENGTex,   gFileSelAreYouSureCopyENGTex,  gFileSelFileCopiedENGTex,
     gFileSelEraseWhichFileENGTex,    gFileSelAreYouSureEraseENGTex, gFileSelFileErasedENGTex,
+    gChaosConfigEngTex
 };
 
 TexturePtr sWarningLabels[] = {
@@ -2715,6 +2726,7 @@ void FileSelect_ConfirmFile(GameState* thisx) {
             Audio_PlaySfx(NA_SE_SY_FSEL_DECIDE_L);
             this->menuMode = FS_MENU_MODE_CHAOS_CONFIG;
             this->chaos_config_mode = CCM_FADE_SELECT_TO_CONFIG;
+            this->nextTitleLabel = FS_TITLE_CHAOS_CONFIG;
             this->actionTimer = 4;
         }
         else 
@@ -2997,6 +3009,7 @@ void FileSelect_ChaosOptions(GameState *thisx)
         Audio_PlaySfx(NA_SE_SY_FSEL_CLOSE);
         this->menuMode = FS_MENU_MODE_SELECT;
         this->selectMode = SM_FADE_IN_FILE_INFO;
+        this->nextTitleLabel = FS_TITLE_OPEN_FILE;
         this->actionTimer = 4;
         Sram_SaveChaosConfig(&this->sramCtx, this->buttonIndex);
     }
@@ -3181,7 +3194,7 @@ void (*gFileSelectUpdateFuncs[])(GameState*) = {
     FileSelect_ChaosConfigModeUpdate
 };
 
-TexturePtr D_808147B4[] = { gFileSelPleaseWaitENGTex, gFileSelDecideCancelENGTex, gFileSelDecideSaveENGTex };
+TexturePtr D_808147B4[] = { gFileSelPleaseWaitENGTex, gFileSelDecideCancelENGTex, gFileSelDecideSaveENGTex, gChaosConfigDetailsEngTex };
 s16 D_808147C0[] = { 144, 144, 152 };
 s16 D_808147C8[] = { 90, 90, 86 };
 
@@ -3189,6 +3202,7 @@ void FileSelect_Main(GameState* thisx) {
     FileSelectState* this = (FileSelectState*)thisx;
     Input* input = CONTROLLER1(&this->state);
     s32 texIndex;
+    u32 footer_offset = 0;
     s32 pad;
 
     func_8012CF0C(this->state.gfxCtx, 0, 1, 0, 0, 0);
@@ -3281,13 +3295,27 @@ void FileSelect_Main(GameState* thisx) {
         texIndex = 1;
     }
 
+    footer_offset = this->chaos_config_box_alpha / 3;
+
     gDPLoadTextureBlock(POLY_OPA_DISP++, D_808147B4[texIndex], G_IM_FMT_IA, G_IM_SIZ_8b, D_808147C0[texIndex], 16, 0,
                         G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK,
                         G_TX_NOLOD);
 
-    gSPTextureRectangle(POLY_OPA_DISP++, D_808147C8[texIndex] << 2, 204 << 2,
-                        (D_808147C8[texIndex] + D_808147C0[texIndex]) << 2, (204 + 16) << 2, G_TX_RENDERTILE, 0, 0,
+    gSPTextureRectangle(POLY_OPA_DISP++, (D_808147C8[texIndex] - footer_offset) << 2, 204 << 2,
+                        (D_808147C8[texIndex] + D_808147C0[texIndex] - footer_offset) << 2, (204 + 16) << 2, G_TX_RENDERTILE, 0, 0,
                         1 << 10, 1 << 10);
+
+    if(this->menuMode == FS_MENU_MODE_CHAOS_CONFIG)
+    {
+        gDPPipeSync(POLY_OPA_DISP++);                    
+        gDPLoadTextureBlock(POLY_OPA_DISP++, gChaosConfigDetailsEngTex, G_IM_FMT_IA, G_IM_SIZ_8b, 80, 16, 0,
+                        G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK,
+                        G_TX_NOLOD);
+
+        gSPTextureRectangle(POLY_OPA_DISP++, 180 << 2, 204 << 2,
+                        (180 + 80) << 2, (204 + 16) << 2, G_TX_RENDERTILE, 0, 0,
+                        1 << 10, 1 << 10);
+    }
 
     gDPPipeSync(POLY_OPA_DISP++);
     gSPDisplayList(POLY_OPA_DISP++, sScreenFillSetupDL);

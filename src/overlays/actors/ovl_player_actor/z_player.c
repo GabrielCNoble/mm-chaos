@@ -13655,9 +13655,21 @@ void Player_Draw(Actor* thisx, PlayState* play) {
 
     if(Chaos_IsCodeActive(CHAOS_CODE_RANDOM_SCALING))
     {
-        actor_scale.x = 0.05f + Rand_ZeroOne() * 3.45f;
-        actor_scale.y = 0.05f + Rand_ZeroOne() * 3.45f;
-        actor_scale.z = 0.05f + Rand_ZeroOne() * 3.45f;
+        switch(gChaosContext.link.random_scaling_mode)
+        {
+            case CHAOS_RANDOM_SCALING_MODE_ALL:
+                actor_scale.x = 0.05f + Rand_ZeroOne() * 3.45f;
+                actor_scale.y = 0.05f + Rand_ZeroOne() * 3.45f;
+                actor_scale.z = 0.05f + Rand_ZeroOne() * 3.45f;
+            break;
+
+            case CHAOS_RANDOM_SCALING_MODE_ROTATE:
+                gChaosContext.link.limb_scales[gChaosContext.link.scaled_limb_index] = gChaosContext.link.temp_limb_scale;
+                gChaosContext.link.scaled_limb_index = (gChaosContext.link.scaled_limb_index + 1) % PLAYER_LIMB_MAX;
+                gChaosContext.link.temp_limb_scale = gChaosContext.link.limb_scales[gChaosContext.link.scaled_limb_index];
+                gChaosContext.link.limb_scales[gChaosContext.link.scaled_limb_index] = Rand_ZeroOne() * 3.45f;
+            break;
+        }
     }
 
     // OPEN_DISPS(play->state.gfxCtx);

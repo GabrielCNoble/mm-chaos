@@ -112,7 +112,8 @@ typedef enum {
     /* 5 */ FS_TITLE_COPY_COMPLETE, // "File copied."
     /* 6 */ FS_TITLE_ERASE_FILE,    // "Erase which file?"
     /* 7 */ FS_TITLE_ERASE_CONFIRM, // "Are you sure?"
-    /* 8 */ FS_TITLE_ERASE_COMPLETE // "File erased."
+    /* 8 */ FS_TITLE_ERASE_COMPLETE,// "File erased."
+            FS_TITLE_CHAOS_CONFIG   // "Chaos config"
 } TitleLabel;
 
 typedef enum {
