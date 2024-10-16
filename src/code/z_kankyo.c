@@ -1320,9 +1320,12 @@ void Environment_UpdateLights(PlayState* play, EnvironmentContext* envCtx, Light
         envCtx->lightSetting = envCtx->lightSettingOverride;
     }
 
-    if (envCtx->lightSettingOverride != LIGHT_SETTING_OVERRIDE_FULL_CONTROL) {
-        if ((envCtx->lightMode == LIGHT_MODE_TIME) && (envCtx->lightSettingOverride == LIGHT_SETTING_OVERRIDE_NONE)) {
-            for (i = 0; i < ARRAY_COUNT(sTimeBasedLightConfigs[envCtx->lightConfig]); i++) {
+    if (envCtx->lightSettingOverride != LIGHT_SETTING_OVERRIDE_FULL_CONTROL) 
+    {
+        if ((envCtx->lightMode == LIGHT_MODE_TIME) && (envCtx->lightSettingOverride == LIGHT_SETTING_OVERRIDE_NONE)) 
+        {
+            for (i = 0; i < ARRAY_COUNT(sTimeBasedLightConfigs[envCtx->lightConfig]); i++) 
+            {
                 f32 arg0;
                 f32 arg1;
                 u16 startTime;
@@ -1340,8 +1343,8 @@ void Environment_UpdateLights(PlayState* play, EnvironmentContext* envCtx, Light
                 sp96 = sTimeBasedLightConfigs[envCtx->changeLightNextConfig][i].lightSetting;
                 sp94 = sTimeBasedLightConfigs[envCtx->changeLightNextConfig][i].nextLightSetting;
 
-                if ((gSaveContext.skyboxTime >= startTime) &&
-                    ((gSaveContext.skyboxTime < endTime) || (endTime == 0xFFFF))) {
+                if ((gSaveContext.skyboxTime >= startTime) && ((gSaveContext.skyboxTime < endTime) || (endTime == 0xFFFF))) 
+                {
                     u8 blend8[2];   // sp90
                     s16 blend16[2]; // sp8C
 
@@ -1445,18 +1448,21 @@ void Environment_UpdateLights(PlayState* play, EnvironmentContext* envCtx, Light
                     blend16[1] = S16_LERP(ENV_LIGHT_SETTINGS_FOG_NEAR(lightSettingsList[(s32)sp96].blendRateAndFogNear),
                                           ENV_LIGHT_SETTINGS_FOG_NEAR(lightSettingsList[(s32)sp94].blendRateAndFogNear),
                                           temp_fv0);
-                    envCtx->lightSettings.fogNear = LERPIMP_ALT(blend16[0], blend16[1], var_fs3);
 
-                    blend16[0] =
-                        S16_LERP(lightSettingsList[(s32)sp97].zFar, lightSettingsList[(s32)sp95].zFar, temp_fv0);
-                    blend16[1] =
-                        S16_LERP(lightSettingsList[(s32)sp96].zFar, lightSettingsList[(s32)sp94].zFar, temp_fv0);
+                    envCtx->lightSettings.fogNear = LERPIMP_ALT(blend16[0], blend16[1], var_fs3);
+                    // envCtx->lightSettings.fogNear = LERPIMP_ALT(envCtx->lightSettings.fogNear, 200, gChaosContext.env.fog_lerp);
+                    
+
+                    blend16[0] = S16_LERP(lightSettingsList[(s32)sp97].zFar, lightSettingsList[(s32)sp95].zFar, temp_fv0);
+                    blend16[1] = S16_LERP(lightSettingsList[(s32)sp96].zFar, lightSettingsList[(s32)sp94].zFar, temp_fv0);
                     envCtx->lightSettings.zFar = LERPIMP_ALT(blend16[0], blend16[1], var_fs3);
 
                     break;
                 }
             }
-        } else {
+        } 
+        else 
+        {
             u8 lightSetting;
             u8 var_v0_3;
 
@@ -1475,8 +1481,8 @@ void Environment_UpdateLights(PlayState* play, EnvironmentContext* envCtx, Light
                 }
 
                 lightSetting = envCtx->lightSetting;
-                envCtx->lightSettings.fogNear =
-                    ENV_LIGHT_SETTINGS_FOG_NEAR(lightSettingsList[(s32)lightSetting].blendRateAndFogNear);
+                envCtx->lightSettings.fogNear = ENV_LIGHT_SETTINGS_FOG_NEAR(lightSettingsList[(s32)lightSetting].blendRateAndFogNear);
+                // envCtx->lightSettings.fogNear = LERPIMP_ALT(envCtx->lightSettings.fogNear, 200, gChaosContext.env.fog_lerp);
                 envCtx->lightSettings.zFar = lightSettingsList[(s32)lightSetting].zFar;
                 envCtx->lightBlend = 1.0f;
             } else {
@@ -1526,10 +1532,13 @@ void Environment_UpdateLights(PlayState* play, EnvironmentContext* envCtx, Light
                     ENV_LIGHT_SETTINGS_FOG_NEAR(lightSettingsList[(s32)lightSetting].blendRateAndFogNear),
                     envCtx->lightBlend);
 
+                // envCtx->lightSettings.fogNear = LERPIMP_ALT(envCtx->lightSettings.fogNear, 200, gChaosContext.env.fog_lerp);
                 envCtx->lightSettings.zFar = LERPIMP_ALT(lightSettingsList[(s32)envCtx->prevLightSetting].zFar,
                                                          lightSettingsList[(s32)lightSetting].zFar, envCtx->lightBlend);
             }
         }
+
+        envCtx->lightSettings.fogNear = LERPIMP_ALT(envCtx->lightSettings.fogNear, 200, gChaosContext.env.fog_lerp);
     }
 
     envCtx->lightBlendEnabled = true;

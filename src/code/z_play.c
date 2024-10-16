@@ -1026,7 +1026,26 @@ void Play_UpdateMain(PlayState* this) {
                 }
             }
         }
-    } 
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_SILENT_FIELD))
+    {
+        gChaosContext.env.fog_lerp += 0.005f;
+
+        if(gChaosContext.env.fog_lerp > 1.0f)
+        {
+            gChaosContext.env.fog_lerp = 1.0f;
+        }
+    }
+    else if(gChaosContext.env.fog_lerp > 0.0f)
+    {
+        gChaosContext.env.fog_lerp -= 0.01f;
+
+        if(gChaosContext.env.fog_lerp < 0.0f)
+        {
+            gChaosContext.env.fog_lerp = 0.0f;
+        }
+    }
 
     // if(Chaos_IsCodeActive(CHAOS_CODE_TEXTBOX))
     // {

@@ -12625,6 +12625,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // play->envCtx.precipitation[PRECIP_RAIN_CUR] = 255;
         // play->envCtx.precipitation[PRECIP_SNOW_MAX] = 255;
         // gWeatherMode = WEATHER_MODE_SNOW;
+        // Chaos_ActivateCode(CHAOS_CODE_SILENT_FIELD, 15);
     }
 
     if(CHECK_BTN_ANY(input->press.button, BTN_R))

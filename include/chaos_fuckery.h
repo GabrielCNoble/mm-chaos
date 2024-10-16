@@ -61,7 +61,7 @@ enum CHAOS_CODES
     /* player randomly screams */
     CHAOS_CODE_TRAP_FLAP,
     /* opens random textbox */
-    CHAOS_CODE_TEXTBOX,
+    // CHAOS_CODE_TEXTBOX,
     /* ice physics */
     CHAOS_CODE_SLIPPERY_FLOORS,
     /* link walks slowly */
@@ -124,6 +124,8 @@ enum CHAOS_CODES
     CHAOS_CODE_BILLBOARD_ACTORS,
     /* draws link as a signpost */
     CHAOS_CODE_SIGNPOST,
+    /* thick fog */
+    CHAOS_CODE_SILENT_FIELD,
     /* simon says, player dies if they fail */
     // CHAOS_CODE_SIMON_SAYS,
     /* makes link "buffer" randomly */
@@ -136,8 +138,7 @@ enum CHAOS_CODES
     // CHAOS_CODE_WEIRD_ENVIRONMENT,
     /* sets far plane pretty close to link */
     // CHAOS_CODE_LOW_RENDER_DISTANCE,
-    /* thick fog */
-    // CHAOS_CODE_SILENT_FIELD,
+    
     /* 
         player randomly loses grip, dropping items, falling from ledges/ladders
         TODO: change this one to include items from the inventory. The item should
@@ -706,6 +707,11 @@ typedef struct ChaosContext
     {
         u8                      fast_time_state;
     } time;
+
+    struct
+    {
+        f32                     fog_lerp;
+    } env;
     
 } ChaosContext;
 
