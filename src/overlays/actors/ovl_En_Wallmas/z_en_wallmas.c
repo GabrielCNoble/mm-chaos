@@ -157,7 +157,7 @@ void EnWallmas_Init(Actor* thisx, PlayState* play) {
     this->actor.world.rot.x = 0;
     if (this->detectionRadius <= 0.0f) {
         this->detectionRadius = 200.0f;
-    }
+    } 
 
     Actor_SetFocus(&this->actor, 25.0f);
 
@@ -259,15 +259,7 @@ void EnWallmas_WaitToDrop(EnWallmas* this, PlayState* play) {
     }
 
     if (this->timer == 0) {
-        // if(WALLMASTER_GET_TYPE(&this->actor) == WALLMASTER_TYPE_FAKE)
-        // {
-        //     // Actor_Kill(&this->actor);
-        //     EnWallmas_SetupFakeDrop(this, play);
-        // }
-        // else
-        // {
         EnWallmas_SetupDrop(this, play);
-        // }
     }
 }
 
@@ -285,7 +277,7 @@ void EnWallmas_SetupDrop(EnWallmas* this, PlayState* play) {
     else
     {
         Animation_Change(&this->skelAnime, &gWallmasterLungeAnim, 0.0f, 20.0f,
-                     Animation_GetLastFrame(&gWallmasterLungeAnim), ANIMMODE_ONCE, 0.0f);
+        Animation_GetLastFrame(&gWallmasterLungeAnim), ANIMMODE_ONCE, 0.0f);
 
         this->yTarget = player->actor.world.pos.y;
         this->actor.world.pos.y = player->actor.world.pos.y + 300.0f;
@@ -294,7 +286,6 @@ void EnWallmas_SetupDrop(EnWallmas* this, PlayState* play) {
         this->actor.floorHeight = player->actor.floorHeight;
         this->actor.flags |= ACTOR_FLAG_TARGETABLE;
         this->actor.flags &= ~ACTOR_FLAG_20;
-
         this->actionFunc = EnWallmas_Drop;
     }
 }
@@ -303,13 +294,18 @@ void EnWallmas_Drop(EnWallmas* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     if ((player->stateFlags2 & PLAYER_STATE2_80) || (player->stateFlags1 & PLAYER_STATE1_TIME_STOPPED) ||
-         (player->actor.freezeTimer > 0)) {
+         (player->actor.freezeTimer > 0)) 
+    {
         EnWallmas_SetupReturnToCeiling(this);
-    } else if (!Play_InCsMode(play) && !(player->stateFlags2 & PLAYER_STATE2_10) && (player->invincibilityTimer >= 0) &&
+    } 
+    else if (!Play_InCsMode(play) && !(player->stateFlags2 & PLAYER_STATE2_10) && (player->invincibilityTimer >= 0) &&
                (this->actor.xzDistToPlayer < 30.0f) && (this->actor.playerHeightRel < -5.0f) &&
-               (-(f32)(player->cylinder.dim.height + 10) < this->actor.playerHeightRel)) {
+               (-(f32)(player->cylinder.dim.height + 10) < this->actor.playerHeightRel)) 
+    {
         EnWallmas_SetupTakePlayer(this, play);
-    } else if (this->actor.world.pos.y <= this->yTarget) {
+    } 
+    else if (this->actor.world.pos.y <= this->yTarget) 
+    {
         this->actor.world.pos.y = this->yTarget;
         this->actor.velocity.y = 0.0f;
         EnWallmas_SetupLand(this, play);
@@ -318,10 +314,19 @@ void EnWallmas_Drop(EnWallmas* this, PlayState* play) {
 
 void EnWallmas_FakeDrop(EnWallmas *this, PlayState *play)
 {
+    Player* player = GET_PLAYER(play);
+
     this->timer--;
     if(this->timer == 0)
     {
-        Actor_Kill(&this->actor);
+        if(!((player->stateFlags2 & PLAYER_STATE2_80) || (player->stateFlags1 & PLAYER_STATE1_TIME_STOPPED) || 
+            (player->actor.freezeTimer > 0)))
+        {
+            Actor_Kill(&this->actor);
+            return;
+        }
+         
+        EnWallmas_SetupReturnToCeiling(this);
     }
 }
 
@@ -408,12 +413,15 @@ void EnWallmas_ReturnToCeiling(EnWallmas* this, PlayState* play) {
     }
 
     if (this->actor.playerHeightRel < -900.0f) {
-        if (WALLMASTER_GET_TYPE(&this->actor) == WALLMASTER_TYPE_FLAG) {
+        u32 type = WALLMASTER_GET_TYPE(&this->actor);
+
+        if (type == WALLMASTER_TYPE_FLAG) 
+        {
             Actor_Kill(&this->actor);
             return;
         }
 
-        if ((WALLMASTER_GET_TYPE(&this->actor) == WALLMASTER_TYPE_TIMER_ONLY) ||
+        if (type == WALLMASTER_TYPE_TIMER_ONLY || type == WALLMASTER_TYPE_FAKE ||
             (Math_Vec3f_DistXZ(&this->actor.home.pos, &player->actor.world.pos) < this->detectionRadius)) {
             EnWallmas_TimerInit(this, play);
         } else {

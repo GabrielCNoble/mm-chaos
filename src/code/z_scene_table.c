@@ -2489,7 +2489,7 @@ static EntranceTableEntry* sGrottosEntranceTable[] = {
 };
 
 static EntranceTableEntry sCutsceneEntrance0[] = {
-    { -SCENE_SPOT00, 0, 0x0102 }, { -SCENE_SPOT00, 0, 0x0102 }, { -SCENE_SPOT00, 0, 0x8102 },
+    { -SCENE_SPOT00, 0, 0x0102, ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM }, { -SCENE_SPOT00, 0, 0x0102 }, { -SCENE_SPOT00, 0, 0x8102 },
     { -SCENE_SPOT00, 0, 0x0102 }, { -SCENE_SPOT00, 0, 0x058B }, { -SCENE_SPOT00, 0, 0x058B },
     { -SCENE_SPOT00, 0, 0x058B }, { -SCENE_SPOT00, 0, 0x058B }, { -SCENE_SPOT00, 0, 0x0183 },
     { -SCENE_SPOT00, 0, 0x0183 }, { -SCENE_SPOT00, 0, 0x8102 }, { -SCENE_SPOT00, 0, 0x0102 },

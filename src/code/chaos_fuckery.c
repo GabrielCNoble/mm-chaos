@@ -123,7 +123,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_SPEEDBOOST]              = */ CHAOS_CODE_DEF(15, 20, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.0025f),
     /* [CHAOS_CODE_BILLBOARD_ACTORS]        = */ CHAOS_CODE_DEF(21, 32, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0), 0.0045f),
     /* [CHAOS_CODE_SIGNPOST]                = */ CHAOS_CODE_DEF(35, 60, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0), 0.0035f),
-    /* [CHAOS_CODE_SILENT_FIELD]            = */ CHAOS_CODE_DEF(35, 60, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0), 0.0065f),
+    /* [CHAOS_CODE_SILENT_FIELD]            = */ CHAOS_CODE_DEF(35, 75, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0), 0.0025f),
 };
   
 const char *gChaosCodeNames[] = {

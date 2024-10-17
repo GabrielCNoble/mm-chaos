@@ -6,7 +6,7 @@
 
 #include "z_obj_demo.h"
 
-#define FLAGS (ACTOR_FLAG_10)
+#define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_NO_CHASE)
 
 #define THIS ((ObjDemo*)thisx)
 
