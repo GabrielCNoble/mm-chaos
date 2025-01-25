@@ -7,6 +7,7 @@
 #include "attributes.h"
 #include "sys_cfb.h"
 #include "libu64/loadfragment.h"
+#include "chaos_fuckery.h"
 
 // Variables are put before most headers as a hacky way to bypass bss reordering
 FaultClient sActorFaultClient; // 2 funcs
@@ -29,6 +30,8 @@ s16 sAttentionPlayerRotY;
 Mtx sActorHiliteMtx;
 
 struct Actor* gCameraDriftActor;
+
+extern struct ChaosContext gChaosContext;
 
 #include "z64actor.h"
 
@@ -446,6 +449,7 @@ AttentionColor sAttentionColors[ACTORCAT_MAX + 1] = {
     { { 255, 255, 0, 255 }, { 200, 155, 0, 0 } },     // ACTORCAT_BOSS
     { { 0, 255, 0, 255 }, { 0, 255, 0, 0 } },         // ACTORCAT_DOOR
     { { 0, 255, 0, 255 }, { 0, 255, 0, 0 } },         // ACTORCAT_CHEST
+    { { 255, 255, 0, 255 }, { 200, 155, 0, 0 } },     // ACTORCAT_CHAOS
     { { 0, 255, 0, 255 }, { 0, 255, 0, 0 } },         // unused extra entry
 };
 
@@ -1176,6 +1180,7 @@ void Actor_Init(Actor* actor, PlayState* play) {
 
 void Actor_Destroy(Actor* actor, PlayState* play) {
     if (actor->init == NULL) {
+        // Chaos_DropActor(actor);
         if (actor->destroy != NULL) {
             actor->destroy(actor, play);
             actor->destroy = NULL;
@@ -1207,10 +1212,16 @@ void Actor_UpdatePos(Actor* actor) {
  * It is recommended to not call this function directly and use `Actor_MoveWithGravity` instead
  */
 void Actor_UpdateVelocityWithGravity(Actor* actor) {
+    f32 gravity_scale = 1.0f;
     actor->velocity.x = actor->speed * Math_SinS(actor->world.rot.y);
     actor->velocity.z = actor->speed * Math_CosS(actor->world.rot.y);
 
-    actor->velocity.y += actor->gravity;
+    if(Chaos_IsCodeActive(CHAOS_CODE_LOW_GRAVITY))
+    {
+        gravity_scale = 0.2f;
+    }
+
+    actor->velocity.y += actor->gravity * gravity_scale;
     if (actor->velocity.y < actor->terminalVelocity) {
         actor->velocity.y = actor->terminalVelocity;
     }
@@ -2323,14 +2334,21 @@ s32 Actor_HasNoRider(PlayState* play, Actor* horse) {
     return false;
 }
 
-void func_800B8D10(PlayState* play, Actor* actor, f32 arg2, s16 arg3, f32 arg4, u32 arg5, u32 arg6) {
+/* Actor_QueuePlayerShove */
+void func_800B8D10(PlayState* play, Actor* actor, f32 xz_speed, s16 hit_angle, f32 y_velocity, u32 shove_type, u32 hit_damage) { 
     Player* player = GET_PLAYER(play);
 
-    player->unk_B74 = arg6;
-    player->unk_B75 = arg5;
-    player->unk_B78 = arg2;
-    player->unk_B76 = arg3;
-    player->unk_B7C = arg4;
+    // player->unk_B74 = arg6;
+    // player->unk_B75 = arg5;
+    // player->unk_B78 = arg2;
+    // player->unk_B76 = arg3;
+    // player->unk_B7C = arg4;
+
+    player->unk_B74 = hit_damage;
+    player->unk_B75 = shove_type;
+    player->unk_B78 = xz_speed;
+    player->unk_B76 = hit_angle;
+    player->unk_B7C = y_velocity;
 }
 
 void func_800B8D50(PlayState* play, Actor* actor, f32 arg2, s16 yaw, f32 arg4, u32 arg5) {
@@ -2358,6 +2376,8 @@ void Player_PlaySfx(Player* player, u16 sfxId) {
     } else {
         AudioSfx_PlaySfx(sfxId, &player->actor.projectedPos, 4, &gSfxDefaultFreqAndVolScale,
                          &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
+        // AudioSfx_PlaySfx(sfxId, &player->actor.projectedPos, 4, &gSfxBeerGogglesFreq,
+        //                  &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
     }
 }
 
@@ -2568,6 +2588,14 @@ Actor* Actor_UpdateActor(UpdateActor_Params* params) {
         actor->world.pos.y = -25000.0f;
     }
 
+    if(Chaos_IsCodeActive(CHAOS_CODE_ACTOR_CHASE) && !(actor->flags & ACTOR_FLAG_NO_CHASE))
+    {
+        Vec3f actor_player_vec;
+        Math_Vec3f_DistXYZAndStoreNormDiff(&actor->world.pos, &params->player->actor.world.pos, 1.0f, &actor_player_vec);
+        Math_Vec3f_Scale(&actor_player_vec, 5.8f + gChaosContext.periodic_probability_scale);
+        Math_Vec3f_Sum(&actor->world.pos, &actor_player_vec, &actor->world.pos);
+    }
+
     actor->sfxId = 0;
     actor->audioFlags &= ~ACTOR_AUDIO_FLAG_ALL;
 
@@ -2588,12 +2616,13 @@ Actor* Actor_UpdateActor(UpdateActor_Params* params) {
     } else {
         if (!Object_IsLoaded(&play->objectCtx, actor->objectSlot)) {
             Actor_Kill(actor);
-        } else if (((params->freezeExceptionFlag != 0) && !(actor->flags & params->freezeExceptionFlag)) ||
+        } else if (!(actor->flags & ACTOR_FLAG_CHAOS) &&
+                    ((params->freezeExceptionFlag != 0 && !(actor->flags & params->freezeExceptionFlag)) ||
                    (((!params->freezeExceptionFlag) != 0) &&
                     (!(actor->flags & ACTOR_FLAG_FREEZE_EXCEPTION) ||
                      ((actor->category == ACTORCAT_EXPLOSIVES) && (params->player->stateFlags1 & PLAYER_STATE1_200))) &&
                     params->canFreezeCategory && (actor != params->talkActor) && (actor != params->player->heldActor) &&
-                    (actor->parent != &params->player->actor))) {
+                    (actor->parent != &params->player->actor)))) {
             CollisionCheck_ResetDamage(&actor->colChkInfo);
         } else {
             Math_Vec3f_Copy(&actor->prevPos, &actor->world.pos);
@@ -2661,6 +2690,8 @@ u32 sCategoryFreezeMasks[ACTORCAT_MAX] = {
     PLAYER_STATE1_2,
     /* ACTORCAT_CHEST */
     PLAYER_STATE1_2 | PLAYER_STATE1_TALKING | PLAYER_STATE1_DEAD | PLAYER_STATE1_200 | PLAYER_STATE1_10000000,
+    /* ACTORCAT_CHAOS */
+     0,
 };
 
 void Actor_UpdateAll(PlayState* play, ActorContext* actorCtx) {
@@ -2766,8 +2797,44 @@ void Actor_UpdateAll(PlayState* play, ActorContext* actorCtx) {
 
 void Actor_Draw(PlayState* play, Actor* actor) {
     Lights* light;
-
+    Player *player = GET_PLAYER(play);
+    Vec3f actor_pos;
+    Vec3f actor_scale;
+    Vec3s actor_rotation;
     OPEN_DISPS(play->state.gfxCtx);
+
+    actor_pos = actor->world.pos;
+    actor_scale = actor->scale;
+    actor_rotation = actor->shape.rot;
+
+    if(player->talkActor == actor && (player->actor.flags & ACTOR_FLAG_TALK))
+    {
+        if(play->msgCtx.msgMode == MSGMODE_TEXT_DISPLAYING)
+        {
+            /* make the actor the player is talking to wobble like crazy while they're talking */
+            gChaosContext.npc.talk_translation.x = ((Chaos_ZeroOne() - 0.5f) / actor_scale.x) * 0.6f;
+            gChaosContext.npc.talk_translation.y = ((Chaos_ZeroOne() - 0.5f) / actor_scale.y) * 0.6f;
+            gChaosContext.npc.talk_translation.z = ((Chaos_ZeroOne() - 0.5f) / actor_scale.z) * 0.6f;
+            gChaosContext.npc.talk_scale.x = Chaos_ZeroOne() * 2.0f;
+            gChaosContext.npc.talk_scale.y = Chaos_ZeroOne() * 2.0f;
+            gChaosContext.npc.talk_scale.z = Chaos_ZeroOne() * 2.0f;
+            gChaosContext.npc.talk_rotation.x = Chaos_RandS16Offset(-8000, 16000);
+            gChaosContext.npc.talk_rotation.y = Chaos_RandS16Offset(-8000, 16000);   
+            gChaosContext.npc.talk_rotation.z = Chaos_RandS16Offset(-8000, 16000);
+        }
+
+        actor_pos.x += gChaosContext.npc.talk_translation.x;
+        actor_pos.y += gChaosContext.npc.talk_translation.y;
+        actor_pos.z += gChaosContext.npc.talk_translation.z;
+
+        actor_rotation.x += gChaosContext.npc.talk_rotation.x;
+        actor_rotation.y += gChaosContext.npc.talk_rotation.y;
+        actor_rotation.z += gChaosContext.npc.talk_rotation.z;
+
+        actor_scale.x *= gChaosContext.npc.talk_scale.x;
+        actor_scale.y *= gChaosContext.npc.talk_scale.y;
+        actor_scale.z *= gChaosContext.npc.talk_scale.z;
+    }
 
     light = LightContext_NewLights(&play->lightCtx, play->state.gfxCtx);
     if ((actor->flags & ACTOR_FLAG_UCODE_POINT_LIGHT_ENABLED) &&
@@ -2782,17 +2849,30 @@ void Actor_Draw(PlayState* play, Actor* actor) {
                    play);
     Lights_Draw(light, play->state.gfxCtx);
 
-    if (actor->flags & ACTOR_FLAG_IGNORE_QUAKE) {
-        Matrix_SetTranslateRotateYXZ(actor->world.pos.x + play->mainCamera.quakeOffset.x,
-                                     actor->world.pos.y +
-                                         ((actor->shape.yOffset * actor->scale.y) + play->mainCamera.quakeOffset.y),
-                                     actor->world.pos.z + play->mainCamera.quakeOffset.z, &actor->shape.rot);
-    } else {
-        Matrix_SetTranslateRotateYXZ(actor->world.pos.x, actor->world.pos.y + (actor->shape.yOffset * actor->scale.y),
-                                     actor->world.pos.z, &actor->shape.rot);
-    }
+    // if (actor->flags & ACTOR_FLAG_IGNORE_QUAKE) {
+    //     Matrix_SetTranslateRotateYXZ(actor->world.pos.x + play->mainCamera.quakeOffset.x,
+    //                                  actor->world.pos.y +
+    //                                      ((actor->shape.yOffset * actor->scale.y) + play->mainCamera.quakeOffset.y),
+    //                                  actor->world.pos.z + play->mainCamera.quakeOffset.z, &actor->shape.rot);
+    // } else {
+    //     Matrix_SetTranslateRotateYXZ(actor->world.pos.x, actor->world.pos.y + (actor->shape.yOffset * actor->scale.y),
+    //                                  actor->world.pos.z, &actor->shape.rot);
+    // }
 
-    Matrix_Scale(actor->scale.x, actor->scale.y, actor->scale.z, MTXMODE_APPLY);
+    // Matrix_Scale(actor->scale.x, actor->scale.y, actor->scale.z, MTXMODE_APPLY);
+
+    if (actor->flags & ACTOR_FLAG_IGNORE_QUAKE) 
+    {
+        actor_pos.y += play->mainCamera.quakeOffset.y;
+    }                            
+
+    Matrix_SetTranslateRotateYXZ(actor_pos.x, actor_pos.y + (actor->shape.yOffset * actor_scale.y), actor_pos.z, &actor_rotation);
+    if(Chaos_IsCodeActive(CHAOS_CODE_BILLBOARD_ACTORS))
+    {
+        Matrix_ReplaceRotation(&play->billboardMtxF);
+    }
+    Matrix_Scale(actor_scale.x, actor_scale.y, actor_scale.z, MTXMODE_APPLY);
+    
     Actor_SetObjectDependency(play, actor);
 
     gSPSegment(POLY_OPA_DISP++, 0x06, play->objectCtx.slots[actor->objectSlot].segment);
@@ -3388,8 +3468,9 @@ Actor* Actor_RemoveFromCategory(PlayState* play, ActorContext* actorCtx, Actor* 
     actorToRemove->next = NULL;
     actorToRemove->prev = NULL;
 
-    if ((actorToRemove->room == play->roomCtx.curRoom.num) && (actorToRemove->category == ACTORCAT_ENEMY) &&
-        (actorCtx->actorLists[ACTORCAT_ENEMY].length == 0)) {
+    if ((actorToRemove->room == play->roomCtx.curRoom.num) && actorToRemove->category == ACTORCAT_ENEMY && 
+            actorCtx->actorLists[ACTORCAT_ENEMY].length == 0) 
+    { 
         Flags_SetClearTemp(play, play->roomCtx.curRoom.num);
     }
 
@@ -3417,6 +3498,24 @@ Actor* Actor_Spawn(ActorContext* actorCtx, PlayState* play, s16 actorId, f32 pos
                    s16 rotY, s16 rotZ, s32 params) {
     return Actor_SpawnAsChildAndCutscene(actorCtx, play, actorId, posX, posY, posZ, rotX, rotY, rotZ, params,
                                          CS_ID_NONE, HALFDAYBIT_ALL, NULL);
+}
+
+ActorProfile *Actor_GetActorInit(ActorContext *actorCtx, s16 id)
+{
+    ActorProfile *init = NULL;
+    ActorOverlay *overlay_entry = gActorOverlayTable + id;
+
+    if (overlay_entry->vramStart == NULL) 
+    {
+        init = overlay_entry->profile;
+    } 
+    else 
+    {
+        init = (void*)(uintptr_t)((overlay_entry->profile != NULL) ? (void*)((uintptr_t)overlay_entry->profile - 
+                        (intptr_t)((uintptr_t)overlay_entry->vramStart - (uintptr_t)overlay_entry->loadedRamAddr)) : NULL);
+    }
+
+    return init;
 }
 
 ActorProfile* Actor_LoadOverlay(ActorContext* actorCtx, s16 index) {
@@ -3477,7 +3576,16 @@ Actor* Actor_SpawnAsChildAndCutscene(ActorContext* actorCtx, PlayState* play, s1
         return NULL;
     }
 
-    objectSlot = Object_GetSlot(&play->objectCtx, profile->objectId);
+    if(profile->flags & ACTOR_FLAG_CHAOS)
+    {
+        /* chaos actors will always have their slot in the persisent region */
+        objectSlot = Object_GetPersistentSlot(&play->objectCtx, profile->objectId);
+    }
+    else
+    {
+        objectSlot = Object_GetSlot(&play->objectCtx, profile->objectId);
+    }
+
     if ((objectSlot <= OBJECT_SLOT_NONE) ||
         ((profile->type == ACTORCAT_ENEMY) && Flags_GetClear(play, play->roomCtx.curRoom.num) &&
          (profile->id != ACTOR_BOSS_05))) {
@@ -3768,7 +3876,7 @@ void Attention_FindActorInCategory(PlayState* play, ActorContext* actorCtx, Play
 }
 
 u8 sAttentionCategorySearchOrder[] = {
-    ACTORCAT_BOSS,  ACTORCAT_ENEMY,  ACTORCAT_BG,   ACTORCAT_EXPLOSIVES, ACTORCAT_NPC,  ACTORCAT_ITEMACTION,
+    ACTORCAT_BOSS,  ACTORCAT_ENEMY, ACTORCAT_CHAOS, ACTORCAT_BG,   ACTORCAT_EXPLOSIVES, ACTORCAT_NPC,  ACTORCAT_ITEMACTION,
     ACTORCAT_CHEST, ACTORCAT_SWITCH, ACTORCAT_PROP, ACTORCAT_MISC,       ACTORCAT_DOOR, ACTORCAT_SWITCH,
 };
 

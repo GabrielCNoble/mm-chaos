@@ -39,7 +39,7 @@
 
 #include "z_en_holl.h"
 
-#define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED)
+#define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_NO_CHASE)
 
 void EnHoll_Init(Actor* thisx, PlayState* play);
 void EnHoll_Destroy(Actor* thisx, PlayState* play);

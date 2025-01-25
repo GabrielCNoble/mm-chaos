@@ -13,6 +13,7 @@ typedef struct {
     /* 0x04 */ void* dramAddr;     // DRAM address (destination)
     /* 0x08 */ size_t size;        // File Transfer size
     /* 0x0C */ char* filename;     // Filename for debugging
+               char* debugMsg;
     /* 0x10 */ s32 line;           // Line for debugging
     /* 0x14 */ s32 unk14;
     /* 0x18 */ OSMesgQueue* notifyQueue; // Message queue for the notification message
@@ -32,6 +33,7 @@ extern size_t gDmaMgrDmaBuffSize;
 
 // Standard DMA Requests
 s32 DmaMgr_RequestAsync(DmaRequest* req, void* ram, uintptr_t vrom, size_t size, UNK_TYPE unused, OSMesgQueue* queue, void* msg);
+s32 DmaMgr_RequestAsyncDebug(DmaRequest* req, void* ram, uintptr_t vrom, size_t size, UNK_TYPE unused, OSMesgQueue* queue, char *debugMsg);
 s32 DmaMgr_RequestSync(void* ram, uintptr_t vrom, size_t size);
 
 // Special-purpose DMA Requests

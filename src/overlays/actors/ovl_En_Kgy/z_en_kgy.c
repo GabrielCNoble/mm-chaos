@@ -136,7 +136,7 @@ static AnimationHeader* sAnimations[ENKGY_ANIM_MAX] = {
 };
 
 void EnKgy_ChangeAnim(EnKgy* this, s16 animIndex, u8 animMode, f32 morphFrames) {
-    Animation_Change(&this->skelAnime, sAnimations[animIndex], 1.0f, 0.0f,
+    Animation_Change(&this->skelAnime, sAnimations[animIndex], 4.0f, 0.0f,
                      Animation_GetLastFrame(sAnimations[animIndex]), animMode, morphFrames);
     this->animIndex = animIndex;
 }

@@ -18,6 +18,8 @@
 #include "assets/interface/icon_item_jpn_static/icon_item_jpn_static.h"
 #include "assets/interface/icon_item_vtx_static/icon_item_vtx_static.h"
 
+#include "chaos_fuckery.h"
+
 // Page Textures (Background of Page):
 // Broken up into multiple textures.
 // Numbered by column/row.
@@ -3498,8 +3500,15 @@ void KaleidoScope_Update(PlayState* play) {
                 play->msgCtx.ocarinaMode = OCARINA_MODE_END;
                 gSaveContext.prevHudVisibility = HUD_VISIBILITY_ALL;
             } else if (CHECK_BTN_ALL(input->press.button, BTN_A)) {
+                u16 text_id = MESSAGE_ID_CONFIRM_OWL_WARP_NORMAL;
+
+                if(/* Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI) && */ (Rand_Next() % 2) == 0)
+                {
+                    text_id = MESSAGE_ID_CONFIRM_OWL_WARP_FLIPPED;
+                }
+
                 Audio_PlaySfx(NA_SE_SY_DECIDE);
-                Message_StartTextbox(play, 0x1B93, NULL);
+                Message_StartTextbox(play, text_id, NULL);
                 pauseCtx->state = PAUSE_STATE_OWL_WARP_CONFIRM;
             } else {
                 KaleidoScope_UpdateOwlWarpNamePanel(play);
@@ -3508,9 +3517,16 @@ void KaleidoScope_Update(PlayState* play) {
 
         case PAUSE_STATE_OWL_WARP_CONFIRM:
             if (CHECK_BTN_ALL(input->press.button, BTN_A)) {
+                u32 choice_index = msgCtx->choiceIndex;
                 msgCtx->msgLength = 0;
                 msgCtx->msgMode = MSGMODE_NONE;
-                if (msgCtx->choiceIndex == 0) {
+
+                if(/* Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI) && */ Rand_S16Offset(0, 16) == 3)
+                {
+                    choice_index ^= 1;
+                }
+
+                if (choice_index == (play->msgCtx.currentTextId == MESSAGE_ID_CONFIRM_OWL_WARP_FLIPPED)) {
                     Interface_SetAButtonDoAction(play, DO_ACTION_NONE);
                     pauseCtx->state = PAUSE_STATE_OWL_WARP_6;
                     sPauseMenuVerticalOffset = -6240.0f;

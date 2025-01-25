@@ -23,7 +23,8 @@ typedef struct EnOsn {
     /* 0x1D4 */ EnOsnActionFunc actionFunc;
     /* 0x1D8 */ Vec3s headRot;
     /* 0x1DE */ Vec3s torsoRot;
-    /* 0x1E4 */ UNK_TYPE1 unk_1E4[0x6];
+                u8 frown_timer; 
+    /* 0x1E4 */ UNK_TYPE1 unk_1E4[0x5];
     /* 0x1EA */ u16 stateFlags;
     /* 0x1EC */ u8 animIndex;
     /* 0x1ED */ u8 cueId;

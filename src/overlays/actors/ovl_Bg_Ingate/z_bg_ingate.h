@@ -9,6 +9,12 @@ typedef void (*BgIngateActionFunc)(struct BgIngate*, PlayState*);
 
 #define BGINGATE_GET_PATH_INDEX(thisx) ((thisx)->params & 0xFF)
 
+#define BGINGATE_REACHED_DEKU_CASTLE (1 << 1)
+#define BGINGATE_PLAYER_DISEMBARKED  (1 << 2)
+#define BGINGATE_RIDE_JUST_STARTED   (1 << 4)
+#define BGINGATE_PLAYER_LANDED       (1 << 14)
+#define BGINGATE_PLAYER_ON_TOP       (1 << 15)
+
 typedef struct BgIngate {
     /* 0x000 */ DynaPolyActor dyna;
     /* 0x15C */ BgIngateActionFunc actionFunc;

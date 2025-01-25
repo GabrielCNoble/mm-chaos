@@ -64,6 +64,10 @@ s16 Camera_UnsetStateFlag(Camera* camera, s16 flags);
 
 #include "z_camera_data.inc.c"
 
+#include "chaos_fuckery.h"
+
+extern struct ChaosContext gChaosContext;
+
 PlayState* sCamPlayState;
 SwingAnimation D_801EDC30[4];
 Vec3f D_801EDDD0;
@@ -494,7 +498,7 @@ s32 func_800CBB88(Camera* camera) {
     return 0;
 }
 
-s32 func_800CBC00(Camera* camera) {
+s32 Camera_IsUsingZoraFins(Camera* camera) {
     Actor* focalActor = camera->focalActor;
 
     if (camera->focalActor == &GET_PLAYER(camera->play)->actor) {
@@ -7193,6 +7197,8 @@ s32 Camera_UpdateWater(Camera* camera) {
 
 void Camera_EarthquakeDay3(Camera* camera) {
     static s16 sEarthquakeTimer = 0;
+    u32 chaos_earthquake = 0;
+    u32 chaos_earthquake_index = 0xffffffff;
     u16 time;
     s16 quakeIndex;
     s32 timeSpeedOffset;
@@ -7203,14 +7209,21 @@ void Camera_EarthquakeDay3(Camera* camera) {
         0x1FC, // 8 Large Earthquakes between CLOCK_TIME(4, 30) to CLOCK_TIME(6, 00)
     };
 
-    if ((CURRENT_DAY == 3) && (CutsceneManager_GetCurrentCsId() == CS_ID_NONE)) {
+    if(Chaos_IsCodeActive(CHAOS_CODE_EARTHQUAKE))
+    {
+        chaos_earthquake = 1;
+        // chaos_earthquake_index = Rand_Next() % 2;
+        chaos_earthquake_index = 0;
+    }
+
+    if ((CURRENT_DAY == 3 || chaos_earthquake) && (CutsceneManager_GetCurrentCsId() == CS_ID_NONE)) {
         time = CURRENT_TIME;
         timeSpeedOffset = gSaveContext.save.timeSpeedOffset;
 
         // Large earthquake created
         // Times based on sEarthquakeFreq
         if ((time > CLOCK_TIME(0, 0)) && (time < CLOCK_TIME(6, 0)) && ((sEarthquakeFreq[time >> 12] & time) == 0) &&
-            (Quake_GetNumActiveQuakes() < 2)) {
+            (Quake_GetNumActiveQuakes() < 2) || chaos_earthquake_index == 0) {
             quakeIndex = Quake_Request(camera, QUAKE_TYPE_4);
             if (quakeIndex != 0) {
                 Quake_SetSpeed(quakeIndex, 30000);
@@ -7417,7 +7430,7 @@ Vec3s Camera_Update(Camera* camera) {
 
                 bgCamIndex = Camera_GetBgCamIndex(camera, &bgId, sp90);
                 if ((bgCamIndex != -1) && (camera->bgId == BGCHECK_SCENE)) {
-                    if (!func_800CBC00(camera)) {
+                    if (!Camera_IsUsingZoraFins(camera)) {
                         camera->nextCamSceneDataId = bgCamIndex | CAM_DATA_IS_BG;
                     }
                 }
@@ -7505,12 +7518,12 @@ Vec3s Camera_Update(Camera* camera) {
     bgId = numQuakesApplied; // required to match
 
     if (numQuakesApplied != 0) {
-        viewAt.x = camera->at.x + camShake.atOffset.x;
-        viewAt.y = camera->at.y + camShake.atOffset.y;
-        viewAt.z = camera->at.z + camShake.atOffset.z;
-        viewEye.x = camera->eye.x + camShake.eyeOffset.x;
-        viewEye.y = camera->eye.y + camShake.eyeOffset.y;
-        viewEye.z = camera->eye.z + camShake.eyeOffset.z;
+        viewAt.x = camera->at.x + camShake.atOffset.x + gChaosContext.view.beer_sway.x;
+        viewAt.y = camera->at.y + camShake.atOffset.y + gChaosContext.view.beer_sway.y;
+        viewAt.z = camera->at.z + camShake.atOffset.z + gChaosContext.view.beer_sway.z;
+        viewEye.x = camera->eye.x + camShake.eyeOffset.x + gChaosContext.view.beer_sway.x;
+        viewEye.y = camera->eye.y + camShake.eyeOffset.y + gChaosContext.view.beer_sway.y;
+        viewEye.z = camera->eye.z + camShake.eyeOffset.z + gChaosContext.view.beer_sway.z;
         sp3C = OLib_Vec3fDiffToVecGeo(&viewEye, &viewAt);
         viewUp = Camera_CalcUpVec(sp3C.pitch, sp3C.yaw, camera->roll + camShake.upRollOffset);
         viewFov = camera->fov + CAM_BINANG_TO_DEG(camShake.fovOffset);
@@ -7522,8 +7535,14 @@ Vec3s Camera_Update(Camera* camera) {
         viewUp = camera->up;
         viewFov = camera->fov;
     } else {
-        viewAt = camera->at;
-        viewEye = camera->eye;
+        viewAt.x = camera->at.x + gChaosContext.view.beer_sway.x;
+        viewAt.y = camera->at.y + gChaosContext.view.beer_sway.y;
+        viewAt.z = camera->at.z + gChaosContext.view.beer_sway.z;
+
+        viewEye.x = camera->eye.x + gChaosContext.view.beer_sway.x;
+        viewEye.y = camera->eye.y + gChaosContext.view.beer_sway.y;
+        viewEye.z = camera->eye.z + gChaosContext.view.beer_sway.z;
+
         sp3C = OLib_Vec3fDiffToVecGeo(&viewEye, &viewAt);
         viewUp = Camera_CalcUpVec(sp3C.pitch, sp3C.yaw, camera->roll);
         viewFov = camera->fov;

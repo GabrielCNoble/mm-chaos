@@ -593,11 +593,13 @@ void EnKbt_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot,
     }
 }
 
+/* mouth textures */
 TexturePtr D_80B34B90[] = {
     object_kbt_Tex_00A5B8,
     object_kbt_Tex_00ADB8,
 };
 
+/* eye textures */
 TexturePtr D_80B34B98[] = {
     object_kbt_Tex_00B5B8, object_kbt_Tex_00BDB8, object_kbt_Tex_00C5B8, object_kbt_Tex_00CDB8, object_kbt_Tex_00D5B8,
 };

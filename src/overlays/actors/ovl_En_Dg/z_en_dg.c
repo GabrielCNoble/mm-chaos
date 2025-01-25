@@ -146,7 +146,7 @@ static DamageTable sDamageTable = {
     /* Ice arrow      */ DMG_ENTRY(0, 0x0),
     /* Light arrow    */ DMG_ENTRY(0, 0x0),
     /* Goron spikes   */ DMG_ENTRY(0, 0x0),
-    /* Deku spin      */ DMG_ENTRY(0, 0x0),
+    /* Deku spin      */ DMG_ENTRY(0, 0xf),
     /* Deku bubble    */ DMG_ENTRY(0, 0x0),
     /* Deku launch    */ DMG_ENTRY(0, 0x0),
     /* UNK_DMG_0x12   */ DMG_ENTRY(0, 0x0),
@@ -230,11 +230,14 @@ void EnDg_UpdateCollision(EnDg* this, PlayState* play) {
     this->collider.dim.pos.z = this->actor.world.pos.z;
     Collider_UpdateCylinder(&this->actor, &this->collider);
 
-    if ((player->transformation == PLAYER_FORM_DEKU) && (this->actionFunc == EnDg_JumpAttack)) {
+    if ((player->transformation == PLAYER_FORM_DEKU || player->transformation == PLAYER_FORM_FIERCE_DEITY) 
+        && (this->actionFunc == EnDg_JumpAttack)) {
         CollisionCheck_SetAT(play, &play->colChkCtx, &this->collider.base);
     } else {
         Collider_ResetCylinderAT(play, &this->collider.base);
     }
+
+    CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
 
     // The check for DOG_FLAG_JUMP_ATTACKING here makes it so the dog passes through the
     // player if it hits them with their jump attack.
@@ -590,6 +593,7 @@ s32 EnDg_ShouldReactToNonHumanPlayer(EnDg* this, PlayState* play) {
             }
             FALLTHROUGH;
         case PLAYER_FORM_DEKU:
+        case PLAYER_FORM_FIERCE_DEITY:
             if (this->actor.xzDistToPlayer < 250.0f) {
                 return true;
             }
@@ -649,6 +653,7 @@ void EnDg_ChooseActionForForm(EnDg* this, PlayState* play) {
                 break;
 
             case PLAYER_FORM_DEKU:
+            case PLAYER_FORM_FIERCE_DEITY:
                 this->dogFlags &= ~DOG_FLAG_JUMP_ATTACKING;
                 if ((this->behavior != DOG_BEHAVIOR_DEKU) && (player->actor.speed > 1.0f)) {
                     this->behavior = DOG_BEHAVIOR_DEKU;
@@ -1354,6 +1359,21 @@ void EnDg_Update(Actor* thisx, PlayState* play) {
         if ((this->actor.bgCheckFlags & BGCHECKFLAG_WATER_TOUCH) && Actor_HasNoParent(&this->actor, play)) {
             EnDg_ChangeAnim(&this->skelAnime, sAnimationInfo, DOG_ANIM_SWIM);
             this->actionFunc = EnDg_SetupSwim;
+        }
+
+        if(this->collider.base.acFlags & AC_HIT)
+        {
+            this->collider.base.acFlags &= ~(AC_HIT | AC_ON);
+            Actor_ApplyDamage(&this->actor);
+            this->timer = 50;
+            EnDg_ChangeAnim(&this->skelAnime, sAnimationInfo, DOG_ANIM_RUN);
+            this->actionFunc = EnDg_RunAwayFromGoron;
+            Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_OPA, 30);
+            SoundSource_PlaySfxAtFixedWorldPos(play, &this->actor.world.pos, 20, NA_SE_EN_LAST_DAMAGE);
+        }
+        else if(this->actionFunc != EnDg_RunAwayFromGoron)
+        {
+            this->collider.base.acFlags |= AC_ON;
         }
 
         this->actionFunc(this, play);

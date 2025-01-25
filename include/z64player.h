@@ -71,6 +71,7 @@ typedef enum PlayerTransformation {
     /* 2 */ PLAYER_FORM_ZORA,
     /* 3 */ PLAYER_FORM_DEKU,
     /* 4 */ PLAYER_FORM_HUMAN,
+            // PLAYER_FORM_BEYBLADE,
     /* 5 */ PLAYER_FORM_MAX
 } PlayerTransformation;
 
@@ -509,7 +510,9 @@ typedef enum PlayerFacialExpression {
     /* 12 */ PLAYER_FACE_12,
     /* 13 */ PLAYER_FACE_13,
     /* 14 */ PLAYER_FACE_14,
-    /* 15 */ PLAYER_FACE_15
+    /* 15 */ PLAYER_FACE_15,
+             PLAYER_FACE_HEHE0,
+             PLAYER_FACE_HEHE1
 } PlayerFacialExpression;
 
 typedef enum PlayerLimb {
@@ -600,7 +603,7 @@ typedef struct PlayerAgeProperties {
     /* 0x00 */ f32 ceilingCheckHeight;
     /* 0x04 */ f32 shadowScale;
     /* 0x08 */ f32 unk_08;
-    /* 0x0C */ f32 unk_0C;
+    /* 0x0C */ f32 unk_0C; // ledge check pos y offset?
     /* 0x10 */ f32 unk_10;
     /* 0x14 */ f32 unk_14; // compared to yDistToLedge
     /* 0x18 */ f32 unk_18; // compared to yDistToLedge
@@ -911,7 +914,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_8          (1 << 3)
 // Zora electric shield
 #define PLAYER_STATE1_10         (1 << 4)
-// 
+// Moving on land
 #define PLAYER_STATE1_20         (1 << 5)
 // Currently talking to an actor. This includes item exchanges.
 #define PLAYER_STATE1_TALKING (1 << 6)
@@ -948,23 +951,26 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE1_200000     (1 << 21)
 // 
 #define PLAYER_STATE1_400000     (1 << 22)
-// 
+// Mounted on epona
 #define PLAYER_STATE1_800000     (1 << 23)
+#define PLAYER_STATE1_MOUNTED PLAYER_STATE1_800000
 // Currently using the zora boomerang. This includes all phases (aiming, throwing, and catching).
 #define PLAYER_STATE1_USING_ZORA_BOOMERANG (1 << 24)
 // Zora boomerang has been thrown and is flying in the air
 #define PLAYER_STATE1_ZORA_BOOMERANG_THROWN (1 << 25)
-// 
+// Player responding to a received attack
 #define PLAYER_STATE1_4000000    (1 << 26)
-// Swimming?
+// In water?
 #define PLAYER_STATE1_8000000    (1 << 27)
+#define PLAYER_STATE1_SWIMMING PLAYER_STATE1_8000000
 // 
 #define PLAYER_STATE1_10000000   (1 << 28)
 // Time is stopped but Link & NPC animations continue
 #define PLAYER_STATE1_20000000   (1 << 29)
+#define PLAYER_STATE1_TIME_STOPPED PLAYER_STATE1_20000000
 // Lock-on was released automatically, for example by leaving the lock-on leash range
 #define PLAYER_STATE1_LOCK_ON_FORCED_TO_RELEASE   (1 << 30)
-// Related to exit a grotto
+// Related to exit a grotto / captured by grotto?
 #define PLAYER_STATE1_80000000   (1 << 31)
 
 
@@ -980,19 +986,20 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE2_10         (1 << 4)
 // 
 #define PLAYER_STATE2_20         (1 << 5)
-// 
+// Hanging off of something?
 #define PLAYER_STATE2_40         (1 << 6)
-// 
+// Player grabbed
 #define PLAYER_STATE2_80         (1 << 7)
+#define PLAYER_STATE2_GRABBED PLAYER_STATE2_80
 // 
 #define PLAYER_STATE2_100        (1 << 8)
 // 
 #define PLAYER_STATE2_FORCE_SAND_FLOOR_SOUND (1 << 9)
-// 
+// Player submerged?
 #define PLAYER_STATE2_400        (1 << 10)
 // Diving
 #define PLAYER_STATE2_800        (1 << 11)
-// 
+// Player is standing still on a ladder
 #define PLAYER_STATE2_1000       (1 << 12)
 // Actor lock-on is active, specifically with Switch Targeting. Hold Targeting checks the state of the Z button instead of this flag.
 #define PLAYER_STATE2_LOCK_ON_WITH_SWITCH       (1 << 13)
@@ -1004,11 +1011,11 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE2_10000      (1 << 16)
 // A non-magic spin attack
 #define PLAYER_STATE2_20000      (1 << 17)
-// 
+// Jumped off a ledge
 #define PLAYER_STATE2_40000      (1 << 18)
-// 
+// Let go of a ledge
 #define PLAYER_STATE2_80000      (1 << 19)
-// 
+// In range to grab something
 #define PLAYER_STATE2_100000     (1 << 20)
 // 
 #define PLAYER_STATE2_200000     (1 << 21)
@@ -1072,7 +1079,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE3_20000      (1 << 17)
 // Related to form Deku
 #define PLAYER_STATE3_40000      (1 << 18)
-// 
+// Goron spike rolling
 #define PLAYER_STATE3_80000      (1 << 19)
 // 
 #define PLAYER_STATE3_100000     (1 << 20)
@@ -1088,7 +1095,7 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE3_2000000    (1 << 25)
 // 
 #define PLAYER_STATE3_4000000    (1 << 26)
-// 
+// Human link rolling?
 #define PLAYER_STATE3_8000000    (1 << 27)
 // 
 #define PLAYER_STATE3_10000000   (1 << 28)
@@ -1100,10 +1107,14 @@ typedef enum PlayerCueId {
 #define PLAYER_STATE3_HOSTILE_LOCK_ON   (1 << 31)
 
 typedef enum PlayerUnkAA5 {
-    /* 0 */ PLAYER_UNKAA5_0,
-    /* 1 */ PLAYER_UNKAA5_1,
-    /* 2 */ PLAYER_UNKAA5_2,
-    /* 3 */ PLAYER_UNKAA5_3,
+    /* 0 */ PLAYER_UNKAA5_0, // FIRST_PERSON_MODE_NONE (Third person)
+            FIRST_PERSON_MODE_NONE = PLAYER_UNKAA5_0,
+    /* 1 */ PLAYER_UNKAA5_1, // FIRST_PERSON_MODE_LOOKING (First person, looking around)
+            FIRST_PERSON_MODE_LOOKING = PLAYER_UNKAA5_1,
+    /* 2 */ PLAYER_UNKAA5_2, // FIRST_PERSON_MODE_PICTO (Looking through pictograph)
+            FIRST_PERSON_MODE_PICTO = PLAYER_UNKAA5_2,
+    /* 3 */ PLAYER_UNKAA5_3, // FIRST_PERSON_MODE_WEAPON (Aiming bow/hookshot/deku bubble)
+            FIRST_PERSON_MODE_WEAPON = PLAYER_UNKAA5_3,
     /* 4 */ PLAYER_UNKAA5_4,
     /* 5 */ PLAYER_UNKAA5_5
 } PlayerUnkAA5;
@@ -1186,8 +1197,8 @@ typedef struct Player {
     /* 0x397 */ u8 unk_397; // PlayerDoorType enum
     /* 0x398 */ Actor* csActor; // Actor involved in a `csAction`. Typically the actor that invoked the cutscene.
     /* 0x39C */ UNK_TYPE1 unk_39C[0x4];
-    /* 0x3A0 */ Vec3f unk_3A0;
-    /* 0x3AC */ Vec3f unk_3AC;
+    /* 0x3A0 */ Vec3f unk_3A0; // door transition walk start pos
+    /* 0x3AC */ Vec3f unk_3AC; // door transition walk end pos
     /* 0x3B8 */ u16 unk_3B8;
     /* 0x3BA */ union {
                     s16 haltActorsDuringCsAction; // If true, halt actors belonging to certain categories during a `csAction`
@@ -1237,7 +1248,7 @@ typedef struct Player {
     /* 0xAA5 */ u8 unk_AA5; // PlayerUnkAA5 enum
     /* 0xAA6 */ u16 unk_AA6_rotFlags; // See `UNKAA6_ROT_` macros. If its flag isn't set, a rot steps to 0.
     /* 0xAA8 */ s16 upperLimbYawSecondary;
-    /* 0xAAA */ s16 unk_AAA;
+    /* 0xAAA */ s16 unk_AAA; // zora swim pitch?
     /* 0xAAC */ Vec3s headLimbRot;
     /* 0xAB2 */ Vec3s upperLimbRot;
     /* 0xAB8 */ f32 unk_AB8;
@@ -1260,25 +1271,51 @@ typedef struct Player {
     /* 0xADF */ s8 controlStickSpinAngles[4]; // Stores a modified version of the control stick angle for the last 4 frames. Used for checking spins.
     /* 0xAE3 */ s8 controlStickDirections[4]; // Stores the control stick direction (relative to shape yaw) for the last 4 frames. See `PlayerStickDirection`.
     /* 0xAE7 */ union {
-        s8 actionVar1;
-        s8 startedAnim; // Player_Action_TimeTravelEnd: Started playing the animation that was previously frozen
-        s8 facingUpSlope; // Player_Action_SlideOnSlope: Facing uphill when sliding on a slope
-    } av1; // "Action Variable 1": context dependent variable that has different meanings depending on what action is currently running
+                s8 iceTrapHaltCounter;
+                s8 revivePlayer;
+                s8 goronRollChargeUpCounter;
+                s8 startedAnim; // Player_Action_TimeTravelEnd: Started playing the animation that was previously frozen
+                s8 facingUpSlope; // Player_Action_SlideOnSlope: Facing uphill when sliding on a slope
+                s8 actionVar1;
+                } av1; // "Action Variable 1": context dependent variable that has different meanings depending on what action is currently running
     /* 0xAE8 */ union {
-        s16 actionVar2;
-        s16 fallDamageStunTimer; // Player_Action_Idle: Prevents any movement and shakes model up and down quickly to indicate fall damage stun
-        s16 animDelayTimer; // Player_Action_TimeTravelEnd: Delays playing animation until finished counting down
-        s16 csDelayTimer; // Player_Action_WaitForCutscene: Number of frames to wait before responding to a cutscene
-        s16 playedLandingSfx; // Player_Action_BlueWarpArrive: Played sfx when landing on the ground
-    } av2; // "Action Variable 2": context dependent variable that has different meanings depending on what action is currently running
+                s16 inputMashAccumulator;
+                s16 fairyReviveCounter;
+                s16 voidOutTimer;
+                s16 goronRollAngularSpeed;
+                s16 fallDamageStunTimer; // Player_Action_Idle: Prevents any movement and shakes model up and down quickly to indicate fall damage stun
+                s16 animDelayTimer; // Player_Action_TimeTravelEnd: Delays playing animation until finished counting down
+                s16 csDelayTimer; // Player_Action_WaitForCutscene: Number of frames to wait before responding to a cutscene
+                s16 playedLandingSfx; // Player_Action_BlueWarpArrive: Played sfx when landing on the ground
+                s16 actionVar2;
+                } av2; // "Action Variable 2": context dependent variable that has different meanings depending on what action is currently running
     /* 0xAEC */ f32 unk_AEC;
     /* 0xAF0 */ union {
-                    Vec3f unk_AF0[2];
+                    Vec3f unk_AF0[2]; /* first element is deku flying start position */
                     f32 arr_AF0[6];
                 };
     /* 0xB08 */ f32 unk_B08;
     /* 0xB0C */ f32 unk_B0C;
-    /* 0xB10 */ f32 unk_B10[6];
+    /* 0xB10 */ union
+                {
+                    struct
+                    {
+                         f32 unk_B10[6];   
+                    };
+
+                    struct
+                    {
+                        f32 dekuSpinSpeed;
+                        f32 dekuSpinTarget;
+                    };
+
+                    struct
+                    {
+                        f32 beybladeFallSpeed;
+                        s16 beybladeAngularSpeed;
+                        s8  beybladeWallJumpTimer;
+                    };
+                };
     /* 0xB28 */ s16 unk_B28; // Burning stick timer?
     /* 0xB2A */ s8 getItemDrawIdPlusOne;
     /* 0xB2B */ s8 unk_B2B;
@@ -1319,9 +1356,20 @@ typedef struct Player {
     /* 0xB7C */ f32 unk_B7C;
     /* 0xB80 */ f32 pushedSpeed; // Pushing player, examples include water currents, floor conveyors, climbing sloped surfaces
     /* 0xB84 */ s16 pushedYaw; // Yaw of direction in which player is being pushed
-    /* 0xB86 */ s16 unk_B86[2]; // unknown length
+    /* 0xB86 */ union
+                {
+                    struct 
+                    {
+                        s16 goronRollAngularVelocity;
+                    };
+                    struct 
+                    {
+                        s16 unk_B86[2];
+                    }; // unknown length
+                };
+    
     /* 0xB8A */ s16 unk_B8A;
-    /* 0xB8C */ s16 unk_B8C;
+    /* 0xB8C */ s16 unk_B8C; // deku fly velocity / frames until being able to steer after reflecting off a wall while rolling?
     /* 0xB8E */ s16 unk_B8E;
     /* 0xB90 */ s16 unk_B90;
     /* 0xB92 */ s16 unk_B92;
@@ -1380,6 +1428,9 @@ void Player_PlaySfx(Player* player, u16 sfxId);
 
 // z_player_lib.c
 
+s32 Player_EnterBoatMode(struct PlayState *play, Player *this);
+s32 Player_IsInBoatMode(struct PlayState *play, Player *this);
+s32 Player_IsInBeybladeMode(struct PlayState *play, Player *this);
 s32 func_801226E0(struct PlayState* play, s32 arg1);
 s32 Player_InitOverrideInput(struct PlayState* play, PlayerOverrideInputEntry* inputEntry, u32 numPoints, Vec3s* targetPosList);
 s32 Player_UpdateOverrideInput(struct PlayState* play, PlayerOverrideInputEntry* inputEntry, f32 distXZRange);
@@ -1448,6 +1499,7 @@ void func_80125500(struct PlayState* play, Player* player, s32 limbIndex, Vec3f*
 s32 Player_OverrideLimbDrawGameplayDefault(struct PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, Actor* actor);
 s32 Player_OverrideLimbDrawGameplayFirstPerson(struct PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, Actor* actor);
 s32 Player_OverrideLimbDrawGameplayCrawling(struct PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, Actor* thisx);
+s32 Player_OverrideLimbDrawGameplayCommon(struct PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, Actor* thisx);
 s32 func_80126440(struct PlayState* play, ColliderQuad* collider, WeaponInfo* weaponInfo, Vec3f* newTip, Vec3f* newBase);
 void Player_DrawGetItem(struct PlayState* play, Player* player);
 void func_80126B8C(struct PlayState* play, Player* player);

@@ -15,8 +15,9 @@ struct PlayState;
 
 #define SPAWN_ROT_FLAGS(rotation, flags) (((rotation) << 7) | (flags))
 
-#define ROOM_DRAW_OPA (1 << 0)
-#define ROOM_DRAW_XLU (1 << 1)
+#define ROOM_DRAW_OPA       (1 << 0)
+#define ROOM_DRAW_XLU       (1 << 1)
+#define ROOM_DRAW_ROTATED   (1 << 2)
 
 typedef struct {
     /* 0x0 */ u8  code;
@@ -218,6 +219,12 @@ typedef struct {
     /* 0x4 */ void* segment;
 } SCmdMapDataChests; // size = 0x8
 
+typedef struct {
+    u8            code;
+    u8            pad;
+    void *        segment;
+} SCmdRoomVertListList;
+
 typedef enum {
     /* 0 */ ROOM_SHAPE_TYPE_NORMAL,
     /* 1 */ ROOM_SHAPE_TYPE_IMAGE,
@@ -394,10 +401,16 @@ typedef struct {
     /* 0x1 */ u8 room;
 } EntranceEntry; // size = 0x2
 
+enum EntranceBgmFlags
+{
+    ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM = 1
+};
+
 typedef struct {
-    /* 0x0 */ s8 sceneId;
-    /* 0x1 */ s8 spawnNum;
-    /* 0x2 */ u16 flags;
+    /* 0x0 */ s8    sceneId;
+    /* 0x1 */ s8    spawnNum;
+    /* 0x2 */ u16   flags;
+              u16   bgm_flags;
 } EntranceTableEntry; // size = 0x4
 
 typedef struct {
@@ -531,7 +544,20 @@ typedef union {
     /* Command: 0x1C */ SCmdMapData             mapData;
     /* Command: 0x1D */ // Unused
     /* Command: 0x1E */ SCmdMapDataChests       mapDataChests;
+    /* Command: 0x1F */ SCmdRoomVertListList    room_vert_list_list;
 } SceneCmd; // size = 0x8
+
+#define ROOM_VERT_LIST(verts) {verts, ARRAY_COUNT(verts)}
+
+typedef struct RoomVertList {
+    void *  verts;
+    u32     count;
+} RoomVertList;
+
+typedef struct{
+    RoomVertList *  room_vert_lists;
+    u32             count;
+} RoomVertListList;
 
 // Sets cursor point options on the world map
 typedef enum RegionId {
@@ -566,6 +592,8 @@ typedef enum OwlWarpId {
     /*  0xB */ OWL_WARP_MAX,
     /* 0xFF */ OWL_WARP_NONE = 0xFF
 } OwlWarpId;
+
+#define OWL_WARP_ALL_MASK 0x000003ff
 
 // Sets cloud visibility on the world map
 typedef enum TingleMapId {
@@ -741,6 +769,11 @@ typedef enum {
     /* 2 */ NAVI_QUEST_HINTS_DUNGEON
 } NaviQuestHintFileId;
 
+typedef enum {
+    ENTR_TRANSITION_FLAG_SHOW_TITLE_CARD                = 0x4000,
+    ENTR_TRANSITION_FLAG_PRESERVE_SEQS_ON_TRANSITION    = 0x8000,
+}EntranceTransitionFlags;
+
 // SceneTableEntry commands
 typedef enum {
     /* 0x00 */ SCENE_CMD_ID_SPAWN_LIST,
@@ -774,7 +807,8 @@ typedef enum {
     /* 0x1C */ SCENE_CMD_ID_MAP_DATA,
     /* 0x1D */ SCENE_CMD_ID_UNUSED_1D,
     /* 0x1E */ SCENE_CMD_ID_MAP_DATA_CHESTS,
-    /* 0x1F */ SCENE_CMD_MAX
+    /* 0x1F */ SCENE_CMD_ID_ROOM_VERT_LIST_LIST,
+    /* 0x20 */ SCENE_CMD_MAX
 } SceneCommandTypeId;
 
 #define SCENE_CMD_SPAWN_LIST(numSpawns, spawnList) \
@@ -801,10 +835,13 @@ typedef enum {
 #define SCENE_CMD_SPECIAL_FILES(naviQuestHintFileId, keepObjectId) \
     { SCENE_CMD_ID_SPECIAL_FILES, naviQuestHintFileId, CMD_W(keepObjectId) }
 
-#define SCENE_CMD_ROOM_BEHAVIOR(type, environment, lensMode, msgCtxunk12044, enablePosLights, stormState)        \
-    { SCENE_CMD_ID_ROOM_BEHAVIOR, type,                                                                          \
-      environment | _SHIFTL(lensMode, 8, 1) | _SHIFTL(msgCtxunk12044, 10, 1) | _SHIFTL(enablePosLights, 11, 1) | \
-          _SHIFTL(stormState, 12, 1) }
+#define SCENE_CMD_ROOM_BEHAVIOR(curRoomUnk3, curRoomUnk2, curRoomUnk5, msgCtxunk12044, enablePosLights,  \
+                                kankyoContextUnkE2)                                                         \
+    {                                                                                                       \
+        SCENE_CMD_ID_ROOM_BEHAVIOR, curRoomUnk3,                                                           \
+            curRoomUnk2 | _SHIFTL(curRoomUnk5, 8, 1) | _SHIFTL(msgCtxunk12044, 10, 1) | \
+                _SHIFTL(enablePosLights, 11, 1) | _SHIFTL(kankyoContextUnkE2, 12, 1)                        \
+    }
 
 #define SCENE_CMD_UNK_09() \
     { SCENE_CMD_ID_UNK_09, 0, CMD_W(0) }
@@ -869,6 +906,9 @@ typedef enum {
 #define SCENE_CMD_MAP_DATA_CHESTS(chestCount, chestInfo) \
     { SCENE_CMD_ID_MAP_DATA_CHESTS, chestCount, CMD_PTR(chestInfo) }
 
+#define SCENE_CMD_ROOM_VERT_LIST_LIST(list_list) \
+    { SCENE_CMD_ID_ROOM_VERT_LIST_LIST, 0, list_list }
+
 #define SCENE_CMD_MINIMAP_INFO SCENE_CMD_MAP_DATA
 #define SCENE_CMD_MINIMAP_COMPASS_ICON_INFO SCENE_CMD_MAP_DATA_CHESTS
 
@@ -918,6 +958,7 @@ s32 Entrance_GetSceneId(u16 entrance);
 s32 Entrance_GetSceneIdAbsolute(u16 entrance);
 s32 Entrance_GetSpawnNum(u16 entrance);
 s32 Entrance_GetTransitionFlags(u16 entrance);
+s32 Entrance_GetBgmFlags(u16 entrance);
 
 extern SceneTableEntry gSceneTable[SCENE_MAX];
 

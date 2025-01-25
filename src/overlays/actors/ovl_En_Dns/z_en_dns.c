@@ -16,6 +16,8 @@ void EnDns_Draw(Actor* thisx, PlayState* play);
 void func_8092D330(EnDns* this, PlayState* play);
 void EnDns_DoNothing(EnDns* this, PlayState* play);
 void func_8092D4D8(EnDns* this, PlayState* play);
+s32 func_8092CC68(PlayState* play);
+s32 EnDns_PlayerEnteredThroughPrisonEntrance(PlayState *play);
 
 static MsgScript D_8092DCB0[] = {
     /* 0x0000 0x05 */ MSCRIPT_CMD_CHECK_WEEK_EVENT_REG(WEEKEVENTREG_23_20, 0x000A - 0x0005),
@@ -69,6 +71,12 @@ static MsgScript D_8092DCF0[] = {
     /* 0x0008 0x03 */ MSCRIPT_CMD_SET_EVENT_INF(EVENTINF_16),
     /* 0x000B 0x01 */ MSCRIPT_CMD_UNSET_AUTOTALK(),
     /* 0x000C 0x01 */ MSCRIPT_CMD_DONE(),
+};
+
+static MsgScript you_shouldnt_be_here_and_neither_should_i[] = {
+    MSCRIPT_CMD_BEGIN_TEXT(0x354f),
+    MSCRIPT_CMD_AWAIT_TEXT(),
+    MSCRIPT_CMD_DONE()
 };
 
 static MsgScript D_8092DD00[] = {
@@ -236,7 +244,12 @@ MsgScript* EnDns_GetMsgScript(EnDns* this, PlayState* play) {
 
     if (!CHECK_WEEKEVENTREG(WEEKEVENTREG_23_20)) {
         if (player->transformation != PLAYER_FORM_DEKU) {
-            return D_8092DCF0;
+            // s16 bgId = player->actor.floorBgId;
+            if (EnDns_PlayerEnteredThroughPrisonEntrance(play)) 
+            {
+                return D_8092DCF0;
+            }
+            return you_shouldnt_be_here_and_neither_should_i;
         } else if (this->unk_2FC != 0) {
             return D_8092DD00;
         }
@@ -279,6 +292,7 @@ s32 EnDns_GetCueType(EnDns* this) {
     }
 }
 
+/* EnDns_PlayerAcceptedTalkOffer */
 s32 func_8092CAD0(EnDns* this, PlayState* play) {
     s32 ret = false;
 
@@ -321,21 +335,36 @@ s32 func_8092CB98(EnDns* this, PlayState* play) {
     return phi_v1;
 }
 
+s32 EnDns_PlayerEnteredThroughPrisonEntrance(PlayState *play)
+{
+    Player* player = GET_PLAYER(play);
+    s16 bgId = player->actor.floorBgId;
+    if (SurfaceType_GetSceneExitIndex(&play->colCtx, player->actor.floorPoly, bgId) != 4) {
+        return true;
+    }
+    return false;
+}
+
+/* EnDns_IsPlayerSpottable? */
 s32 func_8092CC68(PlayState* play) {
     Player* player = GET_PLAYER(play);
-    s32 pad[2];
-    s32 ret = false;
-    s16 bgId;
+    // s32 pad[2];
+    // s32 ret = false;
+    // s16 bgId;
 
     if (!Play_InCsMode(play) && (player->actor.bgCheckFlags & BGCHECKFLAG_GROUND) &&
         (player->transformation != PLAYER_FORM_DEKU)) {
-        bgId = player->actor.floorBgId;
-        if (SurfaceType_GetSceneExitIndex(&play->colCtx, player->actor.floorPoly, bgId) != 4) {
-            ret = true;
+        // bgId = player->actor.floorBgId;
+        if(EnDns_PlayerEnteredThroughPrisonEntrance(play))
+        {
+            return true;
         }
+        // if (SurfaceType_GetSceneExitIndex(&play->colCtx, player->actor.floorPoly, bgId) != 4) {
+        //     ret = true;
+        // }
     }
 
-    return ret;
+    return false;
 }
 
 s32 func_8092CCEC(Actor* thisx, PlayState* play) {
@@ -455,7 +484,7 @@ void func_8092D1B8(EnDns* this, PlayState* play) {
     if (!ENDNS_GET_4000(&this->actor) || (this->unk_2D2 != 0)) {
         if (!CHECK_WEEKEVENTREG(WEEKEVENTREG_23_20) && !CHECK_EVENTINF(EVENTINF_15) && func_8092CC68(play)) {
             player->stateFlags1 |= PLAYER_STATE1_20;
-            this->unk_2C6 |= 0x100;
+            this->unk_2C6 |= EN_DNS_FLAG_PLAYER_SPOTTED;
             SubS_SetOfferMode(&this->unk_2C6, SUBS_OFFER_MODE_AUTO, SUBS_OFFER_MODE_MASK);
             Audio_PlaySfx(NA_SE_SY_FOUND);
             SET_EVENTINF(EVENTINF_15);
@@ -491,8 +520,8 @@ void func_8092D330(EnDns* this, PlayState* play) {
         Math_ApproachS(&this->actor.shape.rot.y, Math_Vec3f_Yaw(&this->actor.world.pos, &sp30), 3, 0x2AA8);
         Actor_MoveWithGravity(&this->actor);
     }
-    if ((this->unk_2C6 & 0x100) && (DECR(this->unk_2D0) == 0)) {
-        this->unk_2C6 &= ~0x100;
+    if ((this->unk_2C6 & EN_DNS_FLAG_PLAYER_SPOTTED) && (DECR(this->unk_2D0) == 0)) {
+        this->unk_2C6 &= ~EN_DNS_FLAG_PLAYER_SPOTTED;
         play->nextEntrance = ENTRANCE(DEKU_PALACE, 1);
         gSaveContext.nextCutsceneIndex = 0;
         play->transitionTrigger = TRANS_TRIGGER_START;

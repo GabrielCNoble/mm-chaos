@@ -226,6 +226,7 @@ void func_80C039A8(EnBombers* this, PlayState* play) {
 
     switch (player->transformation) {
         case PLAYER_FORM_HUMAN:
+        case PLAYER_FORM_FIERCE_DEITY:
             this->actor.textId = 0x73D;
             if (CHECK_WEEKEVENTREG(WEEKEVENTREG_84_80)) {
                 this->actor.textId = 0x74B;
@@ -378,6 +379,7 @@ void func_80C03FAC(EnBombers* this, PlayState* play) {
 
     switch (player->transformation) {
         case PLAYER_FORM_HUMAN:
+        case PLAYER_FORM_FIERCE_DEITY:
             this->unk_28E = -0xFA0;
             break;
 

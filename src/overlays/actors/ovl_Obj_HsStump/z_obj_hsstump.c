@@ -7,6 +7,7 @@
 #include "z_obj_hsstump.h"
 #include "attributes.h"
 #include "assets/objects/object_hsstump/object_hsstump.h"
+#include "chaos_fuckery.h"
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED)
 
@@ -62,6 +63,11 @@ void ObjHsStump_Init(Actor* thisx, PlayState* play) {
 
         default:
             break;
+    }
+
+    if(!Chaos_GetConfigFlag(CHAOS_CONFIG_IKANA_CLIMB_TREE_ACTOR_CHASE))
+    {
+        thisx->flags |= ACTOR_FLAG_NO_CHASE;
     }
 }
 

@@ -2,6 +2,10 @@
 #include "PR/gs2dex.h"
 #include "libu64/debug.h"
 #include "sys_ucode.h"
+#include "chaos_fuckery.h"
+#include "fault.h"
+
+extern struct ChaosContext gChaosContext;
 
 void Room_Noop(PlayState* play, Room* room, Input* input, s32 arg3) {
 }
@@ -11,9 +15,86 @@ void Room_DrawNone(PlayState* play, Room* room, u32 flags) {
 
 static Vec3f sZeroVec = { 0.0f, 0.0f, 0.0f };
 
+// void Room_RotateRoom(PlayState *play, s16 x, s16 y, s16 z)
+// {
+//     OPEN_DISPS(play->state.gfxCtx);
+//     Mtx *room_transform = GRAPH_ALLOC(play->state.gfxCtx, sizeof(Mtx) * 2);
+//     Matrix_Push();
+//     Matrix_RotateZS(z, MTXMODE_NEW);
+//     Matrix_RotateYS(y, MTXMODE_APPLY);
+//     Matrix_RotateXS(x, MTXMODE_APPLY);
+//     Matrix_ToMtx(room_transform + 1);
+//     Matrix_Pop();
+//     gSPSegment(POLY_OPA_DISP++, 0x01, room_transform);
+//     gSPMatrix(POLY_OPA_DISP++, OS_K0_TO_PHYSICAL(room_transform + 1), G_MTX_MODELVIEW | G_MTX_LOAD);
+//     CLOSE_DISPS(play->state.gfxCtx);
+// }
+
+void Room_PivotRoom(PlayState *play, Vec3f *pivot_point, s16 x, s16 y, s16 z)
+{
+    OPEN_DISPS(play->state.gfxCtx);
+    Mtx *room_transform = GRAPH_ALLOC(play->state.gfxCtx, sizeof(Mtx) * 2);
+    Matrix_Push();
+    Matrix_Translate(pivot_point->x, pivot_point->y, pivot_point->z, MTXMODE_NEW);
+    Matrix_RotateZS(z, MTXMODE_APPLY);
+    Matrix_RotateYS(y, MTXMODE_APPLY);
+    Matrix_RotateXS(x, MTXMODE_APPLY);
+    Matrix_Translate(-pivot_point->x, -pivot_point->y, -pivot_point->z, MTXMODE_APPLY);
+    Matrix_ToMtx(room_transform + 1);
+    Matrix_Pop();
+    gSPSegment(POLY_OPA_DISP++, 0x01, room_transform);
+    gSPMatrix(POLY_OPA_DISP++, OS_K0_TO_PHYSICAL(room_transform + 1), G_MTX_MODELVIEW | G_MTX_NOPUSH);
+    gSPSegment(POLY_XLU_DISP++, 0x01, room_transform);
+    gSPMatrix(POLY_XLU_DISP++, OS_K0_TO_PHYSICAL(room_transform + 1), G_MTX_MODELVIEW | G_MTX_NOPUSH);
+    CLOSE_DISPS(play->state.gfxCtx);
+}
+
+void Room_ScaleRoomInDirection(PlayState *play, Vec3f *pivot_point, Vec3f *scale_axis, f32 scale_factor)
+{
+    f32 scale_minus_one;
+    MtxF scale_transform;
+
+    scale_minus_one = scale_factor - 1.0f;
+
+    scale_transform.mf[0][0] = 1.0f + scale_minus_one * scale_axis->x * scale_axis->x;
+    scale_transform.mf[1][0] = scale_minus_one * scale_axis->x * scale_axis->y;
+    scale_transform.mf[2][0] = scale_minus_one * scale_axis->x * scale_axis->z;
+    scale_transform.mf[3][0] = 0.0f;
+
+    scale_transform.mf[0][1] = scale_minus_one * scale_axis->x * scale_axis->y;
+    scale_transform.mf[1][1] = 1.0f + scale_minus_one * scale_axis->y * scale_axis->y;
+    scale_transform.mf[2][1] = scale_minus_one * scale_axis->y * scale_axis->z;
+    scale_transform.mf[3][1] = 0.0f;
+
+    scale_transform.mf[0][2] = scale_minus_one * scale_axis->x * scale_axis->z;
+    scale_transform.mf[1][2] = scale_minus_one * scale_axis->y * scale_axis->z;
+    scale_transform.mf[2][2] = 1.0f + scale_minus_one * scale_axis->z * scale_axis->z;
+    scale_transform.mf[3][2] = 0.0f;
+ 
+    scale_transform.mf[0][3] = 0;
+    scale_transform.mf[1][3] = 0;
+    scale_transform.mf[2][3] = 0;
+    scale_transform.mf[3][3] = 1;
+
+    OPEN_DISPS(play->state.gfxCtx);
+    Mtx *room_transform = GRAPH_ALLOC(play->state.gfxCtx, sizeof(Mtx) * 2);
+    Matrix_Push();
+    Matrix_Translate(pivot_point->x, pivot_point->y, pivot_point->z, MTXMODE_NEW);
+    Matrix_Mult(&scale_transform, MTXMODE_APPLY);
+    Matrix_Translate(-pivot_point->x, -pivot_point->y, -pivot_point->z, MTXMODE_APPLY);
+    Matrix_ToMtx(room_transform + 1);
+    Matrix_Pop();
+    gSPSegment(POLY_OPA_DISP++, 0x01, room_transform);
+    gSPMatrix(POLY_OPA_DISP++, OS_K0_TO_PHYSICAL(room_transform + 1), G_MTX_MODELVIEW | G_MTX_NOPUSH);
+    gSPSegment(POLY_XLU_DISP++, 0x01, room_transform);
+    gSPMatrix(POLY_XLU_DISP++, OS_K0_TO_PHYSICAL(room_transform + 1), G_MTX_MODELVIEW | G_MTX_NOPUSH);
+    CLOSE_DISPS(play->state.gfxCtx);
+}
+
 void Room_DrawNormal(PlayState* play, Room* room, u32 flags) {
     RoomShapeNormal* roomShape;
     RoomShapeDListsEntry* entry;
+    Player *player = GET_PLAYER(play);
     s32 i;
 
     OPEN_DISPS(play->state.gfxCtx);
@@ -22,14 +103,24 @@ void Room_DrawNormal(PlayState* play, Room* room, u32 flags) {
         func_800BCBF4(&sZeroVec, play);
         gSPSegment(POLY_OPA_DISP++, 0x03, room->segment);
         func_8012C268(&play->state);
-        gSPMatrix(POLY_OPA_DISP++, &gIdentityMtx, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+        gSPMatrix(POLY_OPA_DISP++, &gIdentityMtx, G_MTX_MODELVIEW | G_MTX_LOAD);
     }
 
     if (flags & ROOM_DRAW_XLU) {
         func_800BCC68(&sZeroVec, play);
         gSPSegment(POLY_XLU_DISP++, 0x03, room->segment);
         Gfx_SetupDL25_Xlu(play->state.gfxCtx);
-        gSPMatrix(POLY_XLU_DISP++, &gIdentityMtx, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+        gSPMatrix(POLY_XLU_DISP++, &gIdentityMtx, G_MTX_MODELVIEW | G_MTX_LOAD);
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_UNSTABLE_ROOMS) && (gChaosContext.room.weirdness_behavior & CHAOS_UNSTABLE_ROOMS_BEHAVIOR_ROTATE))
+    {
+        Room_PivotRoom(play, &player->actor.world.pos, gChaosContext.room.room_rotation.x, gChaosContext.room.room_rotation.y, gChaosContext.room.room_rotation.z);
+    }
+
+    if(flags & ROOM_DRAW_ROTATED)
+    {
+        Room_PivotRoom(play, &gChaosContext.room.transition_actor_pos, 0, 0x8000, 0);
     }
 
     roomShape = &room->roomShape->normal;
@@ -74,10 +165,18 @@ void Room_DrawCullable(PlayState* play, Room* room, u32 flags) {
     Gfx* dList;
     RoomShapeCullableEntryLinked* insert;
     f32 entryBoundsNearZ;
+    Player *player = GET_PLAYER(play);
     s32 i;
     Vec3f pos;
     Vec3f projectedPos;
+    Vec3f scale_axis = {0, 0, 1};
     RoomShapeCullableEntry* roomShapeCullableEntries;
+    Camera *camera = GET_ACTIVE_CAM(play);
+    f32 camera_speed;
+    f32 scale_factor;
+    f32 c_speed = 20.0f;
+    static s16 angle = 0; 
+    static Vec3f prev_cam_pos = {0, 0, 0};
 
     OPEN_DISPS(play->state.gfxCtx);
 
@@ -89,7 +188,7 @@ void Room_DrawCullable(PlayState* play, Room* room, u32 flags) {
             gSPSegment(POLY_OPA_DISP++, 0x06, play->roomCtx.unk74);
         }
         func_8012C268(&play->state);
-        gSPMatrix(POLY_OPA_DISP++, &gIdentityMtx, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+        gSPMatrix(POLY_OPA_DISP++, &gIdentityMtx, G_MTX_MODELVIEW | G_MTX_LOAD);
     }
 
     if (flags & ROOM_DRAW_XLU) {
@@ -99,8 +198,28 @@ void Room_DrawCullable(PlayState* play, Room* room, u32 flags) {
             gSPSegment(POLY_XLU_DISP++, 0x06, play->roomCtx.unk74);
         }
         Gfx_SetupDL25_Xlu(play->state.gfxCtx);
-        gSPMatrix(POLY_XLU_DISP++, &gIdentityMtx, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+        gSPMatrix(POLY_XLU_DISP++, &gIdentityMtx, G_MTX_MODELVIEW | G_MTX_LOAD);
     }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_UNSTABLE_ROOMS) && (gChaosContext.room.weirdness_behavior & CHAOS_UNSTABLE_ROOMS_BEHAVIOR_ROTATE))
+    {
+        Room_PivotRoom(play, &player->actor.world.pos, gChaosContext.room.room_rotation.x, gChaosContext.room.room_rotation.y, gChaosContext.room.room_rotation.z);
+    }
+
+    if(flags & ROOM_DRAW_ROTATED)
+    {
+        Room_PivotRoom(play, &gChaosContext.room.transition_actor_pos, 0, 0x8000, 0);
+    }
+
+    // Math_Vec3f_Diff(&camera->eye, &prev_cam_pos, &scale_axis);
+    // camera_speed = Math3D_Normalize(&scale_axis);
+
+    // scale_factor = sqrtf(1.0f - (camera_speed * camera_speed) / (c_speed * c_speed));
+
+
+    // Room_ScaleRoomInDirection(play, &player->actor.world.pos, &scale_axis, scale_factor); 
+
+    // prev_cam_pos = camera->eye;
 
     if (room->enablePosLights || (MREG(93) != 0)) {
         gSPSetGeometryMode(POLY_OPA_DISP++, G_LIGHTING_POSITIONAL);
@@ -300,6 +419,7 @@ void Room_DrawImageSingle(PlayState* play, Room* room, u32 flags) {
     Gfx* gfx;
     RoomShapeImageSingle* roomShape;
     RoomShapeDListsEntry* entry;
+    Player *player = GET_PLAYER(play);
     u32 isFixedCamera;
     u32 drawBackground;
     u32 drawOpa;
@@ -321,7 +441,12 @@ void Room_DrawImageSingle(PlayState* play, Room* room, u32 flags) {
 
         if (drawOpa) {
             Gfx_SetupDL25_Opa(play->state.gfxCtx);
-            gSPMatrix(POLY_OPA_DISP++, &gIdentityMtx, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+            gSPMatrix(POLY_OPA_DISP++, &gIdentityMtx, G_MTX_MODELVIEW | G_MTX_LOAD);
+
+            if(Chaos_IsCodeActive(CHAOS_CODE_UNSTABLE_ROOMS) && (gChaosContext.room.weirdness_behavior & CHAOS_UNSTABLE_ROOMS_BEHAVIOR_ROTATE))
+            {
+                Room_PivotRoom(play, &player->actor.world.pos, gChaosContext.room.room_rotation.x, gChaosContext.room.room_rotation.y, gChaosContext.room.room_rotation.z);
+            }
             gSPDisplayList(POLY_OPA_DISP++, entry->opa);
         }
 
@@ -351,7 +476,11 @@ void Room_DrawImageSingle(PlayState* play, Room* room, u32 flags) {
     if (drawXlu) {
         gSPSegment(POLY_XLU_DISP++, 0x03, room->segment);
         Gfx_SetupDL25_Xlu(play->state.gfxCtx);
-        gSPMatrix(POLY_XLU_DISP++, &gIdentityMtx, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+        gSPMatrix(POLY_XLU_DISP++, &gIdentityMtx, G_MTX_MODELVIEW | G_MTX_LOAD);
+        if(Chaos_IsCodeActive(CHAOS_CODE_UNSTABLE_ROOMS) && (gChaosContext.room.weirdness_behavior & CHAOS_UNSTABLE_ROOMS_BEHAVIOR_ROTATE))
+        {
+            Room_PivotRoom(play, &player->actor.world.pos, gChaosContext.room.room_rotation.x, gChaosContext.room.room_rotation.y, gChaosContext.room.room_rotation.z);
+        }
         gSPDisplayList(POLY_XLU_DISP++, entry->xlu);
     }
 
@@ -420,7 +549,7 @@ void Room_DrawImageMulti(PlayState* play, Room* room, u32 flags) {
 
         if (drawOpa) {
             Gfx_SetupDL25_Opa(play->state.gfxCtx);
-            gSPMatrix(POLY_OPA_DISP++, &gIdentityMtx, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+            gSPMatrix(POLY_OPA_DISP++, &gIdentityMtx, G_MTX_MODELVIEW | G_MTX_LOAD);
             gSPDisplayList(POLY_OPA_DISP++, dListsEntry->opa);
         }
 
@@ -450,7 +579,7 @@ void Room_DrawImageMulti(PlayState* play, Room* room, u32 flags) {
     if (drawXlu) {
         gSPSegment(POLY_XLU_DISP++, 0x03, room->segment);
         Gfx_SetupDL25_Xlu(play->state.gfxCtx);
-        gSPMatrix(POLY_XLU_DISP++, &gIdentityMtx, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+        gSPMatrix(POLY_XLU_DISP++, &gIdentityMtx, G_MTX_MODELVIEW | G_MTX_LOAD);
         gSPDisplayList(POLY_XLU_DISP++, dListsEntry->xlu);
     }
 
@@ -591,6 +720,8 @@ s32 Room_RequestNewRoom(PlayState* play, RoomContext* roomCtx, s32 index) {
                             size, 0, &roomCtx->loadQueue, NULL);
         roomCtx->activeBufPage ^= 1;
 
+        gChaosContext.room.vert_list_list[roomCtx->activeBufPage] = NULL;
+
         return true;
     }
 
@@ -614,8 +745,7 @@ s32 Room_ProcessRoomRequest(PlayState* play, RoomContext* roomCtx) {
             func_80123140(play, GET_PLAYER(play));
             Actor_SpawnTransitionActors(play, &play->actorCtx);
 
-            if (!(((play->sceneId == SCENE_IKANA) && (roomCtx->curRoom.num == 1)) ||
-                  (play->sceneId == SCENE_IKNINSIDE))) {
+            if (((play->sceneId != SCENE_IKANA) || (roomCtx->curRoom.num != 1)) && (play->sceneId != SCENE_IKNINSIDE)) {
                 play->envCtx.lightSettingOverride = LIGHT_SETTING_OVERRIDE_NONE;
                 play->envCtx.lightBlendOverride = LIGHT_BLEND_OVERRIDE_NONE;
             }

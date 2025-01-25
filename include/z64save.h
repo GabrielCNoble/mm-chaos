@@ -319,6 +319,18 @@ typedef struct SaveInfo {
     /* 0xFE6 */ u16 checksum;                          // "check_sum"
 } SaveInfo; // size = 0xFE8
 
+
+struct ChaosSaveInfo
+{
+    u32 config[4];
+    u8  moon_crash_count;
+    // u8  pad0[3];
+    u8  major;
+    u8  minor;
+    u8  patch;
+    f32 evilness_probability_scale;
+};
+
 typedef struct Save {
     /* 0x00 */ s32 entrance;        // "scene_no"
     /* 0x04 */ u8 equippedMask;     // "player_mask"
@@ -337,6 +349,7 @@ typedef struct Save {
     /* 0x22 */ u8 hasTatl;          // "bell_flag"
     /* 0x23 */ u8 isOwlSave;
     /* 0x24 */ SaveInfo saveInfo;
+    struct ChaosSaveInfo chaos;
 } Save; // size = 0x100C
 
 typedef struct SaveContext {
@@ -793,7 +806,10 @@ typedef enum {
 #define WEEKEVENTREG_19_20 PACK_WEEKEVENTREG_FLAG(19, 0x20)
 #define WEEKEVENTREG_19_40 PACK_WEEKEVENTREG_FLAG(19, 0x40)
 #define WEEKEVENTREG_19_80 PACK_WEEKEVENTREG_FLAG(19, 0x80)
+
+// woodfall temple risen from water (by playing sonata of awakening)
 #define WEEKEVENTREG_20_01 PACK_WEEKEVENTREG_FLAG(20, 0x01)
+#define WEEKEVENTREG_WOODFALL_TEMPLE_RISEN WEEKEVENTREG_20_01
 
 // woodfall temple purification cutscene watched
 #define WEEKEVENTREG_CLEARED_WOODFALL_TEMPLE PACK_WEEKEVENTREG_FLAG(20, 0x02)
@@ -1130,6 +1146,7 @@ typedef enum {
 
 // Unconfirmed: "Entered South Clock Town"
 #define WEEKEVENTREG_59_04 PACK_WEEKEVENTREG_FLAG(59, 0x04)
+#define WEEKEVENTREG_ENTERED_SOUTH_CLOCK_TOWN WEEKEVENTREG_59_04
 
 #define WEEKEVENTREG_RECEIVED_BANK_HEART_PIECE PACK_WEEKEVENTREG_FLAG(59, 0x08)
 #define WEEKEVENTREG_RECEIVED_SWAMP_SHOOTING_GALLERY_QUIVER_UPGRADE PACK_WEEKEVENTREG_FLAG(59, 0x10)
@@ -1368,6 +1385,7 @@ typedef enum {
 // Unconfirmed: "Obtained Fierce Deity's Mask?"
 // Also related to moon child
 #define WEEKEVENTREG_84_20 PACK_WEEKEVENTREG_FLAG(84, 0x20)
+#define WEEKEVENTREG_OBTAINED_FIERCE_DEITY_MASK WEEKEVENTREG_84_20
 
 #define WEEKEVENTREG_RECEIVED_RED_POTION_FOR_KOUME PACK_WEEKEVENTREG_FLAG(84, 0x40)
 #define WEEKEVENTREG_84_80 PACK_WEEKEVENTREG_FLAG(84, 0x80)
@@ -1455,6 +1473,8 @@ typedef enum {
 // Related to Fishermans's jumping minigame
 #define WEEKEVENTREG_90_20 PACK_WEEKEVENTREG_FLAG(90, 0x20)
 #define WEEKEVENTREG_90_40 PACK_WEEKEVENTREG_FLAG(90, 0x40)
+#define WEEKEVENTREG_BOAT_PARKED_AT_DEKU_PALACE WEEKEVENTREG_90_40
+
 #define WEEKEVENTREG_90_80 PACK_WEEKEVENTREG_FLAG(90, 0x80)
 #define WEEKEVENTREG_91_01 PACK_WEEKEVENTREG_FLAG(91, 0x01)
 #define WEEKEVENTREG_91_02 PACK_WEEKEVENTREG_FLAG(91, 0x02)
@@ -1613,6 +1633,7 @@ typedef enum {
 
 // Related to swamp boat (non-minigame)?
 #define EVENTINF_41 0x41
+#define EVENTINF_RIDING_BOAT EVENTINF_41
 #define EVENTINF_42 0x42
 #define EVENTINF_43 0x43
 #define EVENTINF_44 0x44
@@ -1724,6 +1745,8 @@ void Sram_UpdateWriteToFlashDefault(SramContext* sramCtx);
 void Sram_SetFlashPagesOwlSave(SramContext* sramCtx, s32 curPage, s32 numPages);
 void Sram_StartWriteToFlashOwlSave(SramContext* sramCtx);
 void Sram_UpdateWriteToFlashOwlSave(SramContext* sramCtx);
+void Sram_LoadChaosConfig(SramContext *sram_ctx, u8 file_index);
+void Sram_SaveChaosConfig(SramContext *sram_ctx, u8 file_index);
 
 void SaveContext_Init(void);
 

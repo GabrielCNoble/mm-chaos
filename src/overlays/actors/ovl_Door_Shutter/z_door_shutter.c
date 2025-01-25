@@ -20,7 +20,7 @@
 #include "assets/objects/object_kaizoku_obj/object_kaizoku_obj.h"
 #include "assets/objects/object_last_obj/object_last_obj.h"
 
-#define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED)
+#define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_NO_CHASE)
 
 void DoorShutter_Init(Actor* thisx, PlayState* play2);
 void DoorShutter_Destroy(Actor* thisx, PlayState* play);
@@ -66,7 +66,7 @@ ShutterObjectInfo D_808A2180[] = {
 typedef struct {
     /* 0x0 */ Gfx* unk_00;
     /* 0x4 */ Gfx* unk_04;
-    /* 0x8 */ u8 unk_08;
+    /* 0x8 */ u8 unk_08; // bars move scale
     /* 0x9 */ u8 translateZ;
     /* 0xA */ u8 unk_0A;
     /* 0xB */ u8 unk_0B;
@@ -268,39 +268,47 @@ void DoorShutter_SetupType(DoorShutter* this, PlayState* play) {
     }
 }
 
-f32 func_808A0D90(PlayState* play, DoorShutter* this, f32 arg2, f32 arg3, f32 arg4) {
+/* DoorShutter_PlayerForwardDistance */
+f32 func_808A0D90(PlayState* play, DoorShutter* this, f32 y_offset, f32 horizontal_range, f32 vertical_range) {
     Player* player = GET_PLAYER(play);
-    Vec3f sp28;
-    Vec3f sp1C;
+    Vec3f point;
+    Vec3f offset;
 
-    sp28.x = player->actor.world.pos.x;
-    sp28.y = player->actor.world.pos.y + arg2;
-    sp28.z = player->actor.world.pos.z;
+    point.x = player->actor.world.pos.x;
+    point.y = player->actor.world.pos.y + y_offset;
+    point.z = player->actor.world.pos.z;
 
-    Actor_WorldToActorCoords(&this->slidingDoor.dyna.actor, &sp1C, &sp28);
+    Actor_WorldToActorCoords(&this->slidingDoor.dyna.actor, &offset, &point);
 
-    if ((arg3 < fabsf(sp1C.x)) || (arg4 < fabsf(sp1C.y))) {
+    if ((horizontal_range < fabsf(offset.x)) || (vertical_range < fabsf(offset.y))) {
         return FLT_MAX;
     }
-    return sp1C.z;
+    return offset.z;
 }
 
+/* DoorShutter_GetPlayerDoorSide */
 s32 func_808A0E28(DoorShutter* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     if (!Player_InCsMode(play)) {
         ShutterInfo* shutterInfo = &D_808A21B0[this->unk_164];
-        f32 temp_f0 = func_808A0D90(play, this, 0.0f, shutterInfo->unk_0A, shutterInfo->unk_0B);
+        f32 dist_to_door = func_808A0D90(play, this, 0.0f, shutterInfo->unk_0A, shutterInfo->unk_0B);
+        f32 min_dist_to_door = 50.0f;
 
-        if (fabsf(temp_f0) < 50.0f) {
-            s16 temp_v0_2 = BINANG_SUB(player->actor.shape.rot.y, this->slidingDoor.dyna.actor.shape.rot.y);
+        if(player->transformation == PLAYER_FORM_FIERCE_DEITY)
+        {
+            min_dist_to_door += 12.0f;
+        }
 
-            if (temp_f0 > 0.0f) {
-                temp_v0_2 = 0x8000 - temp_v0_2;
+        if (fabsf(dist_to_door) < min_dist_to_door) {
+            s16 angle_relative_to_door = BINANG_SUB(player->actor.shape.rot.y, this->slidingDoor.dyna.actor.shape.rot.y);
+
+            if (dist_to_door > 0.0f) {
+                angle_relative_to_door = 0x8000 - angle_relative_to_door;
             }
 
-            if (ABS_ALT(temp_v0_2) < 0x3000) {
-                return (temp_f0 >= 0.0f) ? 1.0f : -1.0f;
+            if (ABS_ALT(angle_relative_to_door) < 0x3000) {
+                return (dist_to_door >= 0.0f) ? 1.0f : -1.0f;
             }
         }
     }
@@ -448,13 +456,16 @@ s32 func_808A1340(DoorShutter* this, PlayState* play) {
     return false;
 }
 
-s32 func_808A1478(DoorShutter* this, PlayState* play, f32 arg2) {
-    f32 temp = 1.0f - arg2;
+/* DoorShutter_UpdateBars */
+s32 func_808A1478(DoorShutter* this, PlayState* play, f32 bar_pos_fract_target) {
+    f32 temp = 1.0f - bar_pos_fract_target;
 
     if (temp == this->unk_168) {
-        if (arg2 == 1.0f) {
+        if (bar_pos_fract_target == 1.0f) {
+            /* bars are coming down */
             Actor_PlaySfx(&this->slidingDoor.dyna.actor, NA_SE_EV_METALDOOR_CLOSE);
         } else {
+            /* bars are going up */
             Actor_PlaySfx(&this->slidingDoor.dyna.actor, NA_SE_EV_METALDOOR_OPEN);
         }
 
@@ -463,12 +474,13 @@ s32 func_808A1478(DoorShutter* this, PlayState* play, f32 arg2) {
         }
     }
 
-    if (Math_StepToF(&this->unk_168, arg2, 0.2f)) {
+    if (Math_StepToF(&this->unk_168, bar_pos_fract_target, 0.2f)) {
         return true;
     }
     return false;
 }
 
+/* DoorShutter_LowerBars */
 void func_808A1548(DoorShutter* this, PlayState* play) {
     if (func_808A1478(this, play, 1.0f)) {
         if (Flags_GetSwitch(play, DOORSHUTTER_GET_SWITCH_FLAG(&this->slidingDoor.dyna.actor))) {

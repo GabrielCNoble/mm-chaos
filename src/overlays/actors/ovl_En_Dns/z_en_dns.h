@@ -19,6 +19,10 @@ typedef enum {
     /* 3 */ ENDNS_GET_7_3
 } EnDnsParam;
 
+typedef enum {
+    EN_DNS_FLAG_PLAYER_SPOTTED = 0x100 
+}EnDnsFlags;
+
 typedef struct EnDns {
     /* 0x000 */ Actor actor;
     /* 0x144 */ SkelAnime skelAnime;

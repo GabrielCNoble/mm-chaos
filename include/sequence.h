@@ -3,6 +3,7 @@
 
 #include "PR/ultratypes.h"
 #include "z64math.h"
+#include "stdbool.h"
 
 #define DEFINE_SEQUENCE(_0, seqId, _2, _3, _4) seqId,
 #define DEFINE_SEQUENCE_PTR(_0, seqId, _2, _3, _4) seqId,
@@ -243,9 +244,16 @@ void Audio_PlaySequenceAtDefaultPos(u8 seqPlayerIndex, u16 seqId);
 void Audio_PlaySequenceAtPos(u8 seqPlayerIndex, Vec3f* pos, u16 seqId, f32 maxDist);
 void Audio_PlayMorningSceneSequence(u16 seqId, u8 dayMinusOne);
 void Audio_PlaySceneSequence(u16 seqId, u8 dayMinusOne);
+bool Audio_IsFinalHoursOrSoaring(void);
+bool Audio_IsFinalHours(void);
+
 void Audio_PlaySubBgm(u16 seqId);
 void Audio_PlaySequenceInCutscene(u16 seqId);
 void Audio_PlayBgm_StorePrevBgm(u16 seqId);
+u16 Audio_GetPrevMainBgm(void);
+u16 Audio_GetObjMainBgm(void);
+void Audio_ClearPrevMainBgmSeqId(void);
+void Audio_ClearObjSoundMainBgmSeqId(void);
 void Audio_PlayFanfareWithPlayerIOPort7(u16 seqId, u8 ioData);
 void Audio_PlayFanfare(u16 seqId);
 void Audio_PlayFanfareWithPlayerIOCustomPort(u16 seqId, s8 ioPort, u8 ioData);

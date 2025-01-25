@@ -7,7 +7,7 @@
 #include "z_obj_nozoki.h"
 #include "assets/objects/object_secom_obj/object_secom_obj.h"
 
-#define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED)
+#define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_NO_CHASE)
 
 void ObjNozoki_Init(Actor* thisx, PlayState* play);
 void ObjNozoki_Destroy(Actor* thisx, PlayState* play);

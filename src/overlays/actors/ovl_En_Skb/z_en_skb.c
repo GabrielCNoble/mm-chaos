@@ -9,6 +9,7 @@
 #include "overlays/actors/ovl_En_Encount4/z_en_encount4.h"
 #include "overlays/actors/ovl_En_Part/z_en_part.h"
 #include "overlays/effects/ovl_Effect_Ss_Hahen/z_eff_ss_hahen.h"
+#include "chaos_fuckery.h"
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE)
 
@@ -226,6 +227,7 @@ static InitChainEntry sInitChain[] = {
 
 void EnSkb_Init(Actor* thisx, PlayState* play) {
     EnSkb* this = (EnSkb*)thisx;
+    Player *player = GET_PLAYER(play);
     s32 pad;
 
     Actor_ProcessInitChain(&this->actor, sInitChain);
@@ -242,12 +244,19 @@ void EnSkb_Init(Actor* thisx, PlayState* play) {
     Collider_SetJntSph(play, &this->collider, &this->actor, &sJntSphInit, this->colliderElements);
     this->collider.elements[0].dim.modelSphere.radius = this->collider.elements[0].dim.worldSphere.radius = 10;
     this->collider.elements[1].dim.modelSphere.radius = this->collider.elements[1].dim.worldSphere.radius = 20;
+
     this->actor.home.pos = this->actor.world.pos;
     this->unk_3D6 = ENSKB_GET_F0(&this->actor);
     this->actor.floorHeight = this->actor.world.pos.y;
 
     if ((play->sceneId == SCENE_BOTI) && (gSaveContext.sceneLayer == 1) && (play->csCtx.scriptIndex == 0)) {
         this->actor.flags |= ACTOR_FLAG_FREEZE_EXCEPTION;
+    }
+
+    if(ENSKB_GET_TYPE(&this->actor) == EN_SKB_TYPE_CHAOS)
+    {
+        this->actor.flags |= ACTOR_FLAG_CHAOS;
+        this->target = &player->actor;
     }
 
     switch (this->unk_3D6) {
@@ -496,7 +505,7 @@ void func_8099556C(EnSkb* this, PlayState* play) {
         this->unk_3D4 = Rand_Next() % 0x7D0;
     }
 
-    this->actor.shape.rot.x = Math_SinS(this->unk_3D4 * sp26) * 0x4E20;
+    this->actor.shape.rot.x = Math_SinS(this->unk_3D4 * sp26) * 20000.0f;
     if (Player_GetMask(play) == PLAYER_MASK_CAPTAIN) {
         this->actor.flags &= ~(ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE);
         this->actor.flags |= (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY);
@@ -550,6 +559,7 @@ void func_80995818(EnSkb* this, PlayState* play) {
     }
 }
 
+/*EnSbk_SetupHide */
 void func_809958F4(EnSkb* this) {
     Animation_Change(&this->skelAnime, &gStalchildStandUpAnim, -1.0f, Animation_GetLastFrame(&gStalchildStandUpAnim),
                      0.0f, ANIMMODE_ONCE, -4.0f);
@@ -561,6 +571,7 @@ void func_809958F4(EnSkb* this) {
     this->actionFunc = func_8099599C;
 }
 
+/* EnSkb_Hide */
 void func_8099599C(EnSkb* this, PlayState* play) {
     Math_ApproachF(&this->actor.shape.yOffset, -8000.0f, 1.0f, 500.0f);
 
@@ -575,15 +586,26 @@ void func_8099599C(EnSkb* this, PlayState* play) {
     }
 }
 
+/* EnSkb_SetupWalk */
 void func_80995A30(EnSkb* this) {
     Actor_ChangeAnimationByInfo(&this->skelAnime, sAnimationInfo, STALCHILD_ANIM_0);
     this->actor.speed = 1.6f;
     this->unk_3DA = 0;
     this->unk_3DE = 2;
     this->actionFunc = func_80995A8C;
+
+    if(ENSKB_GET_TYPE(&this->actor) == EN_SKB_TYPE_CHAOS)
+    {
+        this->actor.speed *= 9.0f;
+        this->skelAnime.playSpeed *= 4.0f;
+    }
 }
 
+/* EnSkb_Walk */
 void func_80995A8C(EnSkb* this, PlayState* play) {
+    s16 yaw_step = 0x2ee;
+    s16 yaw_towards_target;
+    f32 distance_to_target;
     if (Player_GetMask(play) == PLAYER_MASK_CAPTAIN) {
         this->actor.flags &= ~(ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE);
         this->actor.flags |= (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY);
@@ -594,23 +616,48 @@ void func_80995A8C(EnSkb* this, PlayState* play) {
         return;
     }
 
-    if ((this->unk_3D8 != 0) && ((play->gameplayFrames % 16) == 0)) {
-        this->unk_3DA = Rand_CenteredFloat(50000.0f);
+    if(ENSKB_GET_TYPE(&this->actor) == EN_SKB_TYPE_CHAOS)
+    {
+        Vec3f target_vec;
+        yaw_step *= 32;
+        yaw_towards_target = Actor_WorldYawTowardActor(&this->actor, this->target);
+        distance_to_target = Actor_WorldDistXZToActor(&this->actor, this->target);
+        this->unk_3DA = 0;
+
+        if(this->target->id == ACTOR_EN_SKB)
+        {
+            /* stalchild aggro'd at another one moves slightly faster to catch up and retribute */
+            this->actor.speed *= 1.3f;
+        }
+    }
+    else
+    {
+        yaw_towards_target = this->actor.yawTowardsPlayer;
+        distance_to_target = this->actor.xzDistToPlayer;
+
+        if ((this->unk_3D8 != 0) && ((play->gameplayFrames % 16) == 0)) 
+        {
+            this->unk_3DA = Rand_CenteredFloat(50000.0f);
+        }
     }
 
-    Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer + this->unk_3DA, 1, 0x2EE, 0);
+    Math_SmoothStepToS(&this->actor.shape.rot.y, yaw_towards_target + this->unk_3DA, 1, yaw_step, 0);
     this->actor.world.rot.y = this->actor.shape.rot.y;
     if (Animation_OnFrame(&this->skelAnime, 8.0f) || Animation_OnFrame(&this->skelAnime, 15.0f)) {
         Actor_PlaySfx(&this->actor, NA_SE_EN_STALKID_WALK);
     }
 
-    if ((this->actor.xzDistToPlayer > 800.0f) || func_80996594(this, play)) {
+    if ((distance_to_target > 800.0f && ENSKB_GET_TYPE(&this->actor) == EN_SKB_TYPE_NORMAL ||
+        distance_to_target > 1600.0f && ENSKB_GET_TYPE(&this->actor) == EN_SKB_TYPE_CHAOS) || func_80996594(this, play)) 
+    {
         func_809958F4(this);
-    } else if (Actor_IsFacingPlayer(&this->actor, 0x11C7) && (this->actor.xzDistToPlayer < 60.0f)) {
+    // } else if (Actor_IsFacingPlayer(&this->actor, 0x11C7) && (distance_to_target < 60.0f)) {
+    } else if (Actor_ActorAIsFacingActorB(&this->actor, this->target, 0x11C7) && (distance_to_target < 60.0f)) {
         func_80995C24(this);
     }
 }
 
+/* EnSkb_SetupAttack? */
 void func_80995C24(EnSkb* this) {
     Actor_ChangeAnimationByInfo(&this->skelAnime, sAnimationInfo, STALCHILD_ANIM_2);
     this->collider.base.atFlags &= ~AT_BOUNCED;
@@ -619,12 +666,24 @@ void func_80995C24(EnSkb* this) {
     this->actionFunc = func_80995C84;
 }
 
+/* EnSkb_Attack? */
 void func_80995C84(EnSkb* this, PlayState* play) {
+    Player *player = GET_PLAYER(play);
     if (Animation_OnFrame(&this->skelAnime, 3.0f) && (this->unk_3E4 == 0)) {
         Actor_PlaySfx(&this->actor, NA_SE_EN_STALKID_ATTACK);
         this->unk_3E4 = 1;
     } else if (Animation_OnFrame(&this->skelAnime, 6.0f)) {
         this->unk_3E4 = 0;
+    }
+
+    if((this->collider.base.atFlags & AT_HIT) && this->collider.base.at != &player->actor)
+    {
+        /* 22/24 chance of a stalchild remaining aggro'd towards another stalchild */
+        if((Chaos_RandNext() % 24) > 22)
+        {
+            /* stalchild not aggro'd anymore, so target player again */
+            this->target = &player->actor;
+        }
     }
 
     if (this->collider.base.atFlags & AT_BOUNCED) {
@@ -744,6 +803,7 @@ void func_809960AC(EnSkb* this, PlayState* play) {
     }
 }
 
+/* EnSkb_SetupDeath? */
 void func_809961E4(EnSkb* this, PlayState* play) {
     Actor_ChangeAnimationByInfo(&this->skelAnime, sAnimationInfo, STALCHILD_ANIM_4);
     this->unk_3D8 |= 0x40;
@@ -886,6 +946,7 @@ s32 func_80996594(EnSkb* this, PlayState* play) {
     return sp54;
 }
 
+/* EnSkb_HandleReceivedAttacks */
 void func_8099672C(EnSkb* this, PlayState* play) {
     s32 pad;
     Player* player = GET_PLAYER(play);
@@ -900,6 +961,7 @@ void func_8099672C(EnSkb* this, PlayState* play) {
         }
 
         if (this->collider.base.acFlags & AC_HIT) {
+            Actor *attacker = this->collider.base.ac;
             this->collider.base.acFlags &= ~AC_HIT;
             if (this->actionFunc == func_8099630C) {
                 switch (this->actor.colChkInfo.damageEffect) {
@@ -918,6 +980,14 @@ void func_8099672C(EnSkb* this, PlayState* play) {
                         break;
                 }
             }
+
+            if(attacker != NULL && attacker->id == ACTOR_EN_SKB)
+            {
+                /* hit by another stalchild */
+                this->actor.colChkInfo.damage = 0;
+            }
+
+            this->target = attacker;
 
             if (!Actor_ApplyDamage(&this->actor) && (this->actor.colChkInfo.damageEffect != 3) &&
                 (this->actor.colChkInfo.damageEffect != 4)) {
@@ -1010,6 +1080,15 @@ void func_80996AD0(EnSkb* this, PlayState* play) {
     if (((this->unk_3DE != 0) || (this->unk_3D0 >= 11)) && (this->unk_3DE != 1) && (this->unk_3DE != 4) &&
         (this->unk_3DE != 6) && (this->unk_3DE != 7) &&
         ((this->actor.colorFilterTimer == 0) || !(this->actor.colorFilterParams & 0x4000))) {
+            
+        this->collider.base.acFlags &= ~AC_TYPE_ENEMY;
+        this->collider.base.acFlags |= AC_TYPE_PLAYER;
+        if((Chaos_RandS16Offset(0, 4) > 0 || this->target->id == ACTOR_EN_SKB) && 
+            Chaos_GetConfigFlag(CHAOS_CONFIG_ALLOW_ENEMY_INFIGHTING))
+        {
+            /* 1/8 chance of once stalchild hitting each other if targeting player*/
+            this->collider.base.acFlags |= AC_TYPE_ENEMY;
+        }
         CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
     }
 
@@ -1066,6 +1145,7 @@ void func_80996D68(EnSkb* this, PlayState* play) {
 void EnSkb_Update(Actor* thisx, PlayState* play) {
     s32 pad;
     EnSkb* this = (EnSkb*)thisx;
+    Player *player = GET_PLAYER(play);
 
     this->actionFunc(this, play);
     if ((this->actionFunc != func_80995E64) && (this->actionFunc != func_80996284) &&
@@ -1077,6 +1157,12 @@ void EnSkb_Update(Actor* thisx, PlayState* play) {
     if ((this->actionFunc != func_8099630C) && (this->actionFunc != func_809963D8) &&
         (this->actionFunc != func_80995E64)) {
         Actor_MoveWithGravity(&this->actor);
+    }
+
+    if(this->target != &player->actor && (this->target == NULL || this->target->update == NULL && this->target->draw == NULL))
+    {
+        /* targeted stalchild got killed, so target player again */
+        this->target = &player->actor;
     }
 
     Actor_UpdateBgCheckInfo(play, &this->actor, 15.0f, 30.0f, 60.0f,

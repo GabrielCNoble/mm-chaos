@@ -832,6 +832,7 @@ void CutsceneManager_StoreCamera(struct Camera* camera);
 void CutsceneManager_ClearWaiting(void);
 s16 CutsceneManager_Update(void);
 void CutsceneManager_Queue(s16 csId);
+void CutsceneManager_Unqueue(s16 csId);
 s16 CutsceneManager_IsNext(s16 csId);
 s16 CutsceneManager_StartWithPlayerCs(s16 csId, struct Actor* actor);
 s16 CutsceneManager_StartWithPlayerCsAndSetFlag(s16 csId, struct Actor* actor);

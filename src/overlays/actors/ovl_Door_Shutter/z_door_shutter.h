@@ -33,7 +33,7 @@ typedef struct DoorShutter {
     /* 0x0165 */ s8 objectSlot;
     /* 0x0166 */ s8 unk_166;
     /* 0x0167 */ s8 unk_167;
-    /* 0x0168 */ f32 unk_168;
+    /* 0x0168 */ f32 unk_168; // Door bars position fraction (0.0 = bars fully up, 1.0f = bars fully down)
     /* 0x016C */ DoorShutterActionFunc actionFunc;
 } DoorShutter; // size = 0x170
 

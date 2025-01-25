@@ -268,6 +268,7 @@ typedef enum {
     /* 0x09 */ ACTORCAT_BOSS,
     /* 0x0A */ ACTORCAT_DOOR,
     /* 0x0B */ ACTORCAT_CHEST,
+               ACTORCAT_CHAOS,
     /* 0x0C */ ACTORCAT_MAX
 } ActorType;
 
@@ -396,6 +397,27 @@ typedef enum {
     /* 1 */ LENS_MODE_HIDE_ACTORS // lens actors are visible by default, and hidden by using lens (for example, fake walls)
 } LensMode;
 
+typedef enum
+{
+    /* player flinches */
+    HIT_TYPE_MELEE_LIGHT        = 0,
+    /* player gets tossed away from hitter with configurable horizontal/vertical velocities */
+    HIT_TYPE_MELEE_HEAVY        = 1,
+    /* player gets shoved away from hitter */
+    HIT_TYPE_MELEE_MID          = 2,
+    HIT_TYPE_FREEZE             = 3,
+    HIT_TYPE_SHOCK              = 4,
+    HIT_TYPE_DRUNK_TRIP         = 5
+}HitType;
+
+// typedef enum
+// {
+//     PLAYER_SHOVE_TYPE_NONE,
+//     PLAYER_SHOVE_TYPE_LIGHT,
+//     PLAYER_SHOVE_TYPE_MID,
+//     PLAYER_SHOVE_TYPE_HEAVY,
+// }PlayerShoveType;
+
 #define LENS_ACTOR_MAX 32
 
 // Target size when activated
@@ -463,12 +485,14 @@ typedef enum DoorLockType {
     /* 3 */ DOORLOCK_MAX
 } DoorLockType;
 
+#define ACTOR_FLAG_FRIENDLY      0
 // Actor is discoverable by the Attention System. This enables Tatl to hover over the actor when it is in range.
 // The actor can also be locked onto (as long as `ACTOR_FLAG_LOCK_ON_DISABLED` is not set).
 #define ACTOR_FLAG_ATTENTION_ENABLED (1 << 0)
 
 // Unused
-#define ACTOR_FLAG_2 (1 << 1)
+// #define ACTOR_FLAG_2             (1 << 1)
+#define ACTOR_FLAG_NO_CHASE      (1 << 1)
 
 // Actor is hostile toward the Player. Player has specific "battle" behavior when locked onto hostile actors.
 // Enemy background music will also be played when the player is close enough to a hostile actor.
@@ -478,7 +502,8 @@ typedef enum DoorLockType {
 // Actor is considered "friendly"; Opposite flag of `ACTOR_FLAG_HOSTILE`.
 // Note that this flag doesn't have any effect on either the actor, or Player's behavior.
 // What actually matters is the presence or lack of `ACTOR_FLAG_HOSTILE`.
-#define ACTOR_FLAG_FRIENDLY (1 << 3)
+// #define ACTOR_FLAG_FRIENDLY      (1 << 3)
+#define ACTOR_FLAG_CHAOS         (1 << 3)
 
 // Culling of the actor's update process is disabled.
 // In other words, the actor will keep updating even if the actor is outside its own culling volume.
@@ -902,8 +927,9 @@ void Actor_DrawAll(struct PlayState* play, ActorContext* actorCtx);
 void Actor_KillAllWithMissingObject(struct PlayState* play, ActorContext* actorCtx);
 void func_800BA798(struct PlayState* play, ActorContext* actorCtx);
 void Actor_CleanupContext(ActorContext* actorCtx, struct PlayState* play);
-Actor* Actor_Spawn(ActorContext* actorCtx, struct PlayState* play, s16 actorId, f32 posX, f32 posY, f32 posZ, s16 rotX,
-                   s16 rotY, s16 rotZ, s32 params);
+void Actor_Destroy(Actor* actor, struct PlayState* play);
+Actor* Actor_Spawn(ActorContext* actorCtx, struct PlayState* play, s16 actorId, f32 posX, f32 posY, f32 posZ, s16 rotX, s16 rotY, s16 rotZ, s32 params);
+ActorProfile *Actor_GetActorInit(ActorContext *actorCtx, s16 id);
 Actor* Actor_SpawnAsChildAndCutscene(ActorContext* actorCtx, struct PlayState* play, s16 index, f32 x, f32 y, f32 z,
                                      s16 rotX, s16 rotY, s16 rotZ, s32 params, u32 csId, u32 halfDaysBits,
                                      Actor* parent);

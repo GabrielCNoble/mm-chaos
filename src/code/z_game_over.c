@@ -3,9 +3,13 @@
 #include "z64rumble.h"
 #include "z64shrink_window.h"
 #include "z64.h"
+#include "z64player.h"
 #include "functions.h"
 #include "variables.h"
 #include "macros.h"
+#include "chaos_fuckery.h"
+
+extern struct ChaosContext gChaosContext;
 
 void GameOver_Init(PlayState* play) {
     play->gameOverCtx.state = GAMEOVER_INACTIVE;
@@ -80,10 +84,26 @@ void GameOver_Update(PlayState* play) {
                     gSaveContext.respawnFlag = -6;
                 }
                 gSaveContext.nextTransitionType = TRANS_TYPE_FADE_BLACK;
-                gSaveContext.save.saveInfo.playerData.health = 0x30;
+                if(gSaveContext.save.saveInfo.playerData.healthCapacity >= 0x30)
+                {
+                    gSaveContext.save.saveInfo.playerData.health = 0x30;
+                }
+                else
+                {
+                    gSaveContext.save.saveInfo.playerData.health = gSaveContext.save.saveInfo.playerData.healthCapacity;
+                }
+                
                 gameOverCtx->state++;
                 if (INV_CONTENT(ITEM_MASK_DEKU) == ITEM_MASK_DEKU) {
-                    gSaveContext.save.playerForm = PLAYER_FORM_HUMAN;
+                    // gSaveContext.save.playerForm = PLAYER_FORM_HUMAN;
+                    if(gChaosContext.link.fierce_deity_state == CHAOS_RANDOM_FIERCE_DEITY_STATE_FIERCE_DEITY)
+                    {
+                        gSaveContext.save.playerForm = PLAYER_FORM_FIERCE_DEITY;    
+                    }
+                    else
+                    {
+                        gSaveContext.save.playerForm = PLAYER_FORM_HUMAN;
+                    }
                     gSaveContext.save.equippedMask = PLAYER_MASK_NONE;
                 }
                 Rumble_StateReset();
@@ -95,6 +115,14 @@ void GameOver_Update(PlayState* play) {
             sGameOverTimer = 0;
             Environment_InitGameOverLights(play);
             ShrinkWindow_Letterbox_SetSizeTarget(32);
+
+            if(gChaosContext.link.syke)
+            {
+                gSaveContext.hudVisibilityForceButtonAlphasByStatus = false;
+                gSaveContext.nextHudVisibility = HUD_VISIBILITY_IDLE;
+                gSaveContext.hudVisibility = HUD_VISIBILITY_IDLE;
+                gSaveContext.hudVisibilityTimer = 0;
+            }
             break;
 
         case GAMEOVER_REVIVE_RUMBLE:
@@ -112,8 +140,13 @@ void GameOver_Update(PlayState* play) {
             break;
 
         case GAMEOVER_REVIVE_WAIT_FAIRY:
-            sGameOverTimer--;
-            if (sGameOverTimer == 0) {
+            if(sGameOverTimer > 0)
+            {
+                sGameOverTimer--;
+            }
+            else if(!gChaosContext.link.syke || (gChaosContext.link.syke && 
+                AudioSeq_GetActiveSeqId(SEQ_PLAYER_FANFARE) != NA_BGM_GAME_OVER))
+            {
                 sGameOverTimer = 50;
                 gameOverCtx->state++; // GAMEOVER_REVIVE_FADE_OUT
             }

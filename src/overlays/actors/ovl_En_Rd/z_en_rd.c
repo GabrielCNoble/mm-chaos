@@ -28,16 +28,16 @@
 #include "assets/objects/object_rd/object_rd.h"
 #include "overlays/actors/ovl_Obj_Ice_Poly/z_obj_ice_poly.h"
 
-#define FLAGS                                                                                 \
-    (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE | ACTOR_FLAG_UPDATE_CULLING_DISABLED | \
-     ACTOR_FLAG_HOOKSHOT_PULLS_PLAYER)
+#define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE | ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_HOOKSHOT_PULLS_PLAYER)
+
+#define THIS ((EnRd*)thisx)
 
 void EnRd_Init(Actor* thisx, PlayState* play);
 void EnRd_Destroy(Actor* thisx, PlayState* play);
 void EnRd_Update(Actor* thisx, PlayState* play);
 void EnRd_Draw(Actor* thisx, PlayState* play);
 
-s32 EnRd_ShouldNotDance(PlayState* play);
+s32 EnRd_ShouldNotDance(EnRd* this, PlayState* play);
 void EnRd_SetupIdle(EnRd* this);
 void EnRd_Idle(EnRd* this, PlayState* play);
 void EnRd_SetupSquattingDance(EnRd* this);
@@ -70,6 +70,10 @@ void EnRd_Crouch(EnRd* this, PlayState* play);
 void EnRd_Damage(EnRd* this, PlayState* play);
 void EnRd_Dead(EnRd* this, PlayState* play);
 void EnRd_Stunned(EnRd* this, PlayState* play);
+// New prototypes
+void EnRd_SetupChaosDanceCommon(EnRd* this, EnRdType rdType);
+void EnRd_ChaosDance(EnRd* this, PlayState* play);
+void EnRd_SetupChaosDance(EnRd* this);
 
 typedef enum {
     /*  0 */ EN_RD_ACTION_IDLE,
@@ -88,7 +92,18 @@ typedef enum {
     /* 13 */ EN_RD_ACTION_RISING_FROM_COFFIN,
     /* 14 */ EN_RD_ACTION_SQUATTING_DANCE,
     /* 15 */ EN_RD_ACTION_CLAPPING_DANCE,
-    /* 16 */ EN_RD_ACTION_PIROUETTE
+    /* 16 */ EN_RD_ACTION_PIROUETTE,
+    // New general actions
+    /* 17 */ EN_RD_CHAOS_ACTION_HIT_THE_GRIDDY,
+    /* 18 */ EN_RD_CHAOS_ACTION_CARAMELLDANSEN,
+    /* 19 */ EN_RD_CHAOS_ACTION_BONEZONE,
+    /* 20 */ EN_RD_CHAOS_ACTION_HEADSPIN,
+    /* 21 */ EN_RD_CHAOS_ACTION_FETAL,
+    /* 22 */ EN_RD_CHAOS_ACTION_FLOSS,
+    /* 23 */ EN_RD_CHAOS_ACTION_GRIND,
+    /* 24 */ EN_RD_CHAOS_ACTION_OLDCLASSIC,
+    /* 25 */ EN_RD_CHAOS_ACTION_LUCHTBALLON,
+    /* 26 */ EN_RD_CHAOS_ACTION_GODHAND,
 } EnRdAction;
 
 typedef enum {
@@ -186,7 +201,8 @@ static InitChainEntry sInitChain[] = {
 };
 
 void EnRd_Init(Actor* thisx, PlayState* play) {
-    EnRd* this = (EnRd*)thisx;
+    EnRd* this = THIS;
+    Player *player = GET_PLAYER(play);
     s32 pad;
 
     Actor_ProcessInitChain(&this->actor, sInitChain);
@@ -222,7 +238,7 @@ void EnRd_Init(Actor* thisx, PlayState* play) {
     if (EN_RD_GET_TYPE(&this->actor) >= EN_RD_TYPE_GIBDO) {
         switch (EN_RD_GET_TYPE(&this->actor)) {
             case EN_RD_TYPE_SQUATTING_DANCE:
-                if (!EnRd_ShouldNotDance(play)) {
+                if (!EnRd_ShouldNotDance(this,play)) {
                     EnRd_SetupSquattingDance(this);
                 } else {
                     this->actor.hintId = TATL_HINT_ID_REDEAD;
@@ -232,7 +248,7 @@ void EnRd_Init(Actor* thisx, PlayState* play) {
                 break;
 
             case EN_RD_TYPE_CLAPPING_DANCE:
-                if (!EnRd_ShouldNotDance(play)) {
+                if (!EnRd_ShouldNotDance(this, play)) {
                     EnRd_SetupClappingDance(this);
                 } else {
                     this->actor.hintId = TATL_HINT_ID_REDEAD;
@@ -242,7 +258,7 @@ void EnRd_Init(Actor* thisx, PlayState* play) {
                 break;
 
             case EN_RD_TYPE_PIROUETTE:
-                if (!EnRd_ShouldNotDance(play)) {
+                if (!EnRd_ShouldNotDance(this, play)) {
                     EnRd_SetupPirouette(this);
                 } else {
                     this->actor.hintId = TATL_HINT_ID_REDEAD;
@@ -250,6 +266,25 @@ void EnRd_Init(Actor* thisx, PlayState* play) {
                 }
                 this->setupDanceFunc = EnRd_SetupPirouette;
                 break;
+ 
+            // Chaos edition stuff
+            case EN_RD_CHAOS_TYPE_HIT_THE_GRIDDY:
+            case EN_RD_CHAOS_TYPE_CARAMELLDANSEN:
+            case EN_RD_CHAOS_TYPE_BONEZONE:
+            case EN_RD_CHAOS_TYPE_HEADSPIN:
+            case EN_RD_CHAOS_TYPE_FETAL:
+            case EN_RD_CHAOS_TYPE_FLOSS:
+            case EN_RD_CHAOS_TYPE_GRIND:
+            case EN_RD_CHAOS_TYPE_OLDCLASSIC:
+            case EN_RD_CHAOS_TYPE_LUCHTBALLON:
+            case EN_RD_CHAOS_TYPE_GODHAND: 
+            // TODO: add new chaos type states here!
+            {
+                // Copied over from type clapping dance
+                // No mask required
+                EnRd_SetupChaosDanceCommon(this, EN_RD_GET_TYPE(&this->actor));
+                this->setupDanceFunc = EnRd_SetupChaosDance;
+            } break;
 
             default:
                 if (EN_RD_GET_TYPE(&this->actor) == EN_RD_TYPE_GIBDO) {
@@ -282,7 +317,7 @@ void EnRd_Init(Actor* thisx, PlayState* play) {
 }
 
 void EnRd_Destroy(Actor* thisx, PlayState* play) {
-    EnRd* this = (EnRd*)thisx;
+    EnRd* this = THIS;
 
     if (gSaveContext.sunsSongState != SUNSSONG_INACTIVE) {
         gSaveContext.sunsSongState = SUNSSONG_INACTIVE;
@@ -325,7 +360,11 @@ void EnRd_UpdateParentForOtherRedeads(PlayState* play, Actor* thisx, s32 setPare
  * do not call this function in the final game and thus don't care about
  * what mask the player has equipped.
  */
-s32 EnRd_ShouldNotDance(PlayState* play) {
+s32 EnRd_ShouldNotDance(EnRd* this, PlayState* play) {
+    EnRdType rdType = EN_RD_GET_TYPE(&this->actor);
+    if(rdType >= EN_RD_CHAOS_TYPE_HIT_THE_GRIDDY && rdType < EN_RD_CHAOS_TYPE_LASTDANCEENUM){
+        return false;
+    }
     if ((Player_GetMask(play) == PLAYER_MASK_GIBDO) || (Player_GetMask(play) == PLAYER_MASK_CAPTAIN) ||
         (Player_GetMask(play) == PLAYER_MASK_GARO)) {
         return false;
@@ -343,8 +382,10 @@ void EnRd_SetupDanceIfConditionsMet(EnRd* this, PlayState* play) {
     if ((EN_RD_GET_TYPE(&this->actor) >= EN_RD_TYPE_SQUATTING_DANCE) && (this->actionFunc != EnRd_SquattingDance) &&
         (this->actionFunc != EnRd_ClappingDance) && (this->actionFunc != EnRd_Pirouette) &&
         (this->actionFunc != EnRd_Stunned) && (this->actionFunc != EnRd_Grab) && (this->actionFunc != EnRd_Damage) &&
-        (this->actionFunc != EnRd_Dead)) {
-        if (!EnRd_ShouldNotDance(play)) {
+        (this->actionFunc != EnRd_ChaosDance) &&
+        (this->actionFunc != EnRd_Dead)) 
+    {
+        if (!EnRd_ShouldNotDance(this, play)) {
             this->setupDanceFunc(this);
         }
     }
@@ -437,7 +478,7 @@ void EnRd_SquattingDance(EnRd* this, PlayState* play) {
     }
 
     this->isMourning = false;
-    if ((this->actor.xzDistToPlayer <= 150.0f) && EnRd_ShouldNotDance(play) && func_800B715C(play)) {
+    if ((this->actor.xzDistToPlayer <= 150.0f) && EnRd_ShouldNotDance(this, play) && func_800B715C(play)) {
         if (EN_RD_GET_TYPE(&this->actor) == EN_RD_TYPE_GIBDO) {
             this->actor.hintId = TATL_HINT_ID_GIBDO;
         } else {
@@ -447,7 +488,7 @@ void EnRd_SquattingDance(EnRd* this, PlayState* play) {
         this->actionFunc = EnRd_EndClappingOrSquattingDanceWhenPlayerIsClose;
     }
 
-    if (EnRd_ShouldNotDance(play)) {
+    if (EnRd_ShouldNotDance(this, play)) {
         if (EN_RD_GET_TYPE(&this->actor) == EN_RD_TYPE_GIBDO) {
             this->actor.hintId = TATL_HINT_ID_GIBDO;
         } else {
@@ -456,6 +497,69 @@ void EnRd_SquattingDance(EnRd* this, PlayState* play) {
         EnRd_SetupIdle(this);
     }
 
+    if ((play->gameplayFrames & 0x5F) == 0) {
+        Actor_PlaySfx(&this->actor, NA_SE_EN_REDEAD_CRY);
+    }
+}
+
+AnimationHeader *GetRdChaosDanceAnimation(EnRdType rdType){
+    // return &gGibdoRedeadClappingDanceAnim;
+    switch(rdType){
+    default: return 0;
+        case EN_RD_CHAOS_TYPE_HIT_THE_GRIDDY:   return &gGibdoRedeadHitTheGriddyDanceAnim;
+        case EN_RD_CHAOS_TYPE_CARAMELLDANSEN:   return &gGibdoRedeadCaramelldansenDanceAnim;
+        case EN_RD_CHAOS_TYPE_BONEZONE:         return &gGibdoRedeadBoneZoneDanceAnim;
+        case EN_RD_CHAOS_TYPE_HEADSPIN:         return &gGibdoRedeadHeadspinDanceAnim;
+        case EN_RD_CHAOS_TYPE_FETAL:            return &gGibdoRedeadFetalAnim;
+        case EN_RD_CHAOS_TYPE_FLOSS:            return &gGibdoRedeadFlossAnim;
+        case EN_RD_CHAOS_TYPE_GRIND:            return &gGibdoRedeadGrindDanceAnim;
+        case EN_RD_CHAOS_TYPE_OLDCLASSIC:       return &gGibdoRedeadOldClassiclAnim;
+        case EN_RD_CHAOS_TYPE_LUCHTBALLON:      return &gGibdoRedeadLuchtballonAnim;
+        case EN_RD_CHAOS_TYPE_GODHAND:          return &gGibdoRedeadGodHandDanceAnim;
+    }
+}
+
+EnRdAction GetRdActionFromType(EnRdType rdType){
+    return (rdType - EN_RD_CHAOS_TYPE_HIT_THE_GRIDDY) + EN_RD_CHAOS_ACTION_HIT_THE_GRIDDY;
+}
+
+void EnRd_SetupChaosDanceCommon(EnRd* this, EnRdType rdType) {
+    AnimationHeader *chaosDance = GetRdChaosDanceAnimation(rdType);
+    Animation_MorphToLoop(&this->skelAnime, chaosDance, -6.0f);
+    this->action =  GetRdActionFromType(rdType);
+    // Copied from SetupClappingDance
+    this->animationJudderTimer = (Rand_ZeroOne() * 10.0f) + 5.0f;
+    this->danceEndTimer = 0;
+    this->actor.speed = 0.0f;
+    this->actor.world.rot.y = this->actor.shape.rot.y;
+    this->actionFunc = EnRd_ChaosDance;
+}
+
+// We probably need a 2nd signature of this for this
+void EnRd_SetupChaosDance(EnRd* this){
+    EnRd_SetupChaosDanceCommon(this, EN_RD_GET_TYPE(&this->actor));
+}
+
+void EnRd_ChaosDance(EnRd* this, PlayState* play){
+    // Mostly copied from EnRd_ClappingDance
+    Player *player = GET_PLAYER(play);
+    SkelAnime_Update(&this->skelAnime);
+    Math_SmoothStepToS(&this->headRotY, 0, 1, 0x64, 0);
+    Math_SmoothStepToS(&this->torsoRotY, 0, 1, 0x64, 0);
+
+    if(this->flags & EN_RD_FLAG_DANCE_LEADER && !(player->stateFlags1 & PLAYER_STATE1_TIME_STOPPED))
+    {
+        player->actor.freezeTimer = Rand_S16Offset(60, 60);
+        Rumble_Request(this->actor.xzDistToPlayer, 255, 20, 150);
+        Player_SetAutoLockOnActor(play, &this->actor);
+        Actor_PlaySfx(&this->actor, NA_SE_EN_REDEAD_AIM);   
+        this->flags &= ~EN_RD_FLAG_DANCE_LEADER;
+    }
+
+    this->isMourning = false;
+    // Never stop dancing the chaos dance
+
+    // Always moan as per usual
     if ((play->gameplayFrames & 0x5F) == 0) {
         Actor_PlaySfx(&this->actor, NA_SE_EN_REDEAD_CRY);
     }
@@ -481,7 +585,7 @@ void EnRd_ClappingDance(EnRd* this, PlayState* play) {
     }
 
     this->isMourning = false;
-    if ((this->actor.xzDistToPlayer <= 150.0f) && EnRd_ShouldNotDance(play) && func_800B715C(play)) {
+    if ((this->actor.xzDistToPlayer <= 150.0f) && EnRd_ShouldNotDance(this, play) && func_800B715C(play)) {
         if (EN_RD_GET_TYPE(&this->actor) == EN_RD_TYPE_GIBDO) {
             this->actor.hintId = TATL_HINT_ID_GIBDO;
         } else {
@@ -491,7 +595,7 @@ void EnRd_ClappingDance(EnRd* this, PlayState* play) {
         this->actionFunc = EnRd_EndClappingOrSquattingDanceWhenPlayerIsClose;
     }
 
-    if (EnRd_ShouldNotDance(play)) {
+    if (EnRd_ShouldNotDance(this, play)) {
         if (EN_RD_GET_TYPE(&this->actor) == EN_RD_TYPE_GIBDO) {
             this->actor.hintId = TATL_HINT_ID_GIBDO;
         } else {
@@ -542,7 +646,7 @@ void EnRd_Pirouette(EnRd* this, PlayState* play) {
     }
 
     this->isMourning = false;
-    if ((this->actor.xzDistToPlayer <= 150.0f) && EnRd_ShouldNotDance(play) && func_800B715C(play)) {
+    if ((this->actor.xzDistToPlayer <= 150.0f) && EnRd_ShouldNotDance(this, play) && func_800B715C(play)) {
         if (EN_RD_GET_TYPE(&this->actor) == EN_RD_TYPE_GIBDO) {
             this->actor.hintId = TATL_HINT_ID_GIBDO;
         } else {
@@ -551,7 +655,7 @@ void EnRd_Pirouette(EnRd* this, PlayState* play) {
         this->actionFunc = EnRd_EndPirouetteWhenPlayerIsClose;
     }
 
-    if (EnRd_ShouldNotDance(play)) {
+    if (EnRd_ShouldNotDance(this, play)) {
         if (EN_RD_GET_TYPE(&this->actor) == EN_RD_TYPE_GIBDO) {
             this->actor.hintId = TATL_HINT_ID_GIBDO;
         } else {
@@ -1266,7 +1370,7 @@ void EnRd_UpdateEffect(EnRd* this, PlayState* play) {
 }
 
 void EnRd_Update(Actor* thisx, PlayState* play) {
-    EnRd* this = (EnRd*)thisx;
+    EnRd* this = THIS;
 
     EnRd_UpdateDamage(this, play);
     if ((gSaveContext.sunsSongState != SUNSSONG_INACTIVE) && (!this->stunnedBySunsSong)) {
@@ -1306,7 +1410,7 @@ void EnRd_Update(Actor* thisx, PlayState* play) {
 
 s32 EnRd_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, Actor* thisx,
                           Gfx** gfx) {
-    EnRd* this = (EnRd*)thisx;
+    EnRd* this = THIS;
 
     if (limbIndex == REDEAD_LIMB_HEAD_ROOT) {
         rot->y += this->headRotY;
@@ -1317,7 +1421,7 @@ s32 EnRd_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* po
 }
 
 void EnRd_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, Actor* thisx, Gfx** gfx) {
-    EnRd* this = (EnRd*)thisx;
+    EnRd* this = THIS;
 
     if ((this->drawDmgEffTimer != 0) &&
         ((limbIndex == REDEAD_LIMB_LEFT_THIGH) || (limbIndex == REDEAD_LIMB_LEFT_SHIN) ||
@@ -1336,7 +1440,7 @@ void EnRd_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, 
 void EnRd_Draw(Actor* thisx, PlayState* play) {
     static Vec3f sScale = { 0.25f, 0.25f, 0.25f };
     s32 pad;
-    EnRd* this = (EnRd*)thisx;
+    EnRd* this = THIS;
     Vec3f pos = this->actor.world.pos;
 
     OPEN_DISPS(play->state.gfxCtx);

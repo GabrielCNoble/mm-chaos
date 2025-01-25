@@ -19,6 +19,8 @@ void EnTest2_Update(Actor* thisx, PlayState* play);
 void EnTest2_UpdateForLens(Actor* thisx, PlayState* play);
 void EnTest2_Draw(Actor* thisx, PlayState* play);
 
+extern Gfx gMountainVillageLadderDL[];
+
 typedef struct EnTest2ModelInfo {
     /* 0x0 */ Gfx* dList1;
     /* 0x4 */ Gfx* dList2;
@@ -40,7 +42,8 @@ ActorProfile En_Test2_Profile = {
 static EnTest2ModelInfo sModelInfo[EN_TEST2_TYPE_MAX] = {
     { object_dekucity_ana_obj_DL_000040, NULL, NULL },                               // EN_TEST2_TYPE_0
     { object_sichitai_obj_DL_001820, NULL, NULL },                                   // EN_TEST2_TYPE_1
-    { object_yukimura_obj_DL_0008C0, NULL, NULL },                                   // EN_TEST2_TYPE_2
+    // { object_yukimura_obj_DL_0008C0, NULL, NULL },                                   // EN_TEST2_TYPE_2
+    { gMountainVillageLadderDL, NULL, NULL },                                        // EN_TEST2_TYPE_2
     { object_hakugin_obj_DL_0016D8, NULL, object_hakugin_obj_Matanimheader_0017A8 }, // EN_TEST2_TYPE_3
     { object_hakugin_obj_DL_002018, NULL, object_hakugin_obj_Matanimheader_0020E8 }, // EN_TEST2_TYPE_4
     { object_hakugin_obj_DL_005268, NULL, object_hakugin_obj_Matanimheader_005338 }, // EN_TEST2_TYPE_5

@@ -24,13 +24,29 @@
      (GET_NEWF(fileSelect, slotNum, 2) == 'L') && (GET_NEWF(fileSelect, slotNum, 3) == 'D') && \
      (GET_NEWF(fileSelect, slotNum, 4) == 'A') && (GET_NEWF(fileSelect, slotNum, 5) == '3'))
 
+#define FS_MSG_CONTINUE_TEX_OFFSET  0x1000
+#define FS_MSG_END_TEX_OFFSET       0x1080
+
+#define FILE_SELECT_CHAOS_SETTINGS_MAX_VISIBLE_SETTINGS 7
+#define FILE_SELECT_CHAOS_SETTING_VERT_COUNT            (4 * FILE_SELECT_CHAOS_SETTINGS_MAX_VISIBLE_SETTINGS + 20)
+#define FILE_SELECT_CHAOS_SETTING_OPTION_WIDTH          0xc0
+#define FILE_SELECT_CHAOS_SETTING_OPTION_HEIGHT         0x0c
+#define FILE_SELECT_CHAOS_SETTING_TAB_WIDTH             0x62
+#define FILE_SELECT_CHAOS_SETTING_TAB_HEIGHT            0x0f
+
+#define FILE_SELECT_BUTTON_WIDTH                        0x40
+#define FILE_SELECT_BUTTON_HEIGHT                       0x10
+#define FILE_SELECT_WINDOW_CONTENT_VERT_COUNT           964
+#define FILE_SELECT_WINDOW_CONTENT_TOTAL_VERT_COUNT     (FILE_SELECT_WINDOW_CONTENT_VERT_COUNT + FILE_SELECT_CHAOS_SETTING_VERT_COUNT)
+
 // Init mode: Initial setup as the file select is starting up, fades and slides in various menu elements
 // Config mode: Handles the bulk of the file select, various configuration tasks like picking a file, copy/erase, and the options menu
 // Select mode: Displays the selected file with various details about it, and allows the player to confirm and open it
 typedef enum {
     /* 0 */ FS_MENU_MODE_INIT,
     /* 1 */ FS_MENU_MODE_CONFIG,
-    /* 2 */ FS_MENU_MODE_SELECT
+    /* 2 */ FS_MENU_MODE_SELECT,
+    /* 3 */ FS_MENU_MODE_CHAOS_CONFIG,
 } MenuMode;
 
 typedef enum {
@@ -89,8 +105,18 @@ typedef enum {
     /* 4 */ SM_FADE_OUT_FILE_INFO,
     /* 5 */ SM_MOVE_FILE_TO_SLOT,
     /* 6 */ SM_FADE_OUT,
-    /* 7 */ SM_LOAD_GAME
+    /* 7 */ SM_LOAD_GAME,
+            SM_FADE_CHAOS_CONFIG_TO_SELECT,
 } SelectMode;
+
+typedef enum
+{
+    CCM_FADE_SELECT_TO_CONFIG,
+    CCM_CHAOS_OPTIONS,
+    CCM_FADE_IN_CONFIG_DETAILS,
+    CCM_CHAOS_CONFIG_DETAILS,
+    CCM_FADE_OUT_CONFIG_DETAILS,
+} ChaosConfigMode;
 
 typedef enum {
     /* 0 */ FS_TITLE_SELECT_FILE,   // "Please select a file."
@@ -101,7 +127,8 @@ typedef enum {
     /* 5 */ FS_TITLE_COPY_COMPLETE, // "File copied."
     /* 6 */ FS_TITLE_ERASE_FILE,    // "Erase which file?"
     /* 7 */ FS_TITLE_ERASE_CONFIRM, // "Are you sure?"
-    /* 8 */ FS_TITLE_ERASE_COMPLETE // "File erased."
+    /* 8 */ FS_TITLE_ERASE_COMPLETE,// "File erased."
+            FS_TITLE_CHAOS_CONFIG   // "Chaos config"
 } TitleLabel;
 
 typedef enum {
@@ -146,12 +173,16 @@ typedef enum {
     /* 1 */ FS_BTN_SELECT_FILE_2,
     /* 2 */ FS_BTN_SELECT_FILE_3,
     /* 3 */ FS_BTN_SELECT_YES,
-    /* 4 */ FS_BTN_SELECT_QUIT
+    /* 4 */ FS_BTN_SELECT_QUIT,
+            FS_BTN_SELECT_OPTIONS,
 } SelectMenuButtonIndex;
 
 typedef enum {
+    // /* 0 */ FS_BTN_CONFIRM_OPTIONS,
     /* 0 */ FS_BTN_CONFIRM_YES,
-    /* 1 */ FS_BTN_CONFIRM_QUIT
+    /* 1 */ FS_BTN_CONFIRM_QUIT,
+    /* 2 */ FS_BTN_CONFIRM_OPTIONS,
+            FS_BTN_CONFIRM_LAST,
 } ConfirmButtonIndex;
 
 typedef enum {
@@ -179,6 +210,86 @@ typedef enum {
     /* 99 */ FS_KBD_BTN_NONE = 99
 } KeyboardButton;
 
+union FileSelectUI
+{
+    struct
+    {
+        Vtx title_label[4];
+        Vtx file_info_box[7][4];
+
+        struct
+        {
+            Vtx file_button[4];
+            Vtx file_name_box[4];
+            Vtx connectors[4];
+            Vtx owl_save[4];
+            
+
+            Vtx file_name[8][4];
+            Vtx file_name_shadow[8][4];
+
+            Vtx hearts[20][4];
+
+            Vtx rupee_digits[3][4];
+            Vtx rupee_digits_shadow[3][4];
+            Vtx rupee_icon[4];
+
+            Vtx mask_text[8];
+            Vtx mask_count_digits[3][4];
+            Vtx mask_count_digits_shadow[3][4];
+
+            Vtx owl_icon[4];
+
+            Vtx remains_masks[4][4];
+
+            Vtx heart_container_pieces[4];
+
+            Vtx day_text[2][4];
+            Vtx time_digits[5][4];
+            Vtx time_digits_shadow[5][4];
+
+        } files[2];
+
+        union
+        {
+            struct
+            {
+                Vtx copy_button[4];
+                Vtx erase_button[4];
+                Vtx options_button[4];
+            };
+
+            struct
+            {
+                Vtx yes_button[4];
+                Vtx quit_button[4];
+                Vtx chaos_options_button[4];
+            };
+
+            Vtx buttons[3][4];
+        };
+
+        // Vtx mask_text[8];
+        Vtx highlighted_option[4];
+        Vtx warning_label[4];
+
+        union
+        {
+            struct
+            {
+                Vtx chaos_options[FILE_SELECT_CHAOS_SETTINGS_MAX_VISIBLE_SETTINGS][4];
+                Vtx chaos_highlighted_option[4];
+            };
+        };
+
+        Vtx chaos_options_box_top[6][4];
+        Vtx chaos_options_box_bottom[6][4];
+        Vtx chaos_text_box[4];
+    };
+
+    Vtx     vertices[0];
+};
+
 typedef struct FileSelectState {
     /* 0x00000 */ GameState state;
     /* 0x000A4 */ Vtx* windowVtx;
@@ -192,7 +303,7 @@ typedef struct FileSelectState {
     /* 0x12550 */ Font font;
     /* 0x242E0 */ EnvironmentContext envCtx;
     /* 0x243E0 */ UNK_TYPE1 pad243E0[0x4];
-    /* 0x243E4 */ Vtx* windowContentVtx;
+    // /* 0x243E4 */ Vtx* windowContentVtx;
     /* 0x243E8 */ Vtx* keyboardVtx;
     /* 0x243EC */ Vtx* nameEntryVtx;
     /* 0x243F0 */ Vtx* keyboard2Vtx;
@@ -221,7 +332,7 @@ typedef struct FileSelectState {
     /* 0x24490 */ UNK_TYPE1 pad24490[0x2];
     /* 0x24492 */ s16 fileNamesY[3];
     /* 0x24498 */ s16 actionTimer;
-    /* 0x2449A */ s16 buttonYOffsets[6];
+    /* 0x2449A */ s16 buttonYOffsets[7];
     /* 0x244A6 */ s16 copyDestFileIndex;
     /* 0x244A8 */ s16 warningLabel;
     /* 0x244AA */ s16 warningButtonIndex;
@@ -236,7 +347,7 @@ typedef struct FileSelectState {
     /* 0x244CE */ s16 connectorAlpha[3];
     /* 0x244D4 */ s16 fileInfoAlpha[3];
     /* 0x244DA */ s16 actionButtonAlpha[2];
-    /* 0x244DA */ s16 confirmButtonAlpha[2];
+    /* 0x244DA */ s16 confirmButtonAlpha[3];
     /* 0x244E2 */ s16 optionButtonAlpha;
     /* 0x244E4 */ s16 nameEntryBoxAlpha;
     /* 0x244E6 */ s16 controlsAlpha;
@@ -244,7 +355,7 @@ typedef struct FileSelectState {
     /* 0x244EA */ s16 highlightColor[4];
     /* 0x244F2 */ s16 highlightPulseDir;
     /* 0x244F4 */ s16 unk_244F4;
-    /* 0x244F6 */ s16 confirmButtonTexIndices[2];
+    /* 0x244F6 */ s16 confirmButtonTexIndices[3];
     /* 0x244FA */ s16 inputTimerX;
     /* 0x244FC */ s16 inputTimerY;
     /* 0x244FE */ s16 stickXDir;
@@ -272,7 +383,21 @@ typedef struct FileSelectState {
     /* 0x2454C */ s16 unk_2454C;
     /* 0x2454E */ s16 unk_2454E;
     /* 0x24550 */ s16 unk_24550;
+                  s16 chaos_config_mode;
+                  s16 chaos_config_scroll;
+                  s16 chaos_config_box_alpha;
+                  s16 chaos_config_option_index;
+                  s16 chaos_config_description_alpha;
+                  u16 chaos_config_description_text_offset;
+                  u16 chaos_config_text_buffer_offset;
+                 char chaos_config_text_buffer[512];
+                  u8  chaos_config_text_flash_timer;
+                  u8  chaos_config_tab_index; 
+                  u8 *textbox_segment;
+    union FileSelectUI *ui_contents;
 } FileSelectState; // size = 0x24558
+
+
 
 void FileSelect_Init(GameState* thisx);
 void FileSelect_Destroy(GameState* thisx);
@@ -281,6 +406,8 @@ void FileSelect_PulsateCursor(GameState* thisx);
 void FileSelect_DrawNameEntry(GameState* thisx);
 void FileSelect_DrawOptions(GameState* thisx);
 void FileSelect_DrawTexQuadI4(GraphicsContext* gfxCtx, TexturePtr texture, s16 point);
+
+u32 FileSelect_IsAtEndOfChaosConfigDetails(GameState *thisx);
 
 // Copying Files
 void FileSelect_SetupCopySource(GameState* thisx);
@@ -328,5 +455,6 @@ void FileSelect_OptionsWaitForFlashSave(GameState* thisx);
 
 extern u8 D_808141F0[];
 extern s16 D_80814280[];
+
 
 #endif

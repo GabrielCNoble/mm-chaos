@@ -783,6 +783,7 @@ beginseg
     include "$(BUILD_DIR)/data/code/gspF3DZEX2.NoN.PosLight.fifo.rodata.o"
     include "$(BUILD_DIR)/data/code/gspS2DEX2.fifo.rodata.o"
     include "$(BUILD_DIR)/data/code/njpgdspMain.rodata.o"
+    include "$(BUILD_DIR)/src/code/chaos_fuckery.o"
 endseg
 
 // The game expects all the segments after the `code` segment and before the first overlay to be `NOLOAD` ones
@@ -4908,6 +4909,27 @@ beginseg
 endseg
 
 beginseg
+    name "ovl_En_Arwing"
+    compress
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Arwing/z_en_arwing.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Arwing/ovl_En_Arwing_reloc.o"
+endseg
+
+beginseg
+    name "ovl_En_Arwing_Laser"
+    compress
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Arwing_Laser/z_en_arwing_laser.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Arwing_Laser/ovl_En_Arwing_Laser_reloc.o"
+endseg
+
+beginseg
+    name "ovl_En_Dark_Link"
+    compress
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Dark_Link/z_en_dark_link.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Dark_Link/ovl_En_Dark_Link_reloc.o"
+endseg
+
+beginseg
     name "ovl_En_Jgame_Tsn"
     compress
     include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Jgame_Tsn/z_en_jgame_tsn.o"
@@ -5520,6 +5542,30 @@ beginseg
     romalign 0x1000
     number 6
     include "$(BUILD_DIR)/assets/objects/object_thiefbird/object_thiefbird.o"
+endseg
+
+beginseg
+    name "object_arwing"
+    compress
+    romalign 0x1000
+    number 6
+    include "$(BUILD_DIR)/assets/objects/object_arwing/object_arwing.o"
+endseg
+
+beginseg
+    name "object_dark_link"
+    compress
+    romalign 0x1000
+    number 6
+    include "$(BUILD_DIR)/assets/objects/object_dark_link/object_dark_link.o"
+endseg
+
+beginseg
+    name "object_beyblade"
+    compress
+    romalign 0x1000
+    number 6
+    include "$(BUILD_DIR)/assets/objects/object_beyblade/object_beyblade.o"
 endseg
 
 beginseg

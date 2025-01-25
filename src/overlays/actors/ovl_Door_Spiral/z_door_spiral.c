@@ -12,7 +12,7 @@
 #include "assets/objects/object_ikninside_obj/object_ikninside_obj.h"
 #include "assets/objects/object_danpei_object/object_danpei_object.h"
 
-#define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED)
+#define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_NO_CHASE)
 
 void DoorSpiral_Init(Actor* thisx, PlayState* play);
 void DoorSpiral_Destroy(Actor* thisx, PlayState* play);

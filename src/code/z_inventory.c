@@ -739,7 +739,7 @@ void Inventory_SaveLotteryCodeGuess(PlayState* play) {
 u8 gPlayerFormItemRestrictions[PLAYER_FORM_MAX][114] = {
     // PLAYER_FORM_FIERCE_DEITY
     {
-        false, // ITEM_OCARINA_OF_TIME
+        true, // ITEM_OCARINA_OF_TIME
         false, // ITEM_BOW
         false, // ITEM_ARROW_FIRE
         false, // ITEM_ARROW_ICE

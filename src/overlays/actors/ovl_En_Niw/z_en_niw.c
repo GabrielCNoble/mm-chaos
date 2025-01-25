@@ -6,26 +6,30 @@
 
 #include "z_en_niw.h"
 #include "overlays/actors/ovl_En_Attack_Niw/z_en_attack_niw.h"
+#include "chaos_fuckery.h"
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_THROW_ONLY)
 
-void EnNiw_Init(Actor* thisx, PlayState* play);
-void EnNiw_Destroy(Actor* thisx, PlayState* play);
-void EnNiw_Update(Actor* thisx, PlayState* play2);
-void EnNiw_Draw(Actor* thisx, PlayState* play);
+#define THIS ((EnNiw*)thisx)
 
-void EnNiw_SetupIdle(EnNiw* this);
-void EnNiw_Idle(EnNiw* this, PlayState* play);
-void EnNiw_Thrown(EnNiw* this, PlayState* play);
-void EnNiw_SetupRunAway(EnNiw* this);
-void EnNiw_RunAway(EnNiw* this, PlayState* play);
-void EnNiw_Upset(EnNiw* this, PlayState* play);
-void EnNiw_SetupCuccoStorm(EnNiw* this, PlayState* play);
-void EnNiw_CuccoStorm(EnNiw* this, PlayState* play);
-void EnNiw_Held(EnNiw* this, PlayState* play);
-void EnNiw_UpdateFeather(EnNiw* this, PlayState* play);
-void EnNiw_DrawFeathers(EnNiw* this, PlayState* play);
-void EnNiw_SpawnFeather(EnNiw* this, Vec3f* pos, Vec3f* velocity, Vec3f* accel, f32 scale);
+// void EnNiw_Init(Actor* thisx, PlayState* play);
+// void EnNiw_Destroy(Actor* thisx, PlayState* play);
+// void EnNiw_Update(Actor* thisx, PlayState* play2);
+// void EnNiw_Draw(Actor* thisx, PlayState* play);
+
+// void EnNiw_SetupIdle(EnNiw* this);
+// void EnNiw_Idle(EnNiw* this, PlayState* play);
+// void EnNiw_Thrown(EnNiw* this, PlayState* play);
+// void EnNiw_SetupRunAway(EnNiw* this);
+// void EnNiw_RunAway(EnNiw* this, PlayState* play);
+// void EnNiw_Upset(EnNiw* this, PlayState* play);
+// void EnNiw_SetupCuccoStorm(EnNiw* this, PlayState* play);
+// void EnNiw_CuccoStorm(EnNiw* this, PlayState* play);
+// void EnNiw_Held(EnNiw* this, PlayState* play);
+// void EnNiw_UpdateFeather(EnNiw* this, PlayState* play);
+// void EnNiw_DrawFeathers(EnNiw* this, PlayState* play);
+// void EnNiw_SpawnFeather(EnNiw* this, Vec3f* pos, Vec3f* velocity, Vec3f* accel, f32 scale);
+// void EnNiw_SpawnAttackNiw(EnNiw* this, PlayState* play);
 
 s16 sCuccoStormActive = false;
 
@@ -86,7 +90,7 @@ void EnNiw_Init(Actor* thisx, PlayState* play) {
         ICHAIN_F32_DIV1000(gravity, -2000, ICHAIN_CONTINUE),
         ICHAIN_F32(lockOnArrowOffset, 0, ICHAIN_STOP),
     };
-    EnNiw* this = (EnNiw*)thisx;
+    EnNiw* this = THIS;
     Vec3f D_808934C4 = { 90000.0f, 90000.0f, 90000.0f };
 
     if (this->actor.params < 0) { // all scene spawned cucco are (-1)
@@ -134,13 +138,22 @@ void EnNiw_Init(Actor* thisx, PlayState* play) {
         this->unk2BC.z = 0.0f;
         this->actor.velocity.y = 0.0f;
         this->actor.gravity = 0.0f;
-    } else {
+    }
+    else if(this->niwType == NIW_TYPE_CHAOS)
+    {
+        this->actionFunc = EnNiw_SetupCuccoStorm;
+        this->unkAttackNiwTimer = Rand_S16Offset(15, 55);
+        this->isStormActive = true;
+        Actor_SetScale(&this->actor, 0.018f);
+    } 
+    else 
+    {
         EnNiw_SetupIdle(this);
     }
 }
 
 void EnNiw_Destroy(Actor* thisx, PlayState* play) {
-    EnNiw* this = (EnNiw*)thisx;
+    EnNiw* this = THIS;
 
     if (this->niwType == NIW_TYPE_REGULAR) {
         Collider_DestroyCylinder(play, &this->collider);
@@ -152,12 +165,12 @@ void EnNiw_Destroy(Actor* thisx, PlayState* play) {
  *
  * AttackNiw has a copy of this function that it barely uses
  */
-void EnNiw_AnimateWingHead(EnNiw* this, PlayState* play, s16 animIndex) {
+void EnNiw_AnimateWingHead(EnNiw* this, PlayState* play, s16 animationState) {
     f32 tempOne = 1.0f; // hopefully fake match, but no luck
 
     if (this->unkTimer24C == 0) {
         // targetLimbRots[0] is bodyRotY
-        if (animIndex == NIW_ANIM_STILL) {
+        if (animationState == NIW_ANIM_STILL) {
             this->targetLimbRots[0] = 0.0f;
         } else {
             this->targetLimbRots[0] = -10000.0f * tempOne;
@@ -167,7 +180,7 @@ void EnNiw_AnimateWingHead(EnNiw* this, PlayState* play, s16 animIndex) {
         this->unkTimer24C = 3;
         if ((this->unk292 % 2) == 0) {
             this->targetLimbRots[0] = 0.0f;
-            if (animIndex == NIW_ANIM_STILL) {
+            if (animationState == NIW_ANIM_STILL) {
                 this->unkTimer24C = Rand_ZeroFloat(30.0f);
             }
         }
@@ -177,7 +190,7 @@ void EnNiw_AnimateWingHead(EnNiw* this, PlayState* play, s16 animIndex) {
         this->unkToggle296++;
         this->unkToggle296 &= 1;
 
-        switch (animIndex) {
+        switch (animationState) {
             case NIW_ANIM_STILL:
                 this->targetLimbRots[2] = 0.0f; // both wingRotZ
                 this->targetLimbRots[1] = 0.0f;
@@ -268,6 +281,12 @@ void EnNiw_SpawnAttackNiw(EnNiw* this, PlayState* play) {
     f32 zView;
     Vec3f newNiwPos;
     Actor* attackNiw;
+    u32 cucco_type = ATTACK_NIW_REGULAR;
+    // u32 max_cuccos = 7;
+    if(this->niwType == NIW_TYPE_CHAOS)
+    {
+        cucco_type = ATTACK_NIW_CHAOS;
+    }
 
     if ((this->attackNiwSpawnTimer == 0) && (this->attackNiwCount < 7)) {
         xView = play->view.at.x - play->view.eye.x;
@@ -276,12 +295,18 @@ void EnNiw_SpawnAttackNiw(EnNiw* this, PlayState* play) {
         newNiwPos.x = play->view.eye.x + ((Rand_ZeroOne() - 0.5f) * xView);
         newNiwPos.y = play->view.eye.y + 50.0f + (yView * 0.5f) + Rand_CenteredFloat(0.3f);
         newNiwPos.z = play->view.eye.z + ((Rand_ZeroOne() - 0.5f) * zView);
+
         attackNiw = Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_EN_ATTACK_NIW, newNiwPos.x,
-                                       newNiwPos.y, newNiwPos.z, 0, 0, 0, ATTACK_NIW_REGULAR);
+                                    newNiwPos.y, newNiwPos.z, 0, 0, 0, cucco_type);    
 
         if (attackNiw != NULL) {
             this->attackNiwCount++;
             this->attackNiwSpawnTimer = 10;
+
+            if(this->niwType == NIW_TYPE_CHAOS)
+            {
+                Actor_SetScale(attackNiw, 0.018f);
+            }
         }
     }
 }
@@ -600,7 +625,16 @@ void EnNiw_SetupCuccoStorm(EnNiw* this, PlayState* play) {
     }
 
     if (this->cuccoStormTimer == 0) {
-        this->cuccoStormTimer = 10;
+
+        if(this->niwType == NIW_TYPE_CHAOS)
+        {
+            this->cuccoStormTimer = 1;
+        }
+        else
+        {
+            this->cuccoStormTimer = 10;
+        }
+        
         this->yawTowardsPlayer = this->actor.yawTowardsPlayer;
         this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
         this->niwState = NIW_STATE_ANGRY3;
@@ -730,7 +764,7 @@ void EnNiw_CheckRage(EnNiw* this, PlayState* play) {
 
 void EnNiw_Update(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
-    EnNiw* this = (EnNiw*)thisx;
+    EnNiw* this = THIS;
     Player* player = GET_PLAYER(play);
     s16 i;
     s16 featherCount;
@@ -871,9 +905,26 @@ void EnNiw_Update(Actor* thisx, PlayState* play2) {
         return;
     }
 
-    if (this->isStormActive && (this->actor.xyzDistToPlayerSq < SQ(dist)) && (player->invincibilityTimer == 0)) {
-        func_800B8D50(play, &this->actor, 2.0f, this->actor.world.rot.y, 0.0f, 0x10);
+    if (this->isStormActive && (this->actor.xyzDistToPlayerSq < SQ(dist))) 
+    {
+        if(this->niwType == NIW_TYPE_CHAOS)
+        {
+            /* chaos cuccos only shove the player, but cause no damage */
+            if(this->unkAttackNiwTimer == 0)
+            {
+                func_800B8D50(play, &this->actor, 2.0f, this->actor.world.rot.y, 0.0f, 0);
+                this->unkAttackNiwTimer = Rand_S16Offset(15, 55);
+            }
+        }
+        else if(player->invincibilityTimer == 0)
+        {   
+            func_800B8D50(play, &this->actor, 2.0f, this->actor.world.rot.y, 0.0f, 0x10);
+        }
     }
+
+    // if (this->isStormActive && (this->actor.xyzDistToPlayerSq < SQ(dist)) && (player->invincibilityTimer == 0)) {
+    //     func_800B8D50(play, &this->actor, 2.0f, this->actor.world.rot.y, 0.0f, 0x10);
+    // }
 
     EnNiw_CheckRage(this, play);
 
@@ -903,7 +954,7 @@ void EnNiw_Update(Actor* thisx, PlayState* play2) {
 }
 
 s32 EnNiw_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, Actor* thisx) {
-    EnNiw* this = (EnNiw*)thisx;
+    EnNiw* this = THIS;
 
     if (limbIndex == NIW_LIMB_UPPER_BODY) {
         rot->y += TRUNCF_BINANG(this->upperBodyRotY);
@@ -925,7 +976,7 @@ s32 EnNiw_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* p
 }
 
 void EnNiw_Draw(Actor* thisx, PlayState* play) {
-    EnNiw* this = (EnNiw*)thisx;
+    EnNiw* this = THIS;
 
     Gfx_SetupDL25_Opa(play->state.gfxCtx);
     SkelAnime_DrawFlexOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,

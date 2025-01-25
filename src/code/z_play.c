@@ -21,6 +21,7 @@ u8 sMotionBlurStatus;
 #include "regs.h"
 #include "sys_cfb.h"
 #include "attributes.h"
+#include "fault.h"
 
 #include "z64bombers_notebook.h"
 #include "z64debug_display.h"
@@ -31,14 +32,27 @@ u8 sMotionBlurStatus;
 #include "z64view.h"
 #include "z64vis.h"
 #include "z64visfbuf.h"
+#include "z64lifemeter.h"
 
 #include "overlays/gamestates/ovl_daytelop/z_daytelop.h"
 #include "overlays/gamestates/ovl_opening/z_opening.h"
 #include "overlays/gamestates/ovl_file_choose/z_file_select.h"
 #include "libu64/debug.h"
+#include "chaos_fuckery.h"
+#include "libc/math.h"
+
+#include "overlays/actors/ovl_En_Niw/z_en_niw.h"
+#include "overlays/actors/ovl_En_Attack_Niw/z_en_attack_niw.h"
+#include "overlays/actors/ovl_En_Rr/z_en_rr.h"
+#include "overlays/actors/ovl_En_Wallmas/z_en_wallmas.h"
+#include "overlays/actors/ovl_En_Rd/z_en_rd.h"
+#include "overlays/actors/ovl_En_Skb/z_en_skb.h"
 
 s32 gDbgCamEnabled = false;
 u8 D_801D0D54 = false;
+
+extern struct ChaosContext gChaosContext;
+extern u32 gCurrentBgmId;
 
 typedef enum {
     /* 0 */ MOTION_BLUR_OFF,
@@ -423,6 +437,8 @@ void Play_Destroy(GameState* thisx) {
     VisFbuf_Destroy(sPlayVisFbufInstance);
     sPlayVisFbufInstance = NULL;
 
+    // Object_CleanupObjectTableFaultClient();
+
     if (CHECK_WEEKEVENTREG(WEEKEVENTREG_92_80)) {
         Actor_CleanupContext(&this->actorCtx, this);
     }
@@ -580,30 +596,33 @@ void Play_UpdateTransition(PlayState* this) {
                     sceneLayer = (gSaveContext.nextCutsceneIndex & 0xF) + 1;
                 }
 
-                if ((!(Entrance_GetTransitionFlags(this->nextEntrance + sceneLayer) & 0x8000) ||
-                     ((this->nextEntrance == ENTRANCE(PATH_TO_MOUNTAIN_VILLAGE, 1)) &&
-                      !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_SNOWHEAD_TEMPLE)) ||
-                     ((this->nextEntrance == ENTRANCE(ROAD_TO_SOUTHERN_SWAMP, 1)) &&
-                      !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_WOODFALL_TEMPLE)) ||
-                     ((this->nextEntrance == ENTRANCE(TERMINA_FIELD, 2)) &&
-                      !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_GREAT_BAY_TEMPLE)) ||
-                     ((this->nextEntrance == ENTRANCE(ROAD_TO_IKANA, 1)) &&
-                      !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_STONE_TOWER_TEMPLE))) &&
-                    (!Environment_IsFinalHours(this) || (Entrance_GetSceneId(this->nextEntrance + sceneLayer) < 0) ||
-                     (AudioSeq_GetActiveSeqId(SEQ_PLAYER_BGM_MAIN) != NA_BGM_FINAL_HOURS))) {
+                if ((!(Entrance_GetTransitionFlags(this->nextEntrance + sceneLayer) & ENTR_TRANSITION_FLAG_PRESERVE_SEQS_ON_TRANSITION) ||
+                     (this->nextEntrance == ENTRANCE(PATH_TO_MOUNTAIN_VILLAGE, 1) && !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_SNOWHEAD_TEMPLE)) ||
+                     (this->nextEntrance == ENTRANCE(ROAD_TO_SOUTHERN_SWAMP, 1)   && !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_WOODFALL_TEMPLE)) ||
+                     (this->nextEntrance == ENTRANCE(TERMINA_FIELD, 2)            && !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_GREAT_BAY_TEMPLE)) ||
+                     (this->nextEntrance == ENTRANCE(ROAD_TO_IKANA, 1)            && !CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_STONE_TOWER_TEMPLE))) &&
+                        (!Environment_IsFinalHours(this) || (Entrance_GetSceneId(this->nextEntrance + sceneLayer) < 0 && 
+                            (Entrance_GetBgmFlags(this->nextEntrance + sceneLayer) & ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM)) ||
+                            !Audio_IsFinalHours()) || Environment_IsForcedSequenceDisabled())
+                {
                     Audio_MuteAllSeqExceptSystemAndOcarina(20);
                     gSaveContext.seqId = (u8)NA_BGM_DISABLED;
                     gSaveContext.ambienceId = AMBIENCE_ID_DISABLED;
                 }
+  
+                // if (Environment_IsForcedSequenceDisabled()) {
+                //     Audio_MuteAllSeqExceptSystemAndOcarina(20);
+                //     gSaveContext.seqId = (u8)NA_BGM_DISABLED;
+                //     gSaveContext.ambienceId = AMBIENCE_ID_DISABLED;
+                // }
 
-                if (Environment_IsForcedSequenceDisabled()) {
-                    Audio_MuteAllSeqExceptSystemAndOcarina(20);
-                    gSaveContext.seqId = (u8)NA_BGM_DISABLED;
-                    gSaveContext.ambienceId = AMBIENCE_ID_DISABLED;
-                }
+                // if (Environment_IsFinalHours(this) && (Entrance_GetSceneId(this->nextEntrance + sceneLayer) >= 0) &&
+                //     (AudioSeq_GetActiveSeqId(SEQ_PLAYER_BGM_MAIN) == NA_BGM_FINAL_HOURS)) {
+                //     Audio_MuteSfxAndAmbienceSeqExceptSysAndOca(20);
+                // }
 
-                if (Environment_IsFinalHours(this) && (Entrance_GetSceneId(this->nextEntrance + sceneLayer) >= 0) &&
-                    (AudioSeq_GetActiveSeqId(SEQ_PLAYER_BGM_MAIN) == NA_BGM_FINAL_HOURS)) {
+                if (Environment_IsFinalHours(this) && Audio_IsFinalHours() /* && !Environment_IsDungeonEntrance(this) */) 
+                {
                     Audio_MuteSfxAndAmbienceSeqExceptSysAndOca(20);
                 }
             }
@@ -918,11 +937,313 @@ const char D_801DFA34[][4] = {
     "h",   "i",  "f",  "fa", "fb", "fc", "fd", "fe",  "ff",  "fg", "fh", "fi", "fj", "fk",
 };
 
+// static s16 vert_pos_rand_list[32];
+// static s16 tex_coord_rand_list[32];
+// static u8 color_rand_list[32];
+
+/* 256 entry list, each */
+extern s16             gVertPosRandList[];
+extern s16             gTexCoordRandList[];
+extern u8              gColorRandList[];
+u8                     vert_pos_rand_index = 0;
+u8                     tex_coord_rand_index = 0;
+u8                     color_rand_index = 0;
+
+ 
 void Play_UpdateMain(PlayState* this) {
-    s32 pad;
+    // s32 pad;
+    u32 index;
+    void *room_segments[2];
     Input* input = this->state.input;
+    Player *player = GET_PLAYER(this);
+    Camera *camera = Play_GetCamera(this, CAM_ID_MAIN);
     s32 sp5C = false;
     u8 freezeFlashTimer;
+    struct ChaosCode *code;
+
+    // if(CHECK_BTN_ANY(input->press.button, BTN_L))
+    // {
+    //     Chaos_ActivateCode(CHAOS_CODE_WALLMASTER, 1);
+    // }
+
+    if(Chaos_GetConfigFlag(CHAOS_CONFIG_DPAD_DOWN_TO_KILL_EFFECTS) &&
+        CHECK_BTN_ANY(input->press.button, BTN_DDOWN))
+    {
+        Chaos_DeactivateOneCode();
+    }
+
+    if(this->pauseCtx.state == PAUSE_STATE_OFF)
+    {
+        if(Chaos_IsCodeActive(CHAOS_CODE_LOVELESS_MARRIAGE))
+        {
+            u32 type_chance = Chaos_RandS16Offset(0, 24);
+            u32 type = LIKE_LIKE_TYPE_CHAOS;
+
+            switch(type_chance)
+            {
+                // case 0:
+                //     type = LIKE_LIKE_TYPE_LONG_RANGE;
+                // break;
+
+                case 1:
+                    type = LIKE_LIKE_TYPE_SMOL;
+                break;
+
+                case 2:
+                    type = LIKE_LIKE_TYPE_TURBO;
+                break;
+
+                case 3:
+                    type = LIKE_LIKE_TYPE_VORE;
+                break;
+
+                default:
+                    type = LIKE_LIKE_TYPE_CHAOS;
+                break;
+            }
+
+            Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_RR, 
+                player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z,
+                0, 0, 0, type);
+            Chaos_DeactivateCode(CHAOS_CODE_LOVELESS_MARRIAGE);
+        }
+
+        if(Chaos_IsCodeActive(CHAOS_CODE_STARFOX))
+        {
+            Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_ARWING, 
+                player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z, 0, 0, 0, 0);
+            Chaos_DeactivateCode(CHAOS_CODE_STARFOX);
+        }
+
+        if(Chaos_IsCodeActive(CHAOS_CODE_WALLMASTER))
+        {
+            Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_WALLMAS, 
+                player->actor.world.pos.x, player->actor.world.pos.y + 20.0f, player->actor.world.pos.z, 
+                0, 0, 0, WALLMASTER_PARAMS((Chaos_RandS16Offset(0, 8) != 0) ? WALLMASTER_TYPE_FAKE : 0, 0, false));
+            Chaos_DeactivateCode(CHAOS_CODE_WALLMASTER);
+        }
+
+        if(Chaos_IsCodeActive(CHAOS_CODE_REDEADASS_GROOVE))
+        {
+            Vec3f player_pos = player->actor.world.pos;
+            player_pos.y += 20.0f;
+            Chaos_SpawnRedeadDanceParty( &this->actorCtx, this, &player_pos);
+            Chaos_DeactivateCode(CHAOS_CODE_REDEADASS_GROOVE);
+        }
+
+        if(Chaos_IsCodeActive(CHAOS_CODE_CHICKEN_ARISE))
+        {
+            if(gChaosContext.chicken.cucco.attackNiwSpawnTimer > 0)
+            {
+                gChaosContext.chicken.cucco.attackNiwSpawnTimer--;
+            }
+
+            if(gChaosContext.chicken.cucco.unkAttackNiwTimer > 0)
+            {
+                gChaosContext.chicken.cucco.unkAttackNiwTimer--;
+            }
+
+            if ((gChaosContext.chicken.cucco.attackNiwSpawnTimer == 0) && (gChaosContext.chicken.cucco.attackNiwCount < 7)) 
+            {
+                f32 xView = this->view.at.x - this->view.eye.x;
+                f32 yView = this->view.at.y - this->view.eye.y;
+                f32 zView = this->view.at.z - this->view.eye.z;
+                f32 cucco_x = this->view.eye.x + ((Chaos_ZeroOne() - 0.5f) * xView);
+                f32 cucco_y = this->view.eye.y + 50.0f + (yView * 0.5f) + Rand_CenteredFloat(0.3f);
+                f32 cucco_z = this->view.eye.z + ((Chaos_ZeroOne() - 0.5f) * zView);
+
+                Actor *cucco = Chaos_SpawnAsChild(&this->actorCtx, &gChaosContext.chicken.cucco.actor, this, ACTOR_EN_ATTACK_NIW, cucco_x,
+                                            cucco_y, cucco_z, 0, 0, 0, ATTACK_NIW_CHAOS);    
+
+                if (cucco != NULL) {
+                    gChaosContext.chicken.cucco.attackNiwCount++;
+                    gChaosContext.chicken.cucco.attackNiwSpawnTimer = 10;
+                    if(Chaos_RandS16Offset(0, 11) == 0)
+                    {
+                        Actor_SetScale(cucco, 0.006f);
+                    }
+                    else
+                    {
+                        Actor_SetScale(cucco, 0.018f);
+                    }
+                }
+            }
+        }
+
+        if(Chaos_IsCodeActive(CHAOS_CODE_FISH))
+        {
+            Actor *fish = Actor_Spawn(&this->actorCtx, this, ACTOR_EN_FISH, 
+                player->actor.world.pos.x, player->actor.world.pos.y, player->actor.world.pos.z, 0, 0, 0, 0);
+
+            fish->scale.x *= 10.0f;
+            fish->scale.y *= 10.0f;
+            fish->scale.z *= 10.0f;
+            Chaos_DeactivateCode(CHAOS_CODE_FISH);
+        }
+        
+        code = Chaos_GetCode(CHAOS_CODE_SILENT_FIELD);
+        if(code != NULL)
+        {
+            if(gChaosContext.env.fog_lerp < 1.0f)
+            {
+                gChaosContext.env.fog_lerp += 0.005f;
+
+                if(gChaosContext.env.fog_lerp > 1.0f)
+                {
+                    gChaosContext.env.fog_lerp = 1.0f;
+                }
+            }
+            
+            if(gChaosContext.env.fog_lerp >= 0.5f)
+            {
+                if(gChaosContext.env.stalchild_spawn_timer > 0)
+                {
+                    gChaosContext.env.stalchild_spawn_timer--;
+                }
+
+                if(gChaosContext.env.stalchild_spawn_timer == 0 && gChaosContext.env.stalchild_count < CHAOS_MAX_STALCHILDS &&
+                    code->timer < 15)
+                {
+                    Vec3f point_a = player->actor.world.pos;
+                    Vec3f point_b = point_a;
+                    Vec3f spawn_pos;
+                    // s16 yaw = Rand_Next() % 0x10000;
+                    s16 yaw = Chaos_RandNext() % 0x10000;
+                    CollisionPoly *poly;
+
+                    point_a.x += Math_SinS(yaw) * 1000;
+                    point_a.y += 30.0f;
+                    point_a.z += Math_CosS(yaw) * 1000;
+
+                    point_b.y += 30.0f;
+
+                    if(!BgCheck_AnyLineTest1(&this->colCtx, &point_a, &point_b, &spawn_pos, &poly, false))
+                    {
+                        spawn_pos = point_a;
+                    }
+
+                    Chaos_SpawnActor(&this->actorCtx, this, ACTOR_EN_SKB, spawn_pos.x, spawn_pos.y, spawn_pos.z, 0, 0, 0, EN_SKB_TYPE_CHAOS);
+
+                    gChaosContext.env.stalchild_count++;
+                    gChaosContext.env.stalchild_spawn_timer = 30;
+                }
+            }
+        }
+        else if(gChaosContext.env.fog_lerp > 0.0f)
+        {
+            gChaosContext.env.fog_lerp -= 0.01f;
+
+            if(gChaosContext.env.fog_lerp < 0.0f)
+            {
+                gChaosContext.env.fog_lerp = 0.0f;
+            }
+        }
+    }
+
+    // if(Chaos_IsCodeActive(CHAOS_CODE_TEXTBOX))
+    // {
+    //     s16 entry_index = 0x09E5;
+    //     // MessageTableEntry *entry = D_801C6B98 + entry_index;
+    //     Message_StartTextbox(this, MESSAGE_ID_CONFIRM_SONG_OF_TIME_NORMAL, &player->actor);
+    //     // CutsceneManager_Queue(CS_ID_GLOBAL_TALK);
+    //     Chaos_DeactivateCode(CHAOS_CODE_TEXTBOX);
+    // }
+
+    // if(this->msgCtx.currentTextId == MESSAGE_ID_CONFIRM_SONG_OF_TIME_NORMAL)
+    // {
+    //     if(CHECK_BTN_ANY(input->press.button, BTN_A))
+    //     {
+    //         Message_CloseTextbox(this);
+    //     }
+    // }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    {
+        u32 heart_index;
+        u32 heart_count = gSaveContext.save.saveInfo.playerData.healthCapacity / LIFEMETER_FULL_HEART_HEALTH;
+        for(heart_index = 0; heart_index < heart_count; heart_index++)
+        {
+            gChaosContext.ui.heart_containers[heart_index].pos_x = (Rand_ZeroOne() * 2.0f - 1.0f) * 8.0f;
+            gChaosContext.ui.heart_containers[heart_index].pos_y = (Rand_ZeroOne() * 2.0f - 1.0f) * 8.0f;
+        }
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_HEART_SNAKE))
+    {
+        if(!Chaos_UpdateSnakeGame(this, input))
+        {
+            Chaos_DeactivateCode(CHAOS_CODE_HEART_SNAKE);
+        }
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_FAST_TIME))
+    {
+        if(gChaosContext.time.fast_time_state == CHAOS_FAST_TIME_STATE_NONE)
+        {
+            gChaosContext.time.fast_time_state = CHAOS_FAST_TIME_STATE_SPEEDING_UP;
+            Audio_PlaySfx(NA_SE_SY_STOPWATCH_TIMER_3);
+        }
+
+        Chaos_DeactivateCode(CHAOS_CODE_FAST_TIME);
+    }
+
+    if(gChaosContext.time.fast_time_state == CHAOS_FAST_TIME_STATE_SPEEDING_UP)
+    {
+        gSaveContext.save.timeSpeedOffset++;
+        if(gSaveContext.save.timeSpeedOffset >= CHAOS_FAST_TIME_OFFSET)
+        {
+            gSaveContext.save.timeSpeedOffset = CHAOS_FAST_TIME_OFFSET;
+            gChaosContext.time.fast_time_state = CHAOS_FAST_TIME_STATE_NONE;
+        }
+    }
+
+    code = Chaos_GetCode(CHAOS_CODE_TERRIBLE_MUSIC);
+
+    if(code != NULL)
+    {
+        // if(code->timer > 1)
+        if(code->timer > 1)
+        {
+            gChaosContext.bgm.change_timer--;
+
+            if(gChaosContext.bgm.change_timer == 0)
+            {
+                u16 frequency_duration = Chaos_RandS16Offset(5, 15);
+                u16 tempo_duration = Chaos_RandS16Offset(5, 15);
+                f32 scale;
+
+                if(frequency_duration > tempo_duration)
+                {
+                    gChaosContext.bgm.change_timer = frequency_duration;
+                }
+                else
+                {
+                    gChaosContext.bgm.change_timer = tempo_duration;
+                }
+
+                scale = 0.25f + Chaos_ZeroOne() * 2.5f;
+                SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_MAIN, frequency_duration, scale * 1000.0f);
+                SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_SUB, frequency_duration, scale * 1000.0f);
+                scale = 0.25f + Chaos_ZeroOne() * 2.5f;
+                SEQCMD_SET_TEMPO(SEQ_PLAYER_BGM_MAIN, tempo_duration, scale * 100.0f);
+                SEQCMD_SET_TEMPO(SEQ_PLAYER_BGM_SUB, tempo_duration, scale * 100.0f);
+            }
+        }
+        else
+        {
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_MAIN, 10, 1000.0f);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_SUB, 10, 1000.0f);
+            SEQCMD_RESET_TEMPO(SEQ_PLAYER_BGM_MAIN, 10);
+            SEQCMD_RESET_TEMPO(SEQ_PLAYER_BGM_SUB, 10);
+        }
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_SKYBOX))
+    {
+        this->skyboxCtx.rot.x += Chaos_ZeroOne() * 0.25f;
+        this->skyboxCtx.rot.y += Chaos_ZeroOne() * 0.25f;
+        this->skyboxCtx.rot.z += Chaos_ZeroOne() * 0.25f;
+    }
 
     gSegments[0x04] = OS_K0_TO_PHYSICAL(this->objectCtx.slots[this->objectCtx.mainKeepSlot].segment);
     gSegments[0x05] = OS_K0_TO_PHYSICAL(this->objectCtx.slots[this->objectCtx.subKeepSlot].segment);
@@ -1000,7 +1321,8 @@ void Play_UpdateMain(PlayState* this) {
                     CollisionCheck_OC(this, &this->colChkCtx);
                     CollisionCheck_Damage(this, &this->colChkCtx);
                     CollisionCheck_ClearContext(this, &this->colChkCtx);
-                    if (!this->haltAllActors) {
+                    if (!this->haltAllActors) 
+                    {
                         Actor_UpdateAll(this, &this->actorCtx);
                     }
                     Cutscene_UpdateManual(this, &this->csCtx);
@@ -1032,6 +1354,240 @@ void Play_UpdateMain(PlayState* this) {
         }
     }
 
+    // if(Chaos_IsCodeInActiveList(CHAOS_CODE_BAD_CONNECTION) && (player->stateFlags1 & PLAYER_STATE1_TIME_STOPPED))
+    // {
+    //     Chaos_NukeSnapshots();
+    // }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_BAD_CONNECTION))
+    {
+        switch(gChaosContext.link.bad_connection_mode)
+        {
+            case CHAOS_BAD_CONNECTION_ROLLBACK:
+                if(gChaosContext.link.snapshot_timer > 0)
+                {
+                    gChaosContext.link.snapshot_timer--;
+                }
+                
+                if(gChaosContext.link.snapshot_timer == 0 || player->actor.room != gChaosContext.link.player_snapshot.actor.room ||
+                    player->actor.child != NULL && gChaosContext.link.player_snapshot.actor.child == NULL ||
+                    player->actor.parent != NULL && gChaosContext.link.player_snapshot.actor.parent == NULL ||
+                    player->doorActor != NULL && gChaosContext.link.door_snapshot.instance == NULL)
+                {
+                    Lib_MemCpy(&gChaosContext.link.player_snapshot, player, sizeof(Player));
+                    Lib_MemCpy(gChaosContext.link.ammo, gSaveContext.save.saveInfo.inventory.ammo, sizeof(gChaosContext.link.ammo));
+                    gChaosContext.link.magic_state = gSaveContext.magicState;
+                    gChaosContext.link.magic_available = gSaveContext.save.saveInfo.playerData.magic;
+                    gChaosContext.link.health = gSaveContext.save.saveInfo.playerData.health;
+                    gChaosContext.link.snapshot_timer = Chaos_RandS16Offset(15, 65);
+                    gChaosContext.link.bad_connection_timer = Chaos_RandS16Offset(2, 45);
+                    // gChaosContext.link.snapshot_timer = 200;
+                    // gChaosContext.link.bad_connection_timer = 20;
+
+                    if(player->actor.parent != NULL)
+                    {
+                        Chaos_SnapshotParent(this, player->actor.parent);
+                    }
+                    else if(gChaosContext.link.parent_snapshot.instance != NULL)
+                    {
+                        Chaos_UnsnapshotParent(this, player->actor.parent);
+                    }
+
+                    if(player->actor.child != NULL)
+                    {
+                        Chaos_SnapshotChild(this, player->actor.child);
+
+                        if(player->actor.child->id == ACTOR_EN_ARROW && player->actor.child->child != NULL)
+                        {
+                            /* when we reach here the child actor update functin will already have been called. In
+                            the case of a magic arrow, the magic effect actor will already be spawned, so just snapshot */
+                            Chaos_SnapshotMagicArrow(this, player->actor.child->child);
+                        }
+                        else if(gChaosContext.link.arrow_snapshot.instance != NULL)
+                        {
+                            /* not a magic arrow and the previous snapshot contains a magic arrow effect actor, 
+                            so drop it */
+                            Chaos_UnsnapshotMagicArrow(this, gChaosContext.link.arrow_snapshot.instance);
+                        }
+                    }
+                    else if(gChaosContext.link.child_snapshot.instance != NULL)
+                    {
+                        /* player has no child actor but previous snapshot contains a child actor, 
+                        so drop it */
+                        Chaos_UnsnapshotChild(this, gChaosContext.link.child_snapshot.instance);
+
+                        if(gChaosContext.link.arrow_snapshot.instance != NULL)
+                        {
+                            /* previous snapshot contains a magic arrow effect actor, so drop it */
+                            Chaos_UnsnapshotMagicArrow(this, gChaosContext.link.arrow_snapshot.instance);
+                        }
+                    }
+
+                    if(player->doorActor != NULL)
+                    {
+                        Chaos_SnapshotDoor(this, player->doorActor);
+                    }
+                    else if(gChaosContext.link.door_snapshot.instance != NULL)
+                    {
+                        Chaos_UnsnapshotDoor(this, gChaosContext.link.door_snapshot.instance);
+                    }
+                }
+
+                if(gChaosContext.link.bad_connection_timer > 0)
+                {
+                    gChaosContext.link.bad_connection_timer--;
+                }
+
+                if(gChaosContext.link.bad_connection_timer == 0)
+                {
+                    if(player->actor.child != NULL && player->actor.child != gChaosContext.link.player_snapshot.actor.child)
+                    {
+                        /* current child actor is different from what's in the snapshot, so kill it */
+                        Actor_Kill(player->actor.child);
+                        player->actor.child = NULL;
+                    }
+
+                    if(player->actor.child == NULL && gChaosContext.link.player_snapshot.actor.child != NULL)
+                    {
+                        /* player currently doesn't have a child actor but the snapshot has */
+                        Actor *child = gChaosContext.link.player_snapshot.actor.child;
+
+                        if(gChaosContext.link.child_snapshot.instance == NULL)
+                        {
+                            /* child actor got killed since the snapshot, so spawn it */
+                            child = Actor_SpawnAsChild(&this->actorCtx, &player->actor, this, 
+                                gChaosContext.link.child_snapshot.actor.id, 0, 0, 0, 0, 0, 0, 
+                                gChaosContext.link.child_snapshot.actor.params);
+
+                            gChaosContext.link.player_snapshot.heldActor = child;
+                            gChaosContext.link.player_snapshot.actor.child = child;
+                            gChaosContext.link.child_snapshot.instance = child;
+
+                            if(child->id == ACTOR_EN_ARROW && gChaosContext.link.child_snapshot.actor.child != NULL)
+                            {
+                                /* we're spawning a magic arrow, so run its update function once so it spawns the magic
+                                effect actor */
+                                child->update(child, this);
+                                gChaosContext.link.child_snapshot.actor.child = child->child;
+                                gChaosContext.link.arrow_snapshot.actor.parent = child;
+                                // gChaosContext.link.arrow_snapshot.actor.next = child->child->next;
+                                // gChaosContext.link.arrow_snapshot.actor.prev = child->child->prev;
+                            }
+                        }
+                        // else if(child->id == ACTOR_EN_ARROW && gChaosContext.link.child_snapshot.actor.child != NULL &&
+                        //     gChaosContext.link.arrow_snapshot.instance == NULL)
+                        // {
+                        //     gChaosContext.link.child_snapshot.actor.child = NULL;
+                        // }
+
+                        // gChaosContext.link.child_snapshot.actor.next = child->next;
+                        // gChaosContext.link.child_snapshot.actor.prev = child->prev;
+                    }
+
+                    if(player->actor.parent == NULL && gChaosContext.link.player_snapshot.actor.parent != NULL &&
+                        gChaosContext.link.parent_snapshot.instance == NULL)
+                    {
+                        /* parent actor got killed since the snapshot, so spawn it */
+                        Actor *parent = Actor_Spawn(&this->actorCtx, this, gChaosContext.link.parent_snapshot.actor.id, 0, 0, 0, 0, 0, 0, 
+                            gChaosContext.link.parent_snapshot.actor.params);
+                        gChaosContext.link.player_snapshot.actor.parent = parent;
+                        gChaosContext.link.parent_snapshot.actor.child = &player->actor;
+                    }
+
+                    Lib_MemCpy(player, &gChaosContext.link.player_snapshot, sizeof(Player));
+                    Lib_MemCpy(gSaveContext.save.saveInfo.inventory.ammo, gChaosContext.link.ammo, sizeof(gChaosContext.link.ammo));
+                    // gSaveContext.magicState = gChaosContext.link.magic_state;
+                    gSaveContext.save.saveInfo.playerData.magic = gChaosContext.link.magic_available;
+                    gSaveContext.save.saveInfo.playerData.health = gChaosContext.link.health;
+                    gChaosContext.link.bad_connection_timer = Chaos_RandS16Offset(2, 45);
+
+                    if(player->actor.parent != NULL)
+                    {
+                        Actor *parent = player->actor.parent;
+                        ActorProfile *init_info = Actor_GetActorInit(&this->actorCtx, parent->id);
+
+                        /* make sure we're not restoring stale stuff */
+                        gChaosContext.link.parent_snapshot.actor.next = parent->next;
+                        gChaosContext.link.parent_snapshot.actor.prev = parent->prev;
+                        gChaosContext.link.parent_snapshot.actor.room = parent->room;
+
+                        Lib_MemCpy(parent, &gChaosContext.link.parent_snapshot.actor, init_info->instanceSize);
+                    }
+
+                    if(player->actor.child != NULL)
+                    {
+                        Actor *child = player->actor.child;
+                        ActorProfile *init_info = Actor_GetActorInit(&this->actorCtx, child->id);
+
+                        /* make sure we're not restoring stale stuff */
+                        gChaosContext.link.child_snapshot.actor.next = child->next;
+                        gChaosContext.link.child_snapshot.actor.prev = child->prev;
+                        gChaosContext.link.child_snapshot.actor.room = child->room;
+
+                        Lib_MemCpy(child, &gChaosContext.link.child_snapshot.actor, init_info->instanceSize);
+
+                        if(child->id == ACTOR_EN_ARROW && gChaosContext.link.child_snapshot.actor.child != NULL)
+                        {
+                            /* we're restoring a magic arrow */
+
+                            if(gChaosContext.link.arrow_snapshot.instance == NULL)
+                            {
+                                /* magic effect got killed since the snapshot but the arrow wasn't, so run the 
+                                arrow update function to respawn it */
+                                child->child = NULL;
+                                child->update(child, this);
+                                gChaosContext.link.child_snapshot.actor.child = child->child;
+                                gChaosContext.link.arrow_snapshot.actor.parent = child;
+                            }
+
+                            /* make sure we're not restoring stale pointers */
+                            gChaosContext.link.arrow_snapshot.actor.next = child->child->next;
+                            gChaosContext.link.arrow_snapshot.actor.prev = child->child->prev;
+                            gChaosContext.link.arrow_snapshot.actor.room = child->child->room;
+
+                            init_info = Actor_GetActorInit(&this->actorCtx, gChaosContext.link.arrow_snapshot.actor.id);
+                            Lib_MemCpy(child->child, &gChaosContext.link.arrow_snapshot.actor, init_info->instanceSize);
+                        }
+                    }
+
+                    if(player->doorActor != NULL)
+                    {
+                        Actor *door = player->doorActor;
+                        ActorProfile *init_info = Actor_GetActorInit(&this->actorCtx, door->id);
+                        gChaosContext.link.door_snapshot.actor.next = door->next;
+                        gChaosContext.link.door_snapshot.actor.prev = door->prev;
+                        Lib_MemCpy(door, &gChaosContext.link.door_snapshot.actor, init_info->instanceSize);
+                    }
+                }
+            break;
+
+            case CHAOS_BAD_CONNECTION_BUFFER:
+                if(gChaosContext.link.bad_connection_timer > 0)
+                {
+                    gChaosContext.link.bad_connection_timer--;
+                }
+                if(gChaosContext.link.bad_connection_timer == 0)
+                {
+                    gChaosContext.link.input_frames += Chaos_RandS16Offset(2, 20);
+                    gChaosContext.link.bad_connection_timer = Chaos_RandS16Offset(10, 25);
+                }
+
+                if(gChaosContext.link.input_frames > 0)
+                {
+                    gChaosContext.link.input_frames--;
+                    gChaosContext.link.magic_available = gSaveContext.save.saveInfo.playerData.magic;
+                }
+                if(gChaosContext.link.input_frames == 0)
+                {
+                    gSaveContext.save.saveInfo.playerData.magic = gChaosContext.link.magic_available;
+                    player->actor.freezeTimer = 2;
+                }
+            break;
+        }
+    }
+
+    Chaos_UpdateChaos(this);
+
     if (!sp5C || gDbgCamEnabled) {
         s32 i;
 
@@ -1042,6 +1598,274 @@ void Play_UpdateMain(PlayState* this) {
             }
         }
         Camera_Update(this->cameraPtrs[this->nextCamera]);
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_BEER_GOGGLES))
+    {  
+        if(gChaosContext.link.beer_goggles_state == CHAOS_BEER_GOGGLES_STATE_NONE)
+        {
+            gChaosContext.link.beer_goggles_state = CHAOS_BEER_GOGGLES_STATE_ACTIVE;
+            SEQCMD_SET_TEMPO(SEQ_PLAYER_AMBIENCE, 40, 80);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_AMBIENCE, 40, 700);
+            SEQCMD_SET_TEMPO(SEQ_PLAYER_BGM_MAIN, 40, 80);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_MAIN, 40, 700);
+            SEQCMD_SET_TEMPO(SEQ_PLAYER_BGM_SUB, 40, 80);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_SUB, 40, 700);
+            SEQCMD_SET_TEMPO(SEQ_PLAYER_FANFARE, 40, 80);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_FANFARE, 40, 700);
+            SEQCMD_SET_TEMPO(SEQ_PLAYER_SFX, 40, 80);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_SFX, 40, 700);
+        }
+        else if(gActiveSeqs[SEQ_PLAYER_BGM_MAIN].tempoTimer == 0)
+        {
+            SEQCMD_SET_TEMPO(SEQ_PLAYER_AMBIENCE, 0, 80);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_AMBIENCE, 0, 700);
+            SEQCMD_SET_TEMPO(SEQ_PLAYER_BGM_MAIN, 0, 80);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_MAIN, 0, 700);
+            SEQCMD_SET_TEMPO(SEQ_PLAYER_BGM_SUB, 0, 80);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_SUB, 0, 700);
+            SEQCMD_SET_TEMPO(SEQ_PLAYER_FANFARE, 0, 80);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_FANFARE, 0, 700);
+            SEQCMD_SET_TEMPO(SEQ_PLAYER_SFX, 0, 80);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_SFX, 0, 700);
+        }
+
+        if(gChaosContext.link.beer_alpha < CHAOS_MAX_BEER_ALPHA)
+        {
+            gChaosContext.link.beer_alpha += 5;
+        }
+
+        gChaosContext.view.beer_pitch = fmodf(gChaosContext.view.beer_pitch + 0.0915f, M_PI * 2.0f);
+        gChaosContext.view.beer_yaw = fmodf(gChaosContext.view.beer_yaw + 0.1593f, M_PI * 2.0f);
+        gChaosContext.view.beer_roll = fmodf(gChaosContext.view.beer_roll + 0.0293f, M_PI * 2.0f);
+        gChaosContext.view.beer_x_offset = fmodf(gChaosContext.view.beer_x_offset + 0.061f, M_PI * 2.0f);
+        gChaosContext.view.beer_y_offset = fmodf(gChaosContext.view.beer_y_offset + 0.0950f, M_PI * 2.0f);
+        gChaosContext.view.beer_time += 0.1f;
+    }
+    else if(gChaosContext.link.beer_alpha > 0)
+    {
+        if(gChaosContext.link.beer_goggles_state == CHAOS_BEER_GOGGLES_STATE_ACTIVE)
+        {
+            gChaosContext.link.beer_goggles_state = CHAOS_BEER_GOGGLES_STATE_NONE;
+            SEQCMD_RESET_TEMPO(SEQ_PLAYER_AMBIENCE, 20);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_AMBIENCE, 20, 1000.0f);
+            SEQCMD_RESET_TEMPO(SEQ_PLAYER_BGM_MAIN, 20);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_MAIN, 20, 1000.0f);
+            SEQCMD_RESET_TEMPO(SEQ_PLAYER_BGM_SUB, 20);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_BGM_SUB, 20, 1000.0f);
+            SEQCMD_RESET_TEMPO(SEQ_PLAYER_FANFARE, 20);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_FANFARE, 20, 1000.0f);
+            SEQCMD_RESET_TEMPO(SEQ_PLAYER_SFX, 20);
+            SEQCMD_SET_SEQPLAYER_FREQ(SEQ_PLAYER_SFX, 20, 1000.0f);
+        }
+        gChaosContext.link.beer_alpha -= 5;
+        gChaosContext.view.beer_sway.x *= 0.9f;
+        gChaosContext.view.beer_sway.y *= 0.9f;
+        gChaosContext.view.beer_sway.z *= 0.9f;
+    }
+
+    if(gChaosContext.link.beer_alpha > 0)
+    {
+        Camera *camera = &this->mainCamera;
+        Vec3f forward_vec;
+        Vec3f right_vec;
+        Vec3f sway_offset;
+        Vec3f pitch_yaw;
+        f32 offset_x;
+        f32 offset_y;
+        f32 alpha_scale = (f32)gChaosContext.link.beer_alpha / (float)CHAOS_MAX_BEER_ALPHA;
+        f32 periodic_probability_scale = gChaosContext.periodic_probability_scale;
+        periodic_probability_scale = periodic_probability_scale * periodic_probability_scale * periodic_probability_scale;
+        periodic_probability_scale = CLAMP_MAX(periodic_probability_scale, 1.0);
+        alpha_scale *= periodic_probability_scale;
+
+        gSfxBeerGogglesFreq = 0.75f * alpha_scale + (1.0f - alpha_scale);
+
+        if(Chaos_GetConfigFlag(CHAOS_CONFIG_BEER_GOGGLES_BLUR))
+        {
+            Play_EnableMotionBlurPriority(gChaosContext.link.beer_alpha * periodic_probability_scale);   
+        }
+        Math_Vec3f_DistXYZAndStoreNormDiff(&camera->eye, &camera->at, 1.0f, &forward_vec);
+
+        right_vec.x = forward_vec.y * camera->up.z - forward_vec.z * camera->up.y;
+        right_vec.y = forward_vec.x * camera->up.z - forward_vec.z * camera->up.x;
+        right_vec.z = forward_vec.x * camera->up.y - forward_vec.y * camera->up.x;
+
+        offset_y = Math_SinF(gChaosContext.view.beer_y_offset) * 15.0f * alpha_scale;
+        offset_x = Math_SinF(gChaosContext.view.beer_x_offset) * 15.0f * alpha_scale;
+
+        sway_offset.x = camera->up.x * offset_y + right_vec.x * offset_x;
+        sway_offset.y = camera->up.y * offset_y + right_vec.y * offset_x;
+        sway_offset.z = camera->up.z * offset_y + right_vec.z * offset_x;
+
+        offset_y = Math_SinF(gChaosContext.view.beer_pitch) * 15.0f * alpha_scale;
+        offset_x = Math_SinF(gChaosContext.view.beer_yaw) * 15.0f * alpha_scale;
+
+        pitch_yaw.x = camera->up.x * offset_y + right_vec.x * offset_x;
+        pitch_yaw.y = camera->up.y * offset_y + right_vec.y * offset_x;
+        pitch_yaw.z = camera->up.z * offset_y + right_vec.z * offset_x;        
+
+        if(camera->mode == CAM_MODE_FIRSTPERSON || (player->stateFlags1 & PLAYER_STATE1_100000))
+        {
+            player->actor.focus.rot.x += offset_y * 3;
+            player->actor.focus.rot.y += offset_x * 3;
+            gChaosContext.view.beer_sway.x = sway_offset.x * 0.025f;
+            gChaosContext.view.beer_sway.y = sway_offset.y * 0.025f;
+            gChaosContext.view.beer_sway.z = sway_offset.z * 0.025f;
+        }
+        else
+        {
+            gChaosContext.view.beer_sway = sway_offset;
+            camera->at.x += pitch_yaw.x * 0.035f;
+            camera->at.y += pitch_yaw.y * 0.035f;
+            camera->at.z += pitch_yaw.z * 0.035f;
+            camera->roll += Math_SinF(gChaosContext.view.beer_roll) * 350.0f * alpha_scale;
+        }
+
+        View_SetDistortionOrientation(&this->view, Math_SinF(gChaosContext.view.beer_time), Math_CosF(gChaosContext.view.beer_time * 1.57), 0.0f);
+        View_SetDistortionScale(&this->view, 1.0f + alpha_scale * 0.5f, 
+                                             1.0f + alpha_scale * 0.5f, 
+                                             1.0f + (0.8f + Math_CosF(gChaosContext.view.beer_time * 0.25)) * alpha_scale * 0.1f);
+        View_SetDistortionSpeed(&this->view, 0.05f);
+    }
+    else if(gChaosContext.link.beer_goggles_state != CHAOS_BEER_GOGGLES_STATE_NONE)
+    {
+        gChaosContext.link.beer_goggles_state = CHAOS_BEER_GOGGLES_STATE_NONE;
+        if(Chaos_GetConfigFlag(CHAOS_CONFIG_BEER_GOGGLES_BLUR))
+        {
+            Play_DisableMotionBlurPriority();
+        }
+        View_ClearDistortion(&this->view);
+        gChaosContext.view.beer_sway.x = 0;
+        gChaosContext.view.beer_sway.y = 0;
+        gChaosContext.view.beer_sway.z = 0;
+        gChaosContext.view.beer_time = 0;
+        gSfxBeerGogglesFreq = 1.0f;
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_SCALE_RANDOM_LIMB))
+    {
+        u32 limb_index = Chaos_RandS16Offset(PLAYER_LIMB_ROOT + 1, PLAYER_LIMB_MAX - 1);
+
+        if(Chaos_RandS16Offset(0, 16) < 11)
+        {
+            gChaosContext.link.limb_scales[limb_index] += 0.1f;
+        }
+        else
+        {
+            gChaosContext.link.limb_scales[limb_index] -= 0.1f;
+        }
+
+        if(gChaosContext.link.limb_scales[limb_index] > 4.0f)
+        {
+            gChaosContext.link.limb_scales[limb_index] = 4.0f;
+        }
+        else if(gChaosContext.link.limb_scales[limb_index] < 0.1f)
+        {
+            gChaosContext.link.limb_scales[limb_index] = 0.1f;
+        }
+
+        Chaos_DeactivateCode(CHAOS_CODE_SCALE_RANDOM_LIMB);
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_UNSTABLE_ROOMS))
+    {
+        u8 snap_to_player_timer = 0;
+        room_segments[this->roomCtx.activeBufPage] = this->roomCtx.curRoom.segment;
+        room_segments[this->roomCtx.activeBufPage ^ 1] = this->roomCtx.prevRoom.segment;
+
+        if(gChaosContext.room.weirdness_behavior & CHAOS_UNSTABLE_ROOMS_BEHAVIOR_ROTATE)
+        {
+            if(gChaosContext.room.room_rotation_timer > 0)
+            {
+                gChaosContext.room.room_rotation_timer--;
+            }
+
+            if(gChaosContext.room.room_rotation_timer == 0)
+            {
+                gChaosContext.room.room_rotation_timer = Chaos_RandS16Offset(0, 30);
+                gChaosContext.room.room_rotation.x = Chaos_RandS16Offset(-1000, 2000);
+                gChaosContext.room.room_rotation.y = Chaos_RandS16Offset(-400, 800);
+                gChaosContext.room.room_rotation.z = Chaos_RandS16Offset(-1000, 2000);
+            }
+        }
+
+        for(index = 0; index < 2; index++)
+        {
+            if(room_segments[index] != NULL && gChaosContext.room.vert_list_list[index] != NULL /* && player->csId != CS_ID_GLOBAL_DOOR */)
+            {
+                u32 vert_list_index;
+                RoomVertListList *vert_list_list;
+                gSegments[0x03] = OS_K0_TO_PHYSICAL(room_segments[index]);
+                vert_list_list = SEGMENTED_TO_K0(gChaosContext.room.vert_list_list[index]);
+
+                if((gChaosContext.room.weirdness_behavior & CHAOS_UNSTABLE_ROOMS_BEHAVIOR_SNAP_TO_PLAYER) && (this->gameplayFrames % 4) == 0)
+                {
+                    u32 snap_index;
+                    u32 snap_count = Chaos_RandS16Offset(1, 7);
+                    for(snap_index = 0; snap_index < snap_count; snap_index++)
+                    {
+                        u32 vert_list_index = Chaos_RandNext() % vert_list_list->count;
+                        Vec3f random_offset;
+                        RoomVertList *room_vert_list = SEGMENTED_TO_K0(vert_list_list->room_vert_lists + vert_list_index);
+                        Vtx *vertices = SEGMENTED_TO_K0(room_vert_list->verts);
+                        u32 index = Chaos_RandNext() % room_vert_list->count;
+                        Vtx *vtx = vertices + index;
+                        random_offset.x = Rand_Centered() * 20.0f;
+                        random_offset.y = Rand_ZeroOne() * 30.0f;
+                        random_offset.z = Rand_Centered() * 20.0f;
+                        vtx->v.ob[0] = player->actor.world.pos.x + random_offset.x;
+                        vtx->v.ob[1] = player->actor.world.pos.y + random_offset.y;
+                        vtx->v.ob[2] = player->actor.world.pos.z + random_offset.z;
+                    }
+                }
+
+                for(vert_list_index = 0; vert_list_index < vert_list_list->count; vert_list_index++)
+                {
+                    RoomVertList *room_vert_list = SEGMENTED_TO_K0(vert_list_list->room_vert_lists + vert_list_index);
+                    Vtx *vertices = SEGMENTED_TO_K0(room_vert_list->verts);
+                    u32 vert_count = room_vert_list->count;
+                    u32 rand_count = 0;
+
+                    if(vert_count > 0)
+                    {
+                        if(gChaosContext.room.weirdness_behavior & CHAOS_UNSTABLE_ROOMS_BEHAVIOR_WOBBLE)
+                        {
+                            while(!(vert_count & 0x2000))
+                            {
+                                rand_count++;
+                                vert_count <<= 1;
+                            }
+
+                            rand_count = 13 - rand_count;
+
+                            if(rand_count > 1)
+                            {
+                                rand_count >>= 1;
+                            }
+
+                            while(rand_count > 0)
+                            {
+                                u32 index = Chaos_RandNext() % room_vert_list->count;
+                                Vtx *vtx = vertices + index;
+                                vtx->v.ob[0] += gVertPosRandList[vert_pos_rand_index++];
+                                vtx->v.ob[1] += gVertPosRandList[vert_pos_rand_index++];
+                                vtx->v.ob[2] += gVertPosRandList[vert_pos_rand_index++];
+
+                                vtx->v.tc[0] += gTexCoordRandList[tex_coord_rand_index++];
+                                vtx->v.tc[1] += gTexCoordRandList[tex_coord_rand_index++];
+                                tex_coord_rand_index++;
+
+                                vtx->v.cn[0] += gColorRandList[color_rand_index++];
+                                vtx->v.cn[1] += gColorRandList[color_rand_index++];
+                                vtx->v.cn[2] += gColorRandList[color_rand_index++];
+                                rand_count--;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     if (!sp5C) {
@@ -1057,6 +1881,28 @@ void Play_UpdateMain(PlayState* this) {
             Sram_UpdateWriteToFlashOwlSave(&this->sramCtx);
         } else {
             Sram_UpdateWriteToFlashDefault(&this->sramCtx);
+        }
+    }
+
+    if(!(gChaosContext.effect_restrictions & (CHAOS_CODE_RESTRICTION_FLAG_AFFECT_CUTSCENE |
+                                            CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TRANSITION)))
+    {
+        if(gChaosContext.moon.moon_crash_timer > 0)
+        {
+            s32 time_until_moon_crash = TIME_UNTIL_MOON_CRASH - gChaosContext.moon.moon_crash_time_offset;
+
+            gChaosContext.moon.moon_crash_timer--;
+
+            if(time_until_moon_crash <= 0)
+            {
+                Interface_StartMoonCrash(this);
+                gChaosContext.moon.moon_crash_timer = 0;
+                gChaosContext.moon.moon_crash_time_offset = 0;
+            }
+        }
+        else
+        {
+            gChaosContext.moon.moon_crash_time_offset = 0;
         }
     }
 }
@@ -1131,6 +1977,9 @@ void Play_PostWorldDraw(PlayState* this) {
 
 void Play_DrawMain(PlayState* this) {
     GraphicsContext* gfxCtx = this->state.gfxCtx;
+    Input inputs[MAXCONTROLLERS];
+    Camera *camera = Play_GetCamera(this, CAM_ID_MAIN);
+    Player *player = GET_PLAYER(this);
     Lights* lights;
     Vec3f temp;
     u8 sp25B = false;
@@ -1171,6 +2020,41 @@ void Play_DrawMain(PlayState* this) {
     gSPSegment(OVERLAY_DISP++, 0x02, this->sceneSegment);
 
     if (1) {
+        f32 scale_minus_one;
+        f32 scale_factor = 0.3f;
+        f32 camera_speed;
+        f32 c_speed = 10.0f;
+        Vec3f scale_axis = gChaosContext.view.camera_velocity;
+        MtxF scale_transform;
+        Mtx *view_scaling;
+
+        // Math_Vec3f_Diff(&camera->eye, &gChaosContext.view.prev_camera_pos, &scale_axis);
+        // camera_speed = Math3D_Normalize(&scale_axis);
+
+        // scale_factor = sqrtf(1.0f - (camera_speed * camera_speed) / (c_speed * c_speed));
+        // scale_factor = 2.0f - CLAMP_MIN(scale_factor, 0.0f);
+        // scale_minus_one = scale_factor - 1.0f;
+
+        // scale_transform.mf[0][0] = 1.0f + scale_minus_one * scale_axis.x * scale_axis.x;
+        // scale_transform.mf[1][0] = scale_minus_one * scale_axis.x * scale_axis.y;
+        // scale_transform.mf[2][0] = scale_minus_one * scale_axis.x * scale_axis.z;
+        // scale_transform.mf[3][0] = 0.0f;
+
+        // scale_transform.mf[0][1] = scale_minus_one * scale_axis.x * scale_axis.y;
+        // scale_transform.mf[1][1] = 1.0f + scale_minus_one * scale_axis.y * scale_axis.y;
+        // scale_transform.mf[2][1] = scale_minus_one * scale_axis.y * scale_axis.z;
+        // scale_transform.mf[3][1] = 0.0f;
+
+        // scale_transform.mf[0][2] = scale_minus_one * scale_axis.x * scale_axis.z;
+        // scale_transform.mf[1][2] = scale_minus_one * scale_axis.y * scale_axis.z;
+        // scale_transform.mf[2][2] = 1.0f + scale_minus_one * scale_axis.z * scale_axis.z;
+        // scale_transform.mf[3][2] = 0.0f;
+    
+        // scale_transform.mf[0][3] = 0;
+        // scale_transform.mf[1][3] = 0;
+        // scale_transform.mf[2][3] = 0;
+        // scale_transform.mf[3][3] = 1;
+
         ShrinkWindow_Draw(gfxCtx);
 
         POLY_OPA_DISP = Play_SetFog(this, POLY_OPA_DISP);
@@ -1206,6 +2090,24 @@ void Play_DrawMain(PlayState* this) {
         Matrix_RotateYF(BINANG_TO_RAD((s16)(Camera_GetCamDirYaw(GET_ACTIVE_CAM(this)) + 0x8000)), MTXMODE_NEW);
         Matrix_ToMtx(this->billboardMtx + 1);
 
+        if(Chaos_IsCodeActive(CHAOS_CODE_LENGTH_CONTRACTION))
+        {
+            gChaosContext.env.length_contraction_scale -= 0.023f;
+
+            if(gChaosContext.env.length_contraction_scale < 0.25f)
+            {
+                gChaosContext.env.length_contraction_scale = 0.25f;
+            }
+        }
+        else if(gChaosContext.env.length_contraction_scale < 1.0f)
+        {
+            gChaosContext.env.length_contraction_scale += 0.08f;
+            if(gChaosContext.env.length_contraction_scale > 1.0f)
+            {
+                gChaosContext.env.length_contraction_scale = 1.0f;
+            }
+        }
+ 
         gSPSegment(POLY_OPA_DISP++, 0x01, this->billboardMtx);
         gSPSegment(POLY_XLU_DISP++, 0x01, this->billboardMtx);
         gSPSegment(OVERLAY_DISP++, 0x01, this->billboardMtx);
@@ -1288,9 +2190,50 @@ void Play_DrawMain(PlayState* this) {
                             Skybox_Draw(&this->skyboxCtx, gfxCtx, this->skyboxId, 0, this->view.eye.x, this->view.eye.y,
                                         this->view.eye.z);
                         }
-                    }
 
-                    Environment_Draw(this);
+                        Environment_Draw(this);
+                    }
+                }
+            
+
+                lights = LightContext_NewLights(&this->lightCtx, gfxCtx);
+
+                if(gChaosContext.env.length_contraction_scale < 1.0f)
+                {
+                    MtxF scale_transform;
+                    Vec3f player_pos = player->actor.world.pos;
+                    Vec3f scale_axis = gChaosContext.env.length_contraction_axis;
+                    f32 scale_minus_one = gChaosContext.env.length_contraction_scale - 1.0f;
+
+                    scale_transform.mf[0][0] = 1.0f + scale_minus_one * scale_axis.x * scale_axis.x;
+                    scale_transform.mf[1][0] = scale_minus_one * scale_axis.x * scale_axis.y;
+                    scale_transform.mf[2][0] = scale_minus_one * scale_axis.x * scale_axis.z;
+                    scale_transform.mf[3][0] = 0.0f;
+
+                    scale_transform.mf[0][1] = scale_minus_one * scale_axis.x * scale_axis.y;
+                    scale_transform.mf[1][1] = 1.0f + scale_minus_one * scale_axis.y * scale_axis.y;
+                    scale_transform.mf[2][1] = scale_minus_one * scale_axis.y * scale_axis.z;
+                    scale_transform.mf[3][1] = 0.0f;
+
+                    scale_transform.mf[0][2] = scale_minus_one * scale_axis.x * scale_axis.z;
+                    scale_transform.mf[1][2] = scale_minus_one * scale_axis.y * scale_axis.z;
+                    scale_transform.mf[2][2] = 1.0f + scale_minus_one * scale_axis.z * scale_axis.z;
+                    scale_transform.mf[3][2] = 0.0f;
+                
+                    scale_transform.mf[0][3] = 0;
+                    scale_transform.mf[1][3] = 0;
+                    scale_transform.mf[2][3] = 0;
+                    scale_transform.mf[3][3] = 1;
+
+                    Matrix_Push();
+                    Matrix_Translate(player_pos.x, player_pos.y, player_pos.z, MTXMODE_NEW);
+                    Matrix_Mult(&scale_transform, MTXMODE_APPLY);
+                    Matrix_Translate(-player_pos.x, -player_pos.y, -player_pos.z, MTXMODE_APPLY);
+                    Matrix_ToMtx(&gChaosContext.env.length_contraction_matrix);
+                    Matrix_Pop();
+
+                    gSPMatrix(POLY_OPA_DISP++, &gChaosContext.env.length_contraction_matrix, G_MTX_NOPUSH | G_MTX_MUL | G_MTX_PROJECTION);
+                    gSPMatrix(POLY_XLU_DISP++, &gChaosContext.env.length_contraction_matrix, G_MTX_NOPUSH | G_MTX_MUL | G_MTX_PROJECTION);
                 }
 
                 lights = LightContext_NewLights(&this->lightCtx, gfxCtx);
@@ -1302,16 +2245,25 @@ void Play_DrawMain(PlayState* this) {
                 Lights_BindAll(lights, this->lightCtx.listHead, NULL, this);
                 Lights_Draw(lights, gfxCtx);
 
-                if (1) {
-                    //! FAKE:
-                    u32 roomDrawFlags = ((1) ? 1 : 0) | (((void)0, 1) ? 2 : 0);
+            // if (1) {
+                //! FAKE:
+                // u32 roomDrawFlags = ((1) ? 1 : 0) | (((void)0, 1) ? 2 : 0);
 
-                    Scene_Draw(this);
-                    if (this->roomCtx.unk78) {
-                        Room_Draw(this, &this->roomCtx.curRoom, roomDrawFlags & 3);
-                        Room_Draw(this, &this->roomCtx.prevRoom, roomDrawFlags & 3);
+                Scene_Draw(this);
+                if (this->roomCtx.unk78) {
+                    u32 room_flags = ROOM_DRAW_OPA | ROOM_DRAW_XLU;
+                    Room_Draw(this, &this->roomCtx.curRoom, room_flags);
+
+                    if(Chaos_IsCodeActive(CHAOS_CODE_DIRECTILE_DYSFUNCTION))
+                    {
+                        room_flags |= ROOM_DRAW_ROTATED;
                     }
+
+                    Room_Draw(this, &this->roomCtx.prevRoom, room_flags);
+                    gSPSegment(POLY_OPA_DISP++, 0x01, this->billboardMtx);
+                    gSPSegment(POLY_XLU_DISP++, 0x01, this->billboardMtx);
                 }
+                // }
 
                 if (this->skyboxCtx.shouldDraw) {
                     Vec3f quakeOffset;
@@ -1328,15 +2280,23 @@ void Play_DrawMain(PlayState* this) {
                 }
             }
 
-            if (1) {
+            // if (1) {
                 Environment_FillScreen(gfxCtx, 0, 0, 0, this->bgCoverAlpha, FILL_SCREEN_OPA);
-            }
+            // }
 
-            if (1) {
+            // if (1) {
+                // if(Chaos_IsCodeActive(CHAOS_CODE_LENGTH_CONTRACTION))
+                // {
+                //     gSPMatrix(POLY_OPA_DISP++, this->view.projectionPtr, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
+                //     gSPMatrix(POLY_OPA_DISP++, this->view.viewingPtr, G_MTX_NOPUSH | G_MTX_MUL | G_MTX_PROJECTION);
+
+                //     gSPMatrix(POLY_XLU_DISP++, this->view.projectionPtr, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
+                //     gSPMatrix(POLY_XLU_DISP++, this->view.viewingPtr, G_MTX_NOPUSH | G_MTX_MUL | G_MTX_PROJECTION);
+                // }
                 Actor_DrawAll(this, &this->actorCtx);
-            }
+            // }
 
-            if (1) {
+            // if (1) {
                 if (!this->envCtx.sunDisabled) {
                     temp.x = this->view.eye.x + this->envCtx.sunPos.x;
                     temp.y = this->view.eye.y + this->envCtx.sunPos.y;
@@ -1345,9 +2305,9 @@ void Play_DrawMain(PlayState* this) {
                 }
 
                 Environment_DrawCustomLensFlare(this);
-            }
+            // }
 
-            if (1) {
+            // if (1) {
                 if (R_PLAY_FILL_SCREEN_ON) {
                     Environment_FillScreen(gfxCtx, R_PLAY_FILL_SCREEN_R, R_PLAY_FILL_SCREEN_G, R_PLAY_FILL_SCREEN_B,
                                            R_PLAY_FILL_SCREEN_ALPHA, FILL_SCREEN_OPA | FILL_SCREEN_XLU);
@@ -1363,21 +2323,21 @@ void Play_DrawMain(PlayState* this) {
                     default:
                         break;
                 }
-            }
+            // }
 
-            if (1) {
+            // if (1) {
                 if (this->envCtx.sandstormState != SANDSTORM_OFF) {
                     Environment_DrawSandstorm(this, this->envCtx.sandstormState);
                 }
-            }
+            // }
 
             if (this->worldCoverAlpha != 0) {
                 Environment_FillScreen(gfxCtx, 0, 0, 0, this->worldCoverAlpha, FILL_SCREEN_OPA | FILL_SCREEN_XLU);
             }
 
-            if (1) {
+            // if (1) {
                 DebugDisplay_DrawObjects(this);
-            }
+            // }
 
             Play_DrawMotionBlur(this);
 
@@ -1419,9 +2379,9 @@ void Play_DrawMain(PlayState* this) {
             }
 
         PostWorldDraw:
-            if (1) {
+            // if (1) {
                 Play_PostWorldDraw(this);
-            }
+            // }
         }
     }
 
@@ -1441,6 +2401,27 @@ SkipPostWorldDraw:
     }
 
     CLOSE_DISPS(gfxCtx);
+
+    bzero(inputs, sizeof(inputs));
+    PadMgr_GetInput(inputs, false);
+    Chaos_PrintCodes(this, &inputs[0]);
+    Chaos_PrintSnakeGameStuff(this);
+    
+    if(Chaos_CanUpdateChaos(this))
+    {
+        if(CHECK_BTN_ANY(inputs[0].press.button, BTN_DLEFT))
+        {
+            if(!(gChaosContext.hide_actors & 2))
+            {
+                gChaosContext.hide_actors |= 2;
+                gChaosContext.hide_actors ^= 1;
+            }
+        }
+        else
+        {
+            gChaosContext.hide_actors &= ~2;
+        }
+    }
 }
 
 void Play_Draw(PlayState* this) {
@@ -1600,6 +2581,11 @@ void Play_SpawnScene(PlayState* this, s32 sceneId, s32 spawn) {
     gSegments[0x02] = OS_K0_TO_PHYSICAL(this->sceneSegment);
     Play_InitScene(this, spawn);
     Room_SetupFirstRoom(this, &this->roomCtx);
+
+    if(sceneId == SCENE_MITURIN)
+    {
+        SET_WEEKEVENTREG(WEEKEVENTREG_WOODFALL_TEMPLE_RISEN);
+    }
 }
 
 void Play_GetScreenPos(PlayState* this, Vec3f* worldPos, Vec3f* screenPos) {
@@ -2068,17 +3054,29 @@ void Play_FillScreen(PlayState* this, s16 fillScreenOn, u8 red, u8 green, u8 blu
     R_PLAY_FILL_SCREEN_ALPHA = alpha;
 }
 
+// u16 sOverridePlayerCsIds[] = {
+//     PLAYER_CS_ID_MASK_TRANSFORMATION,
+//     PLAYER_CS_ID_SONG_WARP,
+//     PLAYER_CS_ID_WARP_PAD_ENTRANCE,
+//     PLAYER_CS_ID_ITEM_OCARINA
+// };
+
 void Play_Init(GameState* thisx) {
     PlayState* this = (PlayState*)thisx;
     GraphicsContext* gfxCtx = this->state.gfxCtx;
-    s32 pad;
+    // s32 pad;
     uintptr_t zAlloc;
     s32 zAllocSize;
     Player* player;
     s32 i;
     s32 spawn;
     u8 sceneLayer;
-    s32 scene;
+    // u32 scene_bgm;
+    s32 scene = gSaveContext.save.entrance >> 9;
+    // u32 index;
+    // s16 cur_cs_id;
+    // u8 override_cutscene = false;
+    // u8 was_playing_last_hours = Audio_IsFinalHours();
 
     if ((gSaveContext.respawnFlag == -4) || (gSaveContext.respawnFlag == -0x63)) {
         if (CHECK_EVENTINF(EVENTINF_TRIGGER_DAYTELOP)) {
@@ -2104,8 +3102,8 @@ void Play_Init(GameState* thisx) {
     }
 
     if ((gSaveContext.nextCutsceneIndex == 0xFFEF) || (gSaveContext.nextCutsceneIndex == 0xFFF0)) {
-        scene = ((void)0, gSaveContext.save.entrance) >> 9;
-        spawn = (((void)0, gSaveContext.save.entrance) >> 4) & 0x1F;
+        // scene = gSaveContext.save.entrance >> 9;
+        spawn = (gSaveContext.save.entrance >> 4) & 0x1F;
 
         if (CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_SNOWHEAD_TEMPLE)) {
             if (scene == ENTR_SCENE_MOUNTAIN_VILLAGE_WINTER) {
@@ -2141,15 +3139,14 @@ void Play_Init(GameState* thisx) {
         // "First cycle" Termina Field
         if (INV_CONTENT(ITEM_OCARINA_OF_TIME) != ITEM_OCARINA_OF_TIME) {
             if ((scene == ENTR_SCENE_TERMINA_FIELD) &&
-                (((void)0, gSaveContext.save.entrance) != ENTRANCE(TERMINA_FIELD, 10))) {
+                (gSaveContext.save.entrance != ENTRANCE(TERMINA_FIELD, 10))) {
                 gSaveContext.nextCutsceneIndex = 0xFFF4;
             }
         }
         //! FAKE:
-        gSaveContext.save.entrance =
-            Entrance_Create(((void)0, scene), spawn, ((void)0, gSaveContext.save.entrance) & 0xF);
+        gSaveContext.save.entrance = Entrance_Create(scene, spawn, gSaveContext.save.entrance & 0xF);
     }
-
+    
     GameState_Realloc(&this->state, 0);
     KaleidoManager_Init(this);
     ShrinkWindow_Init();
@@ -2208,7 +3205,7 @@ void Play_Init(GameState* thisx) {
         gSaveContext.save.isNight = false;
     }
 
-    func_800EDDB0(this);
+    // func_800EDDB0(this);
 
     if (((gSaveContext.gameMode != GAMEMODE_NORMAL) && (gSaveContext.gameMode != GAMEMODE_TITLE_SCREEN)) ||
         (gSaveContext.save.cutsceneIndex >= 0xFFF0)) {
@@ -2224,11 +3221,16 @@ void Play_Init(GameState* thisx) {
 
     sceneLayer = gSaveContext.sceneLayer;
 
-    Play_SpawnScene(
-        this, Entrance_GetSceneIdAbsolute(((void)0, gSaveContext.save.entrance) + ((void)0, gSaveContext.sceneLayer)),
-        Entrance_GetSpawnNum(((void)0, gSaveContext.save.entrance) + ((void)0, gSaveContext.sceneLayer)));
+    Play_SpawnScene(this, Entrance_GetSceneIdAbsolute(gSaveContext.save.entrance + gSaveContext.sceneLayer),
+        Entrance_GetSpawnNum(gSaveContext.save.entrance + gSaveContext.sceneLayer));
     KaleidoScopeCall_Init(this);
     Interface_Init(this);
+
+    // if(scene == ENTR_SCENE_MOUNTAIN_VILLAGE_SPRING || scene == ENTR_SCENE_MOUNTAIN_VILLAGE_WINTER)
+    // {
+    //     // Fault_AddHangupPrintfAndCrash("SHIT");
+    //     Chaos_RandomizeMountainVillageClimb(this);
+    // }
 
     if (gSaveContext.nextDayTime != NEXT_TIME_NONE) {
         if (gSaveContext.nextDayTime == NEXT_TIME_DAY) {
@@ -2274,8 +3276,7 @@ void Play_Init(GameState* thisx) {
 
     if (gSaveContext.gameMode != GAMEMODE_TITLE_SCREEN) {
         if (gSaveContext.nextTransitionType == TRANS_NEXT_TYPE_DEFAULT) {
-            this->transitionType =
-                (Entrance_GetTransitionFlags(((void)0, gSaveContext.save.entrance) + sceneLayer) >> 7) & 0x7F;
+            this->transitionType = (Entrance_GetTransitionFlags(gSaveContext.save.entrance + sceneLayer) >> 7) & 0x7F;
         } else {
             this->transitionType = gSaveContext.nextTransitionType;
             gSaveContext.nextTransitionType = TRANS_NEXT_TYPE_DEFAULT;
@@ -2285,7 +3286,7 @@ void Play_Init(GameState* thisx) {
     }
 
     TransitionFade_Init(&this->unk_18E48);
-    TransitionFade_SetType(&this->unk_18E48, 3);
+    TransitionFade_SetType(&this->unk_18E48, TRANS_INSTANCE_TYPE_FADE_FLASH);
     TransitionFade_SetColor(&this->unk_18E48, RGBA8(160, 160, 160, 255));
     TransitionFade_Start(&this->unk_18E48);
     VisMono_Init(&sPlayVisMono);
@@ -2304,16 +3305,16 @@ void Play_Init(GameState* thisx) {
     sPlayVisFbufInstance->envColor.b = 0;
     sPlayVisFbufInstance->envColor.a = 0;
     CutsceneFlags_UnsetAll(this);
+
     THA_GetRemaining(&this->state.tha);
     zAllocSize = THA_GetRemaining(&this->state.tha);
     zAlloc = (uintptr_t)THA_AllocTailAlign16(&this->state.tha, zAllocSize);
 
-    //! @bug: Incorrect ALIGN16s
-    ZeldaArena_Init((void*)((zAlloc + 8) & ~0xF), (zAllocSize - ((zAlloc + 8) & ~0xF)) + zAlloc);
+    ZeldaArena_Init((void*)((zAlloc + 0xf) & ~0xF), (zAllocSize - ((zAlloc + 0xf) & ~0xF)) + zAlloc);
 
     Actor_InitContext(this, &this->actorCtx, this->linkActorEntry);
+    // Object_InitObjectTableFaultClient(&this->objectCtx);
 
-    // Busyloop until the room loads
     while (!Room_ProcessRoomRequest(this, &this->roomCtx)) {}
 
     if ((CURRENT_DAY != 0) &&
@@ -2330,14 +3331,55 @@ void Play_Init(GameState* thisx) {
         Camera_ChangeActorCsCamIndex(&this->mainCamera, PLAYER_GET_BG_CAM_INDEX(&player->actor));
     }
 
+    if(Chaos_IsCodeInActiveList(CHAOS_CODE_BAD_CONNECTION) && 
+        gChaosContext.link.bad_connection_mode == CHAOS_BAD_CONNECTION_ROLLBACK)
+    {
+        /* force creating a new snapshot after a transition */
+        // gChaosContext.link.snapshot_timer = 0;
+        // gChaosContext.link.bad_connection_timer = 2;
+        // bzero(&gChaosContext.link.player_snapshot, sizeof(gChaosContext.link.player_snapshot));
+        // bzero(&gChaosContext.link.child_snapshot, sizeof(gChaosContext.link.child_snapshot));
+        // bzero(&gChaosContext.link.arrow_snapshot, sizeof(gChaosContext.link.arrow_snapshot));
+        // bzero(&gChaosContext.link.parent_snapshot, sizeof(gChaosContext.link.parent_snapshot));
+        Chaos_NukeSnapshots();
+    }
+    
     CutsceneManager_StoreCamera(&this->mainCamera);
     Interface_SetSceneRestrictions(this);
+    Cutscene_HandleEntranceTriggers(this);
     Environment_PlaySceneSequence(this);
     gSaveContext.seqId = this->sceneSequences.seqId;
     gSaveContext.ambienceId = this->sceneSequences.ambienceId;
     AnimTaskQueue_Update(this, &this->animTaskQueue);
-    Cutscene_HandleEntranceTriggers(this);
+    // Cutscene_HandleEntranceTriggers(this);
     gSaveContext.respawnFlag = 0;
     sBombersNotebookOpen = false;
     BombersNotebook_Init(&sBombersNotebook);
+
+    // cur_cs_id = CutsceneManager_GetCurrentCsId();
+    // override_cutscene = /* this->csCtx.state == CS_STATE_IDLE || */ cur_cs_id == CS_ID_NONE;
+
+    // for(index = 0; index < ARRAY_COUNT(sOverridePlayerCsIds); index++)
+    // {
+    //     override_cutscene |= cur_cs_id == this->playerCsIds[sOverridePlayerCsIds[index]];
+    // }
+
+    // if(Environment_IsFinalHours(this) && override_cutscene)
+    // {
+    //     if ((this->sceneId != SCENE_00KEIKOKU || gSaveContext.sceneLayer != 1) /* && !was_playing_last_hours*/ )
+    //     {
+    //         // SEQCMD_STOP_SEQUENCE(SEQ_PLAYER_AMBIENCE, 0);
+    //         // // SEQCMD_STOP_SEQUENCE(SEQ_PLAYER_BGM_MAIN, 0);
+    //         // if(this->sceneSequences.seqId != NA_BGM_GENERAL_SFX)
+    //         // {
+    //             // AudioSeq_ProcessSeqCmds();
+    //             // AudioSeq_ResetActiveSequences();
+    //         // }
+    //         Audio_ClearObjSoundMainBgmSeqId();
+    //         Audio_ClearPrevMainBgmSeqId();
+    //         Audio_PlaySceneSequence(NA_BGM_FINAL_HOURS, CURRENT_DAY - 1);
+    //         // Audio_StartSceneSequence(NA_BGM_FINAL_HOURS);
+    //         // SEQCMD_SET_SEQPLAYER_IO(SEQ_PLAYER_BGM_MAIN, 4, CURRENT_DAY - 1);
+    //     }
+    // }
 }

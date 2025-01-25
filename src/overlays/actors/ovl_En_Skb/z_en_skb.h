@@ -9,6 +9,13 @@ struct EnSkb;
 typedef void (*EnSkbActionFunc)(struct EnSkb*, PlayState*);
 
 #define ENSKB_GET_F0(thisx) (((thisx)->params >> 4) & 0xF)
+#define ENSKB_GET_TYPE(thisx) ((thisx)->params & 0xF)
+
+typedef enum
+{
+    EN_SKB_TYPE_NORMAL,
+    EN_SKB_TYPE_CHAOS,
+} EnSkbType;
 
 typedef enum {
     /* 0 */ ENSKB_PARAM_0
@@ -37,6 +44,7 @@ typedef struct EnSkb {
     /* 0x144 */ SkelAnime skelAnime;
     /* 0x188 */ ColliderJntSph collider;
     /* 0x1A8 */ ColliderJntSphElement colliderElements[2];
+                Actor *target;
     /* 0x228 */ EnSkbActionFunc actionFunc;
     /* 0x22C */ f32 drawDmgEffAlpha;
     /* 0x230 */ f32 drawDmgEffScale;

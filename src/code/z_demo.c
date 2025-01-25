@@ -1,6 +1,6 @@
 #include "prevent_bss_reordering.h"
 #include "prevent_bss_reordering2.h"
-
+#include "chaos_fuckery.h"
 #include "PR/ultratypes.h"
 
 // Variables are put before most headers as a hacky way to bypass bss reordering
@@ -34,6 +34,7 @@ u16 sCurTextId = 0;
 u16 sCurOcarinaAction = 0;
 u8 gOpeningEntranceIndex = 0;
 u8 sCutsceneStoredPlayerForm = 0;
+extern struct ChaosContext gChaosContext;
 
 void Cutscene_InitContext(PlayState* play, CutsceneContext* csCtx) {
     s32 i;
@@ -163,7 +164,7 @@ void CutsceneCmd_Misc(PlayState* play, CutsceneContext* csCtx, CsCmdMisc* cmd) {
         case CS_MISC_LIGHTNING:
             if (isFirstFrame) {
                 Audio_SetAmbienceChannelIO(AMBIENCE_CHANNEL_LIGHTNING, CHANNEL_IO_PORT_0, 0);
-                Environment_AddLightningBolts(play, 3);
+                Environment_AddLightningBolts(play, 3, false);
                 gLightningStrike.state = LIGHTNING_STRIKE_START;
             }
             break;
@@ -357,6 +358,8 @@ void CutsceneCmd_Misc(PlayState* play, CutsceneContext* csCtx, CsCmdMisc* cmd) {
         case CS_MISC_RESET_SAVE_FROM_MOON_CRASH:
             if (isFirstFrame) {
                 Sram_ResetSaveFromMoonCrash(&play->sramCtx);
+                gChaosContext.moon.moon_crash_time_offset = 0;
+                gChaosContext.moon.moon_crash_timer = 0;
             }
             break;
 
@@ -1562,9 +1565,7 @@ void Cutscene_HandleEntranceTriggers(PlayState* play) {
     if ((gSaveContext.respawnFlag == 0) || (gSaveContext.respawnFlag == -2)) {
         scene = play->loadedScene;
         if ((scene->titleTextId != 0) && gSaveContext.showTitleCard) {
-            if ((Entrance_GetTransitionFlags(((void)0, gSaveContext.save.entrance) +
-                                             ((void)0, gSaveContext.sceneLayer)) &
-                 0x4000) != 0) {
+            if (Entrance_GetTransitionFlags(gSaveContext.save.entrance + gSaveContext.sceneLayer) & ENTR_TRANSITION_FLAG_SHOW_TITLE_CARD) {
                 Message_DisplaySceneTitleCard(play, scene->titleTextId);
             }
         }

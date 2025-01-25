@@ -7,7 +7,7 @@
 #include "z_en_door_etc.h"
 #include "assets/objects/gameplay_keep/gameplay_keep.h"
 
-#define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED)
+#define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_NO_CHASE)
 
 void EnDoorEtc_Init(Actor* thisx, PlayState* play2);
 void EnDoorEtc_Destroy(Actor* thisx, PlayState* play);

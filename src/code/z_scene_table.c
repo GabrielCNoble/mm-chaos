@@ -405,22 +405,22 @@ static EntranceTableEntry* sStoneTowerTempleInvertedEntranceTable[] = {
 };
 
 static EntranceTableEntry sClockTowerRooftopEntrance0[] = {
-    { -SCENE_OKUJOU, 0, 0x0102 },
-    { -SCENE_OKUJOU, 0, 0x8102 },
-    { -SCENE_OKUJOU, 0, 0x0102 },
-    { -SCENE_OKUJOU, 0, 0x0102 },
+    { -SCENE_OKUJOU, 0, 0x0102, ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM },
+    { -SCENE_OKUJOU, 0, 0x8102, ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM },
+    { -SCENE_OKUJOU, 0, 0x0102, ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM },
+    { -SCENE_OKUJOU, 0, 0x0102, ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM },
 };
 
 static EntranceTableEntry sClockTowerRooftopEntrance1[] = {
-    { -SCENE_OKUJOU, 1, 0x0102 },
-    { -SCENE_OKUJOU, 1, 0x0102 },
-    { -SCENE_OKUJOU, 1, 0x0102 },
+    { -SCENE_OKUJOU, 1, 0x0102, ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM },
+    { -SCENE_OKUJOU, 1, 0x0102, ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM },
+    { -SCENE_OKUJOU, 1, 0x0102, ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM },
 };
 
 static EntranceTableEntry sClockTowerRooftopEntrance2[] = {
-    { -SCENE_OKUJOU, 2, 0x858B },
-    { -SCENE_OKUJOU, 2, 0x858B },
-    { -SCENE_OKUJOU, 2, 0x8102 },
+    { -SCENE_OKUJOU, 2, 0x858B, ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM },
+    { -SCENE_OKUJOU, 2, 0x858B, ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM },
+    { -SCENE_OKUJOU, 2, 0x8102, ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM },
 };
 
 static EntranceTableEntry* sClockTowerRooftopEntranceTable[] = {
@@ -2114,7 +2114,7 @@ static EntranceTableEntry* sMoonLinkTrialEntranceTable[] = {
 };
 
 static EntranceTableEntry sTheMoonEntrance0[] = {
-    { SCENE_SOUGEN, 0, 0x0387 },
+    { SCENE_SOUGEN, 0, 0x0387, ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM },
 };
 
 static EntranceTableEntry* sTheMoonEntranceTable[] = {
@@ -2489,7 +2489,7 @@ static EntranceTableEntry* sGrottosEntranceTable[] = {
 };
 
 static EntranceTableEntry sCutsceneEntrance0[] = {
-    { -SCENE_SPOT00, 0, 0x0102 }, { -SCENE_SPOT00, 0, 0x0102 }, { -SCENE_SPOT00, 0, 0x8102 },
+    { -SCENE_SPOT00, 0, 0x0102, ENTR_BGM_FLAG_SUPRESS_FINAL_HOURS_BGM }, { -SCENE_SPOT00, 0, 0x0102 }, { -SCENE_SPOT00, 0, 0x8102 },
     { -SCENE_SPOT00, 0, 0x0102 }, { -SCENE_SPOT00, 0, 0x058B }, { -SCENE_SPOT00, 0, 0x058B },
     { -SCENE_SPOT00, 0, 0x058B }, { -SCENE_SPOT00, 0, 0x058B }, { -SCENE_SPOT00, 0, 0x0183 },
     { -SCENE_SPOT00, 0, 0x0183 }, { -SCENE_SPOT00, 0, 0x8102 }, { -SCENE_SPOT00, 0, 0x0102 },
@@ -2727,4 +2727,10 @@ s32 Entrance_GetTransitionFlags(u16 entrance) {
     EntranceTableEntry* tableEntry = Entrance_GetTableEntry(entrance);
 
     return tableEntry->flags;
+}
+
+s32 Entrance_GetBgmFlags(u16 entrance)
+{
+    EntranceTableEntry *entry = Entrance_GetTableEntry(entrance);
+    return entry->bgm_flags;
 }

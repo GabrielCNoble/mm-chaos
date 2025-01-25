@@ -1334,24 +1334,23 @@ void Message_DecodeNES(PlayState* play) {
                 }
             }
 
-            if ((gSaveContext.save.saveInfo.inventory.strayFairies[(void)0, gSaveContext.dungeonSceneSharedIndex] ==
-                 1) ||
-                (gSaveContext.save.saveInfo.inventory.strayFairies[(void)0, gSaveContext.dungeonSceneSharedIndex] ==
-                 21)) {
+            if ((gSaveContext.save.saveInfo.inventory.strayFairies[(void)0, gSaveContext.dungeonSceneSharedIndex] == 1) ||
+                (gSaveContext.save.saveInfo.inventory.strayFairies[(void)0, gSaveContext.dungeonSceneSharedIndex] == 21)) 
+            {
                 Message_LoadCharNES(play, 's', &charTexIndex, &spA4, decodedBufPos);
                 decodedBufPos++;
                 Message_LoadCharNES(play, 't', &charTexIndex, &spA4, decodedBufPos);
-            } else if ((gSaveContext.save.saveInfo.inventory
-                            .strayFairies[(void)0, gSaveContext.dungeonSceneSharedIndex] == 2) ||
-                       (gSaveContext.save.saveInfo.inventory
-                            .strayFairies[(void)0, gSaveContext.dungeonSceneSharedIndex] == 22)) {
+            } 
+            else if ((gSaveContext.save.saveInfo.inventory.strayFairies[(void)0, gSaveContext.dungeonSceneSharedIndex] == 2) ||
+                       (gSaveContext.save.saveInfo.inventory.strayFairies[(void)0, gSaveContext.dungeonSceneSharedIndex] == 22)) 
+            {
                 Message_LoadCharNES(play, 'n', &charTexIndex, &spA4, decodedBufPos);
                 decodedBufPos++;
                 Message_LoadCharNES(play, 'd', &charTexIndex, &spA4, decodedBufPos);
-            } else if ((gSaveContext.save.saveInfo.inventory
-                            .strayFairies[(void)0, gSaveContext.dungeonSceneSharedIndex] == 3) ||
-                       (gSaveContext.save.saveInfo.inventory
-                            .strayFairies[(void)0, gSaveContext.dungeonSceneSharedIndex] == 23)) {
+            } 
+            else if ((gSaveContext.save.saveInfo.inventory.strayFairies[(void)0, gSaveContext.dungeonSceneSharedIndex] == 3) ||
+                       (gSaveContext.save.saveInfo.inventory.strayFairies[(void)0, gSaveContext.dungeonSceneSharedIndex] == 23)) 
+            {
                 Message_LoadCharNES(play, 'r', &charTexIndex, &spA4, decodedBufPos);
                 decodedBufPos++;
                 Message_LoadCharNES(play, 'd', &charTexIndex, &spA4, decodedBufPos);

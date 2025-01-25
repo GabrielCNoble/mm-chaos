@@ -1,12 +1,14 @@
 #include "libu64/gfxprint.h"
 #include "attributes.h"
+#include "stdbool.h"
+#include "fault.h"
 
-#define GFXP_FLAG_HIRAGANA (1 << 0)
-#define GFXP_FLAG_RAINBOW (1 << 1)
-#define GFXP_FLAG_SHADOW (1 << 2)
-#define GFXP_FLAG_UPDATE (1 << 3)
-#define GFXP_FLAG_ENLARGE (1 << 6)
-#define GFXP_FLAG_OPEN (1 << 7)
+// #define GFXP_FLAG_HIRAGANA (1 << 0)
+// #define GFXP_FLAG_RAINBOW (1 << 1)
+// #define GFXP_FLAG_SHADOW (1 << 2)
+// #define GFXP_FLAG_UPDATE (1 << 3)
+// #define GFXP_FLAG_ENLARGE (1 << 6)
+// #define GFXP_FLAG_OPEN (1 << 7)
 
 u64 sGfxPrintFontTLUT[] = {
 #include "assets/boot/gfxprint/gfx_print_font_tlut.rgba16.inc.c"
@@ -96,7 +98,17 @@ void GfxPrint_PrintCharImpl(GfxPrint* this, u8 c) {
             gDPSetCycleType(this->dList++, G_CYC_2CYCLE);
             gDPSetRenderMode(this->dList++, G_RM_PASS, G_RM_XLU_SURF2);
             gDPSetCombineMode(this->dList++, G_CC_INTERFERENCE, G_CC_PASS2);
-        } else {
+        }
+        if(this->flags & GFXP_FLAG_BLEND)
+        {
+            gDPSetTextureLUT(this->dList++, G_TT_IA16);
+            gDPSetCycleType(this->dList++, G_CYC_1CYCLE);
+            gDPSetRenderMode(this->dList++, G_RM_ZB_XLU_SURF, G_RM_ZB_XLU_SURF2);
+            // gDPSetCombineMode(this->dList++, G_CC_MODULATEIDECALA_PRIM, G_CC_MODULATEIDECALA_PRIM);
+            gDPSetCombineMode(this->dList++, G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM);
+        } 
+        else 
+        {
             gDPSetTextureLUT(this->dList++, G_TT_IA16);
             gDPSetCycleType(this->dList++, G_CYC_1CYCLE);
             gDPSetRenderMode(this->dList++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
@@ -139,7 +151,7 @@ void GfxPrint_PrintChar(GfxPrint* this, u8 c) {
                 break;
 
             case '\n':
-                this->posY += 32;
+                this->posY += (this->y_increment != 0) ? this->y_increment : 32;
                 FALLTHROUGH;
             case '\r':
                 this->posX = this->baseX;
@@ -242,6 +254,93 @@ s32 GfxPrint_VPrintf(GfxPrint* this, const char* fmt, va_list args) {
     return vaprintf(&this->callback, fmt, args);
 }
 
+u32 GfxPrint_CalcWrappedStringDimensions(GfxPrint *this, GfxTextSize *text_size, const char *str, u32 return_on_percent)
+{
+    u32 range_end = 0;
+    u32 range_start = 0;
+    u32 pos_x = 0;
+    u32 used_space;
+    u32 text_length;
+
+    while(str[range_end] != '\0')
+    {
+        used_space = pos_x - this->wrap_start;
+        
+        if(str[range_end] == ' ')
+        {
+            while(str[range_end] == ' ')
+            {
+                range_end++;
+            }
+
+            text_length = range_end - range_start;
+            pos_x += text_length * 32;
+        }
+        else
+        {
+            while(str[range_end] != ' ' && str[range_end] != '\0')
+            {
+                range_end++;
+            }
+
+            text_length = range_end - range_start;
+        
+            if(used_space + text_length * 32 > this->wrap_size)
+            {
+                pos_x = this->wrap_start;
+                text_size->lines++;
+            }
+        }
+
+        range_start = range_end;
+
+        if(str[range_end] == '%' && return_on_percent)
+        {
+            break;
+        }
+    }
+
+    return range_end;
+}
+
+void GfxPrint_CalcWrappedTextDimensions(GfxPrint *this, GfxTextSize *text_size, const char *fmt, ...)
+{
+    u32 range_start = 0;
+    u32 range_end = 0;
+    va_list args;
+    va_start(args, fmt);
+
+    text_size->lines = 1;
+    text_size->length = 0;
+
+    while(fmt[range_end] != '\0')
+    {
+        if(fmt[range_end] == '%')
+        {
+            range_end++;
+
+            if(fmt[range_end] == 's')
+            {
+                char *str = va_arg(args, char *);
+                range_end++;
+                GfxPrint_CalcWrappedStringDimensions(this, text_size, str, false); 
+            }
+            else
+            {
+                Fault_AddHungupAndCrashImpl("Unimplemented!", NULL);
+            }
+        }
+        else
+        {
+            range_end += GfxPrint_CalcWrappedStringDimensions(this, text_size, fmt + range_start, true);
+        }
+
+        range_start = range_end;
+    }
+
+    va_end(args);
+}
+
 s32 GfxPrint_Printf(GfxPrint* this, const char* fmt, ...) {
     s32 ret;
     va_list args;
@@ -252,4 +351,92 @@ s32 GfxPrint_Printf(GfxPrint* this, const char* fmt, ...) {
     va_end(args);
 
     return ret;
+}
+
+u32 GfxPrint_PrintStringWrap(GfxPrint *this, const char *str, u32 return_on_percent)
+{
+    u32 range_start = 0;
+    u32 range_end = 0;
+    u32 used_space;
+    u32 text_length;
+
+    while(str[range_end] != '\0')
+    {
+        used_space = this->posX - this->wrap_start;
+        
+        if(str[range_end] == ' ')
+        {
+            while(str[range_end] == ' ')
+            {
+                range_end++;
+            }
+
+            text_length = range_end - range_start;
+            this->callback(this, str + range_start, text_length);
+        }
+        else
+        {
+            while(str[range_end] != ' ' && str[range_end] != '\0')
+            {
+                range_end++;
+            }
+
+            text_length = range_end - range_start;
+        
+            if(used_space + text_length * 32 > this->wrap_size)
+            {
+                this->posX = this->wrap_start;
+                this->posY += (this->y_increment != 0) ? this->y_increment : 32;
+            }
+
+            this->callback(this, str + range_start, text_length);
+        }
+
+        range_start = range_end;
+
+        if(str[range_end] == '%' && return_on_percent)
+        {
+            break;
+        }
+    }
+
+    return range_end;
+}
+
+s32 GfxPrint_PrintfWrap(GfxPrint *this, const char *fmt, ...)
+{
+    u32 range_start = 0;
+    u32 range_end = 0;
+    va_list args;
+    va_list args_copy;
+    va_start(args, fmt);
+
+    this->posX = this->wrap_start;
+
+    while(fmt[range_end] != '\0')
+    {
+        if(fmt[range_end] == '%')
+        {
+            range_end++;
+
+            if(fmt[range_end] == 's')
+            {
+                char *str = va_arg(args, char *);
+                range_end++;
+                GfxPrint_PrintStringWrap(this, str, false); 
+            }
+            else
+            {
+                Fault_AddHungupAndCrashImpl("Unimplemented!", NULL);
+            }
+        }
+        else
+        {
+            range_end += GfxPrint_PrintStringWrap(this, fmt + range_start, true);
+        }
+
+        range_start = range_end;
+    }
+
+    va_end(args);
 }

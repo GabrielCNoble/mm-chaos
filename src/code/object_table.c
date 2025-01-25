@@ -33,3 +33,10 @@ RomFile gObjectTable[] = {
 #undef DEFINE_OBJECT
 #undef DEFINE_OBJECT_UNSET
 #undef DEFINE_OBJECT_EMPTY
+
+#define DEFINE_OBJECT(name, _enumValue)         #name,
+#define DEFINE_OBJECT_UNSET(_enumValue)         "unset",
+#define DEFINE_OBJECT_EMPTY(name, _enumValue)   "empty",
+const char *gObjectNames[] = {
+#include "tables/object_table.h"
+};

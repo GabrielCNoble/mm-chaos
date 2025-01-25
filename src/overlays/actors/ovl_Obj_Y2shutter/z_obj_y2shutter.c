@@ -7,7 +7,7 @@
 #include "z_obj_y2shutter.h"
 #include "assets/objects/object_kaizoku_obj/object_kaizoku_obj.h"
 
-#define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED)
+#define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_NO_CHASE)
 
 void ObjY2shutter_Init(Actor* thisx, PlayState* play);
 void ObjY2shutter_Destroy(Actor* thisx, PlayState* play);

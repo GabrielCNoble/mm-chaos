@@ -9,6 +9,8 @@
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED)
 
+#define THIS ((EnAttackNiw*)thisx)
+
 void EnAttackNiw_Init(Actor* thisx, PlayState* play);
 void EnAttackNiw_Destroy(Actor* thisx, PlayState* play);
 void EnAttackNiw_Update(Actor* thisx, PlayState* play);
@@ -36,8 +38,28 @@ static InitChainEntry sInitChain[] = {
     ICHAIN_F32(lockOnArrowOffset, 0, ICHAIN_STOP),
 };
 
+static ColliderCylinderInit sCylinderInit = {
+    {
+        COL_MATERIAL_HIT5,
+        AT_NONE,
+        AC_ON | AC_TYPE_PLAYER,
+        OC1_ON | OC1_NO_PUSH | OC1_TYPE_ALL,
+        OC2_TYPE_2,
+        COLSHAPE_CYLINDER,
+    },
+    {
+        ELEM_MATERIAL_UNK0,
+        { 0x00000000, 0x00, 0x00 },
+        { 0xF7CFFFFF, 0x00, 0x00 },
+        ATELEM_NONE | ATELEM_SFX_NORMAL,
+        ACELEM_ON,
+        OCELEM_ON,
+    },
+    { 15, 25, 4, { 0, 0, 0 } },
+};
+
 void EnAttackNiw_Init(Actor* thisx, PlayState* play) {
-    EnAttackNiw* this = (EnAttackNiw*)thisx;
+    EnAttackNiw* this = THIS;
 
     Actor_ProcessInitChain(&this->actor, sInitChain);
     ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 25.0f);
@@ -48,22 +70,29 @@ void EnAttackNiw_Init(Actor* thisx, PlayState* play) {
     if (this->actor.params < 0) {
         this->actor.params = ATTACK_NIW_REGULAR;
     }
+    else if (this->actor.params == ATTACK_NIW_CHAOS) 
+    {
+        Collider_InitAndSetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
+    }
 
     Actor_SetScale(&this->actor, 0.01f);
     this->actor.gravity = 0.0f;
+    this->shove_velocity.x = 0.0f;
+    this->shove_velocity.y = 0.0f;
+    this->shove_velocity.z = 0.0f;
 
     this->randomTargetCenterOffset.x = Rand_CenteredFloat(100.0f);
     this->randomTargetCenterOffset.y = Rand_CenteredFloat(10.0f);
     this->randomTargetCenterOffset.z = Rand_CenteredFloat(100.0f);
 
-    Actor_SetScale(&this->actor, 0.01f);
+    // Actor_SetScale(&this->actor, 0.01f);
     this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED; // Unnecessary: this actor does not start with this flag
     this->actor.shape.rot.y = this->actor.world.rot.y = (Rand_ZeroOne() - 0.5f) * 60000.0f;
     this->actionFunc = EnAttackNiw_EnterViewFromOffscreen;
 }
 
 void EnAttackNiw_Destroy(Actor* thisx, PlayState* play) {
-    EnAttackNiw* this = (EnAttackNiw*)thisx;
+    EnAttackNiw* this = THIS;
     EnNiw* parent = (EnNiw*)this->actor.parent;
 
     if ((this->actor.parent != NULL) && (this->actor.parent->update != NULL)) {
@@ -282,7 +311,7 @@ void EnAttackNiw_EnterViewFromOffscreen(EnAttackNiw* this, PlayState* play) {
 }
 
 void EnAttackNiw_AimAtPlayer(EnAttackNiw* this, PlayState* play) {
-    if (!EnAttackNiw_IsOnScreen(this, play)) {
+    if (!EnAttackNiw_IsOnScreen(this, play) && this->actor.params != ATTACK_NIW_CHAOS) {
         Actor_Kill(&this->actor);
         return;
     }
@@ -345,7 +374,7 @@ void EnAttackNiw_FlyAway(EnAttackNiw* this, PlayState* play) {
 }
 
 void EnAttackNiw_Update(Actor* thisx, PlayState* play) {
-    EnAttackNiw* this = (EnAttackNiw*)thisx;
+    EnAttackNiw* this = THIS;
     s32 pad;
     EnNiw* parent;
     Player* player = GET_PLAYER(play);
@@ -371,11 +400,43 @@ void EnAttackNiw_Update(Actor* thisx, PlayState* play) {
                             UPDBGCHECKINFO_FLAG_1 | UPDBGCHECKINFO_FLAG_4 | UPDBGCHECKINFO_FLAG_8 |
                                 UPDBGCHECKINFO_FLAG_10);
 
-    if (this->actionFunc == EnAttackNiw_EnterViewFromOffscreen) {
-        Actor_MoveWithoutGravity(&this->actor);
-    } else {
-        Actor_MoveWithGravity(&this->actor);
+    if(this->actor.params == ATTACK_NIW_CHAOS)
+    {
+        if(this->collider.base.acFlags & AC_HIT)
+        {
+            Math_Vec3f_DistXYZAndStoreNormDiff(&player->actor.world.pos, &this->actor.world.pos, 10.0f, &this->shove_velocity);
+            Actor_PlaySfx(&this->actor, NA_SE_IT_GORON_ROLLING_REFLECTION);
+        }
+
+        Collider_UpdateCylinder(&this->actor, &this->collider);
+        CollisionCheck_SetAC(play, &play->colChkCtx, &this->collider.base);
     }
+
+    if (this->actionFunc == EnAttackNiw_EnterViewFromOffscreen) {
+        // Actor_MoveWithoutGravity(&this->actor);
+        Actor_UpdateVelocityWithoutGravity(&this->actor);
+    } else {
+        // Actor_MoveWithGravity(&this->actor);
+        Actor_UpdateVelocityWithGravity(&this->actor);
+    }
+
+    this->actor.velocity.x += this->shove_velocity.x;
+    this->actor.velocity.y += this->shove_velocity.y;
+    this->actor.velocity.z += this->shove_velocity.z;
+
+    if(this->actor.bgCheckFlags & BGCHECKFLAG_GROUND)
+    {
+        this->shove_velocity.x *= 0.98f;
+        this->shove_velocity.y *= 0.98f;
+        this->shove_velocity.z *= 0.98f;
+    }
+    else
+    {
+        this->shove_velocity.x *= 0.99f;
+        this->shove_velocity.y *= 0.99f;
+        this->shove_velocity.z *= 0.99f;
+    }
+    Actor_UpdatePos(&this->actor);
 
     if (this->actor.floorHeight <= BGCHECK_Y_MIN) { // under the world
         Actor_Kill(&this->actor);
@@ -396,14 +457,42 @@ void EnAttackNiw_Update(Actor* thisx, PlayState* play) {
         f32 viewOffset = 20.0f;
 
     label:
+    
+        if(this->actor.params == ATTACK_NIW_CHAOS)
+        {
+            viewOffset += 10.0f;
+        }
+
+        // if (this->actor.xyzDistToPlayerSq < SQ(viewOffset)) {
+        //     parent = (EnNiw*)this->actor.parent;
+        //     if ((this->actor.parent->update != NULL) && (this->actor.parent != NULL) && (parent != NULL) &&
+        //         (parent->unkAttackNiwTimer == 0) && (player->invincibilityTimer == 0)) {
+        //         // this updates some player values based on what we pass, need player decomp to know what this is doing
+
+        //         /* tackle player */
+        //         func_800B8D50(play, &this->actor, 2.0f, this->actor.world.rot.y, 0.0f, 
+        //             (this->actor.params == ATTACK_NIW_REGULAR) ? 0x10 : 0);
+        //         parent->unkAttackNiwTimer = 70;
+        //     }
+        // }
 
         if (this->actor.xyzDistToPlayerSq < SQ(viewOffset)) {
             parent = (EnNiw*)this->actor.parent;
-            if ((this->actor.parent->update != NULL) && (this->actor.parent != NULL) && (parent != NULL) &&
-                (parent->unkAttackNiwTimer == 0) && (player->invincibilityTimer == 0)) {
-                // this updates some player values based on what we pass, need player decomp to know what this is doing
-                func_800B8D50(play, &this->actor, 2.0f, this->actor.world.rot.y, 0.0f, 0x10);
-                parent->unkAttackNiwTimer = 70;
+            if ((parent != NULL) && (this->actor.parent->update != NULL) && (this->actor.parent != NULL))
+            {
+                if(parent->niwType == NIW_TYPE_CHAOS)
+                {
+                    if(parent->unkAttackNiwTimer == 0)
+                    {
+                        func_800B8D50(play, &this->actor, 2.0f, this->actor.world.rot.y, 0.0f, 0);
+                        parent->unkAttackNiwTimer = Rand_S16Offset(35, 35);
+                    }
+                }
+                else if((parent->unkAttackNiwTimer == 0) && (player->invincibilityTimer == 0))
+                {
+                    func_800B8D50(play, &this->actor, 2.0f, this->actor.world.rot.y, 0.0f, 0x10);    
+                    parent->unkAttackNiwTimer = 70;
+                }
             }
         }
 
@@ -420,7 +509,7 @@ void EnAttackNiw_Update(Actor* thisx, PlayState* play) {
 }
 
 s32 EnAttackNiw_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, Actor* thisx) {
-    EnAttackNiw* this = (EnAttackNiw*)thisx;
+    EnAttackNiw* this = THIS;
 
     if (limbIndex == NIW_LIMB_UPPER_BODY) {
         rot->y += TRUNCF_BINANG(this->upperBodyRotY);
@@ -445,7 +534,7 @@ s32 EnAttackNiw_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Ve
 }
 
 void EnAttackNiw_Draw(Actor* thisx, PlayState* play) {
-    EnAttackNiw* this = (EnAttackNiw*)thisx;
+    EnAttackNiw* this = THIS;
 
     Gfx_SetupDL25_Opa(play->state.gfxCtx);
     SkelAnime_DrawFlexOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,

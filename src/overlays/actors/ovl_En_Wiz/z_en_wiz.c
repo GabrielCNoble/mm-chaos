@@ -12,7 +12,7 @@
 #define FLAGS                                                                                   \
     (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE | ACTOR_FLAG_UPDATE_CULLING_DISABLED |   \
      ACTOR_FLAG_DRAW_CULLING_DISABLED | ACTOR_FLAG_IGNORE_QUAKE | ACTOR_FLAG_FREEZE_EXCEPTION | \
-     ACTOR_FLAG_LOCK_ON_DISABLED | ACTOR_FLAG_MINIMAP_ICON_ENABLED)
+     ACTOR_FLAG_LOCK_ON_DISABLED | ACTOR_FLAG_MINIMAP_ICON_ENABLED | ACTOR_FLAG_NO_CHASE)
 
 void EnWiz_Init(Actor* thisx, PlayState* play);
 void EnWiz_Destroy(Actor* thisx, PlayState* play);

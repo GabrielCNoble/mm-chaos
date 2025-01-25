@@ -10,6 +10,7 @@
 #include "z64horse.h"
 #include "overlays/gamestates/ovl_daytelop/z_daytelop.h"
 #include "overlays/actors/ovl_En_Horse/z_en_horse.h"
+#include "chaos_fuckery.h"
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED | ACTOR_FLAG_FREEZE_EXCEPTION)
 
@@ -408,6 +409,7 @@ void EnTest4_HandleEvents(EnTest4* this, PlayState* play) {
     };
     Player* player = GET_PLAYER(play);
 
+    
     if ((play->transitionMode == TRANS_MODE_OFF) && !Play_InCsMode(play) && (play->numSetupActors <= 0) &&
         (play->roomCtx.status == 0) && !Play_IsDebugCamEnabled()) {
         u16 transitionTime = sDayNightTransitionTimes[this->daytimeIndex];

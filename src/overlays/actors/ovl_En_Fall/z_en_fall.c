@@ -21,6 +21,7 @@
 #include "assets/objects/object_fall2/object_fall2.h"
 #include "assets/objects/object_lodmoon/object_lodmoon.h"
 #include "assets/objects/object_moonston/object_moonston.h"
+#include "chaos_fuckery.h"
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
@@ -41,6 +42,7 @@ void EnFall_MoonsTear_Fall(EnFall* this, PlayState* play);
 void EnFall_Fireball_Update(Actor* thisx, PlayState* play);
 void EnFall_RisingDebris_Update(Actor* thisx, PlayState* play);
 void EnFall_FireRing_Update(Actor* thisx, PlayState* play);
+void EnFall_Moon_ChaosStuff(PlayState *play, EnFall *this);
 void EnFall_Moon_Draw(Actor* thisx, PlayState* play);
 void EnFall_OpenMouthMoon_Draw(Actor* thisx, PlayState* play);
 void EnFall_LodMoon_DrawWithoutLerp(Actor* thisx, PlayState* play);
@@ -49,6 +51,8 @@ void EnFall_Fireball_Draw(Actor* thisx, PlayState* play);
 void EnFall_RisingDebris_Draw(Actor* thisx, PlayState* play);
 void EnFall_FireRing_Draw(Actor* thisx, PlayState* play);
 void EnFall_MoonsTear_Draw(Actor* thisx, PlayState* play);
+
+extern struct ChaosContext gChaosContext;
 
 typedef struct {
     /* 0x00 */ u8 modelIndex;
@@ -743,6 +747,179 @@ void EnFall_FireRing_Update(Actor* thisx, PlayState* play) {
     }
 }
 
+void EnFall_Moon_ChaosStuff(PlayState *play, EnFall *this)
+{
+    Vec3f up_axis = {0.0f, 1.0f, 0.0f};
+    Vec3f forward_axis = {0.0f, 0.0f, 1.0f};
+
+    // struct ChaosCode *code = Chaos_GetCode(CHAOS_CODE_MOON_DANCE);
+
+    // if(code != NULL)
+    if(Chaos_IsCodeActive(CHAOS_CODE_MOON_DANCE))
+    {
+        if(gChaosContext.moon.moon_dance == CHAOS_MOON_MOVE_HYPE)
+        {
+            if(gChaosContext.moon.bob > 0.0f)
+            {
+                gChaosContext.moon.bob = -1.0f;
+            }
+            else
+            {
+                gChaosContext.moon.bob = 1.0f;
+            }
+
+            Matrix_Translate(0.0f, gChaosContext.moon.bob * 5000.0f, 0.0f, MTXMODE_APPLY);
+        }
+        else
+        {
+            if(gChaosContext.moon.moon_dance & CHAOS_MOON_MOVE_BEEGER)
+            {
+                // f32 scale = 1.0f + Rand_ZeroOne() * 2.0f;
+                Matrix_Scale(1.0f + Rand_ZeroOne() * 1.5f, 
+                             1.0f + Rand_ZeroOne() * 1.5f,
+                             1.0f + Rand_ZeroOne() * 1.5f, MTXMODE_APPLY);
+            }
+
+            if(gChaosContext.moon.moon_dance & CHAOS_MOON_MOVE_SPEEN)
+            {
+                Matrix_RotateAxisF(gChaosContext.moon.yaw, &up_axis, MTXMODE_APPLY);
+                Matrix_RotateAxisF(gChaosContext.moon.pitch, &forward_axis, MTXMODE_APPLY);
+                gChaosContext.moon.pitch += 0.28f;
+                gChaosContext.moon.yaw += 0.39f;
+            }
+
+            if(gChaosContext.moon.moon_dance & (CHAOS_MOON_MOVE_BOB | CHAOS_MOON_MOVE_SWAY))
+            {
+                f32 bob = 0.0f;
+                f32 sway = 0.0f;
+
+                if(gChaosContext.moon.moon_dance & CHAOS_MOON_MOVE_BOB)
+                {
+                    bob = sinf(gChaosContext.moon.bob);
+                    gChaosContext.moon.bob = fmodf(gChaosContext.moon.bob + 0.12f, 2.0f * M_PI);
+                }
+
+                if(gChaosContext.moon.moon_dance & CHAOS_MOON_MOVE_SWAY)
+                {
+                    sway = sinf(gChaosContext.moon.sway);
+                    gChaosContext.moon.sway = fmodf(gChaosContext.moon.sway + 0.09f, 2.0f * M_PI);
+                }
+
+                
+
+                Matrix_Translate(sway * 10000.0f, bob * 10000.0f, 0.0f, MTXMODE_APPLY);
+            }
+        }
+    }
+    else if(Chaos_IsCodeActive(CHAOS_CODE_BIG_BROTHER))
+    {
+        Player *player = GET_PLAYER(play);
+        MtxF *moon_transform;
+        Vec3f moon_right_vec;
+        Vec3f moon_up_vec;
+        Vec3f moon_player_vec;
+        Vec2f xz_vec;
+        f32 yaw_delta;
+        f32 pitch_delta;
+        f32 angle_delta_limit = 0.085f;
+        s16 rotation_multiplier = 850;
+
+        Math_Vec3f_DistXYZAndStoreNormDiff(&player->actor.world.pos, &this->actor.world.pos, 1.0f, &moon_player_vec);
+        moon_transform = Matrix_GetCurrent();
+        moon_right_vec.x = moon_transform->xx;
+        moon_right_vec.y = moon_transform->yx;
+        moon_right_vec.z = moon_transform->zx;
+        moon_up_vec.x = moon_transform->xy;
+        moon_up_vec.y = moon_transform->yy;
+        moon_up_vec.z = moon_transform->zy;
+
+        yaw_delta = (moon_right_vec.x * moon_player_vec.x + moon_right_vec.y * moon_player_vec.y + moon_right_vec.z * moon_player_vec.z);
+        pitch_delta = (moon_up_vec.x * moon_player_vec.x + moon_up_vec.y * moon_player_vec.y + moon_up_vec.z * moon_player_vec.z);
+
+        if(gChaosContext.moon.big_brother_state == CHAOS_BIG_BROTHER_STATE_FAST_LOCKED_ON)
+        {
+            angle_delta_limit = 0.025f;
+        }
+
+        if((fabsf(pitch_delta) < angle_delta_limit && fabsf(yaw_delta) < angle_delta_limit))
+        {
+            // if(gChaosContext.moon.eye_glow == 0.0f)
+            // {
+            //     u16 moon_screams[] = {
+            //         NA_SE_EN_MOON_SCREAM1,
+            //         NA_SE_EN_MOON_SCREAM2,
+            //         NA_SE_EN_MOON_SCREAM3,
+            //         NA_SE_EN_MOON_SCREAM4
+            //     };
+
+            //     u32 scream_index = Rand_Next() % 4;
+
+            //     gChaosContext.moon.eye_glow = 0.1f;
+            //     Audio_PlaySfx(NA_SE_EV_MOON_EYE_FLASH);
+            //     Audio_PlaySfx(moon_screams[scream_index]);
+            // }
+
+            if(gChaosContext.moon.big_brother_state == CHAOS_BIG_BROTHER_STATE_TRACKING)
+            {
+                u16 moon_screams[] = {
+                    NA_SE_EN_MOON_SCREAM1,
+                    NA_SE_EN_MOON_SCREAM2,
+                    NA_SE_EN_MOON_SCREAM3,
+                    NA_SE_EN_MOON_SCREAM4
+                };
+
+                u32 scream_index = Rand_Next() % 4;
+                Audio_PlaySfx(NA_SE_EV_MOON_EYE_FLASH);
+                Audio_PlaySfx(moon_screams[scream_index]);
+            }
+
+            gChaosContext.moon.big_brother_state = CHAOS_BIG_BROTHER_STATE_SLOW_LOCKED_ON;
+        }
+        else if(gChaosContext.moon.big_brother_state != CHAOS_BIG_BROTHER_STATE_TRACKING)
+        {
+            gChaosContext.moon.big_brother_state = CHAOS_BIG_BROTHER_STATE_FAST_LOCKED_ON;
+            rotation_multiplier = 10000;
+        }
+
+        this->actor.shape.rot.x += pitch_delta * rotation_multiplier;
+        this->actor.shape.rot.y -= yaw_delta * rotation_multiplier;
+
+        if(this->actor.shape.rot.x > 16384)
+        {
+            this->actor.shape.rot.y += (16384 - this->actor.shape.rot.x) * 2;
+            this->actor.shape.rot.x = 16384;
+        }
+        else if(this->actor.shape.rot.x < -16384)
+        {
+            this->actor.shape.rot.y += (16384 + this->actor.shape.rot.x) * 2;
+            this->actor.shape.rot.x = -16384;
+        }
+
+        // if(gChaosContext.moon.eye_glow > 0.0f && gChaosContext.moon.eye_glow < 1.0f)
+        if(gChaosContext.moon.big_brother_state == CHAOS_BIG_BROTHER_STATE_SLOW_LOCKED_ON ||
+           gChaosContext.moon.big_brother_state == CHAOS_BIG_BROTHER_STATE_FAST_LOCKED_ON)
+        {
+            gChaosContext.moon.eye_glow += 0.05f;
+
+            if(gChaosContext.moon.eye_glow > 1.0f)
+            {
+                gChaosContext.moon.eye_glow = 1.0f;
+            }
+        }
+
+        this->eyeGlowIntensity = gChaosContext.moon.eye_glow;
+        play->skyboxCtx.rot.y -= 0.05f;
+        play->envCtx.skyboxConfig = 0xd;
+    }
+    else if(gChaosContext.moon.big_brother_state == CHAOS_BIG_BROTHER_STATE_SLOW_LOCKED_ON ||
+            gChaosContext.moon.big_brother_state == CHAOS_BIG_BROTHER_STATE_FAST_LOCKED_ON)
+    {
+        this->eyeGlowIntensity = 0.0f;
+        gChaosContext.moon.eye_glow = 0.0f;
+        gChaosContext.moon.big_brother_state = CHAOS_BIG_BROTHER_STATE_IDLE;
+    }
+}
+
 /**
  * Used for all closed-mouth high-detail moons, including
  * StoppedClosedMouthMoon and CrashingMoon.
@@ -757,6 +934,8 @@ void EnFall_Moon_Draw(Actor* thisx, PlayState* play) {
     OPEN_DISPS(play->state.gfxCtx);
 
     Gfx_SetupDL25_Opa(play->state.gfxCtx);
+
+    EnFall_Moon_ChaosStuff(play, this);
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx);
     Matrix_MultVec3f(sFocusOffset, &this->actor.focus.pos);
 
@@ -775,6 +954,7 @@ void EnFall_OpenMouthMoon_Draw(Actor* thisx, PlayState* play) {
     OPEN_DISPS(play->state.gfxCtx);
 
     Gfx_SetupDL25_Opa(play->state.gfxCtx);
+    EnFall_Moon_ChaosStuff(play, this);
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx);
 
     primColor = (this->eyeGlowIntensity * 200.0f) + 40.0f;
@@ -793,6 +973,9 @@ void EnFall_LodMoon_Draw(Actor* thisx, PlayState* play) {
     OPEN_DISPS(play->state.gfxCtx);
 
     Gfx_SetupDL25_Opa(play->state.gfxCtx);
+
+    EnFall_Moon_ChaosStuff(play, this);
+
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx);
 
     POLY_OPA_DISP = Gfx_SetFog(POLY_OPA_DISP, 20, 25, 30, 0, 0x3E7, 0x3200);

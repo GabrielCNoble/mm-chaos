@@ -17,12 +17,19 @@ typedef enum ArrowType {
     /* 5 */ ARROW_TYPE_LIGHT,
     /* 6 */ ARROW_TYPE_SLINGSHOT,
     /* 7 */ ARROW_TYPE_DEKU_BUBBLE,
-    /* 8 */ ARROW_TYPE_DEKU_NUT
+    /* 8 */ ARROW_TYPE_DEKU_NUT,
+            ARROW_TYPE_BUCKSHOT = 1 << 8,
+            ARROW_TYPE_NONE,
 } ArrowType;
 
 #define ARROW_IS_MAGICAL(arrowType) (((arrowType) >= ARROW_TYPE_FIRE) && ((arrowType) <= ARROW_TYPE_LIGHT))
 #define ARROW_GET_MAGIC_FROM_TYPE(arrowType) (s32)((arrowType) - ARROW_TYPE_FIRE)
 #define ARROW_IS_ARROW(arrowType) ((arrowType) < ARROW_TYPE_SLINGSHOT)
+
+#define ENARROW_ARROW_MAX_FLIGHT_TIME       16
+#define ENARROW_NORMAL_ARROW_LODGED_TIME    20
+#define ENARROW_LIT_ARROW_LODGED_TIME       60
+#define ENARROW_ARROW_NEAR_DEATH_GRAVITY -0.4f
 
 typedef enum ArrowMagic {
     /* -1 */ ARROW_MAGIC_INVALID = -1,
@@ -32,6 +39,12 @@ typedef enum ArrowMagic {
     /*  3 */ ARROW_MAGIC_DEKU_BUBBLE // Only used in Player. Does not map to ARROW_TYPE_SLINGSHOT
 } ArrowMagic;
 
+
+typedef enum ArrowHitFlags {
+    ARROW_HIT_FLAG_1    = 1,
+    ARROW_HIT_FLAG_2    = 1 << 1,
+    ARROW_HIT_FLAG_4    = 1 << 2
+} ArrowHitFlags;
 
 typedef struct {
     /* 0x144 */ SkelAnime skelAnime;
@@ -57,11 +70,11 @@ typedef struct EnArrow {
     /* 0x234 */ Vec3f unk_234;
     /* 0x240 */ s32 unk_240;
     /* 0x244 */ WeaponInfo unk_244;
-    /* 0x260 */ u8 unk_260; // timer in OoT
+    /* 0x260 */ u8 unk_260; // timer in OoT (alive timer)
     /* 0x261 */ u8 unk_261; // hitFlags in OoT
-    /* 0x262 */ u8 unk_262;
+    /* 0x262 */ u8 unk_262; // hit background? (now chaos effect)
     /* 0x263 */ u8 unk_263;
-    /* 0x264 */ Actor* unk_264;
+    /* 0x264 */ Actor* unk_264; // hit actor
     /* 0x268 */ Vec3f unk_268;
     /* 0x274 */ EnArrowActionFunc actionFunc;
 } EnArrow; // size = 0x278

@@ -402,6 +402,10 @@ void func_80AE7F34(EnStopheishi* this, PlayState* play) {
         case PLAYER_FORM_GORON:
             phi_a2 = 2;
             break;
+
+        case PLAYER_FORM_FIERCE_DEITY:
+            phi_a2 = 1;
+        break;
     }
 
     if (((phi_a2 == 1) || (phi_a2 == 2) || (phi_a2 == 3)) &&

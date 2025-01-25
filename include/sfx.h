@@ -267,6 +267,8 @@ extern SfxBankEntry* gSfxBanks[7];
 extern u8 gSfxChannelLayout;
 extern Vec3f gSfxDefaultPos;
 extern f32 gSfxDefaultFreqAndVolScale;
+extern f32 gSfxBeerGogglesFreq;
+extern f32 gSfxFastTimeFreq;
 extern s8 gSfxDefaultReverb;
 
 #endif

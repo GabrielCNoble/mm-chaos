@@ -106,10 +106,12 @@ typedef enum {
     /* 0x27 */ DO_ACTION_POUND,
     /* 0x28 */ DO_ACTION_HOOK,
     /* 0x29 */ DO_ACTION_SHOOT,
-    /* 0x2A */ DO_ACTION_MAX,
-    /* 0x2A */ TATL_STATE_2A = DO_ACTION_MAX,
+    /* 0x2A */ DO_ACTION_LAST,
+    /* 0x2A */ TATL_STATE_2A = DO_ACTION_LAST,
     /* 0x2B */ TATL_STATE_2B,
-    /* 0x2C */ TATL_STATE_2C
+    /* 0x2C */ TATL_STATE_2C,
+               DO_ACTION_SPIN_FASTER,
+               DO_ACTION_MAX
 } DoAction;
 
 typedef enum {
@@ -304,6 +306,7 @@ void Rupees_ChangeBy(s16 rupeeChange);
 void Inventory_ChangeAmmo(s16 item, s16 ammoChange);
 void Magic_Add(struct PlayState* play, s16 magicToAdd);
 void Magic_Reset(struct PlayState* play);
+void Magic_ChangeBy(struct PlayState *play, s16 magic);
 s32 Magic_Consume(struct PlayState* play, s16 magicToConsume, s16 type);
 void Interface_SetPerfectLetters(struct PlayState* play, s16 perfectLettersType);
 void Interface_StartMoonCrash(struct PlayState* play);

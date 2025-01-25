@@ -83,8 +83,8 @@ void ConsoleLogo_Draw(GameState* thisx) {
 
     ConsoleLogo_RenderView(this, 0.0f, 150.0f, 300.0f);
     Gfx_SetupDL25_Opa(this->state.gfxCtx);
-    Matrix_Translate(-53.0f, -5.0f, 0.0f, MTXMODE_NEW);
-    Matrix_Scale(1.0f, 1.0f, 1.0f, MTXMODE_APPLY);
+    Matrix_Translate(-53.0f + Rand_S16Offset(-15, 30), -5.0f + Rand_S16Offset(-15, 30), 0.0f, MTXMODE_NEW);
+    Matrix_Scale(1.8f, 1.8f, 1.8f, MTXMODE_APPLY);
     Matrix_RotateZYX(0, sTitleRotation, 0, MTXMODE_APPLY);
 
     MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, this->state.gfxCtx);
@@ -103,18 +103,21 @@ void ConsoleLogo_Draw(GameState* thisx) {
                       G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, 5, 5, 2, 11);
 
     for (idx = 0, y = 94; idx < 16; idx++, y += 2) {
+        s16 title_x = Rand_S16Offset(-8, 16);
+        s16 title_y = Rand_S16Offset(-8, 16);
+
         gDPLoadTextureBlock(POLY_OPA_DISP++, &((u8*)gNintendo64LogoTextTex)[0x180 * idx], G_IM_FMT_I, G_IM_SIZ_8b, 192,
                             2, 0, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK,
                             G_TX_NOLOD, G_TX_NOLOD);
 
         gDPSetTileSize(POLY_OPA_DISP++, 1, this->uls, (this->ult & 0x7F) - idx * 4, 0, 0);
-        gSPTextureRectangle(POLY_OPA_DISP++, 97 << 2, y << 2, (97 + 192) << 2, (y + 2) << 2, G_TX_RENDERTILE, 0, 0,
-                            1 << 10, 1 << 10);
+        gSPTextureRectangle(POLY_OPA_DISP++, (97 << 2) + title_x, (y << 2) + title_y, ((97 + 192) << 2) + title_x, 
+            ((y + 2) << 2) + title_y, G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
     }
 
     Environment_FillScreen(this->state.gfxCtx, 0, 0, 0, this->coverAlpha, FILL_SCREEN_XLU);
 
-    sTitleRotation += 300;
+    sTitleRotation += 3600;
 
     CLOSE_DISPS(this->state.gfxCtx);
 }

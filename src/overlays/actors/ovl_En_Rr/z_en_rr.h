@@ -7,11 +7,31 @@ struct EnRr;
 
 typedef void (*EnRrActionFunc)(struct EnRr*, PlayState*);
 
+#define TURBO_LIKE_LIKE_MOVE_SPEED          8.0f
+#define TURBO_LIKE_LIKE_DEACCELERATION      1.0f
+#define TURBO_LIKE_LIKE_WOBBLE_RATE         8000
+#define TURBO_LIKE_LIKE_WOBBLE_INCREMENT    200
+
+#define NORMAL_LIKE_LIKE_MOVE_SPEED         2.0f
+#define NORMAL_LIKE_LIKE_DEACCELERATION     0.1f
+#define NORMAL_LIKE_LIKE_WOBBLE_RATE        2500
+#define NORMAL_LIKE_LIKE_WOBBLE_INCREMENT   50
+
+#define SMOL_LIKE_LIKE_MOVE_SPEED         1.25f
+#define SMOL_LIKE_LIKE_DEACCELERATION     0.5f
+#define SMOL_LIKE_LIKE_WOBBLE_RATE        5000
+#define SMOL_LIKE_LIKE_WOBBLE_INCREMENT   50
+
 typedef enum {
     /* 0 */ LIKE_LIKE_PARAM_0,
     /* 1 */ LIKE_LIKE_PARAM_1,
     /* 2 */ LIKE_LIKE_PARAM_2,
-    /* 3 */ LIKE_LIKE_PARAM_3
+    /* 3 */ LIKE_LIKE_PARAM_3,
+            LIKE_LIKE_TYPE_CHAOS,
+            LIKE_LIKE_TYPE_VORE,
+            LIKE_LIKE_TYPE_TURBO,
+            LIKE_LIKE_TYPE_LONG_RANGE,
+            LIKE_LIKE_TYPE_SMOL,
 } LikeLikeParam;
 
 typedef enum LikeLikeBodyPart {
@@ -43,11 +63,11 @@ typedef struct {
     /* 0x04 */ f32 unk_04;
     /* 0x08 */ f32 unk_08;
     /* 0x0C */ f32 unk_0C;
-    /* 0x10 */ f32 unk_10;
-    /* 0x14 */ s16 unk_14;
+    /* 0x10 */ f32 unk_10;      // segment radius?
+    /* 0x14 */ s16 unk_14;      // rotx target?
     /* 0x16 */ s16 unk_16;
-    /* 0x18 */ s16 unk_18;
-    /* 0x1A */ Vec3s unk_1A;
+    /* 0x18 */ s16 unk_18;      // rotz target?
+    /* 0x1A */ Vec3s unk_1A;    // segment rotation?
 } EnRrStruct; // size = 0x20
 
 typedef struct EnRr {
@@ -57,17 +77,18 @@ typedef struct EnRr {
     /* 0x194 */ ColliderCylinder collider2;
     /* 0x1E0 */ u8 drawDmgEffType;
     /* 0x1E1 */ u8 unk_1E1;
-    /* 0x1E2 */ u8 unk_1E2;
+    // /* 0x1E2 */ u8 unk_1E2;
+    /* 0x1E2 */ u8 swallowedShield;
     /* 0x1E4 */ s16 unk_1E4;
-    /* 0x1E6 */ s16 unk_1E6;
+    /* 0x1E6 */ s16 unk_1E6; // action timer
     /* 0x1E8 */ s16 unk_1E8;
     /* 0x1EA */ s16 unk_1EA;
     /* 0x1EC */ s16 unk_1EC;
     /* 0x1EE */ s16 unk_1EE;
     /* 0x1F0 */ s16 unk_1F0;
     /* 0x1F2 */ s16 unk_1F2;
-    /* 0x1F4 */ s16 unk_1F4;
-    /* 0x1F6 */ s16 unk_1F6;
+    /* 0x1F4 */ s16 unk_1F4; // current wobble rate
+    /* 0x1F6 */ s16 unk_1F6; // target wobble rate
     /* 0x1F8 */ s16 unk_1F8;
     /* 0x1FA */ s16 unk_1FA;
     /* 0x1FC */ s16 unk_1FC;

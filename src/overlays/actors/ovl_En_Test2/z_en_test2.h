@@ -10,7 +10,7 @@ struct EnTest2;
 typedef enum EnTest2Type {
     /* 0x0 */ EN_TEST2_TYPE_0,
     /* 0x1 */ EN_TEST2_TYPE_1,
-    /* 0x2 */ EN_TEST2_TYPE_2,
+    /* 0x2 */ EN_TEST2_TYPE_2, // mountain village climb ladder
     /* 0x3 */ EN_TEST2_TYPE_3,
     /* 0x4 */ EN_TEST2_TYPE_4,
     /* 0x5 */ EN_TEST2_TYPE_5,

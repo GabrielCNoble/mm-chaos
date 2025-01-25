@@ -199,7 +199,8 @@ void DmaMgr_ProcessRequest(DmaRequest* req) {
         }
     } else {
         // Error, invalid index
-        Fault_AddHungupAndCrash("../z_std_dma.c", 558);
+        // Fault_AddHungupAndCrash("../z_std_dma.c", 558);
+        Fault_AddHangupPrintfAndCrash("Invalid DMA index %d / %d\n%s", index, sNumDmaEntries, (req->debugMsg != NULL) ? req->debugMsg : "");
     }
 }
 
@@ -245,16 +246,29 @@ s32 DmaMgr_RequestAsync(DmaRequest* req, void* ram, uintptr_t vrom, size_t size,
         return -2;
     }
 
+    // if(DmaMgr_FindDmaIndex(vrom) < 0)
+    // {
+    //     Fault_AddHangupPrintfAndCrash("Well, shit");
+    // }
+
     req->vromAddr = vrom;
     req->dramAddr = ram;
     req->size = size;
     req->unk14 = 0;
     req->notifyQueue = queue;
     req->notifyMsg = msg;
+    req->debugMsg = NULL;
 
     osSendMesg(&sDmaMgrMsgQueue, (OSMesg)req, OS_MESG_BLOCK);
 
     return 0;
+}
+
+s32 DmaMgr_RequestAsyncDebug(DmaRequest* req, void* ram, uintptr_t vrom, size_t size, UNK_TYPE unused, OSMesgQueue* queue, char *debugMsg)
+{
+    s32 ret = DmaMgr_RequestAsync(req, ram, vrom, size, unused, queue, NULL);
+    req->debugMsg = debugMsg;
+    return ret;
 }
 
 /**

@@ -15,6 +15,9 @@
 #include "z64save.h"
 
 #include "assets/interface/parameter_static/parameter_static.h"
+#include "chaos_fuckery.h"
+
+extern struct ChaosContext gChaosContext;
 
 u8 D_801C6A70 = 0;
 s16 sOcarinaButtonIndexBufPos = 0;
@@ -53,15 +56,15 @@ u16 gBombersNotebookWeekEventFlags[BOMBERS_NOTEBOOK_EVENT_MAX] = {
 #include "tables/notebook_table.h"
 };
 
-#undef DEFINE_PERSON
+#undef DEFINE_PERSON 
 #undef DEFINE_EVENT
 
 #define DEFINE_MESSAGE(textId, type, yPos, msg) { textId, (((type)&0xF) << 4) | ((yPos)&0xF), _message_##textId },
 
 MessageTableEntry sMessageTableNES[] = {
-#include "assets/text/message_data.h"
+#include "assets/text/message_data.h" 
     { 0xFFFF, 0, NULL },
-};
+}; 
 
 #undef DEFINE_MESSAGE
 
@@ -226,6 +229,15 @@ void Message_DrawTextboxIcon(PlayState* play, Gfx** gfxP, s16 x, s16 y) {
     s16 envB;
     u8* iconTexture = msgCtx->font.iconBuf;
 
+    s16 chaos_offset_x = 0;
+    s16 chaos_offset_y = 0;
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    {
+        chaos_offset_x = Rand_S16Offset(48, -96);
+        chaos_offset_y = Rand_S16Offset(48, -96);
+    }
+
     gfx = *gfxP;
 
     if (!msgCtx->textIsCredits) {
@@ -294,7 +306,8 @@ void Message_DrawTextboxIcon(PlayState* play, Gfx** gfxP, s16 x, s16 y) {
         if (!play->pauseCtx.bombersNotebookOpen) {
             gDPLoadTextureBlock_4b(gfx++, iconTexture, G_IM_FMT_I, 16, 16, 0, G_TX_NOMIRROR | G_TX_CLAMP,
                                    G_TX_NOMIRROR | G_TX_CLAMP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
-            gSPTextureRectangle(gfx++, x << 2, y << 2, (x + sCharTexSize) << 2, (y + sCharTexSize) << 2,
+            gSPTextureRectangle(gfx++, (x << 2) + chaos_offset_x, (y << 2) + chaos_offset_y, 
+                                       ((x + sCharTexSize) << 2) + chaos_offset_x, ((y + sCharTexSize) << 2) + chaos_offset_y,
                                 G_TX_RENDERTILE, 0, 0, sCharTexScale, sCharTexScale);
         }
 
@@ -741,6 +754,12 @@ void Message_DrawTextChar(PlayState* play, TexturePtr texture, Gfx** gfxP) {
     s16 x = msgCtx->textPosX;
     s16 y = msgCtx->textPosY;
 
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    {
+        x += Rand_S16Offset(12, -24);
+        y += Rand_S16Offset(12, -24);
+    }
+
     gDPPipeSync(gfx++);
 
     gDPLoadTextureBlock_4b(gfx++, texture, G_IM_FMT_I, 16, 16, 0, G_TX_NOMIRROR | G_TX_CLAMP,
@@ -908,6 +927,15 @@ void Message_DrawItemIcon(PlayState* play, Gfx** gfxP) {
     Gfx* gfx = *gfxP;
     s32 index;
 
+    s16 chaos_offset_x = 0;
+    s16 chaos_offset_y = 0;
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    {
+        chaos_offset_x = Rand_S16Offset(12, -24);
+        chaos_offset_y = Rand_S16Offset(12, -24);
+    }
+
     msgCtx->unk12016 = msgCtx->unk12014;
 
     if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING) {
@@ -980,8 +1008,10 @@ void Message_DrawItemIcon(PlayState* play, Gfx** gfxP) {
                             G_TX_NOLOD);
     }
 
-    gSPTextureRectangle(gfx++, msgCtx->unk12010 << 2, msgCtx->unk12012 << 2, (msgCtx->unk12010 + msgCtx->unk12014) << 2,
-                        (msgCtx->unk12012 + msgCtx->unk12016) << 2, G_TX_RENDERTILE, 0, 0, D_801F6B08, D_801F6B08);
+    gSPTextureRectangle(gfx++, (msgCtx->unk12010 << 2) + chaos_offset_x, (msgCtx->unk12012 << 2) + chaos_offset_y, 
+                        ((msgCtx->unk12010 + msgCtx->unk12014) << 2) + chaos_offset_x, 
+                        ((msgCtx->unk12012 + msgCtx->unk12016) << 2) + chaos_offset_y, 
+                        G_TX_RENDERTILE, 0, 0, D_801F6B08, D_801F6B08);
     gDPPipeSync(gfx++);
     gDPSetCombineLERP(gfx++, 0, 0, 0, PRIMITIVE, TEXEL0, 0, PRIMITIVE, 0, 0, 0, 0, PRIMITIVE, TEXEL0, 0, PRIMITIVE, 0);
 
@@ -1091,6 +1121,12 @@ void Message_DrawTextDefault(PlayState* play, Gfx** gfxP) {
     s16 prevG;
     s16 prevB;
     u16 lookAheadCharacter;
+    u32 index;
+    s16 chaos_offsets[4][2];
+    // s16 chaos_offset_x = 0;
+    // s16 chaos_offset_y = 0;
+
+    
 
     play->msgCtx.textPosX = play->msgCtx.unk11F1A[0] + play->msgCtx.unk11FF8;
     play->msgCtx.textPosY = play->msgCtx.unk11FFA;
@@ -1321,6 +1357,17 @@ void Message_DrawTextDefault(PlayState* play, Gfx** gfxP) {
                 break;
 
             case 0x201: // MESSAGE_BACKGROUND
+
+                if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+                {
+                    u32 index;
+                    for(index = 0; index < ARRAY_COUNT(chaos_offsets); index++)
+                    {
+                        chaos_offsets[index][0] = Rand_S16Offset(24, -48);
+                        chaos_offsets[index][1] = Rand_S16Offset(24, -48);
+                    }
+                }
+
                 msgCtx->textPosX = 45;
 
                 if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING) {
@@ -1333,28 +1380,42 @@ void Message_DrawTextDefault(PlayState* play, Gfx** gfxP) {
                 gDPLoadTextureBlock_4b(gfx++, msgCtx->textboxSegment + 0x1000, G_IM_FMT_I, 96, 48, 0,
                                        G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK,
                                        G_TX_NOLOD, G_TX_NOLOD);
-                gSPTextureRectangle(gfx++, msgCtx->textPosX << 2, (msgCtx->unk12012 + 1) << 2,
-                                    (msgCtx->textPosX + 96) << 2, (msgCtx->unk12012 + 49) << 2, G_TX_RENDERTILE, 0, 0,
-                                    1 << 10, 1 << 10);
+                gSPTextureRectangle(gfx++, (msgCtx->textPosX << 2) + chaos_offsets[0][0], 
+                                           ((msgCtx->unk12012 + 1) << 2) + chaos_offsets[0][1],
+                                           ((msgCtx->textPosX + 96) << 2) + chaos_offsets[0][0], 
+                                           ((msgCtx->unk12012 + 49) << 2) + chaos_offsets[0][1], 
+                                           G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
+
                 gDPLoadTextureBlock_4b(gfx++, msgCtx->textboxSegment + 0x1900, G_IM_FMT_I, 96, 48, 0,
                                        G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK,
                                        G_TX_NOLOD, G_TX_NOLOD);
-                gSPTextureRectangle(gfx++, (msgCtx->textPosX + 96) << 2, (msgCtx->unk12012 + 1) << 2,
-                                    (msgCtx->textPosX + 193) << 2, (msgCtx->unk12012 + 49) << 2, G_TX_RENDERTILE, 0, 0,
-                                    1 << 10, 1 << 10);
+
+                gSPTextureRectangle(gfx++, ((msgCtx->textPosX + 96) << 2) + chaos_offsets[1][0], 
+                                           ((msgCtx->unk12012 + 1) << 2) + chaos_offsets[1][1],
+                                           ((msgCtx->textPosX + 193) << 2) + chaos_offsets[1][0], 
+                                           ((msgCtx->unk12012 + 49) << 2) + chaos_offsets[1][1], 
+                                           G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
 
                 gDPPipeSync(gfx++);
                 gDPSetPrimColor(gfx++, 0, 0, 255, 60, 0, msgCtx->textColorAlpha);
                 gDPLoadTextureBlock_4b(gfx++, msgCtx->textboxSegment + 0x1000, G_IM_FMT_I, 96, 48, 0,
                                        G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK,
                                        G_TX_NOLOD, G_TX_NOLOD);
-                gSPTextureRectangle(gfx++, msgCtx->textPosX << 2, msgCtx->unk12012 << 2, (msgCtx->textPosX + 96) << 2,
-                                    (msgCtx->unk12012 + 48) << 2, G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
+
+                gSPTextureRectangle(gfx++, (msgCtx->textPosX << 2) + chaos_offsets[2][0], 
+                                           (msgCtx->unk12012 << 2) + chaos_offsets[2][1], 
+                                           ((msgCtx->textPosX + 96) << 2) + chaos_offsets[2][0],
+                                           ((msgCtx->unk12012 + 48) << 2) + chaos_offsets[2][1], 
+                                           G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
+
                 gDPLoadTextureBlock_4b(gfx++, msgCtx->textboxSegment + 0x1900, G_IM_FMT_I, 96, 48, 0,
                                        G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK,
                                        G_TX_NOLOD, G_TX_NOLOD);
-                gSPTextureRectangle(gfx++, (msgCtx->textPosX + 96) << 2, msgCtx->unk12012 << 2,
-                                    (msgCtx->textPosX + 192) << 2, (msgCtx->unk12012 + 48) << 2, G_TX_RENDERTILE, 0, 0,
+
+                gSPTextureRectangle(gfx++, ((msgCtx->textPosX + 96) << 2) + chaos_offsets[3][0], 
+                                            (msgCtx->unk12012 << 2) + chaos_offsets[3][1],
+                                           ((msgCtx->textPosX + 192) << 2) + chaos_offsets[3][0], 
+                                           ((msgCtx->unk12012 + 48) << 2) + chaos_offsets[3][1], G_TX_RENDERTILE, 0, 0,
                                     1 << 10, 1 << 10);
                 gDPPipeSync(gfx++);
                 gDPSetCombineLERP(gfx++, 0, 0, 0, PRIMITIVE, TEXEL0, 0, PRIMITIVE, 0, 0, 0, 0, PRIMITIVE, TEXEL0, 0,
@@ -3697,6 +3758,21 @@ u8 Message_GetState(MessageContext* msgCtx) {
 void Message_DrawTextBox(PlayState* play, Gfx** gfxP) {
     MessageContext* msgCtx = &play->msgCtx;
     Gfx* gfx = *gfxP;
+    s16 chaos_offsets[2][2];
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    {
+        u32 index;
+        for(index = 0; index < ARRAY_COUNT(chaos_offsets); index++)
+        {
+            chaos_offsets[index][0] = Rand_S16Offset(48, -96);
+            chaos_offsets[index][1] = Rand_S16Offset(48, -96);
+        }
+    }
+    else
+    {
+        bzero(chaos_offsets, sizeof(chaos_offsets));
+    }
 
     gDPPipeSync(gfx++);
 
@@ -3731,13 +3807,17 @@ void Message_DrawTextBox(PlayState* play, Gfx** gfxP) {
     }
 
     if (msgCtx->textBoxType == TEXTBOX_TYPE_A) {
-        gSPTextureRectangle(gfx++, msgCtx->textboxX << 2, (msgCtx->textboxY + 22) << 2,
-                            (msgCtx->textboxX + msgCtx->unk12008) << 2, (msgCtx->textboxY + 54) << 2, G_TX_RENDERTILE,
-                            0, 6, msgCtx->unk1200C << 1, 2 << 10);
+        gSPTextureRectangle(gfx++, (msgCtx->textboxX << 2) + chaos_offsets[0][0], 
+                                   ((msgCtx->textboxY + 22) << 2) + chaos_offsets[0][1],
+                                   ((msgCtx->textboxX + msgCtx->unk12008) << 2) + chaos_offsets[0][0], 
+                                   ((msgCtx->textboxY + 54) << 2) + chaos_offsets[0][1], 
+                                   G_TX_RENDERTILE, 0, 6, msgCtx->unk1200C << 1, 2 << 10);
     } else {
-        gSPTextureRectangle(gfx++, msgCtx->textboxX << 2, (msgCtx->textboxY) << 2,
-                            (msgCtx->textboxX + sTextboxWidth) << 2, (msgCtx->textboxY + sTextboxHeight) << 2,
-                            G_TX_RENDERTILE, 0, 0, sTextboxTexWidth, sTextboxTexHeight);
+        gSPTextureRectangle(gfx++, (msgCtx->textboxX << 2) + chaos_offsets[0][0], 
+                                   ((msgCtx->textboxY) << 2) + chaos_offsets[0][1],
+                                   ((msgCtx->textboxX + sTextboxWidth) << 2) + chaos_offsets[0][0], 
+                                   ((msgCtx->textboxY + sTextboxHeight) << 2) + chaos_offsets[0][1],
+                                    G_TX_RENDERTILE, 0, 0, sTextboxTexWidth, sTextboxTexHeight);
     }
 
     // Draw treble clef
@@ -3748,7 +3828,9 @@ void Message_DrawTextBox(PlayState* play, Gfx** gfxP) {
         gDPSetPrimColor(gfx++, 0, 0, 255, 100, 0, 255);
         gDPLoadTextureBlock_4b(gfx++, gOcarinaTrebleClefTex, G_IM_FMT_I, 16, 32, 0, G_TX_MIRROR | G_TX_WRAP,
                                G_TX_MIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
-        gSPTextureRectangle(gfx++, 78 << 2, 166 << 2, 94 << 2, 198 << 2, G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
+        gSPTextureRectangle(gfx++, (78 << 2) + chaos_offsets[1][0], (166 << 2) + chaos_offsets[1][1], 
+                                   (94 << 2) + chaos_offsets[1][0], (198 << 2) + chaos_offsets[1][1], 
+                                   G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
     }
 
     *gfxP = gfx++;
@@ -3988,6 +4070,22 @@ void Message_DrawOcarinaButtons(PlayState* play, Gfx** gfxP) {
     u16 i;
     u16 notePosX;
 
+    s16 chaos_offsets[8][2];
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    {
+        u32 index;
+        for(index = 0; index < ARRAY_COUNT(chaos_offsets); index++)
+        {
+            chaos_offsets[index][0] = Rand_S16Offset(48, -96);
+            chaos_offsets[index][1] = Rand_S16Offset(48, -96);
+        }
+    }
+    else
+    {
+        bzero(chaos_offsets, sizeof(chaos_offsets));
+    }
+
     if ((play->msgCtx.msgMode >= MSGMODE_OCARINA_PLAYING) && (msgCtx->msgMode <= MSGMODE_40)) {
         if ((msgCtx->ocarinaAction != OCARINA_ACTION_FREE_PLAY) &&
             (msgCtx->ocarinaAction != OCARINA_ACTION_CHECK_NOTIME)) {
@@ -4026,11 +4124,10 @@ void Message_DrawOcarinaButtons(PlayState* play, Gfx** gfxP) {
                             G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
 
                         gSPTextureRectangle(
-                            gfx++, notePosX << 2,
-                            msgCtx->ocarinaButtonsPosY[gOcarinaSongButtons[sOcarinaButtonStepG].buttonIndex[i]] << 2,
-                            (notePosX + 16) << 2,
-                            (msgCtx->ocarinaButtonsPosY[gOcarinaSongButtons[sOcarinaButtonStepG].buttonIndex[i]] + 16)
-                                << 2,
+                            gfx++, (notePosX << 2) + chaos_offsets[i][0],
+                            (msgCtx->ocarinaButtonsPosY[gOcarinaSongButtons[sOcarinaButtonStepG].buttonIndex[i]] << 2) + chaos_offsets[i][1],
+                            ((notePosX + 16) << 2) + chaos_offsets[i][0],
+                            ((msgCtx->ocarinaButtonsPosY[gOcarinaSongButtons[sOcarinaButtonStepG].buttonIndex[i]] + 16) << 2) + chaos_offsets[i][1],
                             G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
                     }
                 }
@@ -4065,8 +4162,10 @@ void Message_DrawOcarinaButtons(PlayState* play, Gfx** gfxP) {
                                         G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
 
                     gSPTextureRectangle(
-                        gfx++, notePosX << 2, msgCtx->ocarinaButtonsPosY[sOcarinaButtonIndexBuf[i]] << 2,
-                        (notePosX + 16) << 2, (msgCtx->ocarinaButtonsPosY[sOcarinaButtonIndexBuf[i]] + 16) << 2,
+                        gfx++, (notePosX << 2) + chaos_offsets[i][0], 
+                        (msgCtx->ocarinaButtonsPosY[sOcarinaButtonIndexBuf[i]] << 2) + chaos_offsets[i][1],
+                        ((notePosX + 16) << 2) + chaos_offsets[i][0], 
+                        ((msgCtx->ocarinaButtonsPosY[sOcarinaButtonIndexBuf[i]] + 16) << 2) + chaos_offsets[i][1],
                         G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
                 }
             }
@@ -5235,6 +5334,7 @@ void Message_Update(PlayState* play) {
     PauseContext* pauseCtx = &play->pauseCtx;
     InterfaceContext* interfaceCtx = &play->interfaceCtx;
     Input* input = CONTROLLER1(&play->state);
+    u32 choice_index;
     s16 avgScreenPosY;
     s16 screenPosX;
     u16 temp_v1_2;
@@ -5571,83 +5671,163 @@ void Message_Update(PlayState* play) {
                         break;
                 }
 
-                if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) &&
-                    (play->msgCtx.ocarinaMode == OCARINA_MODE_ACTIVE)) {
-                    if (Message_ShouldAdvance(play)) {
-                        if (msgCtx->choiceIndex == 0) {
+                choice_index = msgCtx->choiceIndex;
+
+                if(msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE && Rand_S16Offset(0, 16) == 3)
+                {
+                    choice_index ^= 1;
+                }
+
+                if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) && (play->msgCtx.ocarinaMode == OCARINA_MODE_ACTIVE)) 
+                {
+                    if (Message_ShouldAdvance(play)) 
+                    {
+                        // if (msgCtx->choiceIndex == 0) {
+                        if (choice_index == (play->msgCtx.currentTextId == MESSAGE_ID_CONFIRM_OWL_WARP_FLIPPED)) 
+                        {
                             play->msgCtx.ocarinaMode = OCARINA_MODE_WARP;
-                        } else {
+                        } 
+                        else 
+                        {
                             play->msgCtx.ocarinaMode = OCARINA_MODE_END;
                         }
+                        msgCtx->choiceIndex = choice_index;
                         Message_CloseTextbox(play);
                     }
-                } else if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) &&
-                           (play->msgCtx.ocarinaMode == OCARINA_MODE_PROCESS_SOT)) {
-                    if (Message_ShouldAdvance(play)) {
-                        if (msgCtx->choiceIndex == 0) {
+                } 
+                else if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) && (play->msgCtx.ocarinaMode == OCARINA_MODE_PROCESS_SOT)) 
+                {
+                    if (Message_ShouldAdvance(play)) 
+                    {
+                        // if (msgCtx->choiceIndex == 0) {
+                        if (choice_index == (play->msgCtx.currentTextId == MESSAGE_ID_CONFIRM_SONG_OF_TIME_FLIPPED)) 
+                        {
                             Audio_PlaySfx_MessageDecide();
                             msgCtx->msgMode = MSGMODE_NEW_CYCLE_0;
                             msgCtx->decodedTextLen -= 3;
                             msgCtx->unk120D6 = 0;
                             msgCtx->unk120D4 = 0;
-                        } else {
+                        } 
+                        else 
+                        {
                             Audio_PlaySfx_MessageCancel();
                             play->msgCtx.ocarinaMode = OCARINA_MODE_END;
                             Message_CloseTextbox(play);
                         }
+                        msgCtx->choiceIndex = choice_index;
                     }
-                } else if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) &&
-                           (play->msgCtx.ocarinaMode == OCARINA_MODE_PROCESS_INVERTED_TIME)) {
-                    if (Message_ShouldAdvance(play)) {
-                        if (msgCtx->choiceIndex == 0) {
+                } 
+                else if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) && (play->msgCtx.ocarinaMode == OCARINA_MODE_PROCESS_INVERTED_TIME)) 
+                {
+                    if (Message_ShouldAdvance(play)) 
+                    {
+                        s16 text_id = play->msgCtx.currentTextId;
+
+                        if(gSaveContext.save.timeSpeedOffset >= 0 && 
+                            choice_index == (text_id == MESSAGE_ID_CONFIRM_INVERTED_SONG_OF_TIME_SLOW_DOWN_FLIPPED))
+                        {
                             Audio_PlaySfx_MessageDecide();
-                            if (gSaveContext.save.timeSpeedOffset == 0) {
-                                play->msgCtx.ocarinaMode = OCARINA_MODE_APPLY_INV_SOT_SLOW;
-                                gSaveContext.save.timeSpeedOffset = -2;
-                            } else {
-                                play->msgCtx.ocarinaMode = OCARINA_MODE_APPLY_INV_SOT_FAST;
+                            play->msgCtx.ocarinaMode = OCARINA_MODE_APPLY_INV_SOT_SLOW;
+
+                            if(gSaveContext.save.timeSpeedOffset > 0)
+                            {
+                                /* slow down from fast time effect */
                                 gSaveContext.save.timeSpeedOffset = 0;
                             }
-                            Message_CloseTextbox(play);
-                        } else {
+                            else
+                            {
+                                gSaveContext.save.timeSpeedOffset = -2;
+                            }
+                        }
+                        else if(gSaveContext.save.timeSpeedOffset < 0 && 
+                            choice_index == (text_id == MESSAGE_ID_CONFIRM_INVERTED_SONG_OF_TIME_SPEED_UP_FLIPPED))
+                        {
+                            Audio_PlaySfx_MessageDecide();
+                            play->msgCtx.ocarinaMode = OCARINA_MODE_APPLY_INV_SOT_FAST;
+                            gSaveContext.save.timeSpeedOffset = 0;
+                        }
+                        else
+                        {
                             Audio_PlaySfx_MessageCancel();
                             play->msgCtx.ocarinaMode = OCARINA_MODE_END;
                             Message_CloseTextbox(play);
                         }
+
+                        // if (msgCtx->choiceIndex == 0) {
+                        // {
+                        //     Audio_PlaySfx_MessageDecide();
+                        //     if (gSaveContext.save.timeSpeedOffset == 0) 
+                        //     {
+                        //         play->msgCtx.ocarinaMode = OCARINA_MODE_APPLY_INV_SOT_SLOW;
+                        //         gSaveContext.save.timeSpeedOffset = -2;
+                        //     } 
+                        //     else 
+                        //     {
+                        //         play->msgCtx.ocarinaMode = OCARINA_MODE_APPLY_INV_SOT_FAST;
+                        //         gSaveContext.save.timeSpeedOffset = 0;
+                        //     }
+                        //     Message_CloseTextbox(play);
+                        // } 
+                        // else 
+                        // {
+                        //     Audio_PlaySfx_MessageCancel();
+                        //     play->msgCtx.ocarinaMode = OCARINA_MODE_END;
+                        //     Message_CloseTextbox(play);
+                        // }
+                        Message_CloseTextbox(play);
+                        msgCtx->choiceIndex = choice_index;
                     }
-                } else if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) &&
-                           (play->msgCtx.ocarinaMode == OCARINA_MODE_PROCESS_DOUBLE_TIME)) {
-                    if (Message_ShouldAdvance(play)) {
-                        if (msgCtx->choiceIndex == 0) {
+                } 
+                else if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) && (play->msgCtx.ocarinaMode == OCARINA_MODE_PROCESS_DOUBLE_TIME)) 
+                {
+                    if (Message_ShouldAdvance(play)) 
+                    {
+                        // if (msgCtx->choiceIndex == 0) {
+                        if (choice_index == 0) 
+                        {
                             Audio_PlaySfx_MessageDecide();
-                            if (gSaveContext.save.isNight != 0) {
+                            if (gSaveContext.save.isNight != 0) 
+                            {
                                 gSaveContext.save.time = CLOCK_TIME(6, 0);
-                            } else {
+                            } 
+                            else 
+                            {
                                 gSaveContext.save.time = CLOCK_TIME(18, 0);
                             }
                             play->msgCtx.ocarinaMode = OCARINA_MODE_APPLY_DOUBLE_SOT;
                             gSaveContext.timerStates[TIMER_ID_MOON_CRASH] = TIMER_STATE_OFF;
-                        } else {
+                        } 
+                        else 
+                        {
                             Audio_PlaySfx_MessageCancel();
                             play->msgCtx.ocarinaMode = OCARINA_MODE_END;
                         }
+                        msgCtx->choiceIndex = choice_index;
                         Message_CloseTextbox(play);
                     }
-                } else if ((msgCtx->textboxEndType != TEXTBOX_ENDTYPE_TWO_CHOICE) ||
-                           (pauseCtx->state != PAUSE_STATE_OWL_WARP_CONFIRM)) {
-                    if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) &&
-                        (play->msgCtx.ocarinaMode == OCARINA_MODE_1B)) {
-                        if (Message_ShouldAdvance(play)) {
-                            if (msgCtx->choiceIndex == 0) {
+                } 
+                else if ((msgCtx->textboxEndType != TEXTBOX_ENDTYPE_TWO_CHOICE) || (pauseCtx->state != PAUSE_STATE_OWL_WARP_CONFIRM)) 
+                {
+                    if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) && (play->msgCtx.ocarinaMode == OCARINA_MODE_1B)) 
+                    {
+                        if (Message_ShouldAdvance(play)) 
+                        {
+                            // if (msgCtx->choiceIndex == 0) {
+                            if (choice_index == (play->msgCtx.currentTextId == MESSAGE_ID_CONFIRM_OWL_WARP_FLIPPED)) 
+                            {
                                 Audio_PlaySfx_MessageDecide();
                                 play->msgCtx.ocarinaMode = OCARINA_MODE_WARP_TO_ENTRANCE;
-                            } else {
+                            } 
+                            else 
+                            {
                                 Audio_PlaySfx_MessageCancel();
                                 play->msgCtx.ocarinaMode = OCARINA_MODE_END;
                             }
+                            msgCtx->choiceIndex = choice_index;
                             Message_CloseTextbox(play);
                         }
-                    } else if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_INPUT_BANK) ||
+                    } 
+                    else if ((msgCtx->textboxEndType == TEXTBOX_ENDTYPE_INPUT_BANK) ||
                                (msgCtx->textboxEndType == TEXTBOX_ENDTYPE_INPUT_DOGGY_RACETRACK_BET) ||
                                (msgCtx->textboxEndType == TEXTBOX_ENDTYPE_TWO_CHOICE) ||
                                (msgCtx->textboxEndType == TEXTBOX_ENDTYPE_THREE_CHOICE) ||
@@ -5698,7 +5878,15 @@ void Message_Update(PlayState* play) {
             if (sLastPlayedSong == OCARINA_SONG_SOARING) {
                 if (interfaceCtx->restrictions.songOfSoaring == 0) {
                     if (Map_CurRoomHasMapI(play) || (play->sceneId == SCENE_SECOM)) {
-                        Message_StartTextbox(play, 0x1B93, NULL);
+
+                        u16 text_id = MESSAGE_ID_CONFIRM_OWL_WARP_NORMAL;
+
+                        if(/* Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI) && */ (Rand_Next() % 2) == 0)
+                        {
+                            text_id = MESSAGE_ID_CONFIRM_OWL_WARP_FLIPPED;
+                        }
+
+                        Message_StartTextbox(play, text_id, NULL);
                         play->msgCtx.ocarinaMode = OCARINA_MODE_1B;
                         sLastPlayedSong = 0xFF;
                     } else if (!msgCtx->ocarinaSongEffectActive) {
@@ -5796,7 +5984,16 @@ void Message_Update(PlayState* play) {
 
                 if (sLastPlayedSong == OCARINA_SONG_TIME) {
                     if (interfaceCtx->restrictions.songOfTime == 0) {
-                        Message_StartTextbox(play, 0x1B8A, NULL);
+
+                        // Message_StartTextbox(play, 0x1B8A, NULL);
+                        u32 text_id = MESSAGE_ID_CONFIRM_SONG_OF_TIME_NORMAL;
+
+                        if(/* Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI) && */ (Rand_Next() % 2))
+                        {
+                            text_id = MESSAGE_ID_CONFIRM_SONG_OF_TIME_FLIPPED;
+                        }
+
+                        Message_StartTextbox(play, text_id, NULL);
                         play->msgCtx.ocarinaMode = OCARINA_MODE_PROCESS_SOT;
                     } else {
                         sLastPlayedSong = 0xFF;
@@ -5807,9 +6004,13 @@ void Message_Update(PlayState* play) {
                     if (interfaceCtx->restrictions.invSongOfTime == 0) {
                         if (R_TIME_SPEED != 0) {
                             if (gSaveContext.save.timeSpeedOffset == 0) {
-                                Message_StartTextbox(play, 0x1B8C, NULL);
+                                s16 message_id = ((Rand_Next() % 2) == 0) ? MESSAGE_ID_CONFIRM_INVERTED_SONG_OF_TIME_SLOW_DOWN_NORMAL : 
+                                                                            MESSAGE_ID_CONFIRM_INVERTED_SONG_OF_TIME_SLOW_DOWN_FLIPPED;
+                                Message_StartTextbox(play, message_id, NULL);
                             } else {
-                                Message_StartTextbox(play, 0x1B8D, NULL);
+                                s16 message_id = ((Rand_Next() % 2) == 0) ? MESSAGE_ID_CONFIRM_INVERTED_SONG_OF_TIME_SPEED_UP_NORMAL : 
+                                                                            MESSAGE_ID_CONFIRM_INVERTED_SONG_OF_TIME_SPEED_UP_FLIPPED;
+                                Message_StartTextbox(play, message_id, NULL);
                             }
                             play->msgCtx.ocarinaMode = OCARINA_MODE_PROCESS_INVERTED_TIME;
                         } else {

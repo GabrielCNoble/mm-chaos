@@ -5,6 +5,7 @@
 // Variables are put before most headers as a hacky way to bypass bss reordering
 struct FaultAddrConvClient sGraphFaultAddrConvClient;
 struct FaultClient sGraphFaultClient;
+struct FaultClient gLoadedObjectsClient;
 struct GfxMasterList* gGfxMasterDL;
 CfbInfo sGraphCfbInfos[3];
 OSTime sGraphPrevUpdateEndTime;
@@ -27,6 +28,7 @@ OSTime sGraphPrevUpdateEndTime;
 #include "overlays/gamestates/ovl_select/z_select.h"
 #include "overlays/gamestates/ovl_title/z_title.h"
 #include "z_title_setup.h"
+#include "chaos_fuckery.h"
 
 void Graph_FaultClient(void) {
     FaultDrawer_DrawText(30, 100, "ShowFrameBuffer PAGE 0/1");
@@ -126,8 +128,8 @@ void Graph_Init(GraphicsContext* gfxCtx) {
     gfxCtx->xScale = gViConfigXScale;
     gfxCtx->yScale = gViConfigYScale;
     osCreateMesgQueue(&gfxCtx->queue, gfxCtx->msgBuff, ARRAY_COUNT(gfxCtx->msgBuff));
-    Fault_AddClient(&sGraphFaultClient, (void*)Graph_FaultClient, NULL, NULL);
-    Fault_AddAddrConvClient(&sGraphFaultAddrConvClient, Graph_FaultAddrConv, NULL);
+    // Fault_AddClient(&sGraphFaultClient, (void*)Graph_FaultClient, NULL, NULL);
+    // Fault_AddAddrConvClient(&sGraphFaultAddrConvClient, Graph_FaultAddrConv, NULL);
 }
 
 void Graph_Destroy(GraphicsContext* gfxCtx) {
@@ -357,6 +359,8 @@ void Graph_ThreadEntry(void* arg) {
     SysCfb_Init();
     Fault_SetFrameBuffer(gWorkBuffer, SCREEN_WIDTH, SCREEN_HEIGHT);
     Graph_Init(&gfxCtx);
+
+    Chaos_Init();
 
     while (nextOvl) {
         ovl = nextOvl;

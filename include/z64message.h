@@ -323,4 +323,28 @@ extern u8 gPageSwitchNextButtonStatus[6][5];
 extern u16 gBombersNotebookWeekEventFlags[BOMBERS_NOTEBOOK_EVENT_MAX];
 extern s16 gOcarinaSongItemMap[];
 
+#define MESSAGE_ID_WOULD_YOU_WANT_TO_CREATE_A_BANK_ACCOUNT              0x044C
+#define MESSAGE_ID_CONFIRM_SONG_OF_TIME_NORMAL                          0x1B8A
+#define MESSAGE_ID_CONFIRM_SONG_OF_TIME_FLIPPED                         0x354D
+
+#define MESSAGE_ID_CONFIRM_INVERTED_SONG_OF_TIME_SLOW_DOWN_NORMAL       0x1B8C
+#define MESSAGE_ID_CONFIRM_INVERTED_SONG_OF_TIME_SPEED_UP_NORMAL        0x1B8D
+#define MESSAGE_ID_CONFIRM_INVERTED_SONG_OF_TIME_SLOW_DOWN_FLIPPED      0x3552
+#define MESSAGE_ID_CONFIRM_INVERTED_SONG_OF_TIME_SPEED_UP_FLIPPED       0x3553
+
+#define MESSAGE_ID_CONFIRM_OWL_WARP_NORMAL                              0x1B93
+#define MESSAGE_ID_CONFIRM_OWL_WARP_FLIPPED                             0x354E
+#define MESSAGE_ID_WELCOME_TO_THE_BOAT                                  0x09E3
+#define MESSAGE_ID_NOW_ARRIVING_AT_DEKU_PALACE_NORMAL                   0x09E4
+#define MESSAGE_ID_ARE_YOU_DISEMBARKING_NORMAL                          0x09E5
+#define MESSAGE_ID_ARE_YOU_DISEMBARKING_FLIPPED                         0x3550
+#define MESSAGE_ID_ARE_YOU_BOARDING_NORMAL                              0x09E6
+#define MESSAGE_ID_ARE_YOU_BOARDING_FLIPPED                             0x3551
+
+#define MESSAGE_ID_DEPOSIT_OR_NOT_RUPEE_NORMAL                          0x044E
+#define MESSAGE_ID_DEPOSIT_OR_NOT_RUPEE_FLIPPED                         0x3554
+
+#define MESSAGE_ID_DEKU_GUARD_ULTRA_SECRET_MESSAGE                      0x354F
+
+
 #endif

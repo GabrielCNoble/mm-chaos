@@ -86,6 +86,7 @@ extern s32 gFramerateDivisor;
 extern f32 gFramerateDivisorF;
 extern f32 gFramerateDivisorHalf;
 extern f32 gFramerateDivisorThird;
+extern f32 gFrameTime;
 
 
 extern GameStateOverlay gGameStateOverlayTable[GAMESTATE_ID_MAX];

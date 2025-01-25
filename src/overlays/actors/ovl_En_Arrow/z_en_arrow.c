@@ -8,6 +8,9 @@
 #include "attributes.h"
 #include "overlays/effects/ovl_Effect_Ss_Hitmark/z_eff_ss_hitmark.h"
 #include "overlays/effects/ovl_Effect_Ss_Sbn/z_eff_ss_sbn.h"
+#include "chaos_fuckery.h"
+#include "z64actor.h"
+#include "overlays/actors/ovl_En_Bom/z_en_bom.h"
 #include "assets/objects/gameplay_keep/gameplay_keep.h"
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
@@ -17,8 +20,11 @@ void EnArrow_Destroy(Actor* thisx, PlayState* play);
 void EnArrow_Update(Actor* thisx, PlayState* play);
 void EnArrow_Draw(Actor* thisx, PlayState* play);
 
+/* EnArrow_Action_Shoot */
 void func_8088A594(EnArrow* this, PlayState* play);
+/* EnArrow_Action_Flight */
 void func_8088ACE0(EnArrow* this, PlayState* play);
+/* EnArrow_Action_Lodged */
 void func_8088B630(EnArrow* this, PlayState* play);
 void func_8088B6B0(EnArrow* this, PlayState* play);
 
@@ -166,6 +172,13 @@ void EnArrow_Init(Actor* thisx, PlayState* play) {
             Actor_SetScale(&this->actor, 1.0f);
         }
     }
+
+    if(this->unk_262 & CHAOS_ARROW_EFFECT_BOMB)
+    {
+        // this->collider.base.atFlags |= AT_BYPASS_DMG_TABLE;
+        this->collider.elem.atDmgInfo.dmgFlags = DMG_NORMAL_ARROW;
+    }
+
     this->actionFunc = func_8088A594;
 }
 
@@ -263,7 +276,7 @@ void func_8088A594(EnArrow* this, PlayState* play) {
             this->actor.shape.rot.z = 0;
         } else {
             Actor_SetSpeeds(&this->actor, 150.0f);
-            this->unk_260 = 16;
+            this->unk_260 = ENARROW_ARROW_MAX_FLIGHT_TIME;
         }
     }
 }
@@ -313,6 +326,7 @@ void func_8088A894(EnArrow* this, PlayState* play) {
     }
 }
 
+/* hit water? */
 void func_8088AA98(EnArrow* this, PlayState* play) {
     WaterBox* waterBox;
     f32 sp50 = this->actor.world.pos.y;
@@ -369,15 +383,22 @@ void func_8088ACE0(EnArrow* this, PlayState* play) {
     s32 phi_a2 = 0;
     EffectSsSbnInitParams sp84;
     u16 sp82;
-    Actor* sp7C;
+    Actor* hit_actor = NULL;
     f32 sp78;
     f32 sp74;
     f32 temp_f12_2;
     s32 sp50;
 
+    if(this->unk_262 & CHAOS_ARROW_EFFECT_BOMB)
+    {
+        this->collider.elem.atDmgInfo.damage = 32;
+        this->collider.elem.atDmgInfo.dmgFlags = DMG_NORMAL_ARROW;
+        // this->collider.base.atFlags |= AT_BYPASS_DMG_TABLE;
+    }
+
     if ((DECR(this->unk_260) == 0) ||
         ((this->actor.params == ARROW_TYPE_DEKU_BUBBLE) &&
-         ((this->unk_262 != 0) || (phi_a2 = (this->collider.base.atFlags & AT_HIT) != 0)))) {
+         ((this->unk_261 & ARROW_HIT_FLAG_4) || (phi_a2 = (this->collider.base.atFlags & AT_HIT) != 0)))) {
         if (this->actor.params == ARROW_TYPE_DEKU_BUBBLE) {
             if (phi_a2 && (this->collider.elem.atHitElem->elemMaterial != ELEM_MATERIAL_UNK4) &&
                 (this->collider.base.atFlags & AT_BOUNCED)) {
@@ -390,13 +411,13 @@ void func_8088ACE0(EnArrow* this, PlayState* play) {
                 }
             }
 
-            if ((this->unk_262 != 0) || phi_a2) {
+            if ((this->unk_261 & ARROW_HIT_FLAG_4) || phi_a2) {
                 EffectSsStone1_Spawn(play, &this->actor.world.pos, 0);
             }
 
             SoundSource_PlaySfxAtFixedWorldPos(play, &this->actor.world.pos, 20, NA_SE_IT_DEKUNUTS_BUBLE_VANISH);
 
-            if ((this->unk_262 != 0) && (this->actor.wallBgId == BG_ACTOR_MAX)) {
+            if ((this->unk_261 & ARROW_HIT_FLAG_4) && (this->actor.wallBgId == BG_ACTOR_MAX)) {
 
                 Math_Vec3f_Copy(&sp84.pos, &this->actor.world.pos);
                 sp84.colPoly = this->actor.wallPoly;
@@ -408,12 +429,15 @@ void func_8088ACE0(EnArrow* this, PlayState* play) {
         return;
     }
 
+    /* if a magic arrow or deku bubble hit something */
     sp50 = (this->actor.params != ARROW_TYPE_NORMAL_LIT) && (this->actor.params < ARROW_TYPE_DEKU_NUT) &&
            (this->collider.base.atFlags & AT_HIT);
 
-    if (sp50 || (this->unk_262 != 0)) {
+    if (sp50 || (this->unk_261 & ARROW_HIT_FLAG_4)) {
         if (!ARROW_IS_ARROW(this->actor.params)) {
+            /* deku bubble */
             if (sp50) {
+                /* hit something */
                 this->actor.world.pos.x = (this->actor.world.pos.x + this->actor.prevPos.x) * 0.5f;
                 this->actor.world.pos.y = (this->actor.world.pos.y + this->actor.prevPos.y) * 0.5f;
                 this->actor.world.pos.z = (this->actor.world.pos.z + this->actor.prevPos.z) * 0.5f;
@@ -431,40 +455,64 @@ void func_8088ACE0(EnArrow* this, PlayState* play) {
             SoundSource_PlaySfxAtFixedWorldPos(play, &this->actor.world.pos, 20, sp82);
             Actor_Kill(&this->actor);
         } else {
+            /* arrow */
             EffectSsHitmark_SpawnCustomScale(play, EFFECT_HITMARK_WHITE, 150, &this->actor.world.pos);
 
             if (sp50 && (this->collider.elem.atHitElem->elemMaterial != ELEM_MATERIAL_UNK4)) {
-                sp7C = this->collider.base.at;
+                /* magic arrow hit something that's not background? */
+                hit_actor = this->collider.base.at;
 
-                if ((sp7C->update != NULL) && !(this->collider.base.atFlags & AT_BOUNCED) &&
-                    (sp7C->flags & ACTOR_FLAG_CAN_ATTACH_TO_ARROW)) {
-                    this->unk_264 = sp7C;
+                if ((hit_actor->update != NULL) && !(this->collider.base.atFlags & AT_BOUNCED) &&
+                    (hit_actor->flags & ACTOR_FLAG_CAN_ATTACH_TO_ARROW)) {
+                    this->unk_264 = hit_actor;
                     func_8088A894(this, play);
-                    Math_Vec3f_Diff(&sp7C->world.pos, &this->actor.world.pos, &this->unk_268);
-                    sp7C->flags |= ACTOR_FLAG_ATTACHED_TO_ARROW;
+                    Math_Vec3f_Diff(&hit_actor->world.pos, &this->actor.world.pos, &this->unk_268);
+                    hit_actor->flags |= ACTOR_FLAG_ATTACHED_TO_ARROW;
                     this->collider.base.atFlags &= ~AT_HIT;
                     this->actor.speed *= 0.5f;
                     this->actor.velocity.y *= 0.5f;
                 } else {
-                    this->unk_261 |= 1;
-                    this->unk_261 |= 2;
+                    // this->unk_261 |= 1;
+                    // this->unk_261 |= 2;
+                    this->unk_261 |= ARROW_HIT_FLAG_1 | ARROW_HIT_FLAG_2;
                     Math_Vec3f_Copy(&this->actor.world.pos, &this->actor.prevPos);
                     func_8088A7D8(play, this);
                     Actor_PlaySfx(&this->actor, NA_SE_IT_HOOKSHOT_STICK_CRE);
                 }
-            } else if (this->unk_262 != 0) {
+            } else if (this->unk_261 & ARROW_HIT_FLAG_4) {
                 this->actionFunc = func_8088B630;
                 Animation_PlayOnce(&this->arrow.skelAnime, &gameplay_keep_Anim_0128BC);
                 if (this->actor.params >= ARROW_TYPE_NORMAL_LIT) {
-                    this->unk_260 = 60;
+                    this->unk_260 = ENARROW_LIT_ARROW_LODGED_TIME;
                 } else {
-                    this->unk_260 = 20;
+                    this->unk_260 = ENARROW_NORMAL_ARROW_LODGED_TIME;
                 }
                 if (ARROW_IS_MAGICAL(this->actor.params)) {
                     this->actor.draw = NULL;
                 }
                 Actor_PlaySfx(&this->actor, NA_SE_IT_ARROW_STICK_OBJ);
-                this->unk_261 |= 1;
+                this->unk_261 |= ARROW_HIT_FLAG_1;
+            }
+
+            if((this->unk_262 & CHAOS_ARROW_EFFECT_BOMB) && this->unk_261)
+            {
+                EnBom *bomb = (EnBom *)Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_EN_BOM, 
+                    this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
+                    0, 0, 0, BOMB_TYPE_ARROW);
+                bomb->timer = 0;
+
+                // if(hit_actor != NULL)
+                // {
+                //     // hit_actor->colChkInfo.damage += this->collider.info.toucher.damage;
+                //     // hit_actor->colChkInfo.damage = 10;
+                //     // Actor_ApplyDamage(hit_actor);
+                //     hit_actor->colChkInfo.health = 0;
+                //     // hit_actor = this->unk_264;
+                //     // CollisionCheck_SetATvsAC(play, &this->collider.base, &this->collider.info,
+                //     //     &this->actor.world.pos, this->collider.info.atHit, this->collider.info.atHitInfo,
+                //     //     &this->collider.info.atHit->actor->world.pos,)
+                //     // hit_actor->colChkInfo.damage += 64;
+                // }
             }
         }
     } else {
@@ -498,7 +546,8 @@ void func_8088ACE0(EnArrow* this, PlayState* play) {
             }
             Actor_PlaySfx_Flagged(&this->actor, NA_SE_IT_DEKUNUTS_BUBLE_SHOT_LEVEL - SFX_FLAG);
         } else if (this->unk_260 < 7) {
-            this->actor.gravity = -0.4f;
+            /* arrow is near death, so make it fall abruptly */
+            this->actor.gravity = ENARROW_ARROW_NEAR_DEATH_GRAVITY;
         }
 
         Math_Vec3f_Copy(&this->unk_228, &this->actor.world.pos);
@@ -510,11 +559,18 @@ void func_8088ACE0(EnArrow* this, PlayState* play) {
             }
             Actor_UpdatePos(&this->actor);
         } else {
+            if(this->unk_262 & CHAOS_ARROW_EFFECT_WEIRD)
+            {
+                this->actor.world.rot.x += Rand_S16Offset(-1000, 2000);
+                this->actor.world.rot.y += Rand_S16Offset(-1000, 2000);
+                Actor_SetSpeeds(&this->actor, 150.0f);
+            }
             Actor_MoveWithGravity(&this->actor);
         }
 
-        if ((this->unk_262 = BgCheck_ProjectileLineTest(&play->colCtx, &this->actor.prevPos, &this->actor.world.pos,
-                                                        &sp9C, &this->actor.wallPoly, true, true, true, true, &bgId))) {
+        if (BgCheck_ProjectileLineTest(&play->colCtx, &this->actor.prevPos, &this->actor.world.pos,
+                                                        &sp9C, &this->actor.wallPoly, true, true, true, true, &bgId)) {
+            this->unk_261 |= ARROW_HIT_FLAG_4;
             // `func_800B90AC` only returns a boolean, and does not process any code
             func_800B90AC(play, &this->actor, this->actor.wallPoly, bgId, &sp9C);
             Math_Vec3f_Copy(&this->actor.world.pos, &sp9C);
@@ -546,7 +602,7 @@ void func_8088ACE0(EnArrow* this, PlayState* play) {
                 Math_Vec3f_Sum(&this->actor.world.pos, &this->unk_268, &this->unk_264->world.pos);
             }
 
-            if ((this->unk_262 != 0) && (this->unk_264 != NULL)) {
+            if ((this->unk_261 & ARROW_HIT_FLAG_4) && (this->unk_264 != NULL)) {
                 this->unk_264->flags &= ~ACTOR_FLAG_ATTACHED_TO_ARROW;
                 this->unk_264 = NULL;
             }
@@ -622,7 +678,7 @@ void func_8088B88C(PlayState* play, EnArrow* this, EnArrowUnkStruct* arg2) {
     Vec3f* sp4C;
     Vec3f sp40;
     Vec3f sp34;
-    s32 sp30;
+    s32 draw_trail;
 
     Matrix_MultVec3f(&arg2->unk_48, &this->unk_234);
     if (func_8088ACE0 == this->actionFunc) {
@@ -634,15 +690,19 @@ void func_8088B88C(PlayState* play, EnArrow* this, EnArrowUnkStruct* arg2) {
         Matrix_MultVec3f(&sp4C[0], &sp40);
         Matrix_MultVec3f(&sp4C[1], &sp34);
         if (this->actor.params < ARROW_TYPE_DEKU_NUT) {
-            sp30 = ARROW_IS_ARROW(this->actor.params);
+            draw_trail = !(this->unk_262 & CHAOS_ARROW_EFFECT_BUCKSHOT) || 
+                         !((ENARROW_ARROW_MAX_FLIGHT_TIME - (this->unk_260)) & 0x3);
+            draw_trail &= ARROW_IS_ARROW(this->actor.params);
+
             if (this->unk_264 == NULL) {
-                sp30 &= func_80126440(play, &this->collider, &this->unk_244, &sp40, &sp34);
-            } else if (sp30 && (sp40.x == this->unk_244.tip.x) && (sp40.y == this->unk_244.tip.y) &&
+                draw_trail &= func_80126440(play, &this->collider, &this->unk_244, &sp40, &sp34);
+            } else if (draw_trail && (sp40.x == this->unk_244.tip.x) && (sp40.y == this->unk_244.tip.y) &&
                        (sp40.z == this->unk_244.tip.z) && (sp34.x == this->unk_244.base.x) &&
                        (sp34.y == this->unk_244.base.y) && (sp34.z == this->unk_244.base.z)) {
-                sp30 = false;
+                draw_trail = false;
             }
-            if (sp30) {
+
+            if (draw_trail) {
                 EffectBlure_AddVertex(Effect_GetByIndex(this->unk_240), &sp40, &sp34);
             }
         }

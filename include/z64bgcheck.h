@@ -180,7 +180,7 @@ typedef enum WallType {
 #define WALL_FLAG_0 (1 << 0)
 #define WALL_FLAG_1 (1 << 1)
 #define WALL_FLAG_2 (1 << 2)
-#define WALL_FLAG_3 (1 << 3)
+#define WALL_FLAG_3 (1 << 3) // climbable wall
 #define WALL_FLAG_4 (1 << 4)
 #define WALL_FLAG_5 (1 << 5)
 #define WALL_FLAG_6 (1 << 6)

@@ -374,23 +374,33 @@ void EnBigokuta_PlayDeathCutscene(EnBigokuta* this, PlayState* play) {
             Actor_SpawnIceEffects(play, &this->picto.actor, this->bodyPartsPos, BIGOKUTA_BODYPART_MAX, 2, 0.5f, 0.35f);
             EnBigokuta_SetupDeathEffects(this);
         }
-    } else if (CutsceneManager_IsNext(this->csId)) {
-        CutsceneManager_Start(this->csId, &this->picto.actor);
-
-        if (!CHECK_EVENTINF(EVENTINF_41) && !CHECK_EVENTINF(EVENTINF_35)) {
-            Player_SetCsAction(play, &this->picto.actor, PLAYER_CSACTION_WAIT);
-        } else {
-            player = GET_PLAYER(play);
-            player->stateFlags1 |= PLAYER_STATE1_20;
-        }
-
-        if (this->drawDmgEffType == ACTOR_DRAW_DMGEFF_FROZEN_NO_SFX) {
-            this->timer = 3;
-        } else {
-            EnBigokuta_SetupDeathEffects(this);
-        }
     } else {
-        CutsceneManager_Queue(this->csId);
+        if(Player_IsInBeybladeMode(play, player) && this->bodyCollider.elem.acHit == &player->cylinder.base)
+        {
+            /* Beyblade Link just tears through, no time for cutesy cutscenes */
+            EnBigokuta_SetupDeathEffects(this);
+            if (EN_BIGOKUTA_GET_SWITCH_FLAG(&this->picto.actor) != 0xFF) 
+            {
+                Flags_SetSwitch(play, EN_BIGOKUTA_GET_SWITCH_FLAG(&this->picto.actor));
+            }
+        }
+        else if (CutsceneManager_IsNext(this->csId)) {
+            CutsceneManager_Start(this->csId, &this->picto.actor);
+
+            if (!CHECK_EVENTINF(EVENTINF_41) && !CHECK_EVENTINF(EVENTINF_35)) {
+                Player_SetCsAction(play, &this->picto.actor, PLAYER_CSACTION_WAIT);
+            } else {
+                player->stateFlags1 |= PLAYER_STATE1_20;
+            }
+
+            if (this->drawDmgEffType == ACTOR_DRAW_DMGEFF_FROZEN_NO_SFX) {
+                this->timer = 3;
+            } else {
+                EnBigokuta_SetupDeathEffects(this);
+            }
+        } else {
+            CutsceneManager_Queue(this->csId);
+        }
     }
 }
 

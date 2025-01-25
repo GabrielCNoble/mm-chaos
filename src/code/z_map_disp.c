@@ -7,6 +7,7 @@
 #include "assets/objects/gameplay_keep/gameplay_keep.h"
 #include "overlays/actors/ovl_Door_Shutter/z_door_shutter.h"
 #include "overlays/kaleido_scope/ovl_kaleido_scope/z_kaleido_scope.h"
+#include "chaos_fuckery.h"
 
 void MapDisp_DestroyMapI(PlayState* play);
 void MapDisp_InitMapI(PlayState* play);
@@ -151,6 +152,12 @@ void MapDisp_DrawMinimapRoom(PlayState* play, TexturePtr texture, s32 x, s32 y, 
     Color_RGBA8 color;
     s32 drawType;
 
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    {
+        x += Rand_S16Offset(-12, 24);
+        y += Rand_S16Offset(-12, 24);
+    }
+
     if ((mapDataRoom->mapId == MAP_DATA_NO_MAP) || (texture == NULL)) {
         return;
     }
@@ -271,6 +278,12 @@ void MapDisp_Minimap_DrawActorIcon(PlayState* play, Actor* actor) {
                sMapDisp.minimapCurX - sMapDisp.minimapBaseX + texOffsetX;
         posY = -(s32)((actor->world.pos.z - mapDataRoom->centerZ) * scaleFrac) + sMapDisp.minimapBaseY +
                sMapDisp.minimapCurY - sMapDisp.minimapBaseY + texOffsetY;
+    }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    {
+        posX += Rand_S16Offset(-8, 16);
+        posY += Rand_S16Offset(-8, 16);
     }
 
     if ((posX > 0) && (posX < 0x3FF) && (posY > 0) && (posY < 0x3FF)) {
@@ -409,6 +422,13 @@ void MapDisp_Minimap_DrawDoorActor(PlayState* play, Actor* actor) {
                     sMapDisp.minimapBaseY) +
                    texOffsetY;
         }
+
+        if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+        {
+            posX += Rand_S16Offset(-8, 16);
+            posY += Rand_S16Offset(-8, 16);
+        }
+
         if ((posX > 0) && (posX < 0x3FF) && (posY > 0) && (posY < 0x3FF)) {
             OPEN_DISPS(play->state.gfxCtx);
 
@@ -979,6 +999,12 @@ void MapDisp_Minimap_DrawRedCompassIcon(PlayState* play, s32 x, s32 z, s32 rot) 
                (sMapDisp.minimapCurY - sMapDisp.minimapBaseY) + texOffsetY;
     }
 
+    if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    {
+        posX += Rand_S16Offset(-8, 16);
+        posY += Rand_S16Offset(-8, 16);
+    }
+
     if ((posX > 0) && (posX < 0x3FF) && (posY > 0) && (posY < 0x3FF)) {
         OPEN_DISPS(play->state.gfxCtx);
 
@@ -1359,6 +1385,13 @@ void MapDisp_DrawRooms(PlayState* play, s32 viewX, s32 viewY, s32 viewWidth, s32
         } else {
             continue;
         }
+
+        // if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+        // {
+        //     texPosX += Rand_S16Offset(-12, 24);
+        //     texPosY += Rand_S16Offset(-12, 24);
+        // }
+
         gSPTextureRectangle(POLY_OPA_DISP++, (texPosX << 2), (texPosY << 2), (texPosX + texWidth) << 2,
                             (texPosY + texHeight) << 2, 0, s, t, dsdx, dtdy);
         gDPPipeSync(POLY_OPA_DISP++);
@@ -1450,6 +1483,12 @@ void MapDisp_DrawChests(PlayState* play, s32 viewX, s32 viewY, s32 viewWidth, s3
         texPosY = (s32)((((mapDataChests[i].z - (f32)sMapDisp.sceneMidZ) * scaleFrac) - offsetZ) +
                         ((viewHeight / 2) + viewY));
 
+        // if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+        // {
+        //     texPosX += Rand_S16Offset(-12, 24);
+        //     texPosY += Rand_S16Offset(-12, 24);
+        // }
+
         gSPTextureRectangle(POLY_OPA_DISP++, texPosX << 2, texPosY << 2, (texPosX + 8) << 2, (texPosY + 8) << 2,
                             G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
     }
@@ -1502,6 +1541,13 @@ void MapDisp_DrawRoomExits(PlayState* play, s32 viewX, s32 viewY, s32 viewWidth,
                                   ((viewWidth / 2) + viewX);
                         texPosY = ((f32)sTransitionActors[i].pos.z - sMapDisp.sceneMidZ) * scaleFrac +
                                   ((viewHeight / 2) + viewY);
+
+                        // if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+                        // {
+                        //     texPosX += Rand_S16Offset(-12, 24);
+                        //     texPosY += Rand_S16Offset(-12, 24);
+                        // }
+
                         gSPTextureRectangle(POLY_OPA_DISP++, ((texPosX - 1) << 2), ((texPosY - 1) << 2),
                                             ((texPosX + 1) << 2), ((texPosY + 1) << 2), G_TX_RENDERTILE, 0, 0, 1 << 10,
                                             1 << 10);
@@ -1563,6 +1609,13 @@ void MapDisp_DrawBossIcon(PlayState* play, s32 viewX, s32 viewY, s32 viewWidth, 
                       ((viewWidth / 2) + viewX);
             texPosY = ((((f32)sTransitionActors[i].pos.z - sMapDisp.sceneMidZ) * scaleFrac) - offsetZ) +
                       ((viewHeight / 2) + viewY);
+
+            // if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+            // {
+            //     texPosX += Rand_S16Offset(-12, 24);
+            //     texPosY += Rand_S16Offset(-12, 24);
+            // }
+
             gSPTextureRectangle(POLY_OPA_DISP++, texPosX << 2, texPosY << 2, (texPosX + 8) << 2, (texPosY + 8) << 2,
                                 G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
         }
@@ -1620,6 +1673,14 @@ void MapDisp_DrawDungeonFloorSelect(PlayState* play) {
     s32 pad;
     s32 storey;
     s32 dungeonSceneSharedIndex = 0;
+    s32 chaos_x = 0;
+    s32 chaos_y = 0;
+
+    // if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    // {
+    //     chaos_x = Rand_S16Offset(-8, 16);
+    //     chaos_y = Rand_S16Offset(-8, 16);
+    // }
 
     if ((sMapDisp.mapDataScene != NULL) && (sSceneNumRooms != 0) && !MapDisp_SkipDrawDungeonMap(play)) {
         if (Map_IsInBossScene(play)) {
@@ -1674,10 +1735,10 @@ void MapDisp_DrawDungeonFloorSelect(PlayState* play) {
             G_IM_FMT_IA, G_IM_SIZ_8b, 24, 16, 0, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK,
             G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
 
-        texULX = 80;
-        texLRX = 106;
-        texULY = (5 + (pauseCtx->cursorMapDungeonItem * 0xF));
-        texLRY = texULY + 16;
+        texULX = 80 + chaos_x;
+        texLRX = 106 + chaos_y;
+        texULY = (5 + (pauseCtx->cursorMapDungeonItem * 0xF)) + chaos_x;
+        texLRY = texULY + 16 + chaos_y;
         if ((pauseCtx->cursorSpecialPos == 0) && (pauseCtx->cursorXIndex[1] == 0)) {
             texLRX++;
             texULX--;
@@ -1751,6 +1812,24 @@ void MapDisp_DrawDungeonMap(PlayState* play) {
     s32 dungeonSceneSharedIndex = 0;
     s32 offsetX = 0;
     s32 offsetY = 0;
+
+    // s32 chaos_x[4];
+    // s32 chaos_y[4];
+
+    // if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
+    // {
+    //     u32 index;
+    //     for(index = 0; index < ARRAY_COUNT(chaos_x); index++)
+    //     {
+    //         chaos_x[index] += Rand_S16Offset(-12, 24);
+    //         chaos_y[index] += Rand_S16Offset(-12, 24);
+    //     }
+    // }
+    // else
+    // {
+    //     bzero(chaos_x, sizeof(chaos_x));
+    //     bzero(chaos_y, sizeof(chaos_y));
+    // }
 
     if (MapDisp_SkipDrawDungeonMap(play)) {
         return;

@@ -8,6 +8,7 @@
 #include "z64rumble.h"
 #include "overlays/actors/ovl_En_Clear_Tag/z_en_clear_tag.h"
 #include "assets/objects/gameplay_keep/gameplay_keep.h"
+#include "chaos_fuckery.h"
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
@@ -142,7 +143,14 @@ void EnBom_Init(Actor* thisx, PlayState* play) {
         play->actorCtx.flags |= ACTORCTX_FLAG_0;
         this->timer = gSaveContext.powderKegTimer;
     } else {
-        this->timer = 70;
+        if(Chaos_IsCodeActive(CHAOS_CODE_RANDOM_BOMB_TIMER) && this->actor.params != BOMB_TYPE_ARROW)
+        {
+            this->timer = 10 + Rand_Next() % 300;
+        }
+        else
+        {
+            this->timer = 70;
+        }
     }
 
     Collider_InitCylinder(play, &this->collider1);
@@ -164,6 +172,11 @@ void EnBom_Init(Actor* thisx, PlayState* play) {
     this->actor.shape.rot.z &= 0xFF;
     if (ENBOM_GET_80(&this->actor)) {
         this->actor.shape.rot.z |= 0xFF00;
+    }
+
+    if(this->actor.params == BOMB_TYPE_ARROW)
+    {
+        this->collider2.elements[0].base.atDmgInfo.damage = 32;
     }
 
     this->collider2.elements[0].dim.worldSphere.center.x = this->actor.world.pos.x;
@@ -478,7 +491,7 @@ void EnBom_Update(Actor* thisx, PlayState* play) {
         Actor_UpdateBgCheckInfo(play, thisx, 35.0f, 10.0f, 36.0f,
                                 UPDBGCHECKINFO_FLAG_1 | UPDBGCHECKINFO_FLAG_2 | UPDBGCHECKINFO_FLAG_4 |
                                     UPDBGCHECKINFO_FLAG_8 | UPDBGCHECKINFO_FLAG_10);
-        if (thisx->params == BOMB_TYPE_BODY) {
+        if (thisx->params == BOMB_TYPE_BODY || thisx->params == BOMB_TYPE_ARROW) {
             static Vec3us D_80872ED4[] = {
                 { 40, 20, 100 },
                 { 300, 60, 600 },

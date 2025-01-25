@@ -63,6 +63,9 @@
 #define CLAMP_MAX(x, max) ((x) > (max) ? (max) : (x))
 #define CLAMP_MIN(x, min) ((x) < (min) ? (min) : (x))
 
+
+#define TC_10_5(i, f) ((s16)((((i) << 5)) | (s16)((f) * 0x1f)) )
+
 #define SWAP(type, a, b)    \
     {                       \
         type _temp = (a);   \

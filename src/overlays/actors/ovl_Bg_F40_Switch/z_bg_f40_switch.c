@@ -7,6 +7,7 @@
 #include "z_bg_f40_switch.h"
 #include "z64rumble.h"
 #include "assets/objects/object_f40_switch/object_f40_switch.h"
+#include "chaos_fuckery.h"
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED)
 
@@ -115,6 +116,11 @@ void BgF40Switch_Init(Actor* thisx, PlayState* play) {
     if (!sBgF40SwitchGlobalsInitialized) {
         sBgF40SwitchLastUpdateFrame = play->gameplayFrames;
         sBgF40SwitchGlobalsInitialized = true;
+    }
+
+    if(!Chaos_GetConfigFlag(CHAOS_CONFIG_STONE_TOWER_CLIMB_ACTOR_CHASE))
+    {
+        thisx->flags |= ACTOR_FLAG_NO_CHASE;
     }
 }
 
