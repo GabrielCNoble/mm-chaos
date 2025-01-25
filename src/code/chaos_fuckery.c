@@ -1032,7 +1032,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
 
         // if(Chaos_GetConfigFlag(CHAOS_CONFIG_CHAOS))
         // {
-        // return; 
+        // return;  
         // }
 
         if(chaos_elapsed_seconds > 0)
@@ -3366,7 +3366,7 @@ void Chaos_SetV046ConfigDefaults(void)
 void Chaos_SetV050ConfigDefaults(void)
 {
     Chaos_SetConfigFlag(CHAOS_CONFIG_USE_PERIODIC_EFFECT_PROB, false);
-    Chaos_SetConfigFlag(CHAOS_CONFIG_RANDOM_MOUNTAIN_VILLAGE_CLIMB, true);
+    Chaos_SetConfigFlag(CHAOS_CONFIG_RANDOM_MOUNTAIN_VILLAGE_CLIMB, false);
     Chaos_SetConfigFlag(CHAOS_CONFIG_GIVE_FIERCE_DEITY_MASK, true);
 }
 
@@ -3527,6 +3527,25 @@ void Chaos_RandomizeMountainVillageClimb(struct PlayState *play)
     Vtx *segment = gMountainVillageLadderSegments[0];
     Gfx *gfx = gMountainVillageLadderDL;
 
+    u32 climbable_type;
+    u32 wall_type;
+    u32 scene = gSaveContext.save.entrance >> 9;
+
+    if(scene == ENTR_SCENE_MOUNTAIN_VILLAGE_WINTER)
+    {
+        climbable_type = 3;
+        wall_type = 2;
+    }
+    // else if(scene == ENTR_SCENE_MOUNTAIN_VILLAGE_SPRING)
+    // {
+    //     climbable_type = 0;
+    //     wall_type = 14;
+    // }
+    else
+    {
+        return;
+    }
+
     if(!Chaos_GetConfigFlag(CHAOS_CONFIG_RANDOM_MOUNTAIN_VILLAGE_CLIMB))
     {
         gSPDisplayList(gfx++, object_yukimura_obj_DL_000870);
@@ -3573,19 +3592,19 @@ void Chaos_RandomizeMountainVillageClimb(struct PlayState *play)
                     /* last segment is always vertical, so add quads to both sides of the segment */
                     if(min_x > CHAOS_MOUNTAIN_VILLAGE_LADDER_MIN_X)
                     {
-                        Chaos_AppendCollisionQuad(2, min_x, CHAOS_MOUNTAIN_VILLAGE_LADDER_MIN_X, max_y, min_y, &play->colCtx);
+                        Chaos_AppendCollisionQuad(wall_type, min_x, CHAOS_MOUNTAIN_VILLAGE_LADDER_MIN_X, max_y, min_y, &play->colCtx);
                     }
 
                     if(max_x < CHAOS_MOUNTAIN_VILLAGE_LADDER_MAX_X)
                     {
-                        Chaos_AppendCollisionQuad(2, CHAOS_MOUNTAIN_VILLAGE_LADDER_MAX_X, max_x, max_y, min_y, &play->colCtx);
+                        Chaos_AppendCollisionQuad(wall_type, CHAOS_MOUNTAIN_VILLAGE_LADDER_MAX_X, max_x, max_y, min_y, &play->colCtx);
                     }
                 }
 
                 segment[0].v.tc[1] *= segment_length;       
                 segment[3].v.tc[1] *= segment_length;
 
-                Chaos_AppendCollisionQuad(3, max_x, min_x, max_y, min_y, &play->colCtx);
+                Chaos_AppendCollisionQuad(climbable_type, max_x, min_x, max_y, min_y, &play->colCtx);
             }
             break;
 
@@ -3630,19 +3649,19 @@ void Chaos_RandomizeMountainVillageClimb(struct PlayState *play)
                 min_y = max_y - CHAOS_MOUNTAIN_VILLAGE_LADDER_HALF_HEIGHT * 2.0f;
 
                 /* quad under horizontal segment */
-                Chaos_AppendCollisionQuad(2, max_x, min_x, min_y, prev_min_y, &play->colCtx);
+                Chaos_AppendCollisionQuad(wall_type, max_x, min_x, min_y, prev_min_y, &play->colCtx);
 
                 if(x_step < 0.0f)
                 {
                     /* quad to the left of the horizontal segment and to the right of the vertical segment */
                     if(min_x > CHAOS_MOUNTAIN_VILLAGE_LADDER_MIN_X)
                     {
-                        Chaos_AppendCollisionQuad(2, min_x, CHAOS_MOUNTAIN_VILLAGE_LADDER_MIN_X, max_y, prev_min_y, &play->colCtx);
+                        Chaos_AppendCollisionQuad(wall_type, min_x, CHAOS_MOUNTAIN_VILLAGE_LADDER_MIN_X, max_y, prev_min_y, &play->colCtx);
                     }
 
                     if(prev_max_x < CHAOS_MOUNTAIN_VILLAGE_LADDER_MAX_X)
                     {
-                        Chaos_AppendCollisionQuad(2, CHAOS_MOUNTAIN_VILLAGE_LADDER_MAX_X, prev_max_x, max_y, prev_min_y, &play->colCtx);
+                        Chaos_AppendCollisionQuad(wall_type, CHAOS_MOUNTAIN_VILLAGE_LADDER_MAX_X, prev_max_x, max_y, prev_min_y, &play->colCtx);
                     }
                 }
                 else
@@ -3650,16 +3669,16 @@ void Chaos_RandomizeMountainVillageClimb(struct PlayState *play)
                     /* quad to the right of the horizontal segment and to the left of the vertical segment */
                     if(max_x < CHAOS_MOUNTAIN_VILLAGE_LADDER_MAX_X)
                     {
-                        Chaos_AppendCollisionQuad(2, CHAOS_MOUNTAIN_VILLAGE_LADDER_MAX_X, max_x, max_y, prev_min_y, &play->colCtx);
+                        Chaos_AppendCollisionQuad(wall_type, CHAOS_MOUNTAIN_VILLAGE_LADDER_MAX_X, max_x, max_y, prev_min_y, &play->colCtx);
                     }
 
                     if(prev_min_x > CHAOS_MOUNTAIN_VILLAGE_LADDER_MIN_X)
                     {
-                        Chaos_AppendCollisionQuad(2, prev_min_x, CHAOS_MOUNTAIN_VILLAGE_LADDER_MIN_X, max_y, prev_min_y, &play->colCtx);
+                        Chaos_AppendCollisionQuad(wall_type, prev_min_x, CHAOS_MOUNTAIN_VILLAGE_LADDER_MIN_X, max_y, prev_min_y, &play->colCtx);
                     }
                 }
 
-                Chaos_AppendCollisionQuad(3, max_x, min_x, max_y, min_y, &play->colCtx);
+                Chaos_AppendCollisionQuad(wall_type, max_x, min_x, max_y, min_y, &play->colCtx);
 
                 x_step = fabsf(x_step);
                 segment[2].v.tc[0] *= (s32)x_step;

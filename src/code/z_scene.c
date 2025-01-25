@@ -437,7 +437,6 @@ void Scene_CommandActorCutsceneCamList(PlayState* play, SceneCmd* cmd) {
 void Scene_CommandCollisionHeader(PlayState* play, SceneCmd* cmd) {
     CollisionHeader* colHeaderTemp;
     CollisionHeader* colHeader;
-    s32 scene = gSaveContext.save.entrance >> 9;
 
     colHeaderTemp = Lib_SegmentedToVirtual(cmd->colHeader.segment);
     colHeader = colHeaderTemp;
@@ -456,11 +455,8 @@ void Scene_CommandCollisionHeader(PlayState* play, SceneCmd* cmd) {
         colHeader->waterBoxes = Lib_SegmentedToVirtual(colHeader->waterBoxes);
     }
 
-    if(scene == ENTR_SCENE_MOUNTAIN_VILLAGE_SPRING || scene == ENTR_SCENE_MOUNTAIN_VILLAGE_WINTER)
-    {
-        play->colCtx.colHeader = colHeader;
-        Chaos_RandomizeMountainVillageClimb(play);
-    }
+    play->colCtx.colHeader = colHeader;
+    Chaos_RandomizeMountainVillageClimb(play);
 
     BgCheck_Allocate(&play->colCtx, play, colHeader);
 }

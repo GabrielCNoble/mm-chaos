@@ -13231,10 +13231,10 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // return;
     }
 
-    // if(CHECK_BTN_ANY(input->cur.button, BTN_R))
-    // {
-    //     this->actor.velocity.y = 10.0f;
-    // }
+    if(CHECK_BTN_ANY(input->cur.button, BTN_R))
+    {
+        // this->actor.velocity.y = 10.0f;
+    }
  
     if(CHECK_BTN_ANY(input->press.button, BTN_R))
     {
