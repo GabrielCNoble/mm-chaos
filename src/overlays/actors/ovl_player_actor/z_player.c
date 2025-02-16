@@ -11503,7 +11503,7 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     // gSaveContext.save.saveInfo.inventory.items[SLOT_SWORD_GREAT_FAIRY] = ITEM_SWORD_GREAT_FAIRY;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_DEKU] = ITEM_MASK_DEKU;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
-    gSaveContext.save.saveInfo.inventory.items[SLOT_LENS_OF_TRUTH] = ITEM_LENS_OF_TRUTH;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_LENS_OF_TRUTH] = ITEM_LENS_OF_TRUTH;
 
     // gSaveContext.save.saveInfo.playerData.magicLevel = 1;
     // gSaveContext.save.saveInfo.playerData.isMagicAcquired = true;

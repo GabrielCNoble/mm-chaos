@@ -2762,17 +2762,20 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     {
         if(!is_lunatic)
         {
-            if(TIME_UNTIL_MOON_CRASH > CLOCK_TIME(6, 0))
+            if(has_ocarina)
             {
-                /* start random moon crashes only if we're not close to the real one */
-                Chaos_EnableCode(CHAOS_CODE_MOON_CRASH, disruptive_prob_scale);
-            }
+                if(TIME_UNTIL_MOON_CRASH > CLOCK_TIME(6, 0))
+                {
+                    /* start random moon crashes only if we're not close to the real one */
+                    Chaos_EnableCode(CHAOS_CODE_MOON_CRASH, disruptive_prob_scale);
+                }
 
-            if(Chaos_TimeUntilMoonCrash() > CLOCK_TIME(4, 0) && player->transformation != PLAYER_FORM_FIERCE_DEITY && has_ocarina)
-            {
-                /* activate fast time only if there's enough time for the player to react and the player
-                can actually play the ocarina */
-                Chaos_EnableCode(CHAOS_CODE_FAST_TIME, gChaosContext.periodic_probability_scale);
+                if(Chaos_TimeUntilMoonCrash() > CLOCK_TIME(4, 0) && player->transformation != PLAYER_FORM_FIERCE_DEITY)
+                {
+                    /* activate fast time only if there's enough time for the player to react and the player
+                    can actually play the ocarina */
+                    Chaos_EnableCode(CHAOS_CODE_FAST_TIME, gChaosContext.periodic_probability_scale);
+                }
             }
         }
         else
