@@ -16649,6 +16649,8 @@ void Player_Action_7(Player* this, PlayState* play) {
     // gPlayerAction = 7;
     Chaos_AppendActionChange(play, 7);
 
+    Player_DecelerateToZero(this);
+
     if (Player_TryActionHandlerList(play, this, sActionHandlerList4, true)) {
         return;
     }
