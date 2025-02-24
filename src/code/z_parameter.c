@@ -3426,10 +3426,10 @@ void Interface_SetBButtonInterfaceDoAction(PlayState* play, s16 bButtonDoAction)
  */
 s32 Health_ChangeBy(PlayState* play, s16 healthChange) {
 
-    s16 heatlh_change = healthChange;
+    s16 health_change = healthChange;
     if(Chaos_IsCodeActive(CHAOS_CODE_SWAP_HEAL_AND_HURT))
     {
-        heatlh_change = -heatlh_change;
+        health_change = -health_change;
     }
 
     if (healthChange > 0) {
@@ -3438,27 +3438,28 @@ s32 Health_ChangeBy(PlayState* play, s16 healthChange) {
     else if (healthChange < 0) 
     {
         if(gSaveContext.save.saveInfo.playerData.doubleDefense) {
-            heatlh_change >>= 1;
+            health_change /= 2;
         }
+        
         if(Chaos_IsCodeActive(CHAOS_CODE_INVINCIBLE))
         {
-            heatlh_change = 0;
+            health_change = 0;
         }
         else if(Chaos_IsCodeActive(CHAOS_CODE_ONE_HIT_KO))
         {
-            heatlh_change = -gSaveContext.save.saveInfo.playerData.health;
+            health_change = -gSaveContext.save.saveInfo.playerData.health;
         }
-        else if(Chaos_IsCodeActive(CHAOS_CODE_BEER_GOGGLES))
+        else if(Chaos_IsCodeActive(CHAOS_CODE_BEER_GOGGLES) && health_change < 0)
         {
             /* he's drunk, what do you expect? */
-            heatlh_change /= 4;
+            health_change /= 4;
         }
     }
 
-    gSaveContext.save.saveInfo.playerData.health += heatlh_change;
+    gSaveContext.save.saveInfo.playerData.health += health_change;
 
-    if (((void)0, gSaveContext.save.saveInfo.playerData.health) >
-        ((void)0, gSaveContext.save.saveInfo.playerData.healthCapacity)) {
+    if (gSaveContext.save.saveInfo.playerData.health >
+        gSaveContext.save.saveInfo.playerData.healthCapacity) {
         gSaveContext.save.saveInfo.playerData.health = gSaveContext.save.saveInfo.playerData.healthCapacity;
     }
 

@@ -5,6 +5,12 @@
 #include "global.h"
 #include "assets/objects/object_arwing/object_arwing.h"
 
+typedef enum
+{
+    ARWING_LASER_TYPE_NORMAL,
+    ARWING_LASER_TYPE_FRIENDLY,
+}ArwingLaserType;
+
 typedef struct EnArwingLaser
 {
     Actor               actor;

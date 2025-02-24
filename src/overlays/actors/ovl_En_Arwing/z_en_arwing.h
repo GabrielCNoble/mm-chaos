@@ -10,7 +10,8 @@ struct EnArwing;
 typedef enum {
     /* 0x00 */ ARWING_CUTSCENE_ARWING = 0,
     /* 0x01 */ ARWING_ARWING = 1,
-    /* 0x64 */ ARWING_LASER = 100
+               ARWING_FRIENDLY = 2,
+    // /* 0x64 */ ARWING_LASER = 100
 } ArwingType;
 
 typedef enum {
@@ -49,12 +50,12 @@ typedef enum {
     /* 0x03 */ ARWING_TIMER_COUNT
 } ArwingTimers;
 
-struct EnArwingLaser
-{
-    Vec3f               position;
-    Vec3s               rotation;
-    ColliderCylinder    collider;
-};
+// struct EnArwingLaser
+// {
+//     Vec3f               position;
+//     Vec3s               rotation;
+//     ColliderCylinder    collider;
+// };
 
 #define EN_ARWING_MAX_LASORS 16
 
@@ -74,6 +75,7 @@ typedef struct EnArwing {
     /* 0x0186 */ s16                deathTimer;
     /* 0x0188 */ Vec3f              floorTangent;
     /* 0x0194 */ ColliderCylinder   collider;
+                 Actor *            target_actor;
                 //  u8                 laser_count;
     // struct EnArwingLaser            lasers[EN_ARWING_MAX_LASORS];
     // /* 0x01E0 */ u8 cutsceneMode;

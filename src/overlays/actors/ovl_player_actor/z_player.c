@@ -17,6 +17,7 @@
 #include "overlays/actors/ovl_Arms_Hook/z_arms_hook.h"
 #include "overlays/actors/ovl_Door_Spiral/z_door_spiral.h"
 #include "overlays/actors/ovl_Door_Shutter/z_door_shutter.h"
+#include "overlays/actors/ovl_En_Arwing/z_en_arwing.h"
 #include "overlays/actors/ovl_En_Arrow/z_en_arrow.h"
 #include "overlays/actors/ovl_En_Bom/z_en_bom.h"
 #include "overlays/actors/ovl_En_Boom/z_en_boom.h"
@@ -13183,8 +13184,9 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // Chaos_ActivateCode(CHAOS_CODE_DIE, 1);   
         // Chaos_ActivateCode(CHAOS_CODE_RANDOM_KNOCKBACK, 20);
         // gChaosContext.link.random_knockback_timer = 1;
-        // Actor_Spawn(&play->actorCtx, play, ACTOR_EN_DNS, 
-        //     this->actor.world.pos.x, this->actor.world.pos.y + 20.0f, this->actor.world.pos.z, 0, 0, 0, 0);
+        // Chaos_SpawnActor(&play->actorCtx, play, ACTOR_EN_ARWING, 
+        //     this->actor.world.pos.x, this->actor.world.pos.y + 20.0f, this->actor.world.pos.z, 0, 0, 0, ARWING_FRIENDLY);
+        Chaos_StartMoonCrash();
         // Camera_ChangeSetting(Play_GetCamera(play, CAM_ID_MAIN), CAM_SET_BIRDS_EYE_VIEW_0);
         // Chaos_ActivateCode(CHAOS_CODE_LIFTOFF, 1);
         // Chaos_ActivateCode(CHAOS_CODE_BOMB_ARROWS, 120);

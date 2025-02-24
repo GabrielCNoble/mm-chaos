@@ -1019,4 +1019,6 @@ s32 Actor_TrackPlayerSetFocusHeight(struct PlayState* play, Actor* actor, Vec3s*
                                     f32 focusHeight);
 s32 Actor_TrackPlayer(struct PlayState* play, Actor* actor, Vec3s* headRot, Vec3s* torsoRot, Vec3f focusPos);
 
+Actor *Attention_FindClosestEnemyToPlayer(struct PlayState *play, struct Player *player);
+
 #endif

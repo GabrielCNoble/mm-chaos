@@ -1,4 +1,5 @@
 #include "z_en_arwing.h"
+#include "overlays/actors/ovl_En_Arwing_Laser/z_en_arwing_laser.h"
 #include "libc/math.h"
 #include "overlays/actors/ovl_En_Bom/z_en_bom.h"
 #include "overlays/effects/ovl_Effect_Ss_Fire_Tail/z_eff_ss_fire_tail.h"
@@ -69,27 +70,27 @@ static InitChainEntry sInitChain[] = {
     ICHAIN_F32(lockOnArrowOffset, 4000, ICHAIN_STOP),
 };
 
-static ColliderCylinderInit sLaserCylinderInit = {
-    {
-        // COLTYPE_METAL,
-        COL_MATERIAL_METAL,
-        AT_ON | AT_TYPE_ENEMY,
-        AC_ON | AC_TYPE_PLAYER,
-        OC1_ON | OC1_TYPE_ALL,
-        OC2_TYPE_1,
-        COLSHAPE_CYLINDER,
-    },
-    {
-        // ELEMTYPE_UNK0,
-        ELEM_MATERIAL_UNK0,
-        { 0xFFCFFFFF, 0x00, 0x04 },
-        { 0xFFDFFFFF, 0x00, 0x00 },
-        ATELEM_ON | ATELEM_SFX_NORMAL,
-        ACELEM_ON,
-        OCELEM_ON,
-    },
-    { 15, 30, 10, { 0, 0, 0 } },
-};
+// static ColliderCylinderInit sLaserCylinderInit = {
+//     {
+//         // COLTYPE_METAL,
+//         COL_MATERIAL_METAL,
+//         AT_ON | AT_TYPE_ENEMY,
+//         AC_ON | AC_TYPE_PLAYER,
+//         OC1_ON | OC1_TYPE_ALL,
+//         OC2_TYPE_1,
+//         COLSHAPE_CYLINDER,
+//     },
+//     {
+//         // ELEMTYPE_UNK0,
+//         ELEM_MATERIAL_UNK0,
+//         { 0xFFCFFFFF, 0x00, 0x04 },
+//         { 0xFFDFFFFF, 0x00, 0x00 },
+//         ATELEM_ON | ATELEM_SFX_NORMAL,
+//         ACELEM_ON,
+//         OCELEM_ON,
+//     },
+//     { 15, 30, 10, { 0, 0, 0 } },
+// };
 
 // static UNK_TYPE4 D_809D5C98 = 0; // unused
 // static UNK_TYPE4 D_809D5C9C = 0; // unused
@@ -289,13 +290,31 @@ void EnArwing_Init(Actor* thisx, PlayState* play) {
         // Update the Arwing to play the intro cutscene.
         // if (this->actor.params == ARWING_CUTSCENE_ARWING)
         // {
-    this->timers[ARWING_TIMER_ARWING_UPDATE_STATE] = 70;
-    this->timers[ARWING_TIMER_ARWING_ENTER_LOCKED_ON] = 250;
-    this->state = ARWING_STATE_DEMO;
+    // this->timers[ARWING_TIMER_ARWING_ENTER_LOCKED_ON] = 250;
+    // if(this->actor.params == ARWING_FRIENDLY)
     this->actor.world.rot.x = 0x4000;
     // this->cutsceneMode = ARWING_CUTSCENE_MODE_SETUP;
     // this->cutsceneTimer = defaultCutsceneTimer;
     // this->timers[ARWING_TIMER_ARWING_UPDATE_BG_INFO] = 20;
+
+    if(this->actor.params == ARWING_FRIENDLY)
+    {
+        this->target_actor = NULL;
+        this->collider.base.atFlags = AT_ON | AT_TYPE_PLAYER;
+        this->collider.base.acFlags = AC_ON | AC_TYPE_ENEMY;
+        this->state = ARWING_STATE_FLYING;
+        this->timers[ARWING_TIMER_ARWING_UPDATE_STATE] = 0;
+        this->timers[ARWING_TIMER_ARWING_ENTER_LOCKED_ON] = 20;
+    }
+    else
+    {
+        this->target_actor = &player->actor;
+        this->state = ARWING_STATE_DEMO;
+        this->timers[ARWING_TIMER_ARWING_UPDATE_STATE] = 70;
+        this->timers[ARWING_TIMER_ARWING_ENTER_LOCKED_ON] = 250;
+    }
+    
+    
     this->targetPosition.x = player->actor.world.pos.x + random_direction.x;
     this->targetPosition.y = player->actor.world.pos.y + 300.0f;
     this->targetPosition.z = player->actor.world.pos.z + random_direction.z;
@@ -411,15 +430,31 @@ void EnArwing_Update(Actor* thisx, PlayState* play2) {
 
             if (this->timers[ARWING_TIMER_ARWING_UPDATE_STATE] == 0) 
             {
-                if (this->timers[ARWING_TIMER_ARWING_ENTER_LOCKED_ON] == 0) 
+                this->target_actor = NULL;
+
+                if(this->actor.params == ARWING_FRIENDLY)
+                {
+                    this->target_actor = Attention_FindClosestEnemyToPlayer(play, player);
+                }
+
+                if (this->timers[ARWING_TIMER_ARWING_ENTER_LOCKED_ON] == 0 && this->target_actor != NULL) 
                 {
                     this->state = ARWING_STATE_TARGET_LOCKED;
                     this->timers[ARWING_TIMER_ARWING_UPDATE_STATE] = 300;
                 } 
                 else 
                 {
-                    f32 targetCircleX = Math_SinS(player->actor.shape.rot.y) * 400.0f;
-                    f32 targetCircleZ = Math_CosS(player->actor.shape.rot.y) * 400.0f;
+                    f32 target_circle_scale = 400.0f;
+                    f32 targetCircleX = 0;
+                    f32 targetCircleZ = 0;
+
+                    if(this->actor.params == ARWING_FRIENDLY)
+                    {
+                        target_circle_scale = 200.0f;
+                    }
+
+                    targetCircleX = Math_SinS(player->actor.shape.rot.y) * target_circle_scale;
+                    targetCircleZ = Math_CosS(player->actor.shape.rot.y) * target_circle_scale;
 
                     this->state = ARWING_STATE_FLYING;
                     this->timers[ARWING_TIMER_ARWING_UPDATE_STATE] = (s16)Rand_ZeroFloat(50.0f) + 20;
@@ -449,9 +484,14 @@ void EnArwing_Update(Actor* thisx, PlayState* play2) {
             if (this->state == ARWING_STATE_TARGET_LOCKED) 
             {
                 // Set the Arwing to fly towards the player.
-                this->targetPosition.x = player->actor.world.pos.x;
-                this->targetPosition.y = player->actor.world.pos.y + 40.0f;
-                this->targetPosition.z = player->actor.world.pos.z;
+                // this->targetPosition.x = player->actor.world.pos.x;
+                // this->targetPosition.y = player->actor.world.pos.y + 40.0f;
+                // this->targetPosition.z = player->actor.world.pos.z;
+
+                this->targetPosition.x = this->target_actor->world.pos.x;
+                this->targetPosition.y = this->target_actor->world.pos.y + 20.0f;
+                this->targetPosition.z = this->target_actor->world.pos.z;
+
                 rotationScale = 7;
                 xRotationTarget = 0x1000;
                 loseTargetLockDistance = 150.0f;
@@ -487,8 +527,12 @@ void EnArwing_Update(Actor* thisx, PlayState* play2) {
             vectorToTargetY = this->targetPosition.y - this->actor.world.pos.y;
             vectorToTargetZ = this->targetPosition.z - this->actor.world.pos.z;
 
-            // If the Arwing is within a certain distance to the target position, it will be updated to flymode
-            if (sqrtf(SQ(vectorToTargetX) + SQ(vectorToTargetY) + SQ(vectorToTargetZ)) < loseTargetLockDistance) 
+            if(this->actor.params == ARWING_FRIENDLY && this->target_actor != NULL && this->target_actor->colChkInfo.health <= 0)
+            {
+                this->timers[ARWING_TIMER_ARWING_ENTER_LOCKED_ON] = (s16)Rand_ZeroFloat(20.0f);
+                this->state = ARWING_STATE_FLYING;
+            }
+            else if (sqrtf(SQ(vectorToTargetX) + SQ(vectorToTargetY) + SQ(vectorToTargetZ)) < loseTargetLockDistance) 
             {
                 this->timers[ARWING_TIMER_ARWING_UPDATE_STATE] = 0;
 
@@ -525,7 +569,7 @@ void EnArwing_Update(Actor* thisx, PlayState* play2) {
                 {
                     Actor_Spawn(&play->actorCtx, play, ACTOR_EN_ARWING_LASER, this->actor.world.pos.x,
                         this->actor.world.pos.y, this->actor.world.pos.z, this->actor.world.rot.x,
-                        this->actor.world.rot.y, this->actor.world.rot.z, 0);
+                        this->actor.world.rot.y, this->actor.world.rot.z, (this->actor.params == ARWING_FRIENDLY) ? ARWING_LASER_TYPE_FRIENDLY : 0);
                 }
             } 
             else 

@@ -100,6 +100,12 @@ void EnArwingLaser_Init(Actor* thisx, PlayState* play) {
     Collider_SetCylinder(play, &this->collider, &this->actor, &sLaserCylinderInit);
     Actor_PlaySfx(&this->actor, NA_SE_IT_SWORD_REFLECT_MG);
     this->actor.flags |= ACTOR_FLAG_CHAOS;
+
+    if(this->actor.params == ARWING_LASER_TYPE_FRIENDLY)
+    {
+        this->collider.base.acFlags = AC_ON | AC_TYPE_ENEMY;
+        this->collider.base.atFlags = AT_ON | AT_TYPE_PLAYER;
+    }
     // } 
     // else 
     // { // Initialize the Arwing.

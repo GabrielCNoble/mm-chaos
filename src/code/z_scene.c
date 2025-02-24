@@ -137,6 +137,7 @@ void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
     spaceSize += ALIGN16(gObjectTable[OBJECT_SKB].vromEnd - gObjectTable[OBJECT_SKB].vromStart);
     spaceSize += ALIGN16(gObjectTable[OBJECT_GI_SHIELD_2].vromEnd - gObjectTable[OBJECT_GI_SHIELD_2].vromStart);
     spaceSize += ALIGN16(gObjectTable[OBJECT_BEYBLADE].vromEnd - gObjectTable[OBJECT_BEYBLADE].vromStart);
+    spaceSize += ALIGN16(gObjectTable[OBJECT_ARWING].vromEnd - gObjectTable[OBJECT_ARWING].vromStart);
     spaceSize += gChaosContext.chaos_keep_size;
 
     objectCtx->spaceStart = objectCtx->slots[0].segment = THA_AllocTailAlign16(&gameState->tha, spaceSize);
@@ -146,6 +147,7 @@ void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
     Object_SpawnPersistent(objectCtx, OBJECT_SKB);
     Object_SpawnPersistent(objectCtx, OBJECT_GI_SHIELD_2);
     Object_SpawnPersistent(objectCtx, OBJECT_BEYBLADE);
+    Object_SpawnPersistent(objectCtx, OBJECT_ARWING);
 
     /* allocate enough space for the largest object */
     gChaosContext.chaos_keep_slot = Object_AllocatePersistent(objectCtx, gChaosContext.chaos_keep_largest_object);

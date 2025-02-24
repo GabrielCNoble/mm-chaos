@@ -3930,6 +3930,38 @@ void Attention_FindActor(PlayState* play, ActorContext* actorCtx, Actor** attent
     }
 }
 
+Actor *Attention_FindClosestEnemyToPlayer(PlayState *play, Player *player)
+{
+    Actor *enemy = play->actorCtx.actorLists[ACTORCAT_ENEMY].first;
+    Actor *closest_enemy = NULL;
+    float smallest_sqrd_dist = SQ(700.0f);
+
+    while(enemy != NULL)
+    {
+        if(enemy->xyzDistToPlayerSq < smallest_sqrd_dist)
+        {
+            if (Attention_ActorOnScreen(play, enemy)) 
+            {
+                CollisionPoly* poly;
+                s32 bgId;
+                Vec3f lineTestResultPos;
+
+                if (!BgCheck_CameraLineTest1(&play->colCtx, &player->actor.focus.pos, &enemy->focus.pos, &lineTestResultPos,
+                                            &poly, true, true, true, true, &bgId)) {
+                    // if (!SurfaceType_IsIgnoredByProjectiles(&play->colCtx, poly, bgId)) {
+                    //     continue;
+                    // }
+                    closest_enemy = enemy;
+                    smallest_sqrd_dist = enemy->xyzDistToPlayerSq;
+                }
+            }
+        }
+        enemy = enemy->next;
+    }
+
+    return closest_enemy;
+}
+
 /**
  * Play the death sound effect and flash the screen white for 4 frames.
  * While the screen flashes, the game freezes.

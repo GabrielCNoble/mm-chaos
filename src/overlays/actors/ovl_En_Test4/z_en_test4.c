@@ -12,6 +12,8 @@
 #include "overlays/actors/ovl_En_Horse/z_en_horse.h"
 #include "chaos_fuckery.h"
 
+extern struct ChaosContext gChaosContext;
+
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED | ACTOR_FLAG_FREEZE_EXCEPTION)
 
 void EnTest4_Init(Actor* thisx, PlayState* play);
@@ -154,117 +156,297 @@ void EnTest4_HandleDayNightSwap(EnTest4* this, PlayState* play) {
     }
 }
 
+// struct bell_time_t
+// {
+//     u16 bell_time;
+// };
+
+// struct bell_time_t g_bell_times[3][] = {
+//     {}
+// };
+
+u16 g_third_day_bell_times[] = {
+    CLOCK_TIME(17, 30),
+    CLOCK_TIME(17, 36),
+    CLOCK_TIME(17, 42),
+    CLOCK_TIME(17, 48),
+    CLOCK_TIME(17, 54),
+    CLOCK_TIME(0, 0),
+    CLOCK_TIME(0, 0),
+    CLOCK_TIME(0, 10),
+    CLOCK_TIME(0, 20),
+    CLOCK_TIME(0, 30),
+    CLOCK_TIME(0, 40),
+    CLOCK_TIME(0, 50),
+    CLOCK_TIME(1, 0),
+    CLOCK_TIME(1, 10),
+    CLOCK_TIME(1, 20),
+    CLOCK_TIME(1, 30) - 1,
+    CLOCK_TIME(1, 40) - 1,
+    CLOCK_TIME(1, 50) - 1,
+    CLOCK_TIME(2, 0),
+    CLOCK_TIME(2, 10),
+    CLOCK_TIME(2, 20),
+    CLOCK_TIME(2, 30),
+    CLOCK_TIME(2, 40),
+    CLOCK_TIME(2, 50),
+    CLOCK_TIME(3, 0),
+    CLOCK_TIME(3, 10),
+    CLOCK_TIME(3, 20),
+    CLOCK_TIME(3, 30),
+    CLOCK_TIME(3, 40),
+    CLOCK_TIME(3, 50),
+    CLOCK_TIME(4, 0),
+    CLOCK_TIME(4, 10),
+    CLOCK_TIME(4, 20),
+    CLOCK_TIME(4, 30) - 1,
+    CLOCK_TIME(4, 40) - 1,
+    CLOCK_TIME(4, 50) - 1,
+    CLOCK_TIME(5, 0),
+    CLOCK_TIME(5, 5),
+    CLOCK_TIME(5, 10),
+    CLOCK_TIME(5, 15) - 1,
+    CLOCK_TIME(5, 20),
+    CLOCK_TIME(5, 25) - 1,
+    CLOCK_TIME(5, 30),
+    CLOCK_TIME(5, 33) - 1,
+    CLOCK_TIME(5, 36),
+    CLOCK_TIME(5, 39) - 1,
+    CLOCK_TIME(5, 42),
+    CLOCK_TIME(5, 45),
+    CLOCK_TIME(5, 48),
+    CLOCK_TIME(5, 51),
+    CLOCK_TIME(5, 54),
+    CLOCK_TIME(5, 57),
+    CLOCK_TIME(6, 0)
+};
+
+// u16 EnTest4_GetBellTimeIndexOnDay3(u16 current_time)
+// {
+//     if ((current_time >= CLOCK_TIME(6, 0)) && (current_time <= CLOCK_TIME(18, 0))) {
+//         /* day-night transition bells */
+//         if (current_time < CLOCK_TIME(17, 30)) {
+//             return 0;
+//         } else if (current_time < CLOCK_TIME(17, 36)) {
+//             return 1;
+//         } else if (current_time < CLOCK_TIME(17, 42)) {
+//             return 2;
+//         } else if (current_time < CLOCK_TIME(17, 48)) {
+//             return 3;
+//         } else if (current_time < CLOCK_TIME(17, 54)) {
+//             return 4;
+//         } else {
+//             return 5;
+//         }
+//     } else if (current_time > CLOCK_TIME(6, 0)) {
+//         return 6;
+//     } else if (current_time < CLOCK_TIME(0, 10)) {
+//         return 7;
+//     } else if (current_time < CLOCK_TIME(0, 20)) {
+//         return 8;
+//     } else if (current_time < CLOCK_TIME(0, 30)) {
+//         return 9;
+//     } else if (current_time < CLOCK_TIME(0, 40)) {
+//         return 10;
+//     } else if (current_time < CLOCK_TIME(0, 50)) {
+//         this->nextBellTime = CLOCK_TIME(0, 50);
+//     } else if (current_time < CLOCK_TIME(1, 0)) {
+//         this->nextBellTime = CLOCK_TIME(1, 0);
+//     } else if (current_time < CLOCK_TIME(1, 10)) {
+//         this->nextBellTime = CLOCK_TIME(1, 10);
+//     } else if (current_time < CLOCK_TIME(1, 20)) {
+//         this->nextBellTime = CLOCK_TIME(1, 20);
+//     } else if (current_time < CLOCK_TIME(1, 30) - 1) {
+//         this->nextBellTime = CLOCK_TIME(1, 30) - 1;
+//     } else if (current_time < CLOCK_TIME(1, 40) - 1) {
+//         this->nextBellTime = CLOCK_TIME(1, 40) - 1;
+//     } else if (current_time < CLOCK_TIME(1, 50) - 1) {
+//         this->nextBellTime = CLOCK_TIME(1, 50) - 1;
+//     } else if (current_time < CLOCK_TIME(2, 0)) {
+//         this->nextBellTime = CLOCK_TIME(2, 0);
+//     } else if (current_time < CLOCK_TIME(2, 10)) {
+//         this->nextBellTime = CLOCK_TIME(2, 10);
+//     } else if (current_time < CLOCK_TIME(2, 20)) {
+//         this->nextBellTime = CLOCK_TIME(2, 20);
+//     } else if (current_time < CLOCK_TIME(2, 30)) {
+//         this->nextBellTime = CLOCK_TIME(2, 30);
+//     } else if (current_time < CLOCK_TIME(2, 40)) {
+//         this->nextBellTime = CLOCK_TIME(2, 40);
+//     } else if (current_time < CLOCK_TIME(2, 50)) {
+//         this->nextBellTime = CLOCK_TIME(2, 50);
+//     } else if (current_time < CLOCK_TIME(3, 0)) {
+//         this->nextBellTime = CLOCK_TIME(3, 0);
+//     } else if (current_time < CLOCK_TIME(3, 10)) {
+//         this->nextBellTime = CLOCK_TIME(3, 10);
+//     } else if (current_time < CLOCK_TIME(3, 20)) {
+//         this->nextBellTime = CLOCK_TIME(3, 20);
+//     } else if (current_time < CLOCK_TIME(3, 30)) {
+//         this->nextBellTime = CLOCK_TIME(3, 30);
+//     } else if (current_time < CLOCK_TIME(3, 40)) {
+//         this->nextBellTime = CLOCK_TIME(3, 40);
+//     } else if (current_time < CLOCK_TIME(3, 50)) {
+//         this->nextBellTime = CLOCK_TIME(3, 50);
+//     } else if (current_time < CLOCK_TIME(4, 0)) {
+//         this->nextBellTime = CLOCK_TIME(4, 0);
+//     } else if (current_time < CLOCK_TIME(4, 10)) {
+//         this->nextBellTime = CLOCK_TIME(4, 10);
+//     } else if (current_time < CLOCK_TIME(4, 20)) {
+//         this->nextBellTime = CLOCK_TIME(4, 20);
+//     } else if (current_time < CLOCK_TIME(4, 30) - 1) {
+//         this->nextBellTime = CLOCK_TIME(4, 30) - 1;
+//     } else if (current_time < CLOCK_TIME(4, 40) - 1) {
+//         this->nextBellTime = CLOCK_TIME(4, 40) - 1;
+//     } else if (current_time < CLOCK_TIME(4, 50) - 1) {
+//         this->nextBellTime = CLOCK_TIME(4, 50) - 1;
+//     } else if (current_time < CLOCK_TIME(5, 0)) {
+//         this->nextBellTime = CLOCK_TIME(5, 0);
+//     } else if (current_time < CLOCK_TIME(5, 5)) {
+//         this->nextBellTime = CLOCK_TIME(5, 5);
+//     } else if (current_time < CLOCK_TIME(5, 10)) {
+//         this->nextBellTime = CLOCK_TIME(5, 10);
+//     } else if (current_time < CLOCK_TIME(5, 15) - 1) {
+//         this->nextBellTime = CLOCK_TIME(5, 15) - 1;
+//     } else if (current_time < CLOCK_TIME(5, 20)) {
+//         this->nextBellTime = CLOCK_TIME(5, 20);
+//     } else if (current_time < CLOCK_TIME(5, 25) - 1) {
+//         this->nextBellTime = CLOCK_TIME(5, 25) - 1;
+//     } else if (current_time < CLOCK_TIME(5, 30)) {
+//         this->nextBellTime = CLOCK_TIME(5, 30);
+//     } else if (current_time < CLOCK_TIME(5, 33) - 1) {
+//         this->nextBellTime = CLOCK_TIME(5, 33) - 1;
+//     } else if (current_time < CLOCK_TIME(5, 36)) {
+//         this->nextBellTime = CLOCK_TIME(5, 36);
+//     } else if (current_time < CLOCK_TIME(5, 39) - 1) {
+//         this->nextBellTime = CLOCK_TIME(5, 39) - 1;
+//     } else if (current_time < CLOCK_TIME(5, 42)) {
+//         this->nextBellTime = CLOCK_TIME(5, 42);
+//     } else if (current_time < CLOCK_TIME(5, 45)) {
+//         this->nextBellTime = CLOCK_TIME(5, 45);
+//     } else if (current_time < CLOCK_TIME(5, 48)) {
+//         this->nextBellTime = CLOCK_TIME(5, 48);
+//     } else if (current_time < CLOCK_TIME(5, 51)) {
+//         this->nextBellTime = CLOCK_TIME(5, 51);
+//     } else if (current_time < CLOCK_TIME(5, 54)) {
+//         this->nextBellTime = CLOCK_TIME(5, 54);
+//     } else if (current_time < CLOCK_TIME(5, 57)) {
+//         this->nextBellTime = CLOCK_TIME(5, 57);
+//     } else if (current_time < CLOCK_TIME(6, 0)) {
+//         this->nextBellTime = CLOCK_TIME(6, 0);
+//     }
+// }
+
 /**
  * Get the next bell time on Day 3
  */
-void EnTest4_GetBellTimeOnDay3(EnTest4* this) {
-    if ((CURRENT_TIME >= CLOCK_TIME(6, 0)) && (CURRENT_TIME <= CLOCK_TIME(18, 0))) {
-        if (CURRENT_TIME < CLOCK_TIME(17, 30)) {
+u16 EnTest4_GetBellTimeOnDay3(EnTest4* this, u16 current_time) {
+    if ((current_time >= CLOCK_TIME(6, 0)) && (current_time <= CLOCK_TIME(18, 0))) {
+        /* day-night transition bells */
+        if (current_time < CLOCK_TIME(17, 30)) {
             this->nextBellTime = CLOCK_TIME(17, 30);
-        } else if (CURRENT_TIME < CLOCK_TIME(17, 36)) {
+        } else if (current_time < CLOCK_TIME(17, 36)) {
             this->nextBellTime = CLOCK_TIME(17, 36);
-        } else if (CURRENT_TIME < CLOCK_TIME(17, 42)) {
+        } else if (current_time < CLOCK_TIME(17, 42)) {
             this->nextBellTime = CLOCK_TIME(17, 42);
-        } else if (CURRENT_TIME < CLOCK_TIME(17, 48)) {
+        } else if (current_time < CLOCK_TIME(17, 48)) {
             this->nextBellTime = CLOCK_TIME(17, 48);
-        } else if (CURRENT_TIME < CLOCK_TIME(17, 54)) {
+        } else if (current_time < CLOCK_TIME(17, 54)) {
             this->nextBellTime = CLOCK_TIME(17, 54);
         } else {
             this->nextBellTime = CLOCK_TIME(0, 0);
         }
-    } else if (CURRENT_TIME > CLOCK_TIME(6, 0)) {
+    } else if (current_time > CLOCK_TIME(6, 0)) {
         this->nextBellTime = CLOCK_TIME(0, 0);
-    } else if (CURRENT_TIME < CLOCK_TIME(0, 10)) {
+    } else if (current_time < CLOCK_TIME(0, 10)) {
         this->nextBellTime = CLOCK_TIME(0, 10);
-    } else if (CURRENT_TIME < CLOCK_TIME(0, 20)) {
+    } else if (current_time < CLOCK_TIME(0, 20)) {
         this->nextBellTime = CLOCK_TIME(0, 20);
-    } else if (CURRENT_TIME < CLOCK_TIME(0, 30)) {
+    } else if (current_time < CLOCK_TIME(0, 30)) {
         this->nextBellTime = CLOCK_TIME(0, 30);
-    } else if (CURRENT_TIME < CLOCK_TIME(0, 40)) {
+    } else if (current_time < CLOCK_TIME(0, 40)) {
         this->nextBellTime = CLOCK_TIME(0, 40);
-    } else if (CURRENT_TIME < CLOCK_TIME(0, 50)) {
+    } else if (current_time < CLOCK_TIME(0, 50)) {
         this->nextBellTime = CLOCK_TIME(0, 50);
-    } else if (CURRENT_TIME < CLOCK_TIME(1, 0)) {
+    } else if (current_time < CLOCK_TIME(1, 0)) {
         this->nextBellTime = CLOCK_TIME(1, 0);
-    } else if (CURRENT_TIME < CLOCK_TIME(1, 10)) {
+    } else if (current_time < CLOCK_TIME(1, 10)) {
         this->nextBellTime = CLOCK_TIME(1, 10);
-    } else if (CURRENT_TIME < CLOCK_TIME(1, 20)) {
+    } else if (current_time < CLOCK_TIME(1, 20)) {
         this->nextBellTime = CLOCK_TIME(1, 20);
-    } else if (CURRENT_TIME < CLOCK_TIME(1, 30) - 1) {
+    } else if (current_time < CLOCK_TIME(1, 30) - 1) {
         this->nextBellTime = CLOCK_TIME(1, 30) - 1;
-    } else if (CURRENT_TIME < CLOCK_TIME(1, 40) - 1) {
+    } else if (current_time < CLOCK_TIME(1, 40) - 1) {
         this->nextBellTime = CLOCK_TIME(1, 40) - 1;
-    } else if (CURRENT_TIME < CLOCK_TIME(1, 50) - 1) {
+    } else if (current_time < CLOCK_TIME(1, 50) - 1) {
         this->nextBellTime = CLOCK_TIME(1, 50) - 1;
-    } else if (CURRENT_TIME < CLOCK_TIME(2, 0)) {
+    } else if (current_time < CLOCK_TIME(2, 0)) {
         this->nextBellTime = CLOCK_TIME(2, 0);
-    } else if (CURRENT_TIME < CLOCK_TIME(2, 10)) {
+    } else if (current_time < CLOCK_TIME(2, 10)) {
         this->nextBellTime = CLOCK_TIME(2, 10);
-    } else if (CURRENT_TIME < CLOCK_TIME(2, 20)) {
+    } else if (current_time < CLOCK_TIME(2, 20)) {
         this->nextBellTime = CLOCK_TIME(2, 20);
-    } else if (CURRENT_TIME < CLOCK_TIME(2, 30)) {
+    } else if (current_time < CLOCK_TIME(2, 30)) {
         this->nextBellTime = CLOCK_TIME(2, 30);
-    } else if (CURRENT_TIME < CLOCK_TIME(2, 40)) {
+    } else if (current_time < CLOCK_TIME(2, 40)) {
         this->nextBellTime = CLOCK_TIME(2, 40);
-    } else if (CURRENT_TIME < CLOCK_TIME(2, 50)) {
+    } else if (current_time < CLOCK_TIME(2, 50)) {
         this->nextBellTime = CLOCK_TIME(2, 50);
-    } else if (CURRENT_TIME < CLOCK_TIME(3, 0)) {
+    } else if (current_time < CLOCK_TIME(3, 0)) {
         this->nextBellTime = CLOCK_TIME(3, 0);
-    } else if (CURRENT_TIME < CLOCK_TIME(3, 10)) {
+    } else if (current_time < CLOCK_TIME(3, 10)) {
         this->nextBellTime = CLOCK_TIME(3, 10);
-    } else if (CURRENT_TIME < CLOCK_TIME(3, 20)) {
+    } else if (current_time < CLOCK_TIME(3, 20)) {
         this->nextBellTime = CLOCK_TIME(3, 20);
-    } else if (CURRENT_TIME < CLOCK_TIME(3, 30)) {
+    } else if (current_time < CLOCK_TIME(3, 30)) {
         this->nextBellTime = CLOCK_TIME(3, 30);
-    } else if (CURRENT_TIME < CLOCK_TIME(3, 40)) {
+    } else if (current_time < CLOCK_TIME(3, 40)) {
         this->nextBellTime = CLOCK_TIME(3, 40);
-    } else if (CURRENT_TIME < CLOCK_TIME(3, 50)) {
+    } else if (current_time < CLOCK_TIME(3, 50)) {
         this->nextBellTime = CLOCK_TIME(3, 50);
-    } else if (CURRENT_TIME < CLOCK_TIME(4, 0)) {
+    } else if (current_time < CLOCK_TIME(4, 0)) {
         this->nextBellTime = CLOCK_TIME(4, 0);
-    } else if (CURRENT_TIME < CLOCK_TIME(4, 10)) {
+    } else if (current_time < CLOCK_TIME(4, 10)) {
         this->nextBellTime = CLOCK_TIME(4, 10);
-    } else if (CURRENT_TIME < CLOCK_TIME(4, 20)) {
+    } else if (current_time < CLOCK_TIME(4, 20)) {
         this->nextBellTime = CLOCK_TIME(4, 20);
-    } else if (CURRENT_TIME < CLOCK_TIME(4, 30) - 1) {
+    } else if (current_time < CLOCK_TIME(4, 30) - 1) {
         this->nextBellTime = CLOCK_TIME(4, 30) - 1;
-    } else if (CURRENT_TIME < CLOCK_TIME(4, 40) - 1) {
+    } else if (current_time < CLOCK_TIME(4, 40) - 1) {
         this->nextBellTime = CLOCK_TIME(4, 40) - 1;
-    } else if (CURRENT_TIME < CLOCK_TIME(4, 50) - 1) {
+    } else if (current_time < CLOCK_TIME(4, 50) - 1) {
         this->nextBellTime = CLOCK_TIME(4, 50) - 1;
-    } else if (CURRENT_TIME < CLOCK_TIME(5, 0)) {
+    } else if (current_time < CLOCK_TIME(5, 0)) {
         this->nextBellTime = CLOCK_TIME(5, 0);
-    } else if (CURRENT_TIME < CLOCK_TIME(5, 5)) {
+    } else if (current_time < CLOCK_TIME(5, 5)) {
         this->nextBellTime = CLOCK_TIME(5, 5);
-    } else if (CURRENT_TIME < CLOCK_TIME(5, 10)) {
+    } else if (current_time < CLOCK_TIME(5, 10)) {
         this->nextBellTime = CLOCK_TIME(5, 10);
-    } else if (CURRENT_TIME < CLOCK_TIME(5, 15) - 1) {
+    } else if (current_time < CLOCK_TIME(5, 15) - 1) {
         this->nextBellTime = CLOCK_TIME(5, 15) - 1;
-    } else if (CURRENT_TIME < CLOCK_TIME(5, 20)) {
+    } else if (current_time < CLOCK_TIME(5, 20)) {
         this->nextBellTime = CLOCK_TIME(5, 20);
-    } else if (CURRENT_TIME < CLOCK_TIME(5, 25) - 1) {
+    } else if (current_time < CLOCK_TIME(5, 25) - 1) {
         this->nextBellTime = CLOCK_TIME(5, 25) - 1;
-    } else if (CURRENT_TIME < CLOCK_TIME(5, 30)) {
+    } else if (current_time < CLOCK_TIME(5, 30)) {
         this->nextBellTime = CLOCK_TIME(5, 30);
-    } else if (CURRENT_TIME < CLOCK_TIME(5, 33) - 1) {
+    } else if (current_time < CLOCK_TIME(5, 33) - 1) {
         this->nextBellTime = CLOCK_TIME(5, 33) - 1;
-    } else if (CURRENT_TIME < CLOCK_TIME(5, 36)) {
+    } else if (current_time < CLOCK_TIME(5, 36)) {
         this->nextBellTime = CLOCK_TIME(5, 36);
-    } else if (CURRENT_TIME < CLOCK_TIME(5, 39) - 1) {
+    } else if (current_time < CLOCK_TIME(5, 39) - 1) {
         this->nextBellTime = CLOCK_TIME(5, 39) - 1;
-    } else if (CURRENT_TIME < CLOCK_TIME(5, 42)) {
+    } else if (current_time < CLOCK_TIME(5, 42)) {
         this->nextBellTime = CLOCK_TIME(5, 42);
-    } else if (CURRENT_TIME < CLOCK_TIME(5, 45)) {
+    } else if (current_time < CLOCK_TIME(5, 45)) {
         this->nextBellTime = CLOCK_TIME(5, 45);
-    } else if (CURRENT_TIME < CLOCK_TIME(5, 48)) {
+    } else if (current_time < CLOCK_TIME(5, 48)) {
         this->nextBellTime = CLOCK_TIME(5, 48);
-    } else if (CURRENT_TIME < CLOCK_TIME(5, 51)) {
+    } else if (current_time < CLOCK_TIME(5, 51)) {
         this->nextBellTime = CLOCK_TIME(5, 51);
-    } else if (CURRENT_TIME < CLOCK_TIME(5, 54)) {
+    } else if (current_time < CLOCK_TIME(5, 54)) {
         this->nextBellTime = CLOCK_TIME(5, 54);
-    } else if (CURRENT_TIME < CLOCK_TIME(5, 57)) {
+    } else if (current_time < CLOCK_TIME(5, 57)) {
         this->nextBellTime = CLOCK_TIME(5, 57);
-    } else if (CURRENT_TIME < CLOCK_TIME(6, 0)) {
+    } else if (current_time < CLOCK_TIME(6, 0)) {
         this->nextBellTime = CLOCK_TIME(6, 0);
     }
 }
@@ -325,6 +507,7 @@ void EnTest4_Init(Actor* thisx, PlayState* play) {
     EnTest4* this = (EnTest4*)thisx;
     Player* player = GET_PLAYER(play);
     s8 csId = this->actor.csId;
+    u16 current_bell_time = CURRENT_TIME;
 
     sCsIdList[THREEDAY_DAYTIME_NIGHT] = csId;
     if (csId > CS_ID_NONE) {
@@ -380,13 +563,18 @@ void EnTest4_Init(Actor* thisx, PlayState* play) {
         }
     }
 
-    if (CURRENT_DAY == 3) {
-        EnTest4_GetBellTimeOnDay3(this);
+    if(gChaosContext.moon.moon_crash_time_offset != 0)
+    {
+        current_bell_time = CLOCK_TIME(6, 0) - Chaos_TimeUntilMoonCrash();
+    }
+
+    if (CURRENT_DAY == 3 || gChaosContext.moon.moon_crash_time_offset != 0) {
+        EnTest4_GetBellTimeOnDay3(this, current_bell_time);
     } else {
         EnTest4_GetBellTimeAndShrinkScreenBeforeDay3(this, play);
     }
 
-    this->prevBellTime = CURRENT_TIME;
+    this->prevBellTime = current_bell_time;
 
     if ((sCsIdList[this->daytimeIndex] <= CS_ID_NONE) || (play->actorCtx.flags & ACTORCTX_FLAG_TELESCOPE_ON)) {
         gSaveContext.screenScaleFlag = false;
@@ -417,12 +605,27 @@ void EnTest4_HandleEvents(EnTest4* this, PlayState* play) {
         s16 prevTimeUntilTransition;
         s16 prevTimeUntilBell;
         s16 curTimeUntilBell;
+        u16 current_bell_time = CURRENT_TIME;
+
+        if(gChaosContext.moon.moon_crash_time_offset != 0)
+        {
+            current_bell_time = CLOCK_TIME(6, 0) - Chaos_TimeUntilMoonCrash();
+        }
+
+        if(gChaosContext.moon.need_update_bell_time)
+        {
+            gChaosContext.moon.need_update_bell_time = false;
+            EnTest4_GetBellTimeOnDay3(this, current_bell_time);
+            this->prevBellTime = current_bell_time;
+        }
 
         curTimeUntilTransition = CURRENT_TIME - transitionTime;
         prevTimeUntilTransition = this->prevTime - transitionTime;
 
         prevTimeUntilBell = this->prevBellTime - this->nextBellTime;
-        curTimeUntilBell = CURRENT_TIME - this->nextBellTime;
+        curTimeUntilBell = current_bell_time - this->nextBellTime;
+
+        
 
         // When the day-night transition time is passed:
         // `curTimeUntilTransition` will be slightly positive (ahead transition time)
@@ -496,39 +699,55 @@ void EnTest4_HandleEvents(EnTest4* this, PlayState* play) {
         // Only when the signs are different will this condition pass
         if ((curTimeUntilBell * prevTimeUntilBell) <= 0) {
             Audio_PlaySfx_BigBells(&this->actor.projectedPos, THREEDAY_GET_BIG_BELLS_SFX_VOLUME_INDEX(&this->actor));
-            this->prevBellTime = CURRENT_TIME;
+            this->prevBellTime = current_bell_time;
 
             if (CURRENT_DAY == 3) {
-                if ((this->nextBellTime == CLOCK_TIME(0, 0)) &&
-                    ((gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] == ITEM_NONE) ||
-                     (play->sceneId == SCENE_CLOCKTOWER))) {
-                    // Initiate Clocktown day 3 midnight festival cutscene
-                    s32 playerParams;
-                    u32 entrance = gSaveContext.save.entrance;
+                if (this->nextBellTime == CLOCK_TIME(0, 0))
+                {
+                    /* let the real deal deal the real */
+                    Chaos_ClearMoonCrash();
 
-                    if (play->actorCtx.flags & ACTORCTX_FLAG_TELESCOPE_ON) {
-                        playerParams = PLAYER_PARAMS(0xFF, PLAYER_START_MODE_TELESCOPE);
-                    } else {
-                        playerParams = PLAYER_PARAMS(0xFF, PLAYER_START_MODE_B);
+                    if((gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] == ITEM_NONE) || (play->sceneId == SCENE_CLOCKTOWER)) 
+                    {
+                    // Initiate Clocktown day 3 midnight festival cutscene if in south clock town or if
+                    // the player doesn't have ocarina yet
+
+                        s32 playerParams;
+                        u32 entrance = gSaveContext.save.entrance;
+
+                        if (play->actorCtx.flags & ACTORCTX_FLAG_TELESCOPE_ON) {
+                            playerParams = PLAYER_PARAMS(0xFF, PLAYER_START_MODE_TELESCOPE);
+                        } else {
+                            playerParams = PLAYER_PARAMS(0xFF, PLAYER_START_MODE_B);
+                        }
+
+                        Play_SetRespawnData(play, RESPAWN_MODE_RETURN, entrance, player->unk_3CE, playerParams,
+                                            &player->unk_3C0, player->unk_3CC);
+
+                        if ((play->sceneId == SCENE_TENMON_DAI) || (play->sceneId == SCENE_00KEIKOKU)) {
+                            play->nextEntrance = ENTRANCE(TERMINA_FIELD, 0);
+                        } else {
+                            play->nextEntrance = ENTRANCE(SOUTH_CLOCK_TOWN, 0);
+                        }
+                        gSaveContext.nextCutsceneIndex = 0xFFF1;
+                        play->transitionTrigger = TRANS_TRIGGER_START;
+                        play->transitionType = TRANS_TYPE_FADE_BLACK;
+                        player->stateFlags1 |= PLAYER_STATE1_200;
+                        Actor_Kill(&this->actor);
                     }
-
-                    Play_SetRespawnData(play, RESPAWN_MODE_RETURN, entrance, player->unk_3CE, playerParams,
-                                        &player->unk_3C0, player->unk_3CC);
-
-                    if ((play->sceneId == SCENE_TENMON_DAI) || (play->sceneId == SCENE_00KEIKOKU)) {
-                        play->nextEntrance = ENTRANCE(TERMINA_FIELD, 0);
-                    } else {
-                        play->nextEntrance = ENTRANCE(SOUTH_CLOCK_TOWN, 0);
-                    }
-                    gSaveContext.nextCutsceneIndex = 0xFFF1;
-                    play->transitionTrigger = TRANS_TRIGGER_START;
-                    play->transitionType = TRANS_TYPE_FADE_BLACK;
-                    player->stateFlags1 |= PLAYER_STATE1_200;
-                    Actor_Kill(&this->actor);
                 }
-                EnTest4_GetBellTimeOnDay3(this);
+
+                EnTest4_GetBellTimeOnDay3(this, current_bell_time);
             } else {
-                EnTest4_GetBellTimeAndShrinkScreenBeforeDay3(this, play);
+
+                if(gChaosContext.moon.moon_crash_time_offset != 0)
+                {
+                    EnTest4_GetBellTimeOnDay3(this, current_bell_time);
+                }
+                if(gChaosContext.moon.moon_crash_time_offset == 0)
+                {
+                    EnTest4_GetBellTimeAndShrinkScreenBeforeDay3(this, play);
+                }
             }
         }
     }

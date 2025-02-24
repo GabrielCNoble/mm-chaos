@@ -255,6 +255,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_DIRECTILE_DYSFUNCTION]    = */ CHAOS_CODE_DEF(5, 15,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.0045f),
     /* [CHAOS_CODE_LENGTH_CONTRACTION]       = */ CHAOS_CODE_DEF(15, 25, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.0025f),
     /* [CHAOS_CODE_FISH]                     = */ CHAOS_CODE_DEF(0, 0,   CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.0035f),
+    /* [CHAOS_CODE_AIR_SUPPORT]              = */ CHAOS_CODE_DEF(25, 65, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.0035f),
 };
   
 const char *gChaosCodeNames[] = {
@@ -321,6 +322,7 @@ const char *gChaosCodeNames[] = {
     /* [CHAOS_CODE_DIRECTILE_DYSFUNCTION]       = */ "Directile dysfunction",
     /* [CHAOS_CODE_LENGTH_CONTRACTION]          = */ "Length contraction",
     /* [CHAOS_CODE_FISH]                        = */ "Fish",
+    /* [CHAOS_CODE_AIR_SUPPORT]                 = */ "Air support",
 };
 
 enum FAIRY_FOUNTAIN_EXITS
@@ -1032,7 +1034,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
 
         // if(Chaos_GetConfigFlag(CHAOS_CONFIG_CHAOS))
         // {
-        // return;  
+        return;  
         // }
 
         if(chaos_elapsed_seconds > 0)
@@ -1422,43 +1424,45 @@ void Chaos_UpdateChaos(PlayState *playstate)
 
                         case CHAOS_CODE_MOON_CRASH:
                         {
-                            u32 index;
-                            u32 has_ocarina = gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] == ITEM_OCARINA_OF_TIME;
-                            u32 is_real_mooncrash = (gSaveContext.save.chaos.moon_crash_count >= 3) && has_ocarina;
-                            gChaosContext.moon.moon_crash_timer = 0;
+                            // u32 index;
+                            // u32 has_ocarina = gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] == ITEM_OCARINA_OF_TIME;
+                            // u32 is_real_mooncrash = (gSaveContext.save.chaos.moon_crash_count >= 3) && has_ocarina;
+                            // gChaosContext.moon.moon_crash_timer = 0;
 
-                            /* 1/32 chance of real mooncrash */
-                            for(index = 0; index < 8; index++)
-                            {
-                                is_real_mooncrash &= ((Chaos_RandNext() % 4) == 0);
-                            }
+                            // /* 1/32 chance of real mooncrash */
+                            // for(index = 0; index < 8; index++)
+                            // {
+                            //     is_real_mooncrash &= ((Chaos_RandNext() % 4) == 0);
+                            // }
 
-                            do
-                            {
-                                u32 hours_until_crash = Chaos_RandS16Offset(0, 5);
-                                u32 minutes_until_crash = Chaos_RandS16Offset(0, 59);
-                                s32 time_until_moon_crash;
-                                u32 remaining_frames;
+                            // do
+                            // {
+                            //     u32 hours_until_crash = Chaos_RandS16Offset(0, 5);
+                            //     u32 minutes_until_crash = Chaos_RandS16Offset(0, 59);
+                            //     s32 time_until_moon_crash;
+                            //     u32 remaining_frames;
                                 
-                                if(hours_until_crash == 0 && minutes_until_crash == 0)
-                                {
-                                    minutes_until_crash = Chaos_RandS16Offset(20, 39);
-                                }
+                            //     if(hours_until_crash == 0 && minutes_until_crash == 0)
+                            //     {
+                            //         minutes_until_crash = Chaos_RandS16Offset(20, 39);
+                            //     }
 
-                                time_until_moon_crash = CLOCK_TIME(hours_until_crash, minutes_until_crash);
-                                gChaosContext.moon.moon_crash_time_offset = TIME_UNTIL_MOON_CRASH - time_until_moon_crash;
-                                remaining_frames = time_until_moon_crash / (R_TIME_SPEED + gSaveContext.save.timeSpeedOffset);
+                            //     time_until_moon_crash = CLOCK_TIME(hours_until_crash, minutes_until_crash);
+                            //     gChaosContext.moon.moon_crash_time_offset = TIME_UNTIL_MOON_CRASH - time_until_moon_crash;
+                            //     remaining_frames = time_until_moon_crash / (R_TIME_SPEED + gSaveContext.save.timeSpeedOffset);
 
-                                if(is_real_mooncrash)
-                                {
-                                    gChaosContext.moon.moon_crash_timer = 0xffffffff;
-                                }
-                                else if(remaining_frames >= 80)
-                                {
-                                    gChaosContext.moon.moon_crash_timer = Chaos_RandS16Offset(40, remaining_frames - 1);
-                                }
-                            }
-                            while(gChaosContext.moon.moon_crash_timer == 0);
+                            //     if(is_real_mooncrash)
+                            //     {
+                            //         gChaosContext.moon.moon_crash_timer = 0xffffffff;
+                            //     }
+                            //     else if(remaining_frames >= 80)
+                            //     {
+                            //         gChaosContext.moon.moon_crash_timer = Chaos_RandS16Offset(40, remaining_frames - 1);
+                            //     }
+                            // }
+                            // while(gChaosContext.moon.moon_crash_timer == 0);
+
+                            Chaos_StartMoonCrash();
 
                             if(gSaveContext.save.chaos.moon_crash_count < 3)
                             {
@@ -3147,10 +3151,55 @@ s32 Chaos_TimeUntilMoonCrash(void)
     return TIME_UNTIL_MOON_CRASH - gChaosContext.moon.moon_crash_time_offset;
 }
 
+void Chaos_StartMoonCrash(void)
+{
+    u32 index;
+    u32 has_ocarina = gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] == ITEM_OCARINA_OF_TIME;
+    u32 is_real_mooncrash = (gSaveContext.save.chaos.moon_crash_count >= 3) && has_ocarina;
+    // u32 is_real_mooncrash = 0;
+    gChaosContext.moon.moon_crash_timer = 0;
+
+    /* 1/32 chance of real mooncrash */
+    for(index = 0; index < 8; index++)
+    {
+        is_real_mooncrash &= ((Chaos_RandNext() % 4) == 0);
+    }
+
+    do
+    {
+        u32 hours_until_crash = Chaos_RandS16Offset(0, 5);
+        u32 minutes_until_crash = Chaos_RandS16Offset(0, 59);
+        s32 time_until_moon_crash;
+        u32 remaining_frames;
+        
+        if(hours_until_crash == 0 && minutes_until_crash == 0)
+        {
+            minutes_until_crash = Chaos_RandS16Offset(20, 39);
+        }
+
+        time_until_moon_crash = CLOCK_TIME(hours_until_crash, minutes_until_crash);
+        gChaosContext.moon.moon_crash_time_offset = TIME_UNTIL_MOON_CRASH - time_until_moon_crash;
+        remaining_frames = time_until_moon_crash / (R_TIME_SPEED + gSaveContext.save.timeSpeedOffset);
+
+        if(is_real_mooncrash)
+        {
+            gChaosContext.moon.moon_crash_timer = 0xffffffff;
+        }
+        else if(remaining_frames >= 20)
+        {
+            gChaosContext.moon.moon_crash_timer = Chaos_RandS16Offset(20, remaining_frames - 20);
+        }
+    }
+    while(gChaosContext.moon.moon_crash_timer == 0);
+
+    gChaosContext.moon.need_update_bell_time = true;
+}
+
 void Chaos_ClearMoonCrash(void)
 {
     gChaosContext.moon.moon_crash_time_offset = 0;
     gChaosContext.moon.moon_crash_timer = 0;
+    gChaosContext.moon.need_update_bell_time = true;
 }
 
 void Chaos_NukeSnapshots()

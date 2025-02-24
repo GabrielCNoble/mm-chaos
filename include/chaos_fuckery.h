@@ -28,7 +28,7 @@
 
 #define CHAOS_MAJOR_VERSION 0
 #define CHAOS_MINOR_VERSION 5
-#define CHAOS_PATCH_VERSION 1
+#define CHAOS_PATCH_VERSION 2
 
 enum CHAOS_CODES
 {
@@ -164,7 +164,8 @@ enum CHAOS_CODES
     CHAOS_CODE_LENGTH_CONTRACTION,
     /* spawn giant fish at link's position */
     CHAOS_CODE_FISH,
-
+    /* spawns friendly arwings that kill enemies */
+    CHAOS_CODE_AIR_SUPPORT,
     /* link's hands shake */
     // CHAOS_CODE_TOO_MUCH_CAFFEINE,
 
@@ -730,7 +731,9 @@ struct ChaosDoorActorSnapshot
     Actor *             instance;
 };
 
-#define MAX_ACTIVE_CODES 8
+#define MAX_ACTIVE_CODES        8
+#define MAX_AIR_SUPPORT_ARWINGS 3
+
 typedef struct ChaosContext 
 {
     OSTime                  prev_update_counter; 
@@ -778,9 +781,10 @@ typedef struct ChaosContext
 
         u8                  big_brother_state;
         u8                  moon_dance;
-
+        u8                  need_update_bell_time;
         u32                 moon_crash_timer;
         s32                 moon_crash_time_offset;
+
     } moon;
 
     struct
@@ -942,6 +946,15 @@ typedef struct ChaosContext
         u8                      stalchild_count;
         u8                      spawn_stalchilds;
     } env;
+
+    struct
+    {
+        EnArwing *              arwings[MAX_AIR_SUPPORT_ARWINGS];
+        Actor *                 enemies[MAX_AIR_SUPPORT_ARWINGS];
+        u8                      arwing_spawn_timer;
+        u8                      arwing_count;
+        u8                      enemy_count;
+    } air_support;
     
 } ChaosContext;
 
@@ -1045,6 +1058,8 @@ void Chaos_SetConfigFlag(u32 config, u32 value);
 u32 Chaos_GetConfigFlag(u32 config);
 
 s32 Chaos_TimeUntilMoonCrash(void);
+
+void Chaos_StartMoonCrash(void);
 
 void Chaos_ClearMoonCrash(void);
 

@@ -1868,6 +1868,11 @@ void Play_UpdateMain(PlayState* this) {
         }
     }
 
+    if(Chaos_IsCodeActive(CHAOS_CODE_AIR_SUPPORT))
+    {
+        
+    }
+
     if (!sp5C) {
         Play_UpdateWaterCamera(this, this->cameraPtrs[this->nextCamera]);
         Distortion_Update();
@@ -1900,9 +1905,10 @@ void Play_UpdateMain(PlayState* this) {
                 gChaosContext.moon.moon_crash_time_offset = 0;
             }
         }
-        else
+        else if(gChaosContext.moon.moon_crash_time_offset != 0)
         {
-            gChaosContext.moon.moon_crash_time_offset = 0;
+            // gChaosContext.moon.moon_crash_time_offset = 0;
+            Chaos_ClearMoonCrash();
         }
     }
 }

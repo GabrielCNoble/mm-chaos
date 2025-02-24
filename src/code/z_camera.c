@@ -7202,6 +7202,8 @@ void Camera_EarthquakeDay3(Camera* camera) {
     u16 time;
     s16 quakeIndex;
     s32 timeSpeedOffset;
+    u16 current_time = CURRENT_TIME;
+    u16 current_day = CURRENT_DAY;
     s16 sEarthquakeFreq[] = {
         0xFFC, // 1 Large Earthquake  between CLOCK_TIME(0, 00) to CLOCK_TIME(1, 30)
         0x7FC, // 2 Large Earthquakes between CLOCK_TIME(1, 30) to CLOCK_TIME(3, 00)
@@ -7216,8 +7218,14 @@ void Camera_EarthquakeDay3(Camera* camera) {
         chaos_earthquake_index = 0;
     }
 
-    if ((CURRENT_DAY == 3 || chaos_earthquake) && (CutsceneManager_GetCurrentCsId() == CS_ID_NONE)) {
-        time = CURRENT_TIME;
+    if(gChaosContext.moon.moon_crash_time_offset != 0)
+    {
+        current_time = CLOCK_TIME(6, 0) - Chaos_TimeUntilMoonCrash();
+        current_day = 3;
+    }
+
+    if ((current_day == 3 || chaos_earthquake) && (CutsceneManager_GetCurrentCsId() == CS_ID_NONE)) {
+        time = current_time;
         timeSpeedOffset = gSaveContext.save.timeSpeedOffset;
 
         // Large earthquake created
