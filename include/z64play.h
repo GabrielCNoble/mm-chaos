@@ -186,6 +186,7 @@ s32 Play_IsUnderwater(PlayState* this, Vec3f* pos);
 s32 Play_IsDebugCamEnabled(void);
 void Play_AssignPlayerCsIdsFromScene(PlayState* this, s32 spawnCsId);
 void Play_FillScreen(PlayState* this, s16 fillScreenOn, u8 red, u8 green, u8 blue, u8 alpha);
+bool Play_IsChangingArea(PlayState* this);
 void Play_Init(GameState* thisx);
 
 extern s32 gDbgCamEnabled;

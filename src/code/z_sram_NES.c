@@ -5,6 +5,7 @@
 #include "z64horse.h"
 #include "overlays/gamestates/ovl_file_choose/z_file_select.h"
 #include "chaos_fuckery.h"
+#include "fault.h"
 
 extern ChaosContext gChaosContext;
 
@@ -1273,8 +1274,7 @@ void Sram_OpenSave(FileSelectState* fileSelect, SramContext* sramCtx) {
             phi_t1 *= 2;
 
             if (SysFlashrom_ReadData(sramCtx->saveBuf, gFlashSaveStartPages[phi_t1], gFlashSaveNumPages[phi_t1]) != 0) {
-                SysFlashrom_ReadData(sramCtx->saveBuf, gFlashSaveStartPages[phi_t1 + 1],
-                                     gFlashSaveNumPages[phi_t1 + 1]);
+                SysFlashrom_ReadData(sramCtx->saveBuf, gFlashSaveStartPages[phi_t1 + 1], gFlashSaveNumPages[phi_t1 + 1]);
             }
         }
 
@@ -1285,6 +1285,8 @@ void Sram_OpenSave(FileSelectState* fileSelect, SramContext* sramCtx) {
             Lib_MemCpy(&gSaveContext, sramCtx->saveBuf, gFlashSaveSizes[phi_t1]);
         }
     }
+
+    // Sram_LoadChaosConfig(sramCtx, gSaveContext.fileNum);
 
     gSaveContext.save.saveInfo.playerData.magicLevel = 0;
 
@@ -1431,7 +1433,8 @@ void func_801457CC(GameState* gameState, SramContext* sramCtx) {
             phi_s2 = false;
             sp6E = 0;
             // read main save from flash
-            if (SysFlashrom_ReadData(sramCtx->saveBuf, gFlashSaveStartPages[sp64], gFlashSaveNumPages[sp64]) != 0) {
+            if (SysFlashrom_ReadData(sramCtx->saveBuf, gFlashSaveStartPages[sp64], gFlashSaveNumPages[sp64]) != 0) 
+            {
                 // main save didn't work
                 sp6E = 1;
                 // read backup save from flash
@@ -1442,7 +1445,8 @@ void func_801457CC(GameState* gameState, SramContext* sramCtx) {
                 }
             }
 
-            if (sp76 < 2) {
+            if (sp76 < 2) 
+            {
                 // Non-owl save
                 // sp76 = 0: main save
                 // sp76 = 1: backup save
@@ -1556,7 +1560,9 @@ void func_801457CC(GameState* gameState, SramContext* sramCtx) {
                         Sram_SyncWriteToFlash(sramCtx, gFlashSaveStartPages[sp64], gFlashSpecialSaveNumPages[sp64]);
                     }
                 }
-            } else if (sp76 < 4) {
+            } 
+            else if (sp76 < 4) 
+            {
                 // Owl Save:
                 // sp76 = 3: main owl save
                 // sp76 = 4: backup owl save
@@ -2015,11 +2021,8 @@ void Sram_UpdateWriteToFlashOwlSave(SramContext* sramCtx) {
  
 void Sram_LoadChaosConfig(SramContext *sram_ctx, u8 file_index)
 {
-    Save *save;
-    SysFlashrom_ReadData(sram_ctx->saveBuf, gFlashSaveStartPages[file_index << 1],
-            gFlashSaveNumPages[file_index << 1]);
-
-    save = (Save *)sram_ctx->saveBuf;
+    Save *save = (Save *)sram_ctx->saveBuf;
+    SysFlashrom_ReadData(save, gFlashSaveStartPages[file_index << 1], gFlashSaveNumPages[file_index << 1]);
     gSaveContext.save.chaos = save->chaos;
     
     Chaos_SetConfigDefaults();
@@ -2032,14 +2035,13 @@ void Sram_LoadChaosConfig(SramContext *sram_ctx, u8 file_index)
 void Sram_SaveChaosConfig(SramContext *sram_ctx, u8 file_index)
 {
     Save *save = (Save *)sram_ctx->saveBuf;
+    SysFlashrom_ReadData(save, gFlashSaveStartPages[file_index << 1], gFlashSaveNumPages[file_index << 1]);
     save->chaos = gSaveContext.save.chaos;
+
     save->saveInfo.checksum = 0;
     save->saveInfo.checksum = Sram_CalcChecksum(save, sizeof(Save));
-    SysFlashrom_WriteDataSync(sram_ctx->saveBuf, gFlashSaveStartPages[file_index * 2],
-            gFlashSaveNumPages[file_index * 2]);
-        
-    // SysFlashrom_WriteDataSync(sram_ctx->saveBuf, gFlashSaveStartPages[file_index * 2 + 1],
-    //         gFlashSaveNumPages[file_index * 2 + 1]);
+    Sram_SetFlashPagesDefault(sram_ctx, gFlashSaveStartPages[file_index * 2], gFlashSpecialSaveNumPages[file_index * 2]);
+    Sram_StartWriteToFlashDefault(sram_ctx);
 }
 
 void func_80147314(SramContext* sramCtx, s32 fileNum) {

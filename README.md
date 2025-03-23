@@ -15,4 +15,5 @@ Still gotta figure out asset extraction from a modified rom.
 The bps patches were created against Majora's Mask (U), so you'll need that.
 
 ## Special thanks 
-Special thanks goes to Aegiker, the Bat Basement community and the Zelda Decompilation server for the invaluable help.
+Special thanks goes to Aegiker, the Bat Basement community, the Zelda Decompilation server, for the invaluable help, and MrThee, for the Redeadass Groove effect.
+

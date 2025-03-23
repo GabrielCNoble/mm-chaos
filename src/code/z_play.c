@@ -966,10 +966,26 @@ void Play_UpdateMain(PlayState* this) {
     //     Chaos_ActivateCode(CHAOS_CODE_WALLMASTER, 1);
     // }
 
-    if(Chaos_GetConfigFlag(CHAOS_CONFIG_DPAD_DOWN_TO_KILL_EFFECTS) &&
-        CHECK_BTN_ANY(input->press.button, BTN_DDOWN))
+    if(Chaos_GetConfigFlag(CHAOS_CONFIG_DPAD_DOWN_TO_DIE))
     {
-        Chaos_DeactivateOneCode();
+        if(CHECK_BTN_ANY(input->cur.button, BTN_DDOWN) && !Play_IsChangingArea(this))
+        {
+            gChaosContext.link.dpad_down_timer++;
+
+            if((gChaosContext.link.dpad_down_timer % 20) == 0)
+            {
+                Audio_PlaySfx(NA_SE_SY_WARNING_COUNT_E);
+            }
+            
+            if(gChaosContext.link.dpad_down_timer >= 100)
+            {
+                func_80169FDC(this);
+            }
+        }
+        else
+        {
+            gChaosContext.link.dpad_down_timer = 0;
+        }
     }
 
     if(this->pauseCtx.state == PAUSE_STATE_OFF)
@@ -1364,6 +1380,13 @@ void Play_UpdateMain(PlayState* this) {
         switch(gChaosContext.link.bad_connection_mode)
         {
             case CHAOS_BAD_CONNECTION_ROLLBACK:
+
+                if(player->maskObjectLoadState != 0)
+                {
+                    /* only do snapshot stuff if there's no mask dma in progress */
+                    break;
+                }
+
                 if(gChaosContext.link.snapshot_timer > 0)
                 {
                     gChaosContext.link.snapshot_timer--;
@@ -1440,6 +1463,8 @@ void Play_UpdateMain(PlayState* this) {
 
                 if(gChaosContext.link.bad_connection_timer == 0)
                 {
+                    s8 current_loaded_mask = player->maskId;
+
                     if(player->actor.child != NULL && player->actor.child != gChaosContext.link.player_snapshot.actor.child)
                     {
                         /* current child actor is different from what's in the snapshot, so kill it */
@@ -1495,6 +1520,12 @@ void Play_UpdateMain(PlayState* this) {
                     }
 
                     Lib_MemCpy(player, &gChaosContext.link.player_snapshot, sizeof(Player));
+
+                    if(player->currentMask != PLAYER_MASK_NONE && player->maskId != current_loaded_mask)
+                    {
+                        player->maskId = current_loaded_mask;
+                    }
+
                     Lib_MemCpy(gSaveContext.save.saveInfo.inventory.ammo, gChaosContext.link.ammo, sizeof(gChaosContext.link.ammo));
                     // gSaveContext.magicState = gChaosContext.link.magic_state;
                     gSaveContext.save.saveInfo.playerData.magic = gChaosContext.link.magic_available;
@@ -3066,6 +3097,10 @@ void Play_FillScreen(PlayState* this, s16 fillScreenOn, u8 red, u8 green, u8 blu
 //     PLAYER_CS_ID_WARP_PAD_ENTRANCE,
 //     PLAYER_CS_ID_ITEM_OCARINA
 // };
+
+bool Play_IsChangingArea(PlayState* this) {
+    return (this->transitionTrigger != TRANS_TRIGGER_OFF) || (this->transitionMode != TRANS_MODE_OFF);
+}
 
 void Play_Init(GameState* thisx) {
     PlayState* this = (PlayState*)thisx;

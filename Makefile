@@ -43,7 +43,7 @@ ORIG_COMPILER ?= 0
 # if WERROR is 1, pass -Werror to CC_CHECK, so warnings would be treated as errors
 WERROR ?= 0
 # Keep .mdebug section in build
-KEEP_MDEBUG ?= 0
+KEEP_MDEBUG ?= 1
 # Disassembles all asm from the ROM instead of skipping files which are entirely in C
 FULL_DISASM ?= 0
 # Check code syntax with host compiler

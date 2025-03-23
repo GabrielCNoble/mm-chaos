@@ -47,11 +47,11 @@ typedef enum PlayerShield {
 
 typedef enum PlayerBoots {
     /* 0 */ PLAYER_BOOTS_FIERCE_DEITY,
-    /* 1 */ PLAYER_BOOTS_HYLIAN,
+    /* 1 */ PLAYER_BOOTS_HYLIAN,          // child link walking/floating in water
     /* 2 */ PLAYER_BOOTS_GIANT,
-    /* 3 */ PLAYER_BOOTS_DEKU,
-    /* 4 */ PLAYER_BOOTS_ZORA_LAND,
-    /* 5 */ PLAYER_BOOTS_ZORA_UNDERWATER,
+    /* 3 */ PLAYER_BOOTS_DEKU,            // deku
+    /* 4 */ PLAYER_BOOTS_ZORA_LAND,       // zora running on land/floating in water
+    /* 5 */ PLAYER_BOOTS_ZORA_UNDERWATER, // zora sinking/walking underwater
     /* 6 */ PLAYER_BOOTS_GORON,
     /* 7 */ PLAYER_BOOTS_7,
     /* 8 */ PLAYER_BOOTS_MAX

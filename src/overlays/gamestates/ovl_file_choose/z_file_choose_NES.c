@@ -3489,6 +3489,7 @@ void FileSelect_FadeInFileInfo(GameState* thisx) {
         this->fileInfoAlpha[this->buttonIndex] = 200;
         this->actionTimer = 4;
         // this->selectMode++; // SM_CONFIRM_FILE
+        // Sram_LoadChaosConfig(&this->sramCtx, this->buttonIndex);
         this->selectMode = SM_CONFIRM_FILE;
     }
 
@@ -3798,7 +3799,7 @@ void FileSelect_FadeSelectToChaosConfig(GameState *thisx)
     this->confirmButtonAlpha[FS_BTN_CONFIRM_QUIT] = this->fileInfoAlpha[this->buttonIndex];
     this->confirmButtonAlpha[FS_BTN_CONFIRM_OPTIONS] = this->fileInfoAlpha[this->buttonIndex];
 }
-
+ 
 void FileSelect_ChaosOptions(GameState *thisx)
 {
     FileSelectState *this = (FileSelectState *)thisx;
@@ -3807,11 +3808,12 @@ void FileSelect_ChaosOptions(GameState *thisx)
     if(CHECK_BTN_ALL(input->press.button, BTN_B))
     {
         Audio_PlaySfx(NA_SE_SY_FSEL_CLOSE);
+        Sram_SaveChaosConfig(&this->sramCtx, this->buttonIndex);
+        // this->chaos_config_mode = CCM_CHAOS_WAIT_FOR_FLASH_SAVE;
         this->menuMode = FS_MENU_MODE_SELECT;
         this->selectMode = SM_FADE_IN_FILE_INFO;
         this->nextTitleLabel = FS_TITLE_OPEN_FILE;
         this->actionTimer = 4;
-        Sram_SaveChaosConfig(&this->sramCtx, this->buttonIndex); 
     }
     else if(CHECK_BTN_ALL(input->press.button, BTN_A))
     {
@@ -3977,12 +3979,28 @@ void FileSelect_FadeOutConfigDetails(GameState *thisx)
     this->chaos_config_mode = CCM_CHAOS_OPTIONS;
 }
 
+void FileSelect_ChaosWaitForFlashSave(GameState *thisx)
+{
+    FileSelectState* this = (FileSelectState*)thisx;
+    SramContext* sramCtx = &this->sramCtx;
+
+    Sram_UpdateWriteToFlashDefault(sramCtx);
+
+    if (sramCtx->status == 0) {
+        this->menuMode = FS_MENU_MODE_SELECT;
+        this->selectMode = SM_FADE_IN_FILE_INFO;
+        this->nextTitleLabel = FS_TITLE_OPEN_FILE;
+        this->actionTimer = 4;
+    }
+}
+
 void (*sChaosConfigModeUpdateFuncs[])(GameState *thisx) = {
     FileSelect_FadeSelectToChaosConfig,
     FileSelect_ChaosOptions,
     FileSelect_FadeInConfigDetails,
     FileSelect_ChaosConfigDetails,
-    FileSelect_FadeOutConfigDetails
+    FileSelect_FadeOutConfigDetails,
+    FileSelect_ChaosWaitForFlashSave
 };
 
 void FileSelect_ChaosConfigModeUpdate(GameState *thisx)

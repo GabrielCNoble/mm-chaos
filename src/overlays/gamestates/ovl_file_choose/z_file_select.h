@@ -116,6 +116,7 @@ typedef enum
     CCM_FADE_IN_CONFIG_DETAILS,
     CCM_CHAOS_CONFIG_DETAILS,
     CCM_FADE_OUT_CONFIG_DETAILS,
+    CCM_CHAOS_WAIT_FOR_FLASH_SAVE,
 } ChaosConfigMode;
 
 typedef enum {

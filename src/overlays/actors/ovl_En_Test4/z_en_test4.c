@@ -609,7 +609,23 @@ void EnTest4_HandleEvents(EnTest4* this, PlayState* play) {
 
         if(gChaosContext.moon.moon_crash_time_offset != 0)
         {
-            current_bell_time = CLOCK_TIME(6, 0) - Chaos_TimeUntilMoonCrash();
+            if(CURRENT_DAY == 3 && CURRENT_TIME < CLOCK_TIME(6, 0))
+            {
+                /* let the real deal deal the real */
+                Chaos_ClearMoonCrash();
+
+                /* this will cause the bell to ring at midnight, but won't trigger the cutscene
+                because the call to EnTest4_GetBellTimeOnDay3 further down will compute a next
+                bell time of CLOCK_TIME(0, 10), and the cutscene triggers only if the next bell
+                time is CLOCK_TIME(0, 0) */
+
+                this->prevBellTime = CLOCK_TIME(0, 0);
+                this->nextBellTime = CLOCK_TIME(0, 0);
+            }
+            else
+            {
+                current_bell_time = CLOCK_TIME(6, 0) - Chaos_TimeUntilMoonCrash();
+            }
         }
 
         if(gChaosContext.moon.need_update_bell_time)
@@ -704,9 +720,6 @@ void EnTest4_HandleEvents(EnTest4* this, PlayState* play) {
             if (CURRENT_DAY == 3) {
                 if (this->nextBellTime == CLOCK_TIME(0, 0))
                 {
-                    /* let the real deal deal the real */
-                    Chaos_ClearMoonCrash();
-
                     if((gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] == ITEM_NONE) || (play->sceneId == SCENE_CLOCKTOWER)) 
                     {
                     // Initiate Clocktown day 3 midnight festival cutscene if in south clock town or if

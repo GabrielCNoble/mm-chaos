@@ -55,6 +55,7 @@
 #include "assets/objects/object_link_child/object_link_child.h"
 #include "assets/objects/object_beyblade/object_beyblade.h"
 #include "chaos_fuckery.h"
+#include "fault.h"
 
 extern struct ChaosContext  gChaosContext;
 extern u32                  gPlayerAction;
@@ -574,7 +575,8 @@ extern PlayerAnimationHeader *gImaginaryFriendAnimations[];
 
 /* Player_IsChangingArea */
 bool func_8082DA90(PlayState* play) {
-    return (play->transitionTrigger != TRANS_TRIGGER_OFF) || (play->transitionMode != TRANS_MODE_OFF);
+    return Play_IsChangingArea(play);
+    // return (play->transitionTrigger != TRANS_TRIGGER_OFF) || (play->transitionMode != TRANS_MODE_OFF);
 }
 
 
@@ -8154,7 +8156,8 @@ PlayerAnimationHeader* D_8085D1F8[] = {
 s32 Player_ActionHandler_13(Player* this, PlayState* play) {
     PlayerBottle bottleAction;
 
-    if (this->unk_AA5 != PLAYER_UNKAA5_0) {
+    if (this->unk_AA5 != PLAYER_UNKAA5_0) 
+    {
         if (!(this->actor.bgCheckFlags & (BGCHECKFLAG_GROUND | BGCHECKFLAG_GROUND_TOUCH)) &&
             !(this->stateFlags1 & PLAYER_STATE1_8000000) && !(this->stateFlags1 & PLAYER_STATE1_800000) &&
             !(this->stateFlags3 & PLAYER_STATE3_8) && !(this->skelAnime.movementFlags & ANIM_FLAG_ENABLE_MOVEMENT)) {
@@ -8191,7 +8194,8 @@ s32 Player_ActionHandler_13(Player* this, PlayState* play) {
                         func_808388B8(play, this, this->itemAction - PLAYER_IA_MASK_FIERCE_DEITY);
                     }
                     gSaveContext.save.equippedMask = this->currentMask;
-                } else if (CHECK_FLAG_ALL(this->actor.flags, ACTOR_FLAG_TALK) ||
+                } 
+                else if (CHECK_FLAG_ALL(this->actor.flags, ACTOR_FLAG_TALK) ||
                            (this->itemAction == PLAYER_IA_PICTOGRAPH_BOX) ||
                            ((this->itemAction != this->unk_B2B) &&
                             ((this->itemAction == PLAYER_IA_BOTTLE_BIG_POE) ||
@@ -8202,7 +8206,8 @@ s32 Player_ActionHandler_13(Player* this, PlayState* play) {
                               (((this->exchangeItemAction == PLAYER_IA_MAGIC_BEANS) &&
                                 (this->itemAction == PLAYER_IA_MAGIC_BEANS)) ||
                                ((this->exchangeItemAction != PLAYER_IA_MAGIC_BEANS) &&
-                                (Player_BottleFromIA(this, this->itemAction) > PLAYER_BOTTLE_NONE))))))) {
+                                (Player_BottleFromIA(this, this->itemAction) > PLAYER_BOTTLE_NONE))))))) 
+                {
                     Actor* talkActor;
                     s32 heldItemTemp = this->itemAction;
 
@@ -8254,10 +8259,13 @@ s32 Player_ActionHandler_13(Player* this, PlayState* play) {
                     }
                     func_8082DAD4(this);
                     return true;
-                } else {
+                } 
+                else 
+                {
                     bottleAction = Player_BottleFromIA(this, this->itemAction);
 
-                    if (bottleAction > PLAYER_BOTTLE_NONE) {
+                    if (bottleAction > PLAYER_BOTTLE_NONE) 
+                    {
                         Player_StopCutscene(this);
                         if (bottleAction >= PLAYER_BOTTLE_FAIRY) {
                             Player_SetAction_PreserveItemAction(play, this, Player_Action_69, 0);
@@ -8273,7 +8281,9 @@ s32 Player_ActionHandler_13(Player* this, PlayState* play) {
                                                                   ? &gPlayerAnim_pn_drinkstart
                                                                   : &gPlayerAnim_link_bottle_drink_demo_start);
                         }
-                    } else {
+                    } 
+                    else 
+                    {
                         Actor* ocarinaInteractionActor = this->ocarinaInteractionActor;
 
                         if ((ocarinaInteractionActor == NULL) || (ocarinaInteractionActor->id == ACTOR_EN_ZOT) ||
@@ -9287,7 +9297,6 @@ void func_8083B930(PlayState* play, Player* this) {
         (Player_Action_96 == this->actionFunc)) 
     {
         func_8082DE50(play, this);
-        
 
         if (Player_Action_28 == this->actionFunc) {
             func_8083B850(play, this);
@@ -9298,12 +9307,16 @@ void func_8083B930(PlayState* play, Player* this) {
             Player_Anim_PlayLoopAdjusted(play, this, &gPlayerAnim_pz_fishswim);
         } else if ((this->currentBoots < PLAYER_BOOTS_ZORA_UNDERWATER) && (this->stateFlags2 & PLAYER_STATE2_400)) {
             this->stateFlags2 &= ~PLAYER_STATE2_400;
-            func_8083B3B4(play, this, NULL);
+            func_8083B3B4(play, this, NULL);    
             this->av1.actionVar1 = 1;
         } else if (Player_Action_27 == this->actionFunc) {
             Player_SetAction(play, this, Player_Action_59, 0);
             func_8083B798(play, this);
         } else if(this->actionFunc != Player_Action_Beyblade){
+            // if(this->actionFunc == Player_Action_26)
+            // {
+            //     Fault_AddHangupPrintfAndCrash("ASS");
+            // }
             /* beyblades don't swim */
             Player_SetAction(play, this, Player_Action_54, 1);
             Player_Anim_PlayOnceMorph(play, this,
@@ -9311,7 +9324,13 @@ void func_8083B930(PlayState* play, Player* this) {
                                           ? &gPlayerAnim_link_swimer_wait2swim_wait
                                           : &gPlayerAnim_link_swimer_land2swim_wait);
         }
+
+        // if(this->actionFunc == Player_Action_26)
+        // {
+        //     Fault_AddHangupPrintfAndCrash("ASS");
+        // }
     }
+
     if (!(this->stateFlags1 & PLAYER_STATE1_8000000) || (this->actor.depthInWater < this->ageProperties->unk_2C)) {
         func_8083B8D0(play, this);
     }
@@ -9406,6 +9425,10 @@ void func_8083BB4C(PlayState* play, Player* this) {
                         (Player_Action_57 != this->actionFunc) && (Player_Action_58 != this->actionFunc) &&
                         (Player_Action_59 != this->actionFunc) && (Player_Action_60 != this->actionFunc) &&
                         (Player_Action_55 != this->actionFunc) && (Player_Action_56 != this->actionFunc))) {
+                // if(this->actionFunc == Player_Action_26)
+                // {
+                //     Fault_AddHangupPrintfAndCrash("ASS");
+                // }
                 func_8083B930(play, this);
             }
         } else if ((this->stateFlags1 & PLAYER_STATE1_8000000) &&
@@ -11193,11 +11216,13 @@ s32 func_80840A30(PlayState* play, Player* this, f32* cur_speed, f32 bonk_speed_
                 if (!(this->stateFlags3 & PLAYER_STATE3_1000)) {
                     if ((this->stateFlags3 & PLAYER_STATE3_8000) && (Player_Action_28 != this->actionFunc)) {
                         Player_SetAction(play, this, Player_Action_61, 0);
+                        Chaos_AppendActionChange(play, 61);
                         Player_Anim_PlayOnceAdjusted(play, this, &gPlayerAnim_link_swimer_swim_hit);
                         func_8082DD2C(play, this);
                         this->speedXZ *= 0.2f;
                     } else {
                         Player_SetAction(play, this, Player_Action_26, 0);
+                        Chaos_AppendActionChange(play, 26);
                         Player_Anim_PlayOnce(play, this, D_8085BE84[PLAYER_ANIMGROUP_hip_down][this->modelAnimType]);
                         this->av2.actionVar2 = 1;
                     }
@@ -11510,7 +11535,9 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     // gSaveContext.save.saveInfo.playerData.isMagicAcquired = true;
     // gSaveContext.save.saveInfo.playerData.magic = 80;
 
-    // gSaveContext.save.saveInfo.inventory.items[SLOT_HOOKSHOT] = ITEM_HOOKSHOT;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_BUNNY] = ITEM_MASK_BUNNY;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ROMANI] = ITEM_MASK_ROMANI;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] = ITEM_NONE;
     // gSaveContext.save.saveInfo.inventory.questItems = (1 << QUEST_SONG_SOARING);
     // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_SONG_EPONA);
@@ -11712,8 +11739,8 @@ void Player_GiveAGoddamnItem(PlayState *play, Player *this, s16 get_item_id)
     func_80838830(this, gi_entry->objectId);
     
 
-    if (!(this->stateFlags2 & PLAYER_STATE2_400) ||
-        (this->currentBoots == PLAYER_BOOTS_ZORA_UNDERWATER)) {
+    if (!(this->stateFlags2 & PLAYER_STATE2_400) || (this->currentBoots == PLAYER_BOOTS_ZORA_UNDERWATER)) {
+        /* if player is standing up, either on land or underwater */
         Player_StopCutscene(this);
         Player_SetupWaitForPutAwayWithCs(play, this, func_80837C78, play->playerCsIds[PLAYER_CS_ID_ITEM_GET]);
         Player_Anim_PlayOnceAdjusted(play, this, (this->transformation == PLAYER_FORM_DEKU)
@@ -13156,7 +13183,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     {
         // play->nextEntrance = Entrance_Create(gSceneIndex, gEntranceIndex, 0);
         // Chaos_ActivateCode(CHAOS_CODE_WALLMASTER);
-        // play->nextEntrance = ENTRANCE(MOUNTAIN_VILLAGE_WINTER, 1);
+        // play->nextEntrance = ENTRANCE(PINNACLE_ROCK, 0);
         // Scene_SetExitFade(play);
         // play->transitionTrigger = TRANS_TRIGGER_START;
 
@@ -13186,7 +13213,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // gChaosContext.link.random_knockback_timer = 1;
         // Chaos_SpawnActor(&play->actorCtx, play, ACTOR_EN_ARWING, 
         //     this->actor.world.pos.x, this->actor.world.pos.y + 20.0f, this->actor.world.pos.z, 0, 0, 0, ARWING_FRIENDLY);
-        Chaos_StartMoonCrash();
+        // Chaos_StartMoonCrash();
         // Camera_ChangeSetting(Play_GetCamera(play, CAM_ID_MAIN), CAM_SET_BIRDS_EYE_VIEW_0);
         // Chaos_ActivateCode(CHAOS_CODE_LIFTOFF, 1);
         // Chaos_ActivateCode(CHAOS_CODE_BOMB_ARROWS, 120);
@@ -13242,6 +13269,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     {
         // this->actor.velocity.y = 10.0f;
         // Chaos_ActivateCode(CHAOS_CODE_MOON_CRASH, 1);
+        // Chaos_StartMoonCrash();
         // u32 time_until_moon_crash = CLOCK_TIME(4, 0);
         // gChaosContext.moon.moon_crash_time_offset = TIME_UNTIL_MOON_CRASH - time_until_moon_crash;
         // gChaosContext.moon.moon_crash_timer = 0xffffffff;
@@ -13267,7 +13295,15 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // gChaosContext.room.weirdness_behavior = CHAOS_WEIRD_ROOMS_BEHAVIOR_ROTATE;
         // gChaosContext.room.room_rotation_timer = 0;
 
+        // Chaos_ActivateCode(CHAOS_CODE_RANDOM_FIERCE_DEITY, 15);
+
+        // Chaos_ActivateCode(CHAOS_CODE_BEER_GOGGLES, 15);
+
+        // Chaos_ActivateCode(CHAOS_CODE_BAD_CONNECTION, 15);
         // gChaosContext.link.bad_connection_mode = CHAOS_BAD_CONNECTION_ROLLBACK;
+        // gChaosContext.link.bad_connection_timer = 1;
+        // gChaosContext.link.snapshot_timer = 1;
+        
         // Chaos_NukeSnapshots();
         // Chaos_ActivateCode(CHAOS_CODE_BEYBLADE, 30);
         // Chaos_ActivateCode(CHAOS_CODE_RANDOM_KNOCKBACK, 10);
@@ -13884,7 +13920,18 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
             this->pushedSpeed = 0.0f;
         }
 
+        // if(this->actionFunc == Player_Action_26)
+        // {
+        //     Fault_AddHangupPrintfAndCrash("ASS");
+        // }
+
         Player_HandleExitsAndVoids(play, this, this->actor.floorPoly, this->actor.floorBgId);
+
+        // if(this->actionFunc == Player_Action_26)
+        // {
+        //     Fault_AddHangupPrintfAndCrash("ASS");
+        // }
+
         if (sPlayerConveyorSpeedIndex != CONVEYOR_SPEED_DISABLED) {
             f32 conveyorSpeed;
             s32 pad2;
@@ -13905,9 +13952,27 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         } else if (this->pushedSpeed != 0.0f) {
             Math_StepToF(&this->pushedSpeed, 0.0f, (this->stateFlags1 & PLAYER_STATE1_8000000) ? 0.5f : 2.0f);
         }
+
+        // if(this->actionFunc == Player_Action_26)
+        // {
+        //     Fault_AddHangupPrintfAndCrash("ASS");
+        // }
+
         if (!(this->stateFlags1 & (PLAYER_STATE1_DEAD | PLAYER_STATE1_20000000)) &&
             !(this->stateFlags3 & PLAYER_STATE3_FLYING_WITH_HOOKSHOT) && (Player_Action_80 != this->actionFunc)) {
+
+            // if(this->actionFunc == Player_Action_26)
+            // {
+            //     Fault_AddHangupPrintfAndCrash("ASS");
+            // }
+
             func_8083BB4C(play, this);
+
+            // if(this->actionFunc == Player_Action_26)
+            // {
+            //     Fault_AddHangupPrintfAndCrash("ASS");
+            // }
+
             if (!Play_InCsMode(play)) {
                 if ((this->actor.id == ACTOR_PLAYER) && !(this->stateFlags1 & PLAYER_STATE1_80000000) &&
                     (gSaveContext.save.saveInfo.playerData.health == 0) &&
@@ -13967,6 +14032,11 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
             this->actor.world.pos.y = this->actor.prevPos.y;
         }
 
+        // if(this->actionFunc == Player_Action_26)
+        // {
+        //     Fault_AddHangupPrintfAndCrash("ASS");
+        // }
+
         if (play->csCtx.state != CS_STATE_IDLE) {
             if ((this->csAction != PLAYER_CSACTION_5) && !(this->stateFlags1 & PLAYER_STATE1_800000)) {
                 if (!(this->stateFlags2 & PLAYER_STATE2_80) && (this->actor.id == ACTOR_PLAYER)) {
@@ -13983,6 +14053,11 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
                 }
             }
         }
+
+        // if(this->actionFunc == Player_Action_26)
+        // {
+        //     Fault_AddHangupPrintfAndCrash("ASS");
+        // }
 
         if ((u32)this->csAction != PLAYER_CSACTION_NONE) {
             if ((this->csAction != PLAYER_CSACTION_END) ||
@@ -14031,6 +14106,8 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
 
         var_v1 = Play_InCsMode(play);
         sSavedCurrentMask = this->currentMask;
+
+
         if (!(this->stateFlags3 & PLAYER_STATE3_4)) {
             this->actionFunc(this, play);
         }
@@ -19126,6 +19203,11 @@ void Player_Action_54(Player* this, PlayState* play) {
         func_8084748C(this, &this->speedXZ, speedTarget, yawTarget);
         func_80847F1C(this);
     }
+
+    // if(this->actionFunc == Player_Action_26)
+    // {
+    //     Fault_AddHangupPrintfAndCrash("COCK");
+    // }
 }
 
 void Player_Action_55(Player* this, PlayState* play) {
@@ -19474,6 +19556,7 @@ void Player_Action_60(Player* this, PlayState* play) {
     func_8084748C(this, &this->speedXZ, 0.0f, this->actor.shape.rot.y);
 }
 
+/* zora swim bonk */
 void Player_Action_61(Player* this, PlayState* play) {
     // gPlayerAction = 61;
     Chaos_AppendActionChange(play, 61);

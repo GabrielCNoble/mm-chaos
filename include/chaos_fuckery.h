@@ -25,10 +25,11 @@
 #include "overlays/actors/ovl_Bg_Open_Shutter/z_bg_open_shutter.h"
 #include "overlays/actors/ovl_En_Door/z_en_door.h"
 #include "overlays/actors/ovl_En_Door_Etc/z_en_door_etc.h"
+#include "overlays/actors/ovl_En_Arwing/z_en_arwing.h"
 
 #define CHAOS_MAJOR_VERSION 0
 #define CHAOS_MINOR_VERSION 5
-#define CHAOS_PATCH_VERSION 2
+#define CHAOS_PATCH_VERSION 3
 
 enum CHAOS_CODES
 {
@@ -140,7 +141,7 @@ enum CHAOS_CODES
     CHAOS_CODE_HEART_SNAKE,
     /* makes time flow a lot faster */
     CHAOS_CODE_FAST_TIME,
-    /* fake moon crash, with a 1/32 chance of becoming a real moon crash */
+    /* fake moon crash, with a 1/64 chance of becoming a real moon crash */
     CHAOS_CODE_MOON_CRASH,
     /* makes link run 10x as fast */
     CHAOS_CODE_SPEEDBOOST,
@@ -153,7 +154,6 @@ enum CHAOS_CODES
     /* makes link "buffer" and rollback randomly */
     CHAOS_CODE_BAD_CONNECTION,
     /*  
-        link puts his finger on the ground and spins like a beyblade.
         A: makes it "dash" forward and spin faster
         B: makes it spin faster and jump. Jumping against a wall allows wall-jumping.
     */
@@ -168,9 +168,6 @@ enum CHAOS_CODES
     CHAOS_CODE_AIR_SUPPORT,
     /* link's hands shake */
     // CHAOS_CODE_TOO_MUCH_CAFFEINE,
-
-    /* spawns a bunch of arwings that attack enemies */
-    // CHAOS_CODE_AIR_SUPPORT,
 
     /* tatl randomly pipes up saying things like
         "The pit",
@@ -466,10 +463,11 @@ enum CHAOS_CONFIGS
     CHAOS_CONFIG_USE_DISRUPTIVE_EFFECT_PROB,
     CHAOS_CONFIG_ALLOW_BEER_GOGGLES_AND_SILENT_FIELD,
     CHAOS_CONFIG_ALLOW_ENEMY_INFIGHTING,
-    CHAOS_CONFIG_DPAD_DOWN_TO_KILL_EFFECTS,
+    CHAOS_CONFIG_DPAD_DOWN_TO_DIE,
     CHAOS_CONFIG_USE_PERIODIC_EFFECT_PROB,
     CHAOS_CONFIG_RANDOM_MOUNTAIN_VILLAGE_CLIMB,
     CHAOS_CONFIG_GIVE_FIERCE_DEITY_MASK,
+    CHAOS_CONFIG_ALLOW_UNDERWATER_OCARINA,
     CHAOS_CONFIG_LAST,
 };
 
@@ -840,6 +838,7 @@ typedef struct ChaosContext
         f32                     temp_limb_scale;
         u8                      random_scaling_mode;
         u8                      scaled_limb_index;
+        u8                      dpad_down_timer;
 
         u8                              magic_state;   
         s16                             magic_available;                           
@@ -1098,6 +1097,8 @@ void Chaos_SetV045ConfigDefaults(void);
 void Chaos_SetV046ConfigDefaults(void);
 
 void Chaos_SetV050ConfigDefaults(void);
+
+void Chaos_SetV053ConfigDefaults(void);
 
 void Chaos_SetConfigDefaults(void);
 

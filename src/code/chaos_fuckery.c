@@ -155,9 +155,9 @@ struct ChaosConfig gChaosConfigs[CHAOS_CONFIG_LAST] = {
                                 "If enabled, chaos spawned enemies will be able to deal damage to others, and will retaliate others if attacked.\n"
                                 "This often means enemies will stop paying attention to the player for some time."
     },
-    /* [CHAOS_CONFIG_DPAD_DOWN_TO_KILL_EFFECTS] */ {
-        /* .label = */          "D-Down effect kill",
-        /* .description */      "If enabled, pressing D-Pad down will kill one of the active effects."
+    /* [CHAOS_CONFIG_DPAD_DOWN_TO_DIE] */ {
+        /* .label = */          "D-Down to die",
+        /* .description */      "If enabled, holding D-Pad down will kill Link after 5 seconds. Useful for getting out of softlocks."
     },
     /* [CHAOS_CONFIG_USE_PERIODIC_EFFECT_PROB] */ {
         /* .label = */          "Periodic effect prob",
@@ -173,8 +173,11 @@ struct ChaosConfig gChaosConfigs[CHAOS_CONFIG_LAST] = {
         /* .label = */          "Random Fierce Deity mask",
         /* .description = */    "If enabled, the random Fierce Deity effect will add Fierce Deity's mask to inventory instead of forcefully transforming Link when activating.\n"
                                 "The mask will also be removed from the inventory/C-buttons when deactivating, and Link will be transformed back to human."
-    }
-
+    },
+    /* [CHAOS_CONFIG_ALLOW_UNDERWATER_OCARINA] = */{
+        /* .label = */          "Underwater ocarina",
+        /* .description = */    "If enabled, playing ocarina underwater will be possible. This is so it's possible to counter the fast time effect when underwater.\n"
+    },
 };
 
 
@@ -183,6 +186,7 @@ struct ChaosConfigSetup gChaosConfigSetups[] = {
     {0, 4, 5, Chaos_SetV045ConfigDefaults},
     {0, 4, 6, Chaos_SetV046ConfigDefaults},
     {0, 5, 0, Chaos_SetV050ConfigDefaults},
+    {0, 5, 3, Chaos_SetV053ConfigDefaults},
 };
 
 PlayerAnimationHeader *gImaginaryFriendAnimations[] = {
@@ -1034,7 +1038,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
 
         // if(Chaos_GetConfigFlag(CHAOS_CONFIG_CHAOS))
         // {
-        return;  
+        // return;  
         // }
 
         if(chaos_elapsed_seconds > 0)
@@ -1424,44 +1428,6 @@ void Chaos_UpdateChaos(PlayState *playstate)
 
                         case CHAOS_CODE_MOON_CRASH:
                         {
-                            // u32 index;
-                            // u32 has_ocarina = gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] == ITEM_OCARINA_OF_TIME;
-                            // u32 is_real_mooncrash = (gSaveContext.save.chaos.moon_crash_count >= 3) && has_ocarina;
-                            // gChaosContext.moon.moon_crash_timer = 0;
-
-                            // /* 1/32 chance of real mooncrash */
-                            // for(index = 0; index < 8; index++)
-                            // {
-                            //     is_real_mooncrash &= ((Chaos_RandNext() % 4) == 0);
-                            // }
-
-                            // do
-                            // {
-                            //     u32 hours_until_crash = Chaos_RandS16Offset(0, 5);
-                            //     u32 minutes_until_crash = Chaos_RandS16Offset(0, 59);
-                            //     s32 time_until_moon_crash;
-                            //     u32 remaining_frames;
-                                
-                            //     if(hours_until_crash == 0 && minutes_until_crash == 0)
-                            //     {
-                            //         minutes_until_crash = Chaos_RandS16Offset(20, 39);
-                            //     }
-
-                            //     time_until_moon_crash = CLOCK_TIME(hours_until_crash, minutes_until_crash);
-                            //     gChaosContext.moon.moon_crash_time_offset = TIME_UNTIL_MOON_CRASH - time_until_moon_crash;
-                            //     remaining_frames = time_until_moon_crash / (R_TIME_SPEED + gSaveContext.save.timeSpeedOffset);
-
-                            //     if(is_real_mooncrash)
-                            //     {
-                            //         gChaosContext.moon.moon_crash_timer = 0xffffffff;
-                            //     }
-                            //     else if(remaining_frames >= 80)
-                            //     {
-                            //         gChaosContext.moon.moon_crash_timer = Chaos_RandS16Offset(40, remaining_frames - 1);
-                            //     }
-                            // }
-                            // while(gChaosContext.moon.moon_crash_timer == 0);
-
                             Chaos_StartMoonCrash();
 
                             if(gSaveContext.save.chaos.moon_crash_count < 3)
@@ -1587,6 +1553,7 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
         {
             gAcceptPageChange = 1;
         }
+        
 
         if(gAcceptPageChange)
         {
@@ -1602,6 +1569,8 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
                 gAcceptPageChange = 0;
             }
         }
+
+        // gChaosEffectPageIndex = 0xffffffff;
 
         if(gChaosEffectPageIndex == 0)
         {
@@ -1719,6 +1688,8 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
             GfxPrint_Printf(&gfx_print, "pause state: %x", playstate->pauseCtx.state);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "actor count: %x", gChaosContext.actors.spawned_actors);
+            GfxPrint_SetPos(&gfx_print, 1, y_pos++);
+            GfxPrint_Printf(&gfx_print, "current boot: %x", player->currentBoots);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             // GfxPrint_Printf(&gfx_print, "wall poly: %d", (u32)(player->actor.wallPoly - playstate->colCtx.colHeader->polyList));
             // GfxPrint_SetPos(&gfx_print, 1, y_pos++);
@@ -3156,14 +3127,14 @@ void Chaos_StartMoonCrash(void)
     u32 index;
     u32 has_ocarina = gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] == ITEM_OCARINA_OF_TIME;
     u32 is_real_mooncrash = (gSaveContext.save.chaos.moon_crash_count >= 3) && has_ocarina;
-    // u32 is_real_mooncrash = 0;
-    gChaosContext.moon.moon_crash_timer = 0;
 
-    /* 1/32 chance of real mooncrash */
-    for(index = 0; index < 8; index++)
+    if(gSaveContext.save.chaos.moon_crash_count < 3)
     {
-        is_real_mooncrash &= ((Chaos_RandNext() % 4) == 0);
+        gSaveContext.save.chaos.moon_crash_count++;
     }
+
+    gChaosContext.moon.moon_crash_timer = 0;
+    is_real_mooncrash &= ((Chaos_RandNext() & 0x1f) == 0x1f);
 
     do
     {
@@ -3412,7 +3383,7 @@ void Chaos_SetV045ConfigDefaults(void)
 
 void Chaos_SetV046ConfigDefaults(void)
 {
-    Chaos_SetConfigFlag(CHAOS_CONFIG_DPAD_DOWN_TO_KILL_EFFECTS, false);
+    Chaos_SetConfigFlag(CHAOS_CONFIG_DPAD_DOWN_TO_DIE, false);
 }
 
 void Chaos_SetV050ConfigDefaults(void)
@@ -3422,16 +3393,35 @@ void Chaos_SetV050ConfigDefaults(void)
     Chaos_SetConfigFlag(CHAOS_CONFIG_GIVE_FIERCE_DEITY_MASK, true);
 }
 
+void Chaos_SetV053ConfigDefaults(void)
+{
+    Chaos_SetConfigFlag(CHAOS_CONFIG_ALLOW_UNDERWATER_OCARINA, true);
+    Chaos_SetConfigFlag(CHAOS_CONFIG_RANDOM_MOUNTAIN_VILLAGE_CLIMB, true);
+    Chaos_SetConfigFlag(CHAOS_CONFIG_DPAD_DOWN_TO_DIE, true);
+}
+
 void Chaos_SetConfigDefaults(void)
 {
     u32 index;
+    u32 current_version = gSaveContext.save.chaos.major;
+    current_version <<= 8;
+    current_version |= gSaveContext.save.chaos.minor;
+    current_version <<= 8;
+    current_version |= gSaveContext.save.chaos.patch;
     for(index = 0; index < ARRAY_COUNT(gChaosConfigSetups); index++)
     {
         struct ChaosConfigSetup *setup = gChaosConfigSetups + index;
 
-        if(gSaveContext.save.chaos.major < setup->major || 
-           gSaveContext.save.chaos.minor < setup->minor ||
-           gSaveContext.save.chaos.patch < setup->patch)
+        u32 setup_version = setup->major;
+        setup_version <<= 8;
+        setup_version |= setup->minor;
+        setup_version <<= 8;
+        setup_version |= setup->patch;
+
+        // if(gSaveContext.save.chaos.major < setup->major || 
+        //    gSaveContext.save.chaos.minor < setup->minor ||
+        //    gSaveContext.save.chaos.patch < setup->patch)
+        if(current_version < setup_version)
         {
             setup->config();
         }

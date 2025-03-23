@@ -1894,23 +1894,35 @@ void Interface_UpdateButtonsPart2(PlayState* play) {
             gSaveContext.buttonStatus[EQUIP_SLOT_B] = BTN_ENABLED;
         }
 
-        for (i = EQUIP_SLOT_C_LEFT; i <= EQUIP_SLOT_C_RIGHT; i++) {
-            if (GET_CUR_FORM_BTN_ITEM(i) != ITEM_MASK_ZORA) {
-                if (Player_GetEnvironmentalHazard(play) == PLAYER_ENV_HAZARD_UNDERWATER_FLOOR) {
-                    if (!((GET_CUR_FORM_BTN_ITEM(i) >= ITEM_BOTTLE) &&
-                          (GET_CUR_FORM_BTN_ITEM(i) <= ITEM_OBABA_DRINK))) {
-                        if (gSaveContext.buttonStatus[i] == BTN_ENABLED) {
+        for (i = EQUIP_SLOT_C_LEFT; i <= EQUIP_SLOT_C_RIGHT; i++) 
+        {
+            if (GET_CUR_FORM_BTN_ITEM(i) != ITEM_MASK_ZORA) 
+            {
+                if (Player_GetEnvironmentalHazard(play) == PLAYER_ENV_HAZARD_UNDERWATER_FLOOR) 
+                {
+                    bool allow_underwater_ocarina = Chaos_GetConfigFlag(CHAOS_CONFIG_ALLOW_UNDERWATER_OCARINA);
+                    if (!((GET_CUR_FORM_BTN_ITEM(i) >= ITEM_BOTTLE) && (GET_CUR_FORM_BTN_ITEM(i) <= ITEM_OBABA_DRINK)) && 
+                    (!allow_underwater_ocarina || (GET_CUR_FORM_BTN_ITEM(i) != ITEM_OCARINA_OF_TIME && allow_underwater_ocarina)))
+                    {
+                        if (gSaveContext.buttonStatus[i] == BTN_ENABLED) 
+                        {
                             restoreHudVisibility = true;
                         }
                         gSaveContext.buttonStatus[i] = BTN_DISABLED;
-                    } else {
-                        if (gSaveContext.buttonStatus[i] == BTN_DISABLED) {
+                    } 
+                    else 
+                    {
+                        if (gSaveContext.buttonStatus[i] == BTN_DISABLED) 
+                        {
                             restoreHudVisibility = true;
                         }
                         gSaveContext.buttonStatus[i] = BTN_ENABLED;
                     }
-                } else {
-                    if (gSaveContext.buttonStatus[i] == BTN_ENABLED) {
+                } 
+                else 
+                {
+                    if (gSaveContext.buttonStatus[i] == BTN_ENABLED) 
+                    {
                         restoreHudVisibility = true;
                     }
                     gSaveContext.buttonStatus[i] = BTN_DISABLED;
