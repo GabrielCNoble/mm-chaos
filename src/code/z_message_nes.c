@@ -2,6 +2,9 @@
 #include "message_data_fmt_nes.h"
 #include "message_data_static.h"
 #include "attributes.h"
+#include "chaos_fuckery.h"
+
+extern struct ChaosContext gChaosContext;
 
 f32 sNESFontWidths[160] = {
     8.0f,  8.0f,  6.0f,  9.0f,  9.0f,  14.0f, 12.0f, 3.0f,  7.0f,  7.0f,  7.0f,  9.0f,  4.0f,  6.0f,  4.0f,  9.0f,
@@ -865,6 +868,26 @@ void Message_DrawTextNES(PlayState* play, Gfx** gfxP, u16 textDrawPos) {
                 }
                 *gfxP = gfx;
                 return;
+
+            case MESSAGE_SIMON_KEY0:
+            case MESSAGE_SIMON_KEY1:
+            {
+                u16 button = gChaosContext.link.simon_says_keys[character - MESSAGE_SIMON_KEY0];
+
+                prevR = msgCtx->textColorR;
+                prevG = msgCtx->textColorG;
+                prevB = msgCtx->textColorB;
+                msgCtx->textColorR = sColorsButtonsNES[(s16)sButtonColorIndicesNES[11]].r;
+                msgCtx->textColorG = sColorsButtonsNES[(s16)sButtonColorIndicesNES[11]].g;
+                msgCtx->textColorB = sColorsButtonsNES[(s16)sButtonColorIndicesNES[11]].b;
+                Message_DrawTextChar(play, &font->charBuf[font->unk_11D88][charTexIndex], &gfx);
+                msgCtx->textColorR = prevR;
+                msgCtx->textColorG = prevG;
+                msgCtx->textColorB = prevB;
+                charTexIndex += FONT_CHAR_TEX_SIZE;
+                msgCtx->textPosX += (s32)(16.0f * msgCtx->textCharScale);
+            }
+            break;
 
             default:
                 switch (character) {
@@ -1929,7 +1952,16 @@ void Message_DecodeNES(PlayState* play) {
         } else if (curChar == MESSAGE_DELAY) {
             msgCtx->decodedBuffer.schar[++decodedBufPos] = font->msgBuf.schar[++msgCtx->msgBufPos];
             msgCtx->decodedBuffer.schar[++decodedBufPos] = font->msgBuf.schar[++msgCtx->msgBufPos];
-        } else if ((curChar != ' ') && (curChar >= 9)) {
+        } 
+        else if(curChar == MESSAGE_SIMON_KEY0 || curChar == MESSAGE_SIMON_KEY1)
+        {
+            curChar = gChaosContext.link.simon_says_keys[curChar - MESSAGE_SIMON_KEY0];
+            // msgCtx->decodedBuffer.schar[decodedBufPos] = curChar;
+            Font_LoadCharNES(play, curChar, charTexIndex);
+            charTexIndex += FONT_CHAR_TEX_SIZE;
+            spA4 += 16.0f * msgCtx->textCharScale;
+        }
+        else if ((curChar != ' ') && (curChar >= 9)) {
             Font_LoadCharNES(play, curChar, charTexIndex);
             charTexIndex += FONT_CHAR_TEX_SIZE;
             spA4 += sNESFontWidths[curChar - ' '] * msgCtx->textCharScale;
@@ -1940,3 +1972,4 @@ void Message_DecodeNES(PlayState* play) {
         msgCtx->msgBufPos++;
     }
 }
+ 

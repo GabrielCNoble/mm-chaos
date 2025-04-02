@@ -49,6 +49,12 @@
 #define MESSAGE_BTN_CRIGHT 0xB9
 #define MESSAGE_Z_TARGET 0xBA
 #define MESSAGE_CONTROL_PAD 0xBB
+#define MESSAGE_SIMON_KEY0 0xBC
+#define MESSAGE_SIMON_KEY1 0xBD
+#define MESSAGE_BTN_DUP 0xBC
+#define MESSAGE_BTN_DRIGHT 0xBD
+#define MESSAGE_BTN_DDOWN 0xBE
+#define MESSAGE_BTN_DLEFT 0xBF
 #define MESSAGE_END 0xBF
 #define MESSAGE_BACKGROUND 0xC1
 #define MESSAGE_TWO_CHOICE 0xC2
@@ -142,6 +148,8 @@
 #define POINTS_TENS CTRL_BASE(POINTS_TENS)
 #define POINTS_THOUSANDS CTRL_BASE(POINTS_THOUSANDS)
 #define BOX_BREAK CTRL_BASE(BOX_BREAK)
+#define SIMON_KEY0 CTRL_BASE(SIMON_KEY0)
+#define SIMON_KEY1 CTRL_BASE(SIMON_KEY1)
 // while a control character, newlines are handled in the charmap conversion
 // stage to allow normal newline \n usage in message_data_static files
 #define NEWLINE CTRL_BASE(NEWLINE)

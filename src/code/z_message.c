@@ -16,7 +16,7 @@
 
 #include "assets/interface/parameter_static/parameter_static.h"
 #include "chaos_fuckery.h"
-
+ 
 extern struct ChaosContext gChaosContext;
 
 u8 D_801C6A70 = 0;
@@ -55,7 +55,7 @@ u16 sBombersNotebookEventMessages[BOMBERS_NOTEBOOK_EVENT_MAX] = {
 u16 gBombersNotebookWeekEventFlags[BOMBERS_NOTEBOOK_EVENT_MAX] = {
 #include "tables/notebook_table.h"
 };
-
+ 
 #undef DEFINE_PERSON 
 #undef DEFINE_EVENT
 
@@ -64,8 +64,8 @@ u16 gBombersNotebookWeekEventFlags[BOMBERS_NOTEBOOK_EVENT_MAX] = {
 MessageTableEntry sMessageTableNES[] = {
 #include "assets/text/message_data.h" 
     { 0xFFFF, 0, NULL },
-}; 
-
+};
+ 
 #undef DEFINE_MESSAGE
 
 #define DEFINE_MESSAGE(textId, type, yPos, msg) \
@@ -234,8 +234,8 @@ void Message_DrawTextboxIcon(PlayState* play, Gfx** gfxP, s16 x, s16 y) {
 
     if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
     {
-        chaos_offset_x = Rand_S16Offset(48, -96);
-        chaos_offset_y = Rand_S16Offset(48, -96);
+        chaos_offset_x = Chaos_RandS16Offset(48, -96);
+        chaos_offset_y = Chaos_RandS16Offset(48, -96);
     }
 
     gfx = *gfxP;
@@ -756,8 +756,8 @@ void Message_DrawTextChar(PlayState* play, TexturePtr texture, Gfx** gfxP) {
 
     if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
     {
-        x += Rand_S16Offset(12, -24);
-        y += Rand_S16Offset(12, -24);
+        x += Chaos_RandS16Offset(12, -24);
+        y += Chaos_RandS16Offset(12, -24);
     }
 
     gDPPipeSync(gfx++);

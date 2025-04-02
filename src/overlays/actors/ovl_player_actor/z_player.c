@@ -3,6 +3,7 @@
  * Overlay: ovl_player_actor
  * Description: Player
  */
+#include "message_data_fmt_nes.h"
 #include "prevent_bss_reordering.h"
 #include "z64player.h"
 
@@ -60,6 +61,7 @@
 extern struct ChaosContext  gChaosContext;
 extern u32                  gPlayerAction;
 extern u32                  gPlayerUpperAction;
+extern u32                  gForcePause;
 extern AnimationHeader      gBeybladeAnimation;
 extern s32                (*gSetPlayerInBoatMode)(PlayState* play, Player* this);
 extern s32                (*gIsPlayerInBoatMode)(PlayState* play, Player* this);
@@ -4772,6 +4774,7 @@ void func_80831F34(PlayState* play, Player* this, PlayerAnimationHeader* anim) {
     }
 
     this->stateFlags1 |= PLAYER_STATE1_DEAD;
+    gChaosContext.link.simon_says_state = CHAOS_SIMON_SAYS_STATE_IDLE;
 
     func_8082DAD4(this);
 
@@ -11527,6 +11530,7 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     // gSaveContext.save.saveInfo.inventory.items[SLOT_BOTTLE_1] = ITEM_POTION_BLUE;
     // gSaveContext.save.saveInfo.playerData.owlActivationFlags |= 1 << OWL_WARP_GREAT_BAY_COAST;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_SWORD_GREAT_FAIRY] = ITEM_SWORD_GREAT_FAIRY;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_GORON] = ITEM_MASK_GORON;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_DEKU] = ITEM_MASK_DEKU;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_LENS_OF_TRUTH] = ITEM_LENS_OF_TRUTH;
@@ -11538,8 +11542,8 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_BUNNY] = ITEM_MASK_BUNNY;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ROMANI] = ITEM_MASK_ROMANI;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
-    // gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] = ITEM_NONE;
-    // gSaveContext.save.saveInfo.inventory.questItems = (1 << QUEST_SONG_SOARING);
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] = ITEM_OCARINA_OF_TIME;
+    // gSaveContext.save.saveInfo.inventory.questItems = (1 << QUEST_SONG_TIME);
     // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_SONG_EPONA);
     // CUR_FORM_EQUIP(EQUIP_SLOT_B) = ITEM_SWORD_GILDED;
     // gSaveContext.save.saveInfo.equips.buttonItems[]
@@ -13183,9 +13187,15 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     {
         // play->nextEntrance = Entrance_Create(gSceneIndex, gEntranceIndex, 0);
         // Chaos_ActivateCode(CHAOS_CODE_WALLMASTER);
-        // play->nextEntrance = ENTRANCE(PINNACLE_ROCK, 0);
+        // play->nextEntrance = ENTRANCE(MILK_BAR, 0);
         // Scene_SetExitFade(play);
         // play->transitionTrigger = TRANS_TRIGGER_START;
+
+        // Chaos_ActivateCode(CHAOS_CODE_SIMON_SAYS, 1);
+        // gChaosContext.link.simon_says_state = CHAOS_SIMON_SAYS_STATE_START;
+
+        // gChaosContext.loaded_object_id = OBJECT_RD;
+        // Object_RequestOverwrite(&play->objectCtx, gChaosContext.chaos_keep_slot, OBJECT_RD);
 
         // u32 tunic_color = Rand_Next() % 0xffffff;
         // gChaosContext.link.tunic_r = tunic_color;
@@ -13264,9 +13274,14 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     {
         // this->actor.velocity.y = 10.0f;
     }
- 
+  
     if(CHECK_BTN_ANY(input->press.button, BTN_R))
     {
+
+        // gChaosContext.link.simon_says_keys[0] = MESSAGE_BTN_DUP + Rand_S16Offset(0, 4);
+        // Message_StartTextbox(play, MESSAGE_ID_PRESS_KEY_OR_DIE, NULL);
+        // Chaos_ActivateCode(CHAOS_CODE_REDEADASS_GROOVE, 1);
+        // Object_RequestOverwrite(&play->objectCtx, gChaosContext.chaos_keep_slot, OBJECT_RD);
         // this->actor.velocity.y = 10.0f;
         // Chaos_ActivateCode(CHAOS_CODE_MOON_CRASH, 1);
         // Chaos_StartMoonCrash();
@@ -21165,6 +21180,7 @@ void Player_Action_87(Player* this, PlayState* play) {
                 Player_StopCutscene(this);
                 play->envCtx.adjLightSettings = D_80862B50;
                 func_8085B384(this, play);
+                // gForcePause = true;
                 return;
             }
         }

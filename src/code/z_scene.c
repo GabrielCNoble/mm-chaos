@@ -72,7 +72,7 @@ s32 Object_AllocatePersistent(ObjectContext* objectCtx, s16 id)
 s32 Object_SpawnPersistent(ObjectContext* objectCtx, s16 id) {
     size_t size = gObjectTable[id].vromEnd - gObjectTable[id].vromStart;
     objectCtx->slots[objectCtx->numEntries].id = id;
-    size = gObjectTable[id].vromEnd - gObjectTable[id].vromStart;
+    // size = gObjectTable[id].vromEnd - gObjectTable[id].vromStart;
 
     //! FAKE:
     if (1) {}
@@ -210,18 +210,20 @@ void Object_UpdateEntries(ObjectContext* objectCtx) {
                 } 
                 else 
                 {
-                    struct ObjectLoadRequest *request = objectCtx->load_requests + objectCtx->next_available_request;
+                    struct ObjectLoadRequest *request = NULL;
+
+                    if(objectCtx->pending_request_count >= MAX_OBJECT_REQUESTS)
+                    {
+                        break;
+                    }
+
+                    request = objectCtx->load_requests + objectCtx->next_available_request;
                     objectCtx->next_available_request = (objectCtx->next_available_request + 1) % MAX_OBJECT_REQUESTS;
                     objectCtx->pending_request_count++;
                     request->slot_index = entry_index;
                     osCreateMesgQueue(&request->load_queue, &request->load_msg, 1);
                     DmaMgr_RequestAsync(&request->dma_req, entry->segment, objectFile->vromStart, size, 0, &request->load_queue, NULL);
                     entry->load_pending = true;
-
-                    if(objectCtx->pending_request_count >= MAX_OBJECT_REQUESTS)
-                    {
-                        break;
-                    }
                 }
             }
         }
@@ -261,6 +263,19 @@ s32 Object_GetSlot(ObjectContext* objectCtx, s16 objectId) {
     {
         slot = Object_GetPersistentSlot(objectCtx, objectId);
     }
+
+    return slot;
+
+    // s32 slot = Object_GetPersistentSlot(objectCtx, objectId);
+
+    // if(slot == OBJECT_SLOT_NONE)
+    // {
+    //     slot = Object_GetNonPersistentSlot(objectCtx, objectId);
+    // }
+
+    // return slot;
+
+    // u32 i;
     // if(Object_IsLoadedById(objectCtx, objectId))
     // {
     //     for (i = 0; i < objectCtx->numEntries; i++) {
@@ -270,10 +285,7 @@ s32 Object_GetSlot(ObjectContext* objectCtx, s16 objectId) {
     //     }
     // }
 
-
-
-
-    return slot;
+    // return OBJECT_SLOT_NONE;
 }
 
 s32 Object_GetPersistentSlot(ObjectContext* objectCtx, s16 objectId) 
@@ -331,12 +343,12 @@ void Object_MarkObjectAsUnloaded(ObjectContext *ctx, s16 id)
 }
 
 s32 Object_IsLoaded(ObjectContext* objectCtx, s32 slot) {
-    return objectCtx->slots[slot].id > 0;
+    return slot > OBJECT_SLOT_NONE && objectCtx->slots[slot].id > 0;
 }
 
 s32 Object_IsLoadedById(ObjectContext *objectCtx, s16 id) 
 {
-    id = ABS(id);
+    // id = ABS(id);
     if(id > 0 && id < OBJECT_ID_MAX)
     {
         u32 byte_index = id >> 3;
@@ -366,7 +378,7 @@ void Object_LoadAll(ObjectContext* objectCtx) {
         DmaMgr_RequestSync(objectCtx->slots[i].segment, gObjectTable[id].vromStart, vromSize);
         Object_MarkObjectAsLoaded(objectCtx, id);
     }
-}
+} 
 /* Object_RequestOverwrite? */
 void* Object_RequestOverwrite(ObjectContext* objectCtx, s32 slot, s16 id) {
     uintptr_t addr;
@@ -512,24 +524,24 @@ void Scene_CommandMesh(PlayState* play, SceneCmd* cmd) {
 // SceneTableEntry Header Command 0x0B:  Object List
 void Scene_CommandObjectList(PlayState* play, SceneCmd* cmd) {
     // s32 i;
-    s32 non_persistent_entry_index;
+    s32 non_persistent_entry_index = play->objectCtx.numPersistentEntries;
     s32 j;
     // s32 k;
-    s32 object_list_entry_index;
-    ObjectEntry* firstObject;
-    ObjectEntry* entry;
-    ObjectEntry* invalidatedEntry;
-    s16* objectEntry;
-    void* nextPtr;
+    s32 object_list_entry_index = 0;
+    ObjectEntry* object_slots = &play->objectCtx.slots[0];
+    ObjectEntry* entry = &play->objectCtx.slots[non_persistent_entry_index];
+    ObjectEntry* invalidatedEntry = NULL;
+    s16* objectEntry = Lib_SegmentedToVirtual(cmd->objectList.segment);
+    void* nextPtr = NULL;
 
     uintptr_t keep_start = (uintptr_t)play->objectCtx.slots[play->objectCtx.mainKeepSlot].segment;
     uintptr_t keep_end = keep_start + (gObjectTable[GAMEPLAY_KEEP].vromEnd - gObjectTable[GAMEPLAY_KEEP].vromStart);
 
-    objectEntry = Lib_SegmentedToVirtual(cmd->objectList.segment);
-    object_list_entry_index = 0;
-    non_persistent_entry_index = play->objectCtx.numPersistentEntries;
-    entry = &play->objectCtx.slots[non_persistent_entry_index];
-    firstObject = &play->objectCtx.slots[0];
+    // objectEntry = Lib_SegmentedToVirtual(cmd->objectList.segment);
+    // object_list_entry_index = 0;
+    // non_persistent_entry_index = play->objectCtx.numPersistentEntries;
+    // entry = &play->objectCtx.slots[non_persistent_entry_index];
+    // object_slots = &play->objectCtx.slots[0];
 
     /* look for the first non-persistent entry that doesn't match the object list */
     while (non_persistent_entry_index < play->objectCtx.numEntries) {
@@ -565,7 +577,7 @@ void Scene_CommandObjectList(PlayState* play, SceneCmd* cmd) {
             nextPtr = Object_RequestOverwrite(&play->objectCtx, non_persistent_entry_index, *objectEntry);
 
             if (non_persistent_entry_index < ARRAY_COUNT(play->objectCtx.slots) - 1) {
-                firstObject[non_persistent_entry_index + 1].segment = nextPtr;
+                object_slots[non_persistent_entry_index + 1].segment = nextPtr;
             }
 
             non_persistent_entry_index++;

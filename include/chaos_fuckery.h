@@ -29,7 +29,7 @@
 
 #define CHAOS_MAJOR_VERSION 0
 #define CHAOS_MINOR_VERSION 5
-#define CHAOS_PATCH_VERSION 3
+#define CHAOS_PATCH_VERSION 4
 
 enum CHAOS_CODES
 {
@@ -166,6 +166,8 @@ enum CHAOS_CODES
     CHAOS_CODE_FISH,
     /* spawns friendly arwings that kill enemies */
     CHAOS_CODE_AIR_SUPPORT,
+    /* simon says, player dies if they fail */
+    CHAOS_CODE_SIMON_SAYS,    
     /* link's hands shake */
     // CHAOS_CODE_TOO_MUCH_CAFFEINE,
 
@@ -207,8 +209,6 @@ enum CHAOS_CODES
     // CHAOS_CODE_AIRHEAD,
     /* hookshot pulls hookshot targets towards player */
     // CHAOS_CODE_BAD_FIXTURES,
-    /* simon says, player dies if they fail */
-    // CHAOS_CODE_SIMON_SAYS,    
     /* link can walk on any surface */
     // CHAOS_CODE_ALL_THE_TRACTION,
     /* gives link memory garbage, whose model is just random data from a random K0 address */
@@ -638,7 +638,7 @@ enum CHAOS_ROLLBACK_STATES
 // #define CHAOS_LOW_PERIODIC_PROBABILITY_MAX_SCALE (CHAOS_MIN_PERIODIC_PROBABILITY_SCALE + 0.5f)
 #define CHAOS_MAX_PERIODIC_PROBABILITY_SCALE 3.0f
 
-#define MAX_SPAWNED_ACTORS      12
+#define MAX_SPAWNED_ACTORS      48
 #define ACTOR_DESPAWN_TIMER     10
 #define CHAOS_MAX_STALCHILDS    5
 
@@ -654,6 +654,45 @@ enum CHAOS_ROLLBACK_STATES
 #define CHAOS_MOUNTAIN_VILLAGE_LADDER_COL_Y_OFFSET  28
 #define CHAOS_MOUNTAIN_VILLAGE_LADDER_COL_X_OFFSET  435
 #define CHAOS_MOUNTAIN_VILLAGE_LADDER_COL_Z_OFFSET -1087
+
+enum CHAOS_SIMON_SAYS_CONFIGS
+{
+    CHAOS_SIMON_SAYS_CONFIG_PRESS_KEY_OR_DIE,
+    CHAOS_SIMON_SAYS_CONFIG_PRESS_KEY_TO_DIE,
+    CHAOS_SIMON_SAYS_CONFIG_PRESS_KEY_AND_DIE,
+    CHAOS_SIMON_SAYS_CONFIG_DO_NOT_PRESS_KEY_TO_NOT_NOT_DIE,
+    CHAOS_SIMON_SAYS_CONFIG_DO_NOT_PRESS_KEY_OR_DIE,
+    CHAOS_SIMON_SAYS_CONFIG_DO_NOT_PRESS_KEY_TO_NOT_DIE,
+    CHAOS_SIMON_SAYS_CONFIG_DO_NOT_NOT_PRESS_KEY_TO_DIE,
+    CHAOS_SIMON_SAYS_CONFIG_DO_NOT_NOT_PRESS_KEY_TO_NOT_DIE,
+    CHAOS_SIMON_SAYS_CONFIG_DO_NOT_NOT_PRESS_KEY_OR_DIE,
+    CHAOS_SIMON_SAYS_CONFIG_PRESS_KEY_NOT_TO_NOT_DIE,
+    CHAOS_SIMON_SAYS_CONFIG_LAST
+};
+
+enum CHAOS_SIMON_SAYS_STATES
+{
+    CHAOS_SIMON_SAYS_STATE_IDLE,
+    CHAOS_SIMON_SAYS_STATE_START,
+    CHAOS_SIMON_SAYS_STATE_WAIT_INPUT,
+    CHAOS_SIMON_SAYS_STATE_WAIT_DEATH,
+};
+
+enum CHAOS_SIMON_SAYS_KEYS
+{
+    CHAOS_SIMON_SAYS_KEY_DUP,
+    CHAOS_SIMON_SAYS_KEY_DRIGHT,
+    CHAOS_SIMON_SAYS_KEY_DDOWN,
+    CHAOS_SIMON_SAYS_KEY_DLEFT,
+    CHAOS_SIMON_SAYS_KEY_LAST
+};
+
+struct SimonSaysConfig
+{
+    const char *    str;
+    u16             match_to_live;
+    u16             text_x_offset;
+};
 
 struct ChaosActor
 {
@@ -804,41 +843,41 @@ typedef struct ChaosContext
 
     struct
     {
-        PlayerAnimationHeader * cur_animation;
+        PlayerAnimationHeader *         cur_animation;
 
-        f32                     cur_animation_frame;
-        f32                     cur_animation_play_speed;
-        u32                     cur_animation_mode;
+        f32                             cur_animation_frame;
+        f32                             cur_animation_play_speed;
+        u32                             cur_animation_mode;
 
-        f32                     out_of_shape_speed_scale;
-        f32                     speed_boost_speed_scale;
-        f32                     imaginary_friends_speed_scale;
-        Vec2f                   ear_scales[2];
-        u8                      beer_alpha;
-        u8                      tunic_r;
-        u8                      tunic_g;
-        u8                      tunic_b;
-        u8                      out_of_shape_state;
-        u8                      beer_goggles_state;
-        u8                      fierce_deity_state;
-        u8                      imaginary_friends_state;
-        u8                      imaginary_friends_anim_index;
-        u8                      speed_boost_state;
-        u8                      fierce_deity_counter;
-        u8                      prev_link_form;
-        u8                      liftoff_timer;
-        u8                      liftoff_state;
-        u16                     syke_health;
-        s16                     imaginary_friends_target_yaw;
-        u8                      syke;
-        u8                      random_knockback_timer;
-        u8                      magic_gauge_sfx_timer;
-        u8                      trap_flap_timer;
-        f32                     limb_scales[PLAYER_LIMB_MAX];
-        f32                     temp_limb_scale;
-        u8                      random_scaling_mode;
-        u8                      scaled_limb_index;
-        u8                      dpad_down_timer;
+        f32                             out_of_shape_speed_scale;
+        f32                             speed_boost_speed_scale;
+        f32                             imaginary_friends_speed_scale;
+        Vec2f                           ear_scales[2];
+        u8                              beer_alpha;
+        u8                              tunic_r;
+        u8                              tunic_g;
+        u8                              tunic_b;
+        u8                              out_of_shape_state;
+        u8                              beer_goggles_state;
+        u8                              fierce_deity_state;
+        u8                              imaginary_friends_state;
+        u8                              imaginary_friends_anim_index;
+        u8                              speed_boost_state;
+        u8                              fierce_deity_counter;
+        u8                              prev_link_form;
+        u8                              liftoff_timer;
+        u8                              liftoff_state;
+        u16                             syke_health;
+        s16                             imaginary_friends_target_yaw;
+        u8                              syke;
+        u8                              random_knockback_timer;
+        u8                              magic_gauge_sfx_timer;
+        u8                              trap_flap_timer;
+        f32                             limb_scales[PLAYER_LIMB_MAX];
+        f32                             temp_limb_scale;
+        u8                              random_scaling_mode;
+        u8                              scaled_limb_index;
+        u8                              dpad_down_timer;
 
         u8                              magic_state;   
         s16                             magic_available;                           
@@ -858,8 +897,12 @@ typedef struct ChaosContext
             u8                          snapshot_timer; 
             u8                          input_frames;
         };
-        // u8                              rollback_state;
-        
+
+        u8                              simon_says_keys[2];
+        u8                              simon_says_config;
+        // u8                              simon_says_death_queued;
+        u8                              simon_says_timer;
+        u8                              simon_says_state;
     } link;
 
     struct
@@ -1050,7 +1093,11 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this);
 
 u32 Chaos_UpdateSnakeGame(PlayState *play, Input *input);
 
+void Chaos_UpdateSimonSays(PlayState *play, Input *input);
+
 void Chaos_PrintSnakeGameStuff(PlayState *play);
+
+void Chaos_PrintSimonSaysStuff(PlayState *play);
 
 void Chaos_SetConfigFlag(u32 config, u32 value);
 

@@ -36,6 +36,7 @@ u32             gCurrentBgmId;
 
 u32             gPlayerActionChangeCount = 0;
 u32             gPlayerActionChanges[64];
+u32             gForcePause = false;
 
 
 Vtx gMountainVillageLadderFragment[] = {
@@ -61,6 +62,53 @@ Gfx gMountainVillageLadderSetupDL[]  = {
 Gfx gMountainVillageLadderDL[ARRAY_COUNT(gMountainVillageLadderSetupDL) + sizeof(Gfx) + sizeof(Gfx) * CHAOS_MAX_MOUNTAIN_VILLAGE_LADDER_SEGS * 2];
 u32 gMountainVillageLadderSegmentCount;
 Vtx gMountainVillageLadderSegments[CHAOS_MAX_MOUNTAIN_VILLAGE_LADDER_SEGS][4];
+
+u16 gSimonSaysKeyMap[] = {
+    /* [CHAOS_SIMON_SAYS_KEY_DUP]       = */ BTN_DUP,
+    /* [CHAOS_SIMON_SAYS_KEY_DRIGHT]    = */ BTN_DRIGHT,
+    /* [CHAOS_SIMON_SAYS_KEY_DDOWN]     = */ BTN_DDOWN,
+    /* [CHAOS_SIMON_SAYS_KEY_DLEFT]     = */ BTN_DLEFT,
+};
+
+const char *gSimonSaysKeyStrs[] = {
+    /* [CHAOS_SIMON_SAYS_KEY_DUP]       = */ "D-UP",
+    /* [CHAOS_SIMON_SAYS_KEY_DRIGHT]    = */ "D-RIGHT",
+    /* [CHAOS_SIMON_SAYS_KEY_DDOWN]     = */ "D-DOWN",
+    /* [CHAOS_SIMON_SAYS_KEY_DLEFT]     = */ "D-LEFT",
+};
+
+struct SimonSaysConfig gSimonSaysConfigs[] = {
+    /* [SIMON_SAYS_CONFIG_PRESS_KEY_OR_DIE] */ {
+        "Press %s or die", true, 10
+    },
+    /* [SIMON_SAYS_CONFIG_PRESS_KEY_TO_DIE] */ {
+        "Press %s to die", false, 10
+    },
+    /* [SIMON_SAYS_CONFIG_PRESS_KEY_AND_DIE] */ {
+        "Press %s and die", false, 10
+    },
+    /* [SIMON_SAYS_CONFIG_DO_NOT_PRESS_KEY_TO_NOT_NOT_DIE] */ {
+        "Do not press %s to not not die", true, 3
+    },
+    /* [SIMON_SAYS_CONFIG_DO_NOT_PRESS_KEY_OR_DIE] */ {
+        "Do not press %s or die", false, 6
+    },
+    /* [SIMON_SAYS_CONFIG_DO_NOT_PRESS_KEY_TO_NOT_DIE] */ {
+        "Do not press %s to not die", false, 4
+    },
+    /* [SIMON_SAYS_CONFIG_DO_NOT_NOT_PRESS_KEY_TO_DIE] */ {
+        "Do not not press %s to die", false, 4
+    },
+    /* [SIMON_SAYS_CONFIG_DO_NOT_NOT_PRESS_KEY_TO_NOT_DIE] */ {
+        "Do not not press %s to not die", true, 4
+    },
+    /* [SIMON_SAYS_CONFIG_DO_NOT_NOT_PRESS_KEY_OR_DIE] */ {
+        "Do not not press %s or die", true, 4
+    },
+    /* [SIMON_SAYS_CONFIG_PRESS_KEY_NOT_TO_NOT_DIE] */ {
+        "Press %s not to not die", false, 4
+    },
+};
 
 // Vec3s           gBeybladePose[] = {
 //     /* [PLAYER_LIMB_NONE] */            {0, 3000, 0},
@@ -260,6 +308,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_LENGTH_CONTRACTION]       = */ CHAOS_CODE_DEF(15, 25, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.0025f),
     /* [CHAOS_CODE_FISH]                     = */ CHAOS_CODE_DEF(0, 0,   CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.0035f),
     /* [CHAOS_CODE_AIR_SUPPORT]              = */ CHAOS_CODE_DEF(25, 65, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.0035f),
+    /* [CHAOS_CODE_SIMON_SAYS]               = */ CHAOS_CODE_DEF(0, 0,   CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.0030f),
 };
   
 const char *gChaosCodeNames[] = {
@@ -327,6 +376,7 @@ const char *gChaosCodeNames[] = {
     /* [CHAOS_CODE_LENGTH_CONTRACTION]          = */ "Length contraction",
     /* [CHAOS_CODE_FISH]                        = */ "Fish",
     /* [CHAOS_CODE_AIR_SUPPORT]                 = */ "Air support",
+    /* [CHAOS_CODE_SIMON_SAYS]                  = */ "Simon says",
 };
 
 enum FAIRY_FOUNTAIN_EXITS
@@ -816,6 +866,8 @@ void Chaos_Init(void)
     gChaosContext.chicken.cucco.niwType = NIW_TYPE_CHAOS;
     gChaosContext.chicken.cucco.actor.update = EnNiw_Update;
     gChaosContext.chicken.cucco.actor.draw = EnNiw_Draw;
+
+    gChaosContext.link.simon_says_state = CHAOS_SIMON_SAYS_STATE_IDLE;
     
     for(index = 0; index < CHAOS_CODE_LAST; index++)
     {
@@ -1200,7 +1252,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
 
                         // case CHAOS_CODE_LOVELESS_MARRIAGE:
                         case CHAOS_CODE_CHICKEN_ARISE:
-                        case CHAOS_CODE_STARFOX:
+                        // case CHAOS_CODE_STARFOX:
                         case CHAOS_CODE_WALLMASTER:
                         case CHAOS_CODE_REDEADASS_GROOVE:
                         {
@@ -1265,17 +1317,19 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         case CHAOS_CODE_CHANGE_HEALTH:
                             if(Chaos_IsCodeInActiveList(CHAOS_CODE_ONE_HIT_KO) || 
                                Chaos_IsCodeInActiveList(CHAOS_CODE_INVINCIBLE) || 
-                               Chaos_IsCodeInActiveList(CHAOS_CODE_SWAP_HEAL_AND_HURT))
+                               Chaos_IsCodeInActiveList(CHAOS_CODE_SWAP_HEAL_AND_HURT) ||
+                               gChaosContext.link.simon_says_state == CHAOS_SIMON_SAYS_STATE_WAIT_DEATH)
                             {
-                                /* changing health would one-hit the player or not have any 
-                                effect at all, so don't activate it */
+                                /* changing health would one-hit the player, not have any 
+                                effect at all or potentially cancel a simon says death, so don't activate it */
                                 continue;
                             }
                         break;
 
                         case CHAOS_CODE_INVINCIBLE:
                             if(Chaos_IsCodeInActiveList(CHAOS_CODE_ONE_HIT_KO) || 
-                               Chaos_IsCodeInActiveList(CHAOS_CODE_CHANGE_HEALTH))
+                               Chaos_IsCodeInActiveList(CHAOS_CODE_CHANGE_HEALTH) ||
+                               gChaosContext.link.simon_says_state == CHAOS_SIMON_SAYS_STATE_WAIT_DEATH)
                             {
                                 /* making the player invicible now would make both codes 
                                 not have an effect, so don't activate it */
@@ -1318,8 +1372,16 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         break;
 
                         case CHAOS_CODE_HEART_SNAKE:
-                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_WEIRD_UI) || 
+                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_WEIRD_UI) || gChaosContext.link.simon_says_state != CHAOS_SIMON_SAYS_STATE_IDLE ||
                                 gSaveContext.save.saveInfo.playerData.healthCapacity <= LIFEMETER_FULL_HEART_HEALTH * 3)
+                            {
+                                continue;
+                            }
+                        break;
+
+                        case CHAOS_CODE_SIMON_SAYS:
+                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_HEART_SNAKE) || Chaos_IsCodeInActiveList(CHAOS_CODE_CHANGE_HEALTH) || 
+                                gChaosContext.link.simon_says_state != CHAOS_SIMON_SAYS_STATE_IDLE)
                             {
                                 continue;
                             }
@@ -1378,6 +1440,10 @@ void Chaos_UpdateChaos(PlayState *playstate)
 
                         case CHAOS_CODE_HEART_SNAKE:
                             gChaosContext.ui.snake_state = CHAOS_SNAKE_GAME_STATE_INIT;
+                        break;
+
+                        case CHAOS_CODE_SIMON_SAYS:
+                            gChaosContext.link.simon_says_state = CHAOS_SIMON_SAYS_STATE_START;
                         break;
 
                         case CHAOS_CODE_UNSTABLE_ROOMS:
@@ -2658,6 +2724,7 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     Chaos_EnableCode(CHAOS_CODE_CHANGE_HEALTH, gChaosContext.periodic_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_SCALE_RANDOM_LIMB, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_HEART_SNAKE, gChaosContext.periodic_probability_scale);
+    Chaos_EnableCode(CHAOS_CODE_SIMON_SAYS, disruptive_prob_scale);
     Chaos_EnableCode(CHAOS_CODE_SPEEDBOOST, gChaosContext.periodic_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_BILLBOARD_ACTORS, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_SIGNPOST, 1.0f);
@@ -3038,6 +3105,64 @@ u32 Chaos_UpdateSnakeGame(PlayState *play, Input *input)
     return true;
 }
 
+void Chaos_UpdateSimonSays(PlayState *play, Input *input)
+{
+    if(gChaosContext.link.simon_says_state == CHAOS_SIMON_SAYS_STATE_START)
+    {
+        gChaosContext.link.simon_says_config = Chaos_RandS16Offset(0, CHAOS_SIMON_SAYS_CONFIG_LAST);
+        gChaosContext.link.simon_says_timer = 100;
+        gChaosContext.link.simon_says_state = CHAOS_SIMON_SAYS_STATE_WAIT_INPUT;
+        gChaosContext.link.simon_says_keys[0] = Chaos_RandS16Offset(0, CHAOS_SIMON_SAYS_KEY_LAST);
+    }
+    else if(gChaosContext.link.simon_says_state == CHAOS_SIMON_SAYS_STATE_WAIT_INPUT)
+    {
+        struct SimonSaysConfig *config = gSimonSaysConfigs + gChaosContext.link.simon_says_config;
+        u32 key_match = CHECK_BTN_ANY(input->cur.button, gSimonSaysKeyMap[gChaosContext.link.simon_says_keys[0]]);
+
+        if(key_match)
+        {
+            if(config->match_to_live)
+            {
+                Audio_PlaySfx(NA_SE_SY_CORRECT_CHIME);
+                gChaosContext.link.simon_says_state = CHAOS_SIMON_SAYS_STATE_IDLE;
+            }
+            else
+            {
+                gSaveContext.healthAccumulator = 0;
+                gSaveContext.save.saveInfo.playerData.health = 0;
+                gChaosContext.link.simon_says_state = CHAOS_SIMON_SAYS_STATE_WAIT_DEATH;
+                Audio_PlaySfx(NA_SE_SY_ERROR);
+            }
+
+
+            return;
+        }
+
+        if(gChaosContext.link.simon_says_timer > 0)
+        {
+            gChaosContext.link.simon_says_timer--;
+        }
+
+        if(gChaosContext.link.simon_says_timer == 0)
+        {
+            if(config->match_to_live)
+            {
+                gSaveContext.healthAccumulator = 0;
+                gSaveContext.save.saveInfo.playerData.health = 0;
+                gChaosContext.link.simon_says_state = CHAOS_SIMON_SAYS_STATE_WAIT_DEATH;
+                Audio_PlaySfx(NA_SE_SY_ERROR);
+            }
+            else
+            {
+                Audio_PlaySfx(NA_SE_SY_CORRECT_CHIME);
+                gChaosContext.link.simon_says_state = CHAOS_SIMON_SAYS_STATE_IDLE;
+            }
+
+            return;
+        }
+    }
+}
+
 void Chaos_PrintSnakeGameStuff(PlayState *play)
 {
     if(gChaosContext.ui.snake_state == CHAOS_SNAKE_GAME_STATE_PLAY && gChaosContext.ui.blink_timer > 0)
@@ -3086,6 +3211,61 @@ void Chaos_PrintSnakeGameStuff(PlayState *play)
         GfxPrint_Printf(&gfx_print, "or lose them ");
         GfxPrint_SetColor(&gfx_print, 255, 5, 5, 255 * alpha_scale);
         GfxPrint_Printf(&gfx_print, "FOREVER!");
+
+        gfx = GfxPrint_Close(&gfx_print);
+        GfxPrint_Destroy(&gfx_print);
+        // gSPEndDisplayList(gfx++);
+        Gfx_Close(polyOpa, gfx);
+        POLY_OPA_DISP = gfx;
+        CLOSE_DISPS(gfxCtx);   
+    }
+}
+
+void Chaos_PrintSimonSaysStuff(PlayState *play)
+{
+    if(gChaosContext.link.simon_says_state == CHAOS_SIMON_SAYS_STATE_WAIT_INPUT)
+    {
+
+        Gfx *polyOpa;
+        Gfx *gfx;
+        GfxPrint gfx_print;
+        u32 y_pos = 3 << 3;
+        OPEN_DISPS(play->state.gfxCtx);
+        f32 alpha_scale = 1.0f;
+        struct SimonSaysConfig *config = gSimonSaysConfigs + gChaosContext.link.simon_says_config;
+
+        gDPSetRenderMode(OVERLAY_DISP++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
+        gDPSetCombineMode(OVERLAY_DISP++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
+        gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 0, 0, 0, 190);
+        gDPFillRectangle(OVERLAY_DISP++, 0, y_pos - 4, SCREEN_WIDTH,  y_pos + (5 << 3));
+        gDPPipeSync(OVERLAY_DISP++);
+
+        polyOpa = POLY_OPA_DISP;
+        gfx = Gfx_Open(polyOpa);
+        // gDPSetRenderMode(OVERLAY_DISP++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
+        // gDPSetCombineMode(OVERLAY_DISP++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
+
+        gSPDisplayList(OVERLAY_DISP++, gfx);
+
+        GfxPrint_Init(&gfx_print);
+        GfxPrint_Open(&gfx_print, gfx);
+        gfx_print.flags |= GFXP_FLAG_BLEND;
+        // gDPSetRenderMode(gfx_print.dList++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
+        // gDPSetCombineMode(gfx_print.dList++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
+        gDPSetOtherMode(gfx_print.dList++, G_AD_DISABLE | G_CD_DISABLE | G_CK_NONE | G_TC_FILT | G_TF_BILERP | 
+            G_TT_IA16 | G_TL_TILE | G_TD_CLAMP | G_TP_NONE | G_CYC_1CYCLE | G_PM_NPRIMITIVE,
+                    G_AC_NONE | G_RM_XLU_SURF | G_RM_XLU_SURF2);
+
+        
+        GfxPrint_SetColor(&gfx_print, 255, 255, 255, 255);
+        GfxPrint_SetPos(&gfx_print, config->text_x_offset, 4);
+        GfxPrint_Printf(&gfx_print, config->str, gSimonSaysKeyStrs[gChaosContext.link.simon_says_keys[0]]);
+        // GfxPrint_SetPos(&gfx_print, 6, 5);
+        // GfxPrint_Printf(&gfx_print, "Collect all containers...");
+        // GfxPrint_SetPos(&gfx_print, 6, 6);
+        // GfxPrint_Printf(&gfx_print, "or lose them ");
+        // GfxPrint_SetColor(&gfx_print, 255, 5, 5, 255 * alpha_scale);
+        // GfxPrint_Printf(&gfx_print, "FOREVER!");
 
         gfx = GfxPrint_Close(&gfx_print);
         GfxPrint_Destroy(&gfx_print);

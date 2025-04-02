@@ -56,7 +56,7 @@ void ActorOverlayTable_FaultClient(void* arg0, void* arg1) {
     FaultDrawer_SetCharPad(-2, 0);
 
     FaultDrawer_Printf("actor_dlftbls %u\n", gMaxActorId);
-    FaultDrawer_Printf("No. RamStart- RamEnd cn  Name\n");
+    FaultDrawer_Printf("No. RamStart- RamEnd   cn Name\n");
 
     for (actorId = 0, overlayEntry = &gActorOverlayTable[0]; actorId < gMaxActorId; actorId++, overlayEntry++) {
         overlaySize = (uintptr_t)overlayEntry->vramEnd - (uintptr_t)overlayEntry->vramStart;

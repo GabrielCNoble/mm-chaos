@@ -5,6 +5,8 @@
 
 #include "global.h"
 
+#include "fault.h"
+
 #include "assets/objects/gameplay_keep/gameplay_keep.h"
 
 // Assets for each player form
@@ -432,7 +434,8 @@ void func_8012301C(Actor* thisx, PlayState* play2) {
         Object_RequestOverwrite(&play->objectCtx, this->actor.objectSlot, objectId);
         this->actor.objectSlot = Object_GetSlot(&play->objectCtx, GAMEPLAY_KEEP);
     } else if (this->av1.actionVar1 >= 3) {
-        s32 objectSlot = Object_GetSlot(&play->objectCtx, gActorOverlayTable[ACTOR_PLAYER].profile->objectId);
+        // s32 objectSlot = Object_GetSlot(&play->objectCtx, gActorOverlayTable[ACTOR_PLAYER].profile->objectId);
+        s32 objectSlot = Object_GetPersistentSlot(&play->objectCtx, gActorOverlayTable[ACTOR_PLAYER].profile->objectId);
 
         if (Object_IsLoaded(&play->objectCtx, objectSlot)) {
             this->actor.objectSlot = objectSlot;

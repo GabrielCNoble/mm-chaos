@@ -6,6 +6,8 @@
 
 #include "overlays/kaleido_scope/ovl_kaleido_scope/z_kaleido_scope.h"
 
+extern u32 gForcePause;
+
 s16 sKaleidoSetupRightPageIndex[] = {
     PAUSE_MAP,   // PAUSE_ITEM
     PAUSE_QUEST, // PAUSE_MAP
@@ -123,7 +125,8 @@ void KaleidoSetup_Update(PlayState* play) {
             return;
         }
 
-        if (!play->actorCtx.isOverrideInputOn && CHECK_BTN_ALL(input->press.button, BTN_START)) {
+        if (!play->actorCtx.isOverrideInputOn && CHECK_BTN_ALL(input->press.button, BTN_START) || gForcePause) {
+            gForcePause = false;
             gSaveContext.prevHudVisibility = gSaveContext.hudVisibility;
             pauseCtx->itemDescriptionOn = false;
             pauseCtx->state = PAUSE_STATE_OPENING_0;

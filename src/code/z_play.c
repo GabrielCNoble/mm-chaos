@@ -1192,6 +1192,8 @@ void Play_UpdateMain(PlayState* this) {
         }
     }
 
+    Chaos_UpdateSimonSays(this, input);
+
     if(Chaos_IsCodeActive(CHAOS_CODE_FAST_TIME))
     {
         if(gChaosContext.time.fast_time_state == CHAOS_FAST_TIME_STATE_NONE)
@@ -1337,6 +1339,8 @@ void Play_UpdateMain(PlayState* this) {
                     CollisionCheck_OC(this, &this->colChkCtx);
                     CollisionCheck_Damage(this, &this->colChkCtx);
                     CollisionCheck_ClearContext(this, &this->colChkCtx);
+
+
                     if (!this->haltAllActors) 
                     {
                         Actor_UpdateAll(this, &this->actorCtx);
@@ -2443,6 +2447,7 @@ SkipPostWorldDraw:
     PadMgr_GetInput(inputs, false);
     Chaos_PrintCodes(this, &inputs[0]);
     Chaos_PrintSnakeGameStuff(this);
+    Chaos_PrintSimonSaysStuff(this);
     
     if(Chaos_CanUpdateChaos(this))
     {

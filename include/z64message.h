@@ -346,5 +346,20 @@ extern s16 gOcarinaSongItemMap[];
 
 #define MESSAGE_ID_DEKU_GUARD_ULTRA_SECRET_MESSAGE                      0x354F
 
+#define MESSAGE_ID_PRESS_KEY_OR_DIE                                     0x3555
+#define MESSAGE_ID_PRESS_KEY_TO_DIE                                     0x3556
+#define MESSAGE_ID_PRESS_KEY_NOR_DIE                                    0x3557
+#define MESSAGE_ID_PRESS_KEY_AND_DIE                                    0x3558
+#define MESSAGE_ID_DO_NOT_PRESS_KEY_TO_NOT_NOT_DIE                      0x3559
+#define MESSAGE_ID_DO_NOT_PRESS_KEY_TO_NOT_DIE                          0x355a
+#define MESSAGE_ID_DO_NOT_PRESS_KEY_NOR_DIE                             0x355b
+#define MESSAGE_ID_DO_NOT_NOT_PRESS_KEY_TO_DIE                          0x355c
+#define MESSAGE_ID_DO_NOT_NOT_PRESS_KEY_OR_DIE                          0x355d
+#define MESSAGE_ID_DO_NOT_NOT_PRESS_KEY_TO_NOT_DIE                      0x355e
+#define MESSAGE_ID_DO_NOT_NOT_PRESS_KEY_OR_NOT_DIE                      0x355f
+#define MESSAGE_ID_PRESS_KEY_NOT_TO_DIE                                 0x3560
+#define MESSAGE_ID_PRESS_KEY_NOT_TO_NOT_DIE                             0x3561
+#define MESSAGE_ID_DO_PRESS_KEY_NOR_KEY_NOT_TO_DIE                      0x3562
+#define MESSAGE_ID_DO_PRESS_KEY_NOR_KEY_TO_NOT_DIE                      0x3563
 
 #endif
