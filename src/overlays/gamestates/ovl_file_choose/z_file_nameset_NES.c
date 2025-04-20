@@ -180,6 +180,7 @@ void FileSelect_SetNameEntryVtx(GameState* thisx) {
     s16 var_s0;
     s16 var_t1;
     s16 sp108;
+    struct save_info_t *save_info = &this->save_info[this->buttonIndex];
 
     OPEN_DISPS(this->state.gfxCtx);
 
@@ -208,8 +209,10 @@ void FileSelect_SetNameEntryVtx(GameState* thisx) {
     this->nameEntryVtx = GRAPH_ALLOC(this->state.gfxCtx, 44 * sizeof(Vtx));
 
     for (var_s0 = 0, var_t1 = 0; var_t1 < 44; var_t1 += 4, var_s0++) {
+        
+
         if ((var_s0 > 0) && (var_s0 < 9)) {
-            temp = this->fileNames[this->buttonIndex][var_s0 - 1];
+            temp = save_info->fileName[var_s0 - 1];
 
             this->nameEntryVtx[var_t1 + 0].v.ob[0] = this->nameEntryVtx[var_t1 + 2].v.ob[0] =
                 D_80814434[var_s0] + this->nameEntryBoxPosX + D_80814280[temp];
@@ -275,7 +278,7 @@ void FileSelect_SetNameEntryVtx(GameState* thisx) {
 
     for (sp108 = 0, var_s0 = 0; var_s0 < 0x20; var_s0 += 4, sp108++) {
         FileSelect_DrawTexQuadI4(
-            this->state.gfxCtx, font->fontBuf + this->fileNames[this->buttonIndex][sp108] * FONT_CHAR_TEX_SIZE, var_s0);
+            this->state.gfxCtx, font->fontBuf + save_info->fileName[sp108] * FONT_CHAR_TEX_SIZE, var_s0);
     }
 
     this->nameEntryVtx[37].v.tc[0] = this->nameEntryVtx[38].v.tc[1] = this->nameEntryVtx[39].v.tc[0] =
@@ -331,6 +334,7 @@ void FileSelect_DrawNameEntry(GameState* thisx) {
     s16 tmp;
     u16 time;
     s16 validName;
+    struct save_info_t *save_info = &this->save_info[this->buttonIndex];
 
     OPEN_DISPS(this->state.gfxCtx);
 
@@ -408,13 +412,13 @@ void FileSelect_DrawNameEntry(GameState* thisx) {
             this->kbdY = 5;
             this->kbdX = 4;
         } else if (CHECK_BTN_ALL(input->press.button, BTN_B)) {
-            if ((this->newFileNameCharCount == 7) && (this->fileNames[this->buttonIndex][7] != 0x3E)) {
+            if ((this->newFileNameCharCount == 7) && (save_info->fileName[7] != 0x3E)) {
 
                 for (i = this->newFileNameCharCount; i < 7; i++) {
-                    this->fileNames[this->buttonIndex][i] = this->fileNames[this->buttonIndex][i + 1];
+                    save_info->fileName[i] = save_info->fileName[i + 1];
                 }
 
-                this->fileNames[this->buttonIndex][i] = 0x3E;
+                save_info->fileName[i] = 0x3E;
                 Audio_PlaySfx(NA_SE_SY_FSEL_CLOSE);
             } else {
                 this->newFileNameCharCount--;
@@ -425,10 +429,10 @@ void FileSelect_DrawNameEntry(GameState* thisx) {
                     Audio_PlaySfx(NA_SE_SY_FSEL_CLOSE);
                 } else {
                     for (i = this->newFileNameCharCount; i < 7; i++) {
-                        this->fileNames[this->buttonIndex][i] = this->fileNames[this->buttonIndex][i + 1];
+                        save_info->fileName[i] = save_info->fileName[i + 1];
                     }
 
-                    this->fileNames[this->buttonIndex][i] = 0x3E;
+                    save_info->fileName[i] = 0x3E;
                     Audio_PlaySfx(NA_SE_SY_FSEL_CLOSE);
                 }
             }
@@ -463,7 +467,7 @@ void FileSelect_DrawNameEntry(GameState* thisx) {
 
                     if (CHECK_BTN_ALL(input->press.button, BTN_A)) {
                         Audio_PlaySfx(NA_SE_SY_FSEL_DECIDE_S);
-                        this->fileNames[this->buttonIndex][this->newFileNameCharCount] = D_808141F0[this->charIndex];
+                        save_info->fileName[this->newFileNameCharCount] = D_808141F0[this->charIndex];
 
                         this->newFileNameCharCount++;
 
@@ -474,13 +478,13 @@ void FileSelect_DrawNameEntry(GameState* thisx) {
                 } else if (CHECK_BTN_ALL(input->press.button, BTN_A)) {
                     if (this->charPage != this->kbdButton) {
                         if (this->kbdButton == FS_KBD_BTN_BACKSPACE) {
-                            if ((this->newFileNameCharCount == 7) && (this->fileNames[this->buttonIndex][7] != 0x3E)) {
+                            if ((this->newFileNameCharCount == 7) && (save_info->fileName[7] != 0x3E)) {
 
                                 for (i = this->newFileNameCharCount; i < 7; i++) {
-                                    this->fileNames[this->buttonIndex][i] = this->fileNames[this->buttonIndex][i + 1];
+                                    save_info->fileName[i] = save_info->fileName[i + 1];
                                 }
 
-                                this->fileNames[this->buttonIndex][i] = 0x3E;
+                                save_info->fileName[i] = 0x3E;
                                 Audio_PlaySfx(NA_SE_SY_FSEL_CLOSE);
                             } else {
                                 this->newFileNameCharCount--;
@@ -490,17 +494,17 @@ void FileSelect_DrawNameEntry(GameState* thisx) {
                                 }
 
                                 for (i = this->newFileNameCharCount; i < 7; i++) {
-                                    this->fileNames[this->buttonIndex][i] = this->fileNames[this->buttonIndex][i + 1];
+                                    save_info->fileName[i] = save_info->fileName[i + 1];
                                 }
 
-                                this->fileNames[this->buttonIndex][i] = 0x3E;
+                                save_info->fileName[i] = 0x3E;
                                 Audio_PlaySfx(NA_SE_SY_FSEL_CLOSE);
                             }
                         } else if (this->kbdButton == FS_KBD_BTN_END) {
                             validName = false;
 
                             for (i = 0; i < 8; i++) {
-                                if (this->fileNames[this->buttonIndex][i] != 0x3E) {
+                                if (save_info->fileName[i] != 0x3E) {
                                     validName = true;
                                     break;
                                 }

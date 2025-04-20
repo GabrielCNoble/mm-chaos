@@ -391,6 +391,7 @@ void FileSelect_UpdateMainMenu(GameState* thisx) {
 
     if (CHECK_BTN_ALL(input->press.button, BTN_START) || CHECK_BTN_ALL(input->press.button, BTN_A)) {
         if (this->buttonIndex <= FS_BTN_MAIN_FILE_3) {
+            struct save_info_t *save_info = &this->save_info[this->buttonIndex];
             if (!gSaveContext.flashSaveAvailable) {
                 if (!NO_FLASH_SLOT_OCCUPIED(sramCtx, this->buttonIndex)) {
                     Audio_PlaySfx(NA_SE_SY_FSEL_DECIDE_L);
@@ -407,7 +408,7 @@ void FileSelect_UpdateMainMenu(GameState* thisx) {
                     this->newFileNameCharCount = 0;
                     this->nameEntryBoxPosX = 120;
                     this->nameEntryBoxAlpha = 0;
-                    Lib_MemCpy(&this->fileNames[this->buttonIndex], &sEmptyName, ARRAY_COUNT(sEmptyName));
+                    Lib_MemCpy(&save_info->fileName, &sEmptyName, ARRAY_COUNT(sEmptyName));
                 } else {
                     Audio_PlaySfx(NA_SE_SY_FSEL_DECIDE_L);
                     this->actionTimer = 4;
@@ -431,7 +432,7 @@ void FileSelect_UpdateMainMenu(GameState* thisx) {
                 this->newFileNameCharCount = 0;
                 this->nameEntryBoxPosX = 120;
                 this->nameEntryBoxAlpha = 0;
-                Lib_MemCpy(&this->fileNames[this->buttonIndex], &sEmptyName, ARRAY_COUNT(sEmptyName));
+                Lib_MemCpy(&save_info->fileName, &sEmptyName, ARRAY_COUNT(sEmptyName));
             } else {
                 Audio_PlaySfx(NA_SE_SY_FSEL_DECIDE_L);
                 this->actionTimer = 4;
@@ -1286,6 +1287,7 @@ void FileSelect_SetWindowContentVtx(GameState* thisx) {
 
     // Loop through 3 files
     for (file_index = 0; file_index < 2; file_index++, posY -= 16) {
+        struct save_info_t *save_info = &this->save_info[file_index + 2];
         if (!gSaveContext.flashSaveAvailable) {
             // Should skip vtxId
             // vtxId += 268;
@@ -1295,7 +1297,7 @@ void FileSelect_SetWindowContentVtx(GameState* thisx) {
         // Account for owl-save offset
 
         spAC = file_index;
-        if (this->isOwlSave[file_index + 2]) {
+        if (save_info->isOwlSave || save_info->is_crash_save) {
             spAC = file_index + 2;
         }
 
@@ -1316,7 +1318,7 @@ void FileSelect_SetWindowContentVtx(GameState* thisx) {
         // Loop through 8 characters of file name
         for (i = 0; i < 8; i++, vtxId += 4) {
 
-            index = this->fileNames[file_index][i];
+            index = save_info->fileName[i];
 
             /* File Name */
 
@@ -1382,9 +1384,9 @@ void FileSelect_SetWindowContentVtx(GameState* thisx) {
         posX = this->windowPosX + 14;
         tempPosY = relPosY - 0x18;
 
-        FileSelect_SplitNumber(this->rupees[spAC], &spA4[0], &spA4[1], &spA4[2]);
+        FileSelect_SplitNumber(save_info->rupees, &spA4[0], &spA4[1], &spA4[2]);
 
-        index = sWalletFirstDigit[this->walletUpgrades[spAC]];
+        index = sWalletFirstDigit[save_info->walletUpgrades];
 
         ptr = &spA4[index];
 
@@ -1440,7 +1442,7 @@ void FileSelect_SetWindowContentVtx(GameState* thisx) {
         posX = this->windowPosX + 42;
         tempPosY = relPosY - 0x2A;
 
-        FileSelect_SplitNumber(this->maskCount[spAC], &spA4[0], &spA4[1], &spA4[2]);
+        FileSelect_SplitNumber(save_info->maskCount, &spA4[0], &spA4[1], &spA4[2]);
 
         for (digit_index = 0; digit_index < 2; digit_index++, vtxId += 4) {
 
@@ -1787,6 +1789,22 @@ void FileSelect_SetWindowContentVtx(GameState* thisx) {
         this->ui_contents->files[file_index].owl_icon[3].v.ob[1] = this->ui_contents->files[file_index].owl_icon[0].v.ob[1] - 0xC;
         this->ui_contents->files[file_index].owl_icon[3].v.tc[0] = 0x300;
         this->ui_contents->files[file_index].owl_icon[3].v.tc[1] = 0x180;
+
+        this->ui_contents->files[file_index].crash_icon[0].v.ob[0] = posX + 8;
+        this->ui_contents->files[file_index].crash_icon[0].v.ob[1] = tempPosY - 2;
+
+        this->ui_contents->files[file_index].crash_icon[1].v.ob[0] = this->ui_contents->files[file_index].crash_icon[0].v.ob[0] + 32;
+        this->ui_contents->files[file_index].crash_icon[1].v.ob[1] = tempPosY - 2;
+        this->ui_contents->files[file_index].crash_icon[1].v.tc[0] = TC_10_5(47, 0);
+        
+        this->ui_contents->files[file_index].crash_icon[2].v.ob[0] = posX + 8;
+        this->ui_contents->files[file_index].crash_icon[2].v.ob[1] = this->ui_contents->files[file_index].crash_icon[0].v.ob[1] - 0xC;
+        this->ui_contents->files[file_index].crash_icon[2].v.tc[1] = TC_10_5(15, 0);
+        
+        this->ui_contents->files[file_index].crash_icon[3].v.ob[0] = this->ui_contents->files[file_index].crash_icon[0].v.ob[0] + 32;
+        this->ui_contents->files[file_index].crash_icon[3].v.ob[1] = this->ui_contents->files[file_index].crash_icon[0].v.ob[1] - 0xC;
+        this->ui_contents->files[file_index].crash_icon[3].v.tc[0] = TC_10_5(47, 0);
+        this->ui_contents->files[file_index].crash_icon[3].v.tc[1] = TC_10_5(15, 0);
 
         vtxId += 4;
 
@@ -2357,13 +2375,14 @@ void FileSelect_DrawFileInfo(GameState* thisx, s16 fileIndex) {
     s16 timeDigits[5];
     u16 digits[3]; // rupees and mask count
     u8 quarterHeartCount;
+    struct save_info_t *save_info = &this->save_info[fileIndex];
 
     OPEN_DISPS(this->state.gfxCtx);
 
     gDPPipeSync(POLY_OPA_DISP++);
     gDPSetCombineLERP(POLY_OPA_DISP++, 0, 0, 0, PRIMITIVE, TEXEL0, 0, PRIMITIVE, 0, 0, 0, 0, PRIMITIVE, TEXEL0, 0, PRIMITIVE, 0);
 
-    sp20C = fileIndex;
+    // sp20C = fileIndex;
 
     {
         // draw file name
@@ -2374,7 +2393,7 @@ void FileSelect_DrawFileInfo(GameState* thisx, s16 fileIndex) {
 
             for (vtxOffset = 0, i = 0; vtxOffset < (4 * 8); i++, vtxOffset += 4) {
                 FileSelect_DrawTexQuadI4(this->state.gfxCtx,
-                                        font->fontBuf + this->fileNames[fileIndex][i] * FONT_CHAR_TEX_SIZE, vtxOffset);
+                                        font->fontBuf + save_info->fileName[i] * FONT_CHAR_TEX_SIZE, vtxOffset);
             }
 
             // gSPVertex(POLY_OPA_DISP++, &this->windowContentVtx[D_80814654[fileIndex]], 32, 0);
@@ -2383,27 +2402,28 @@ void FileSelect_DrawFileInfo(GameState* thisx, s16 fileIndex) {
 
             for (vtxOffset = 0, i = 0; vtxOffset < (4 * 8); i++, vtxOffset += 4) {
                 FileSelect_DrawTexQuadI4(this->state.gfxCtx,
-                                        font->fontBuf + this->fileNames[fileIndex][i] * FONT_CHAR_TEX_SIZE, vtxOffset);
+                                        font->fontBuf + save_info->fileName[i] * FONT_CHAR_TEX_SIZE, vtxOffset);
             }
         }
     }
 
     if ((fileIndex == this->selectedFileIndex) || (fileIndex == this->copyDestFileIndex)) 
     {
-        if (this->isOwlSave[fileIndex + 2]) {
-            sp20C = fileIndex + 2;
+        if (this->save_info[fileIndex + 2].isOwlSave || this->save_info[fileIndex + 2].is_crash_save) 
+        {
+            save_info = &this->save_info[fileIndex + 2];
         }
 
         {
             /* rupee digits and shadow */
             gDPPipeSync(POLY_OPA_DISP++);
             gDPSetCombineMode(POLY_OPA_DISP++, G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM);
-            gDPSetPrimColor(POLY_OPA_DISP++, 0x00, 0x00, sFileSelRupeePrimColors[this->walletUpgrades[sp20C]][0],
-                            sFileSelRupeePrimColors[this->walletUpgrades[sp20C]][1],
-                            sFileSelRupeePrimColors[this->walletUpgrades[sp20C]][2], this->fileInfoAlpha[fileIndex]);
-            gDPSetEnvColor(POLY_OPA_DISP++, sFileSelRupeeEnvColors[this->walletUpgrades[sp20C]][0],
-                        sFileSelRupeeEnvColors[this->walletUpgrades[sp20C]][1],
-                        sFileSelRupeeEnvColors[this->walletUpgrades[sp20C]][2], 255);
+            gDPSetPrimColor(POLY_OPA_DISP++, 0x00, 0x00, sFileSelRupeePrimColors[save_info->walletUpgrades][0],
+                            sFileSelRupeePrimColors[save_info->walletUpgrades][1],
+                            sFileSelRupeePrimColors[save_info->walletUpgrades][2], this->fileInfoAlpha[fileIndex]);
+            gDPSetEnvColor(POLY_OPA_DISP++, sFileSelRupeeEnvColors[save_info->walletUpgrades][0],
+                        sFileSelRupeeEnvColors[save_info->walletUpgrades][1],
+                        sFileSelRupeeEnvColors[save_info->walletUpgrades][2], 255);
 
             // gSPVertex(POLY_OPA_DISP++, &this->windowContentVtx[D_80814654[fileIndex] + 0xC8], 4, 0);
             gSPVertex(POLY_OPA_DISP++, &this->ui_contents->files[fileIndex].rupee_icon, 4, 0);
@@ -2421,15 +2441,15 @@ void FileSelect_DrawFileInfo(GameState* thisx, s16 fileIndex) {
             // gSPVertex(POLY_OPA_DISP++, &this->windowContentVtx[D_80814654[fileIndex] + 0x4C], 12, 0);
             gSPVertex(POLY_OPA_DISP++, &this->ui_contents->files[fileIndex].rupee_digits_shadow, 12, 0);
 
-            FileSelect_SplitNumber((u16)this->rupees[sp20C], &digits[0], &digits[1], &digits[2]);
+            FileSelect_SplitNumber((u16)save_info->rupees, &digits[0], &digits[1], &digits[2]);
 
-            for (vtxOffset = 0, i = sWalletFirstDigit[this->walletUpgrades[sp20C]]; i < 3; i++, vtxOffset += 4) {
+            for (vtxOffset = 0, i = sWalletFirstDigit[save_info->walletUpgrades]; i < 3; i++, vtxOffset += 4) {
                 FileSelect_DrawTexQuadI4(this->state.gfxCtx, font->fontBuf + digits[i] * FONT_CHAR_TEX_SIZE, vtxOffset);
             }
 
-            if (this->rupees[sp20C] == gUpgradeCapacities[4][this->walletUpgrades[sp20C]]) {
+            if (save_info->rupees == gUpgradeCapacities[4][save_info->walletUpgrades]) {
                 gDPSetPrimColor(POLY_OPA_DISP++, 0x00, 0x00, 120, 255, 0, this->fileInfoAlpha[fileIndex]);
-            } else if (this->rupees[sp20C] != 0) {
+            } else if (save_info->rupees != 0) {
                 gDPSetPrimColor(POLY_OPA_DISP++, 0x00, 0x00, 255, 255, 255, this->fileInfoAlpha[fileIndex]);
             } else {
                 gDPSetPrimColor(POLY_OPA_DISP++, 0x00, 0x00, 100, 100, 100, this->fileInfoAlpha[fileIndex]);
@@ -2438,7 +2458,7 @@ void FileSelect_DrawFileInfo(GameState* thisx, s16 fileIndex) {
             // gSPVertex(POLY_OPA_DISP++, &this->windowContentVtx[D_80814654[fileIndex] + 0x40], 12, 0);
             gSPVertex(POLY_OPA_DISP++, &this->ui_contents->files[fileIndex].rupee_digits, 12, 0);
 
-            for (vtxOffset = 0, i = sWalletFirstDigit[this->walletUpgrades[sp20C]]; i < 3; i++, vtxOffset += 4) {
+            for (vtxOffset = 0, i = sWalletFirstDigit[save_info->walletUpgrades]; i < 3; i++, vtxOffset += 4) {
                 FileSelect_DrawTexQuadI4(this->state.gfxCtx, font->fontBuf + digits[i] * FONT_CHAR_TEX_SIZE, vtxOffset);
             }
         }
@@ -2456,7 +2476,7 @@ void FileSelect_DrawFileInfo(GameState* thisx, s16 fileIndex) {
 
             gSPVertex(POLY_OPA_DISP++, &this->ui_contents->files[fileIndex].heart_container_pieces, 4, 0);
 
-            POLY_OPA_DISP = FileSelect_DrawTexQuadIA8(POLY_OPA_DISP, sFileSelHeartPieceTextures[this->heartPieceCount[sp20C]], 0x18, 0x10, 0);
+            POLY_OPA_DISP = FileSelect_DrawTexQuadIA8(POLY_OPA_DISP, sFileSelHeartPieceTextures[save_info->heartPieceCount], 0x18, 0x10, 0);
         }
 
         // Fault_AddHangupPrintfAndCrash("HERE");
@@ -2467,7 +2487,7 @@ void FileSelect_DrawFileInfo(GameState* thisx, s16 fileIndex) {
 
         {
             /* hearts */
-            if (this->defenseHearts[sp20C] == 0) {
+            if (save_info->defenseHearts == 0) {
                 heartType = 0;
             } else {
                 heartType = 1;
@@ -2478,9 +2498,9 @@ void FileSelect_DrawFileInfo(GameState* thisx, s16 fileIndex) {
             gDPSetEnvColor(POLY_OPA_DISP++, sHeartEnvColors[heartType][0], sHeartEnvColors[heartType][1],
                         sHeartEnvColors[heartType][2], 255);
 
-            heart_count = this->healthCapacity[sp20C] / 0x10;
+            heart_count = save_info->healthCapacity / 0x10;
 
-            health = this->health[sp20C];
+            health = save_info->health;
             if (health <= 0x30) {
                 health = 0x30;
             }
@@ -2523,7 +2543,7 @@ void FileSelect_DrawFileInfo(GameState* thisx, s16 fileIndex) {
 
             for (vtxOffset = 0, remains_index = 0; remains_index < 4; remains_index++, vtxOffset += 4) 
             {
-                if (this->questItems[sp20C] & gBitFlags[remains_index])
+                if (save_info->questItems & gBitFlags[remains_index])
                 {
                     // gSPVertex(POLY_OPA_DISP++, &this->windowContentVtx[D_80814654[fileIndex] + 0xB8 + vtxOffset], 4, 0);
                     gSPVertex(POLY_OPA_DISP++, &this->ui_contents->files[fileIndex].remains_masks[remains_index], 4, 0);
@@ -2555,7 +2575,7 @@ void FileSelect_DrawFileInfo(GameState* thisx, s16 fileIndex) {
             // gSPVertex(POLY_OPA_DISP++, &this->windowContentVtx[D_80814654[fileIndex] + 0x60], 8, 0);
             gSPVertex(POLY_OPA_DISP++, &this->ui_contents->files[fileIndex].mask_count_digits_shadow, 8, 0);
 
-            FileSelect_SplitNumber(this->maskCount[sp20C], &digits[0], &digits[1], &digits[2]);
+            FileSelect_SplitNumber(save_info->maskCount, &digits[0], &digits[1], &digits[2]);
 
             for (vtxOffset = 0, i = 1; i < 3; i++, vtxOffset += 4) {
                 FileSelect_DrawTexQuadI4(this->state.gfxCtx, font->fontBuf + digits[i] * FONT_CHAR_TEX_SIZE, vtxOffset);
@@ -2573,18 +2593,26 @@ void FileSelect_DrawFileInfo(GameState* thisx, s16 fileIndex) {
         }
     }
 
-    if (this->isOwlSave[fileIndex + 2] && this->chaos_config_box_alpha == 0) {
+    if ((this->save_info[fileIndex + 2].isOwlSave || this->save_info[fileIndex + 2].is_crash_save) && this->chaos_config_box_alpha == 0) {
         gDPPipeSync(POLY_OPA_DISP++);
         gDPSetCombineMode(POLY_OPA_DISP++, G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM);
 
-        gDPSetPrimColor(POLY_OPA_DISP++, 0x00, 0x00, 255, 255, 255, this->nameAlpha[fileIndex]);
+        gDPSetPrimColor(POLY_OPA_DISP++, 0x00, 0x00, 255, 255, 255, this->nameAlpha[fileIndex]);        
 
-        // gSPVertex(POLY_OPA_DISP++, &this->windowContentVtx[D_80814654[fileIndex] + 0xD8], 4, 0);
-        gSPVertex(POLY_OPA_DISP++, this->ui_contents->files[fileIndex].owl_icon, 4, 0);
-
-        gDPLoadTextureBlock(POLY_OPA_DISP++, gFileSelOwlSaveIconTex, G_IM_FMT_RGBA, G_IM_SIZ_32b, 24, 12, 0,
-                            G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD,
-                            G_TX_NOLOD);
+        if(this->save_info[fileIndex + 2].is_crash_save)
+        {
+            gSPVertex(POLY_OPA_DISP++, this->ui_contents->files[fileIndex].crash_icon, 4, 0);
+            gDPLoadTextureBlock(POLY_OPA_DISP++, gFileSelCrashSaveTex, G_IM_FMT_IA, G_IM_SIZ_8b, 48, 16, 0,
+                                G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD,
+                                G_TX_NOLOD);
+        }
+        else
+        {
+            gSPVertex(POLY_OPA_DISP++, this->ui_contents->files[fileIndex].owl_icon, 4, 0);
+            gDPLoadTextureBlock(POLY_OPA_DISP++, gFileSelOwlSaveIconTex, G_IM_FMT_RGBA, G_IM_SIZ_32b, 24, 12, 0,
+                                G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD,
+                                G_TX_NOLOD);
+        }
         gSP1Quadrangle(POLY_OPA_DISP++, 0, 2, 3, 1, 0);
 
         gDPPipeSync(POLY_OPA_DISP++);
@@ -2595,7 +2623,7 @@ void FileSelect_DrawFileInfo(GameState* thisx, s16 fileIndex) {
 
         gDPSetPrimColor(POLY_OPA_DISP++, 0x00, 0x00, 0, 0, 0, this->fileInfoAlpha[fileIndex]);
 
-        gDPLoadTextureBlock_4b(POLY_OPA_DISP++, sFileSelDayENGTextures[this->day[sp20C]], G_IM_FMT_I, 48, 24, 0,
+        gDPLoadTextureBlock_4b(POLY_OPA_DISP++, sFileSelDayENGTextures[save_info->day], G_IM_FMT_I, 48, 24, 0,
                                G_TX_NOMIRROR | G_TX_CLAMP, G_TX_NOMIRROR | G_TX_CLAMP, G_TX_NOMASK, G_TX_NOMASK,
                                G_TX_NOLOD, G_TX_NOLOD);
         gSP1Quadrangle(POLY_OPA_DISP++, 4, 6, 7, 5, 0);
@@ -2604,7 +2632,7 @@ void FileSelect_DrawFileInfo(GameState* thisx, s16 fileIndex) {
         gSP1Quadrangle(POLY_OPA_DISP++, 0, 2, 3, 1, 0);
 
         timeDigits[0] = 0;
-        timeDigits[1] = TIME_TO_MINUTES_F(this->time[sp20C]) / 60.0f;
+        timeDigits[1] = TIME_TO_MINUTES_F(save_info->time) / 60.0f;
 
         while (timeDigits[1] >= 10) {
             timeDigits[0]++;
@@ -2612,7 +2640,7 @@ void FileSelect_DrawFileInfo(GameState* thisx, s16 fileIndex) {
         }
 
         timeDigits[3] = 0;
-        timeDigits[4] = (s32)TIME_TO_MINUTES_F(this->time[sp20C]) % 60;
+        timeDigits[4] = (s32)TIME_TO_MINUTES_F(save_info->time) % 60;
 
         while (timeDigits[4] >= 10) {
             timeDigits[3]++;
@@ -2767,12 +2795,13 @@ void FileSelect_DrawWindowContents(GameState* thisx) {
     // draw file info box (large box when a file is selected)
     for (fileIndex = 0; fileIndex < 3; fileIndex++ /*, temp += 28 */) {
         if (fileIndex < 2) {
+            struct save_info_t *save_info = &this->save_info[fileIndex + 2];
             gDPPipeSync(POLY_OPA_DISP++);
             gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, this->windowColor[0], this->windowColor[1], this->windowColor[2], this->fileInfoAlpha[fileIndex]);
             // gSPVertex(POLY_OPA_DISP++, &this->windowContentVtx[temp], 28, 0);
 
             for (quadVtxIndex = 0, i = 0; i < 7; i++, quadVtxIndex += 4) {
-                if ((i < 5) || (this->isOwlSave[fileIndex + 2] && (i >= 5))) {
+                if ((i < 5) || ((save_info->isOwlSave || save_info->is_crash_save) && (i >= 5))) {
                     gDPLoadTextureBlock(POLY_OPA_DISP++, sFileInfoBoxTextures[i], G_IM_FMT_IA, G_IM_SIZ_16b,
                                         sFileInfoBoxPartWidths[i], 56, 0, G_TX_NOMIRROR | G_TX_WRAP,
                                         G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
@@ -3024,7 +3053,7 @@ void FileSelect_DrawWindowContents(GameState* thisx) {
                                 G_TX_NOLOD, G_TX_NOLOD);
             gSP1Quadrangle(POLY_OPA_DISP++, 8, 10, 11, 9, 0);
 
-            if (this->isOwlSave[i + 2]) {
+            if (this->save_info[i + 2].isOwlSave || this->save_info[i + 2].is_crash_save) {
                 gDPSetPrimColor(POLY_OPA_DISP++, 0, 0, sWindowContentColors[0], sWindowContentColors[1],
                                 sWindowContentColors[2], this->nameBoxAlpha[i]);
                 gDPLoadTextureBlock(POLY_OPA_DISP++, gFileSelBlankButtonTex, G_IM_FMT_IA, G_IM_SIZ_16b, 52, 16, 0,
@@ -3659,14 +3688,21 @@ void FileSelect_LoadGame(GameState* thisx) {
 
     gSaveContext.fileNum = this->buttonIndex;
     Sram_OpenSave(this, &this->sramCtx);
-
     gSaveContext.gameMode = GAMEMODE_NORMAL;
-
     STOP_GAMESTATE(&this->state);
     SET_NEXT_GAMESTATE(&this->state, Play_Init, sizeof(PlayState));
 
-    gSaveContext.respawnFlag = 0;
-    gSaveContext.respawn[RESPAWN_MODE_DOWN].entrance = ENTR_LOAD_OPENING;
+    // if(gSaveContext.save.is_crash_save)
+    // {
+
+    // }
+    // else
+    // {
+
+        gSaveContext.respawnFlag = 0;
+        gSaveContext.respawn[RESPAWN_MODE_DOWN].entrance = ENTR_LOAD_OPENING;
+    // }
+
     gSaveContext.seqId = (u8)NA_BGM_DISABLED;
     gSaveContext.ambienceId = AMBIENCE_ID_DISABLED;
     gSaveContext.showTitleCard = true;

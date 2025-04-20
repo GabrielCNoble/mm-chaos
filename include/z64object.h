@@ -34,7 +34,7 @@ struct ObjectLoadRequest
 
 #define OBJECT_SLOT_NONE -1
 
-#define MAX_OBJECT_REQUESTS 8
+#define MAX_OBJECT_REQUESTS 16
 typedef struct {
     /* 0x000 */ void*           spaceStart;
     /* 0x004 */ void*           spaceEnd;
@@ -49,7 +49,7 @@ typedef struct {
                 u8              pad0[2];
     /* 0x010 */ ObjectEntry     slots[64];    
     /* 0x310 */ struct ObjectLoadRequest    load_requests[MAX_OBJECT_REQUESTS];
-    /* 0x510 */ u8 pad1[0x448];
+    // /* 0x510 */ u8 pad1[0x448];
     #else
     /* 0x010 */ ObjectEntry     slots[35];    
     #endif

@@ -79,34 +79,34 @@ const char *gSimonSaysKeyStrs[] = {
 
 struct SimonSaysConfig gSimonSaysConfigs[] = {
     /* [SIMON_SAYS_CONFIG_PRESS_KEY_OR_DIE] */ {
-        "Press %s or die", true, 10
+        "Press %s or die", true, 10, 100
     },
     /* [SIMON_SAYS_CONFIG_PRESS_KEY_TO_DIE] */ {
-        "Press %s to die", false, 10
+        "Press %s to die", false, 10, 100
     },
     /* [SIMON_SAYS_CONFIG_PRESS_KEY_AND_DIE] */ {
-        "Press %s and die", false, 10
+        "Press %s and die", false, 10, 100
     },
     /* [SIMON_SAYS_CONFIG_DO_NOT_PRESS_KEY_TO_NOT_NOT_DIE] */ {
-        "Do not press %s to not not die", true, 3
+        "Do not press %s to not not die", true, 3, 160
     },
     /* [SIMON_SAYS_CONFIG_DO_NOT_PRESS_KEY_OR_DIE] */ {
-        "Do not press %s or die", false, 6
+        "Do not press %s or die", false, 6, 160
     },
     /* [SIMON_SAYS_CONFIG_DO_NOT_PRESS_KEY_TO_NOT_DIE] */ {
-        "Do not press %s to not die", false, 4
+        "Do not press %s to not die", false, 4, 160
     },
     /* [SIMON_SAYS_CONFIG_DO_NOT_NOT_PRESS_KEY_TO_DIE] */ {
-        "Do not not press %s to die", false, 4
+        "Do not not press %s to die", false, 4, 160
     },
     /* [SIMON_SAYS_CONFIG_DO_NOT_NOT_PRESS_KEY_TO_NOT_DIE] */ {
-        "Do not not press %s to not die", true, 4
+        "Do not not press %s to not die", true, 4, 160
     },
     /* [SIMON_SAYS_CONFIG_DO_NOT_NOT_PRESS_KEY_OR_DIE] */ {
-        "Do not not press %s or die", true, 4
+        "Do not not press %s or die", true, 4, 140
     },
     /* [SIMON_SAYS_CONFIG_PRESS_KEY_NOT_TO_NOT_DIE] */ {
-        "Press %s not to not die", false, 4
+        "Press %s not to not die", false, 4, 120
     },
 };
 
@@ -226,6 +226,10 @@ struct ChaosConfig gChaosConfigs[CHAOS_CONFIG_LAST] = {
         /* .label = */          "Underwater ocarina",
         /* .description = */    "If enabled, playing ocarina underwater will be possible. This is so it's possible to counter the fast time effect when underwater.\n"
     },
+    /* [CHAOS_CONFIG_SAVE_AT_GAME_CRASH] = */{
+        /* .label = */          "Save when crashing",
+        /* .description = */    "If enabled, the game will save the current progress if it crashes. When loading the save, the player will spawn at the last entrance they went through.\n"
+    },
 };
 
 
@@ -295,7 +299,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_SCALE_RANDOM_LIMB]        = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.0016f),
     /* [CHAOS_CODE_LIFTOFF]                  = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1), 0.00018f),
     /* [CHAOS_CODE_UNSTABLE_ROOMS]           = */ CHAOS_CODE_DEF(15, 25, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.005f),
-    /* [CHAOS_CODE_HEART_SNAKE]              = */ CHAOS_CODE_DEF(25, 65, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.0038f),
+    /* [CHAOS_CODE_HEART_SNAKE]              = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.0038f),
     /* [CHAOS_CODE_FAST_TIME]                = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.0012f),
     /* [CHAOS_CODE_MOON_CRASH]               = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1), 0.0006f),
     /* [CHAOS_CODE_SPEEDBOOST]               = */ CHAOS_CODE_DEF(15, 20, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.0035f),
@@ -309,6 +313,9 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_FISH]                     = */ CHAOS_CODE_DEF(0, 0,   CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.0035f),
     /* [CHAOS_CODE_AIR_SUPPORT]              = */ CHAOS_CODE_DEF(25, 65, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.0035f),
     /* [CHAOS_CODE_SIMON_SAYS]               = */ CHAOS_CODE_DEF(0, 0,   CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.0030f),
+    /* [CHAOS_CODE_RANDOM_AUTO_JUMP]         = */ CHAOS_CODE_DEF(5,  12, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1), 0.008f),
+    /* [CHAOS_CODE_UNSTEADY_LEGS]            = */ CHAOS_CODE_DEF(10, 15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.008f),
+    /* [CHAOS_CODE_FAKE_CRASH]               = */ CHAOS_CODE_DEF(0, 0,   CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.00006f),
 };
   
 const char *gChaosCodeNames[] = {
@@ -377,6 +384,9 @@ const char *gChaosCodeNames[] = {
     /* [CHAOS_CODE_FISH]                        = */ "Fish",
     /* [CHAOS_CODE_AIR_SUPPORT]                 = */ "Air support",
     /* [CHAOS_CODE_SIMON_SAYS]                  = */ "Simon says",
+    /* [CHAOS_CODE_RANDOM_AUTO_JUMP]            = */ "Random auto-jumps",
+    /* [CHAOS_CODE_UNSTEADY_LEGS]               = */ "Unsteady legs",
+    /* [CHAOS_CODE_FAKE_CRASH]                  = */ "Fake crash",
 };
 
 enum FAIRY_FOUNTAIN_EXITS
@@ -831,6 +841,8 @@ void Chaos_Init(void)
     gChaosContext.periodic_probability_scale = 1.0f;
     gChaosContext.periodic_probability_scale_target = 1.0f;
     gChaosContext.periodic_probability_update_timer = 0;
+
+    gChaosContext.fake_crash = false;
     // gChaosContext.cur_spawn_actor_code = CHAOS_CODE_NONE;
     // gChaosContext.spawn_actor_code_was_activated = CHAOS_CODE_NONE;
     // gChaosContext.update_spawn_actor_code = false;
@@ -1090,7 +1102,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
 
         // if(Chaos_GetConfigFlag(CHAOS_CONFIG_CHAOS))
         // {
-        // return;  
+        return;  
         // }
 
         if(chaos_elapsed_seconds > 0)
@@ -1226,7 +1238,8 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         // break;
 
                         case CHAOS_CODE_RANDOM_HEALTH_UP:
-                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_HEART_SNAKE))
+                            // if(Chaos_IsCodeInActiveList(CHAOS_CODE_HEART_SNAKE))
+                            if(gChaosContext.ui.snake_state != CHAOS_SNAKE_GAME_STATE_NONE)
                             {
                                 continue;
                             }
@@ -1239,7 +1252,8 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         break;
 
                         case CHAOS_CODE_RANDOM_HEALTH_DOWN:
-                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_HEART_SNAKE))
+                            // if(Chaos_IsCodeInActiveList(CHAOS_CODE_HEART_SNAKE))
+                            if(gChaosContext.ui.snake_state != CHAOS_SNAKE_GAME_STATE_NONE)
                             {
                                 continue;
                             }
@@ -1365,7 +1379,8 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         break;
 
                         case CHAOS_CODE_WEIRD_UI:
-                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_HEART_SNAKE))
+                            // if(Chaos_IsCodeInActiveList(CHAOS_CODE_HEART_SNAKE))
+                            if(gChaosContext.ui.snake_state != CHAOS_SNAKE_GAME_STATE_NONE)
                             {
                                 continue;
                             }
@@ -1380,7 +1395,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
                         break;
 
                         case CHAOS_CODE_SIMON_SAYS:
-                            if(Chaos_IsCodeInActiveList(CHAOS_CODE_HEART_SNAKE) || Chaos_IsCodeInActiveList(CHAOS_CODE_CHANGE_HEALTH) || 
+                            if(gChaosContext.ui.snake_state != CHAOS_SNAKE_GAME_STATE_NONE || Chaos_IsCodeInActiveList(CHAOS_CODE_CHANGE_HEALTH) || 
                                 gChaosContext.link.simon_says_state != CHAOS_SIMON_SAYS_STATE_IDLE)
                             {
                                 continue;
@@ -1767,7 +1782,8 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
             // GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "Allocated: %d, Free: %d", (u32)total_alloc_size, (u32)total_free_size);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
-            GfxPrint_Printf(&gfx_print, "%d", playstate->bButtonAmmoPlusOne);
+            GfxPrint_Printf(&gfx_print, "Clear flag: %d", Flags_GetClear(playstate, playstate->roomCtx.curRoom.num));
+            // GfxPrint_Printf(&gfx_print, "%d", playstate->bButtonAmmoPlusOne);
             
         }
 
@@ -1835,19 +1851,19 @@ void Chaos_DeactivateCodeAtIndex(u8 index)
                 gChaosContext.link.limb_scales[gChaosContext.link.scaled_limb_index] = gChaosContext.link.temp_limb_scale;
             break;
 
-            case CHAOS_CODE_HEART_SNAKE:
-                bzero(gChaosContext.ui.heart_containers, sizeof(gChaosContext.ui.heart_containers));
-                if(gChaosContext.ui.snake_state != CHAOS_SNAKE_GAME_STATE_DIED || 
-                    gChaosContext.ui.snake_state != CHAOS_SNAKE_GAME_STATE_WIN)
-                {
-                    gSaveContext.save.saveInfo.playerData.healthCapacity = LIFEMETER_FULL_HEART_HEALTH * gChaosContext.ui.heart_count;
+            // case CHAOS_CODE_HEART_SNAKE:
+            //     bzero(gChaosContext.ui.heart_containers, sizeof(gChaosContext.ui.heart_containers));
+            //     if(gChaosContext.ui.snake_state != CHAOS_SNAKE_GAME_STATE_DIED || 
+            //         gChaosContext.ui.snake_state != CHAOS_SNAKE_GAME_STATE_WIN)
+            //     {
+            //         gSaveContext.save.saveInfo.playerData.healthCapacity = LIFEMETER_FULL_HEART_HEALTH * gChaosContext.ui.heart_count;
 
-                    if(gSaveContext.save.saveInfo.playerData.health > gSaveContext.save.saveInfo.playerData.healthCapacity)
-                    {
-                        gSaveContext.save.saveInfo.playerData.health = gSaveContext.save.saveInfo.playerData.healthCapacity;
-                    }
-                }
-            break;
+            //         if(gSaveContext.save.saveInfo.playerData.health > gSaveContext.save.saveInfo.playerData.healthCapacity)
+            //         {
+            //             gSaveContext.save.saveInfo.playerData.health = gSaveContext.save.saveInfo.playerData.healthCapacity;
+            //         }
+            //     }
+            // break;
             
             case CHAOS_CODE_BAD_CONNECTION:
                 Chaos_NukeSnapshots();
@@ -2732,6 +2748,7 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     Chaos_EnableCode(CHAOS_CODE_RANDOM_HEALTH_UP, 1.0f / gChaosContext.periodic_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_RANDOM_HEALTH_DOWN, gChaosContext.periodic_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_FISH, gChaosContext.periodic_probability_scale);
+    Chaos_EnableCode(CHAOS_CODE_RANDOM_AUTO_JUMP, disruptive_prob_scale);
 
     Chaos_EnableCode(CHAOS_CODE_CHANGE_RUPEE, gChaosContext.periodic_probability_scale);
 
@@ -2915,11 +2932,11 @@ u32 Chaos_UpdateSnakeGame(PlayState *play, Input *input)
         gChaosContext.ui.move_timer = 0;
         gChaosContext.ui.next_move_dir = CHAOS_SNAKE_MOVE_DIR_RIGHT;
 
-        gChaosContext.ui.heart_containers[0].pos_x = CHAOS_MIN_SNAKE_X * LIFEMETER_HEART_CONTAINER_SIZE;
+        gChaosContext.ui.heart_containers[0].pos_x = (CHAOS_MIN_SNAKE_X + 12) * LIFEMETER_HEART_CONTAINER_SIZE;
         gChaosContext.ui.heart_containers[0].pos_y = CHAOS_SNAKE_START_Y * LIFEMETER_HEART_CONTAINER_SIZE;
-        gChaosContext.ui.heart_containers[1].pos_x = (CHAOS_MIN_SNAKE_X + 1) * LIFEMETER_HEART_CONTAINER_SIZE;
+        gChaosContext.ui.heart_containers[1].pos_x = (CHAOS_MIN_SNAKE_X + 13) * LIFEMETER_HEART_CONTAINER_SIZE;
         gChaosContext.ui.heart_containers[1].pos_y = CHAOS_SNAKE_START_Y * LIFEMETER_HEART_CONTAINER_SIZE;
-        gChaosContext.ui.heart_containers[2].pos_x = (CHAOS_MIN_SNAKE_X + 2) * LIFEMETER_HEART_CONTAINER_SIZE;
+        gChaosContext.ui.heart_containers[2].pos_x = (CHAOS_MIN_SNAKE_X + 14) * LIFEMETER_HEART_CONTAINER_SIZE;
         gChaosContext.ui.heart_containers[2].pos_y = CHAOS_SNAKE_START_Y * LIFEMETER_HEART_CONTAINER_SIZE;
 
         for(container_index = 3; container_index < gChaosContext.ui.orig_heart_count; container_index++)
@@ -3098,6 +3115,7 @@ u32 Chaos_UpdateSnakeGame(PlayState *play, Input *input)
         if(gChaosContext.ui.blink_timer == 0)
         {
             gChaosContext.ui.snake_state = CHAOS_SNAKE_GAME_STATE_NONE;
+            bzero(gChaosContext.ui.heart_containers, sizeof(gChaosContext.ui.heart_containers));
             return false;
         }
     }
@@ -3109,10 +3127,13 @@ void Chaos_UpdateSimonSays(PlayState *play, Input *input)
 {
     if(gChaosContext.link.simon_says_state == CHAOS_SIMON_SAYS_STATE_START)
     {
+        struct SimonSaysConfig *config = NULL;
         gChaosContext.link.simon_says_config = Chaos_RandS16Offset(0, CHAOS_SIMON_SAYS_CONFIG_LAST);
-        gChaosContext.link.simon_says_timer = 100;
         gChaosContext.link.simon_says_state = CHAOS_SIMON_SAYS_STATE_WAIT_INPUT;
         gChaosContext.link.simon_says_keys[0] = Chaos_RandS16Offset(0, CHAOS_SIMON_SAYS_KEY_LAST);
+        config = gSimonSaysConfigs + gChaosContext.link.simon_says_config;
+        gChaosContext.link.simon_says_timer = config->timeout;
+
     }
     else if(gChaosContext.link.simon_says_state == CHAOS_SIMON_SAYS_STATE_WAIT_INPUT)
     {
@@ -3185,7 +3206,7 @@ void Chaos_PrintSnakeGameStuff(PlayState *play)
         gDPFillRectangle(OVERLAY_DISP++, 0, y_pos - 4, SCREEN_WIDTH,  y_pos + (5 << 3));
         gDPPipeSync(OVERLAY_DISP++);
 
-        polyOpa = POLY_OPA_DISP;
+        polyOpa = OVERLAY_DISP + 1;
         gfx = Gfx_Open(polyOpa);
         // gDPSetRenderMode(OVERLAY_DISP++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
         // gDPSetCombineMode(OVERLAY_DISP++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
@@ -3216,7 +3237,7 @@ void Chaos_PrintSnakeGameStuff(PlayState *play)
         GfxPrint_Destroy(&gfx_print);
         // gSPEndDisplayList(gfx++);
         Gfx_Close(polyOpa, gfx);
-        POLY_OPA_DISP = gfx;
+        OVERLAY_DISP = gfx;
         CLOSE_DISPS(gfxCtx);   
     }
 }
@@ -3234,24 +3255,23 @@ void Chaos_PrintSimonSaysStuff(PlayState *play)
         f32 alpha_scale = 1.0f;
         struct SimonSaysConfig *config = gSimonSaysConfigs + gChaosContext.link.simon_says_config;
 
-        gDPSetRenderMode(OVERLAY_DISP++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
+        gSPClearGeometryMode(OVERLAY_DISP++, G_SHADE | G_SHADING_SMOOTH | G_CULL_BOTH |
+            G_FOG | G_LIGHTING | G_TEXTURE_GEN | G_TEXTURE_GEN_LINEAR | G_LOD);
+        gDPSetCycleType(OVERLAY_DISP++, G_CYC_1CYCLE);
         gDPSetCombineMode(OVERLAY_DISP++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
+        gDPSetRenderMode(OVERLAY_DISP++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
         gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 0, 0, 0, 190);
         gDPFillRectangle(OVERLAY_DISP++, 0, y_pos - 4, SCREEN_WIDTH,  y_pos + (5 << 3));
         gDPPipeSync(OVERLAY_DISP++);
 
-        polyOpa = POLY_OPA_DISP;
-        gfx = Gfx_Open(polyOpa);
-        // gDPSetRenderMode(OVERLAY_DISP++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
-        // gDPSetCombineMode(OVERLAY_DISP++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
+        polyOpa = OVERLAY_DISP + 1;
+        gfx = Gfx_Open(polyOpa);    
 
         gSPDisplayList(OVERLAY_DISP++, gfx);
 
         GfxPrint_Init(&gfx_print);
         GfxPrint_Open(&gfx_print, gfx);
-        gfx_print.flags |= GFXP_FLAG_BLEND;
-        // gDPSetRenderMode(gfx_print.dList++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
-        // gDPSetCombineMode(gfx_print.dList++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
+        // gfx_print.flags |= GFXP_FLAG_BLEND;
         gDPSetOtherMode(gfx_print.dList++, G_AD_DISABLE | G_CD_DISABLE | G_CK_NONE | G_TC_FILT | G_TF_BILERP | 
             G_TT_IA16 | G_TL_TILE | G_TD_CLAMP | G_TP_NONE | G_CYC_1CYCLE | G_PM_NPRIMITIVE,
                     G_AC_NONE | G_RM_XLU_SURF | G_RM_XLU_SURF2);
@@ -3260,18 +3280,12 @@ void Chaos_PrintSimonSaysStuff(PlayState *play)
         GfxPrint_SetColor(&gfx_print, 255, 255, 255, 255);
         GfxPrint_SetPos(&gfx_print, config->text_x_offset, 4);
         GfxPrint_Printf(&gfx_print, config->str, gSimonSaysKeyStrs[gChaosContext.link.simon_says_keys[0]]);
-        // GfxPrint_SetPos(&gfx_print, 6, 5);
-        // GfxPrint_Printf(&gfx_print, "Collect all containers...");
-        // GfxPrint_SetPos(&gfx_print, 6, 6);
-        // GfxPrint_Printf(&gfx_print, "or lose them ");
-        // GfxPrint_SetColor(&gfx_print, 255, 5, 5, 255 * alpha_scale);
-        // GfxPrint_Printf(&gfx_print, "FOREVER!");
 
         gfx = GfxPrint_Close(&gfx_print);
         GfxPrint_Destroy(&gfx_print);
-        // gSPEndDisplayList(gfx++);
+        gSPEndDisplayList(gfx++);
         Gfx_Close(polyOpa, gfx);
-        POLY_OPA_DISP = gfx;
+        OVERLAY_DISP = gfx;
         CLOSE_DISPS(gfxCtx);   
     }
 }
@@ -3578,6 +3592,11 @@ void Chaos_SetV053ConfigDefaults(void)
     Chaos_SetConfigFlag(CHAOS_CONFIG_ALLOW_UNDERWATER_OCARINA, true);
     Chaos_SetConfigFlag(CHAOS_CONFIG_RANDOM_MOUNTAIN_VILLAGE_CLIMB, true);
     Chaos_SetConfigFlag(CHAOS_CONFIG_DPAD_DOWN_TO_DIE, true);
+}
+
+void Chaos_SetV055ConfigDefaults(void)
+{
+    Chaos_SetConfigFlag(CHAOS_CONFIG_SAVE_AT_GAME_CRASH, true);
 }
 
 void Chaos_SetConfigDefaults(void)

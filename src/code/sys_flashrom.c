@@ -107,7 +107,8 @@ s32 SysFlashrom_ExecWrite(void* addr, u32 pageNum, u32 pageCount) {
     }
     // Ensure the page is always aligned to a sector boundary.
     if ((pageNum % FLASH_BLOCK_SIZE) != 0) {
-        Fault_AddHungupAndCrash("../sys_flashrom.c", 275);
+        // Fault_AddHungupAndCrash("../sys_flashrom.c", 275);
+        Fault_AddHangupPrintfAndCrash("Start page %d is not sector aligned", pageNum);
     }
     osWritebackDCache(addr, pageCount * FLASH_BLOCK_SIZE);
     for (i = 0; i < pageCount; i++) {

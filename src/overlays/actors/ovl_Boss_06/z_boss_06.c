@@ -361,6 +361,7 @@ void Boss06_CurtainBurningCutscene(Boss06* this, PlayState* play) {
 }
 
 void Boss06_SetupCloseCurtain(Boss06* this, PlayState* play) {
+
     this->actionFunc = Boss06_CloseCurtain;
     this->drawFlags = BOSS06_DRAWFLAG_LIGHT_RAY | BOSS06_DRAWFLAG_CURTAIN;
     this->curtainHeight = 110.0f;

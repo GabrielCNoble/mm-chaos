@@ -505,7 +505,7 @@ typedef struct FaultMgr {
     /* 0x7E0 */ UNK_TYPE1 unk_7E0[0x4];
     /* 0x7E4 */ Input inputs[MAXCONTROLLERS];
     /* 0x844 */ void* fb;
-} FaultMgr; // size = 0x848
+} FaultMgr; // size = 0x848  
 
 // TODO: Commented out to try to avoid bss reorder in fault.c
 // extern FaultMgr gFaultMgr;

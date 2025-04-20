@@ -350,6 +350,7 @@ typedef struct Save {
     /* 0x23 */ u8 isOwlSave;
     /* 0x24 */ SaveInfo saveInfo;
     struct ChaosSaveInfo chaos;
+               u8 is_crash_save;
 } Save; // size = 0x100C
 
 typedef struct SaveContext {
@@ -1723,6 +1724,8 @@ typedef enum {
 void Sram_ActivateOwl(u8 owlWarpId);
 void Sram_ClearFlagsAtDawnOfTheFirstDay(void);
 void Sram_SaveEndOfCycle(struct PlayState* play);
+void Sram_InvalidateOwlSave(SramContext* sramCtx, s32 fileNum);
+void Sram_SaveAtGameCrashTime(struct PlayState *play);
 void Sram_IncrementDay(void);
 u16 Sram_CalcChecksum(void* data, size_t count);
 void Sram_InitNewSave(void);
@@ -1747,6 +1750,7 @@ void Sram_StartWriteToFlashOwlSave(SramContext* sramCtx);
 void Sram_UpdateWriteToFlashOwlSave(SramContext* sramCtx);
 void Sram_LoadChaosConfig(SramContext *sram_ctx, u8 file_index);
 void Sram_SaveChaosConfig(SramContext *sram_ctx, u8 file_index);
+void func_80145698(SramContext* sramCtx);
 
 void SaveContext_Init(void);
 
@@ -1759,5 +1763,6 @@ extern s32 gFlashOwlSaveStartPages[];
 extern s32 gFlashOwlSaveNumPages[];
 
 extern SaveContext gSaveContext;
+extern Save        gSaveCopy;
 
 #endif

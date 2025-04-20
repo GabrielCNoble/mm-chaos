@@ -30,6 +30,8 @@ OSTime sGraphPrevUpdateEndTime;
 #include "z_title_setup.h"
 #include "chaos_fuckery.h"
 
+struct GameState *gCurrentGameState = NULL;
+
 void Graph_FaultClient(void) {
     FaultDrawer_DrawText(30, 100, "ShowFrameBuffer PAGE 0/1");
     osViSwapBuffer(SysCfb_GetFramebuffer(0));
@@ -342,7 +344,7 @@ void Graph_ThreadEntry(void* arg) {
     GraphicsContext gfxCtx;
     GameStateOverlay* nextOvl = &gGameStateOverlayTable[0];
     GameStateOverlay* ovl;
-    GameState* gameState;
+    // GameState* gameState;
     u32 size;
     s32 pad[2];
 
@@ -371,21 +373,21 @@ void Graph_ThreadEntry(void* arg) {
 
         func_800809F4(ovl->file.vromStart);
 
-        gameState = malloc(size);
+        gCurrentGameState = malloc(size);
 
-        bzero(gameState, size);
-        GameState_Init(gameState, ovl->init, &gfxCtx);
+        bzero(gCurrentGameState, size);
+        GameState_Init(gCurrentGameState, ovl->init, &gfxCtx);
 
-        while (GameState_IsRunning(gameState)) {
-            Graph_Update(&gfxCtx, gameState);
+        while (GameState_IsRunning(gCurrentGameState)) {
+            Graph_Update(&gfxCtx, gCurrentGameState);
         }
 
-        nextOvl = Graph_GetNextGameState(gameState);
+        nextOvl = Graph_GetNextGameState(gCurrentGameState);
 
         if (size) {}
 
-        GameState_Destroy(gameState);
-        free(gameState);
+        GameState_Destroy(gCurrentGameState);
+        free(gCurrentGameState);
 
         Overlay_FreeGameState(ovl);
     }

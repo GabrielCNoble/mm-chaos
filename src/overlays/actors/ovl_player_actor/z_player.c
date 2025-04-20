@@ -7847,7 +7847,8 @@ void func_8083827C(Player* this, PlayState* play) {
     if (!(this->stateFlags1 & (PLAYER_STATE1_8000000 | PLAYER_STATE1_20000000)) &&
         ((this->stateFlags1 & PLAYER_STATE1_80000000) ||
          !(this->stateFlags3 & (PLAYER_STATE3_200 | PLAYER_STATE3_2000))) &&
-        !(this->actor.bgCheckFlags & BGCHECKFLAG_GROUND)) {
+        !(this->actor.bgCheckFlags & BGCHECKFLAG_GROUND)) 
+    {
         if (func_80835428(play, this)) {            
             return;
         }
@@ -8682,6 +8683,7 @@ void func_80839E74(Player* this, PlayState* play) {
     this->yaw = this->actor.shape.rot.y;
 }
 
+/* Player_SetThirdPersonView */
 void func_80839ED0(Player* this, PlayState* play) {
     if (!(this->stateFlags3 & PLAYER_STATE3_FLYING_WITH_HOOKSHOT) && (Player_Action_64 != this->actionFunc) &&
         !func_8083213C(this)) {
@@ -13176,6 +13178,7 @@ u16 gChaosJunkItems[] = {
 
 extern size_t gSystemHeapSize;
 extern u8 gWeatherMode;
+extern FaultMgr* sFaultInstance;
 
 void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
     f32 temp_fv0;
@@ -13185,11 +13188,25 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
 
     if(CHECK_BTN_ANY(input->press.button, BTN_L))
     {
+        // u32 *p = NULL;
+        // *p = 5;
+
+        // Fault_AddHangupPrintfAndCrash("Entrance is: %d", gSaveContext.save.entrance);
+        // osSendMesg(&sFaultInstance->queue, ((OSMesg)4), 0);
         // play->nextEntrance = Entrance_Create(gSceneIndex, gEntranceIndex, 0);
         // Chaos_ActivateCode(CHAOS_CODE_WALLMASTER);
-        // play->nextEntrance = ENTRANCE(MILK_BAR, 0);
-        // Scene_SetExitFade(play);
-        // play->transitionTrigger = TRANS_TRIGGER_START;
+        play->nextEntrance = ENTRANCE(IGOS_DU_IKANAS_LAIR, 0);
+        Scene_SetExitFade(play);
+        play->transitionTrigger = TRANS_TRIGGER_START;
+
+        // Chaos_ActivateCode(CHAOS_CODE_UNSTEADY_LEGS, 15);
+        // gChaosContext.link.random_autojump_timer = 2;
+
+
+        // this->actor.bgCheckFlags &= ~BGCHECKFLAG_GROUND;
+        // func_8083827C(this, play);
+        // func_808373F8(play, this, NA_SE_VO_LI_AUTO_JUMP);
+        // func_808378FC(play, this);
 
         // Chaos_ActivateCode(CHAOS_CODE_SIMON_SAYS, 1);
         // gChaosContext.link.simon_says_state = CHAOS_SIMON_SAYS_STATE_START;
@@ -13214,22 +13231,14 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // this->actor.parent = NULL;
 
         // Player_GiveAGoddamnItem(play, this, GI_DEKU_STICKS_1);
-        // Chaos_ActivateCode(CHAOS_CODE_RANDOM_FIERCE_DEITY, 15);
-        // Chaos_ActivateCode(CHAOS_CODE_RANDOM_HEALTH_UP, 1);
-        // Chaos_ActivateCode(CHAOS_CODE_JUNK_ITEM, 1);
-        // Chaos_ActivateCode(CHAOS_CODE_BEER_GOGGLES, 30);
-        // Chaos_ActivateCode(CHAOS_CODE_DIE, 1);   
-        // Chaos_ActivateCode(CHAOS_CODE_RANDOM_KNOCKBACK, 20);
         // gChaosContext.link.random_knockback_timer = 1;
         // Chaos_SpawnActor(&play->actorCtx, play, ACTOR_EN_ARWING, 
         //     this->actor.world.pos.x, this->actor.world.pos.y + 20.0f, this->actor.world.pos.z, 0, 0, 0, ARWING_FRIENDLY);
         // Chaos_StartMoonCrash();
         // Camera_ChangeSetting(Play_GetCamera(play, CAM_ID_MAIN), CAM_SET_BIRDS_EYE_VIEW_0);
-        // Chaos_ActivateCode(CHAOS_CODE_LIFTOFF, 1);
-        // Chaos_ActivateCode(CHAOS_CODE_BOMB_ARROWS, 120);
-        // Chaos_ActivateCode(CHAOS_CODE_BUCKSHOT_ARROWS, 120);
-        // Chaos_ActivateCode(CHAOS_CODE_HEART_SNAKE, 60);
+        // Chaos_ActivateCode(CHAOS_CODE_HEART_SNAKE, 1);
         // gChaosContext.ui.snake_state = CHAOS_SNAKE_GAME_STATE_INIT;
+        // gSaveContext.save.saveInfo.playerData.healthCapacity = 8 * 16;
         // Chaos_ActivateCode(CHAOS_CODE_FAST_TIME, 1);
         // gChaosContext.moon.moon_crash_timer = 600;
         // gChaosContext.moon.moon_crash_time_offset = TIME_UNTIL_MOON_CRASH - CLOCK_TIME(6, 0);
@@ -13277,7 +13286,12 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
   
     if(CHECK_BTN_ANY(input->press.button, BTN_R))
     {
-
+        Chaos_ActivateCode(CHAOS_CODE_FAKE_CRASH, 1);
+        // Fault_AddHangupPrintfAndCrash("Entrance is: %d", gSaveContext.save.entrance);
+        // Chaos_ActivateCode(CHAOS_CODE_HEART_SNAKE, 20);
+        // Chaos_ActivateCode(CHAOS_CODE_SIMON_SAYS, 1);
+        // gChaosContext.link.simon_says_state = CHAOS_SIMON_SAYS_STATE_START;
+        
         // gChaosContext.link.simon_says_keys[0] = MESSAGE_BTN_DUP + Rand_S16Offset(0, 4);
         // Message_StartTextbox(play, MESSAGE_ID_PRESS_KEY_OR_DIE, NULL);
         // Chaos_ActivateCode(CHAOS_CODE_REDEADASS_GROOVE, 1);
@@ -13338,6 +13352,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
 
         // Chaos_ActivateCode(CHAOS_CODE_SILENT_FIELD, 15);
         // Chaos_ActivateCode(CHAOS_CODE_ENTRANCE_RANDO, 10);
+        // gSaveContext.save.saveInfo.playerData.healthCapacity = 16*8;
         // gChaosContext.ui.snake_state = CHAOS_SNAKE_GAME_STATE_INIT;
         // Audio_PlaySfx(NA_SE_EV_METALDOOR_OPEN);
         // Chaos_ActivateCode(CHAOS_CODE_RANDOM_FIERCE_DEITY, 15);
@@ -13560,7 +13575,20 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
             Chaos_DeactivateCode(CHAOS_CODE_SHOCK);
         }
 
-        // code = Chaos_GetCode(CHAOS_CODE_RANDOM_KNOCKBACK);
+        if(Chaos_IsCodeActive(CHAOS_CODE_RANDOM_AUTO_JUMP))
+        {
+            if(gChaosContext.link.random_autojump_timer > 0)
+            {
+                gChaosContext.link.random_autojump_timer--;
+            }
+
+            if(gChaosContext.link.random_autojump_timer == 0 && (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND))
+            {
+                func_80839ED0(this, play);
+                func_808373F8(play, this, NA_SE_VO_LI_AUTO_JUMP);
+                gChaosContext.link.random_autojump_timer = Chaos_RandS16Offset(3, 80);
+            }
+        }
 
         if(Chaos_IsCodeActive(CHAOS_CODE_RANDOM_KNOCKBACK))
         {
@@ -17432,10 +17460,22 @@ void Player_Action_25(Player* this, PlayState* play) {
         }
 
         PlayerAnimation_Update(play, &this->skelAnime);
-        if ((this->skelAnime.animation == &gPlayerAnim_link_normal_newroll_jump_20f) &&
-            PlayerAnimation_OnFrame(&this->skelAnime, 4.0f)) {
-            Player_PlaySfx(this, NA_SE_PL_ROLL);
+        if(this->skelAnime.animation == &gPlayerAnim_link_normal_newroll_jump_20f)
+        {
+            if(Chaos_IsCodeActive(CHAOS_CODE_UNSTEADY_LEGS))
+            {
+                Player_SetAction(play, this, Player_Action_21, 0);
+                return;
+            }
+            else
+            {
+                Player_PlaySfx(this, NA_SE_PL_ROLL);
+            }
         }
+        // if ((this->skelAnime.animation == &gPlayerAnim_link_normal_newroll_jump_20f) &&
+        //     PlayerAnimation_OnFrame(&this->skelAnime, 4.0f)) {
+        //     Player_PlaySfx(this, NA_SE_PL_ROLL);
+        // }
 
         if (this->transformation == PLAYER_FORM_DEKU) {
             s16 prevYaw = this->yaw;
@@ -17600,6 +17640,7 @@ void Player_Action_26(Player* this, PlayState* play) {
     }
 }
 
+/* Player_Action_Falling? */
 void Player_Action_27(Player* this, PlayState* play) {
     // gPlayerAction = 27;
     Chaos_AppendActionChange(play, 27);

@@ -6141,8 +6141,10 @@ void Message_Update(PlayState* play) {
             sp44 = gSaveContext.save.cutsceneIndex;
             sp3E = CURRENT_TIME;
             sp40 = gSaveContext.save.day;
-
+            gSaveContext.save.is_crash_save = false;
             Sram_SaveEndOfCycle(play);
+            /* invalidate any crash save */
+            Sram_InvalidateOwlSave(&play->sramCtx, gSaveContext.fileNum);
             gSaveContext.timerStates[TIMER_ID_MOON_CRASH] = TIMER_STATE_OFF;
             func_8014546C(&play->sramCtx);
 
@@ -6174,6 +6176,7 @@ void Message_Update(PlayState* play) {
         case MSGMODE_OWL_SAVE_0:
             play->state.unk_A3 = 1;
             gSaveContext.save.isOwlSave = true;
+            gSaveContext.save.is_crash_save = false;
             Play_SaveCycleSceneFlags(play);
             func_8014546C(&play->sramCtx);
 

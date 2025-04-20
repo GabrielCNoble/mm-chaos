@@ -239,7 +239,8 @@ void LifeMeter_Draw(PlayState* play) {
     u32 curCombineModeSet = 0;
     TexturePtr temp = NULL;
     s32 defense_hearts_count = gSaveContext.save.saveInfo.inventory.defenseHearts - 1;
-    u32 heart_snake = Chaos_IsCodeActive(CHAOS_CODE_HEART_SNAKE);
+    // u32 heart_snake = Chaos_IsCodeActive(CHAOS_CODE_HEART_SNAKE);
+    u32 heart_snake = gChaosContext.ui.snake_state != CHAOS_SNAKE_GAME_STATE_NONE;
 
     if(heart_snake)
     {

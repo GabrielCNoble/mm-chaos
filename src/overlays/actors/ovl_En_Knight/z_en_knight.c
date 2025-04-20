@@ -563,6 +563,11 @@ void EnKnight_Init(Actor* thisx, PlayState* play) {
     this->randTimer = Rand_ZeroFloat(1000.0f);
     this->actor.flags |= ACTOR_FLAG_HOOKSHOT_PULLS_PLAYER;
 
+    // if(!CHECK_QUEST_ITEM(QUEST_SONG_ELEGY))
+    // {
+    //     Flags_UnsetClear(play, play->roomCtx.curRoom.num);
+    // }
+
     if (this->actor.params == EN_KNIGHT_PARAM_IGOS_HEAD) {
         // Flying head init
 
@@ -2667,10 +2672,15 @@ void EnKnight_IntroCutscene(EnKnight* this, PlayState* play) {
     switch (this->csState) {
         case KNIGHT_INTRO_CS_STATE_0:
             // If the room clear flag is set, or there is a cs playing, or the player is too far away, don't play the cs
+            // if (Flags_GetClear(play, play->roomCtx.curRoom.num) || (CutsceneManager_GetCurrentCsId() != CS_ID_NONE) ||
+            //     !(player->actor.world.pos.x >= 870.0f)) {
+            //     break;
+            // }    
+
             if (Flags_GetClear(play, play->roomCtx.curRoom.num) || (CutsceneManager_GetCurrentCsId() != CS_ID_NONE) ||
                 !(player->actor.world.pos.x >= 870.0f)) {
                 break;
-            }
+            }    
 
             Cutscene_StartManual(play, &play->csCtx);
             Player_SetCsActionWithHaltedActors(play, &this->actor, PLAYER_CSACTION_WAIT);

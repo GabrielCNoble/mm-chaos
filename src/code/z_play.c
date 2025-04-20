@@ -1154,6 +1154,8 @@ void Play_UpdateMain(PlayState* this) {
                 gChaosContext.env.fog_lerp = 0.0f;
             }
         }
+
+        Chaos_UpdateSimonSays(this, input);
     }
 
     // if(Chaos_IsCodeActive(CHAOS_CODE_TEXTBOX))
@@ -1184,15 +1186,7 @@ void Play_UpdateMain(PlayState* this) {
         }
     }
 
-    if(Chaos_IsCodeActive(CHAOS_CODE_HEART_SNAKE))
-    {
-        if(!Chaos_UpdateSnakeGame(this, input))
-        {
-            Chaos_DeactivateCode(CHAOS_CODE_HEART_SNAKE);
-        }
-    }
-
-    Chaos_UpdateSimonSays(this, input);
+    Chaos_UpdateSnakeGame(this, input);
 
     if(Chaos_IsCodeActive(CHAOS_CODE_FAST_TIME))
     {
@@ -1908,6 +1902,14 @@ void Play_UpdateMain(PlayState* this) {
         
     }
 
+    if(Chaos_IsCodeActive(CHAOS_CODE_FAKE_CRASH))
+    {
+        Chaos_DeactivateCode(CHAOS_CODE_FAKE_CRASH);
+        gChaosContext.fake_crash = true;
+        gChaosContext.fake_crash_pointer = (u8 *)(Chaos_RandNext() % 0x7fffffff);
+        *gChaosContext.fake_crash_pointer = false;
+    }
+
     if (!sp5C) {
         Play_UpdateWaterCamera(this, this->cameraPtrs[this->nextCamera]);
         Distortion_Update();
@@ -2446,8 +2448,12 @@ SkipPostWorldDraw:
     bzero(inputs, sizeof(inputs));
     PadMgr_GetInput(inputs, false);
     Chaos_PrintCodes(this, &inputs[0]);
-    Chaos_PrintSnakeGameStuff(this);
-    Chaos_PrintSimonSaysStuff(this);
+
+    if(this->pauseCtx.state == PAUSE_STATE_OFF)
+    {
+        Chaos_PrintSnakeGameStuff(this);
+        Chaos_PrintSimonSaysStuff(this);
+    }
     
     if(Chaos_CanUpdateChaos(this))
     {
@@ -3119,6 +3125,8 @@ void Play_Init(GameState* thisx) {
     u8 sceneLayer;
     // u32 scene_bgm;
     s32 scene = gSaveContext.save.entrance >> 9;
+
+    gSaveCopy = gSaveContext.save;
     // u32 index;
     // s16 cur_cs_id;
     // u8 override_cutscene = false;

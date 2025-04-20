@@ -71,6 +71,7 @@ void Attention_FindActor(PlayState* play, ActorContext* actorCtx, Actor** attent
                          Player* player);
 s32 Actor_CullingVolumeTest(PlayState* play, Actor* actor, Vec3f* projPos, f32 projW);
 void Actor_AddToCategory(ActorContext* actorCtx, Actor* actor, u8 actorCategory);
+Actor* Actor_RemoveFromCategoryNotSetClearFlag(PlayState* play, ActorContext* actorCtx, Actor* actorToRemove);
 Actor* Actor_RemoveFromCategory(PlayState* play, ActorContext* actorCtx, Actor* actorToRemove);
 
 void Actor_PrintLists(ActorContext* actorCtx) {
@@ -2764,7 +2765,14 @@ void Actor_UpdateAll(PlayState* play, ActorContext* actorCtx) {
                 next = actor->next;
                 newCategory = actor->category;
                 actor->category = category;
-                Actor_RemoveFromCategory(play, actorCtx, actor);
+                if(newCategory == ACTORCAT_CHAOS)
+                {
+                    Actor_RemoveFromCategoryNotSetClearFlag(play, actorCtx, actor);
+                }
+                else
+                {
+                    Actor_RemoveFromCategory(play, actorCtx, actor);
+                }
                 Actor_AddToCategory(actorCtx, actor, newCategory);
                 actor = next;
             }
@@ -3447,7 +3455,9 @@ void Actor_AddToCategory(ActorContext* actorCtx, Actor* actor, u8 actorCategory)
  * Removes a given actor instance from its actor list.
  * Also sets the temp clear flag of the current room if the actor removed was the last enemy loaded.
  */
-Actor* Actor_RemoveFromCategory(PlayState* play, ActorContext* actorCtx, Actor* actorToRemove) {
+
+Actor* Actor_RemoveFromCategoryNotSetClearFlag(PlayState* play, ActorContext* actorCtx, Actor* actorToRemove)
+{
     Actor* newHead;
 
     actorCtx->totalLoadedActors--;
@@ -3467,6 +3477,30 @@ Actor* Actor_RemoveFromCategory(PlayState* play, ActorContext* actorCtx, Actor* 
 
     actorToRemove->next = NULL;
     actorToRemove->prev = NULL;
+
+    return newHead;
+}
+
+Actor* Actor_RemoveFromCategory(PlayState* play, ActorContext* actorCtx, Actor* actorToRemove) {
+    Actor* newHead = Actor_RemoveFromCategoryNotSetClearFlag(play, actorCtx, actorToRemove);
+
+    // actorCtx->totalLoadedActors--;
+    // actorCtx->actorLists[actorToRemove->category].length--;
+
+    // if (actorToRemove->prev != NULL) {
+    //     actorToRemove->prev->next = actorToRemove->next;
+    // } else {
+    //     actorCtx->actorLists[actorToRemove->category].first = actorToRemove->next;
+    // }
+
+    // newHead = actorToRemove->next;
+
+    // if (newHead != NULL) {
+    //     newHead->prev = actorToRemove->prev;
+    // }
+
+    // actorToRemove->next = NULL;
+    // actorToRemove->prev = NULL;
 
     if ((actorToRemove->room == play->roomCtx.curRoom.num) && actorToRemove->category == ACTORCAT_ENEMY && 
             actorCtx->actorLists[ACTORCAT_ENEMY].length == 0) 

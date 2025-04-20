@@ -269,6 +269,7 @@ typedef enum {
     /* 0x0A */ ACTORCAT_DOOR,
     /* 0x0B */ ACTORCAT_CHEST,
                ACTORCAT_CHAOS,
+            //    ACTORCAT_ALLY,
     /* 0x0C */ ACTORCAT_MAX
 } ActorType;
 

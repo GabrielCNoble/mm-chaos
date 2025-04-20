@@ -11,6 +11,7 @@
 #include "overlays/gamestates/ovl_daytelop/z_daytelop.h"
 #include "overlays/actors/ovl_En_Horse/z_en_horse.h"
 #include "chaos_fuckery.h"
+#include "fault.h"
 
 extern struct ChaosContext gChaosContext;
 
@@ -509,6 +510,12 @@ void EnTest4_Init(Actor* thisx, PlayState* play) {
     s8 csId = this->actor.csId;
     u16 current_bell_time = CURRENT_TIME;
 
+    // if(gSaveContext.save.is_crash_save)
+    // {
+    //     Actor_Kill(&this->actor);
+    //     return;
+    // }
+
     sCsIdList[THREEDAY_DAYTIME_NIGHT] = csId;
     if (csId > CS_ID_NONE) {
         CutsceneEntry* csEntry = CutsceneManager_GetCutsceneEntry(sCsIdList[THREEDAY_DAYTIME_NIGHT]);
@@ -534,6 +541,7 @@ void EnTest4_Init(Actor* thisx, PlayState* play) {
                 gSaveContext.gameMode = GAMEMODE_NORMAL;
                 STOP_GAMESTATE(&play->state);
                 SET_NEXT_GAMESTATE(&play->state, DayTelop_Init, sizeof(DayTelopState));
+                
                 this->daytimeIndex = THREEDAY_DAYTIME_DAY;
                 gSaveContext.save.time = CLOCK_TIME(6, 0);
                 Actor_Kill(&this->actor);

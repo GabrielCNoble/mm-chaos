@@ -29,7 +29,7 @@
 
 #define CHAOS_MAJOR_VERSION 0
 #define CHAOS_MINOR_VERSION 5
-#define CHAOS_PATCH_VERSION 4
+#define CHAOS_PATCH_VERSION 5
 
 enum CHAOS_CODES
 {
@@ -156,18 +156,37 @@ enum CHAOS_CODES
     /*  
         A: makes it "dash" forward and spin faster
         B: makes it spin faster and jump. Jumping against a wall allows wall-jumping.
+        (unfinished)
     */
     CHAOS_CODE_BEYBLADE,
-    /* going throught a door leads to the same door in the same room */
+    /* going throught a door leads to the same door in the same room (unfinished) */
     CHAOS_CODE_DIRECTILE_DYSFUNCTION,
     /* scale the world (except link) in a arbitrary direction */
     CHAOS_CODE_LENGTH_CONTRACTION,
     /* spawn giant fish at link's position */
     CHAOS_CODE_FISH,
-    /* spawns friendly arwings that kill enemies */
+    /* spawns friendly arwings that kill enemies (unfinished) */
     CHAOS_CODE_AIR_SUPPORT,
     /* simon says, player dies if they fail */
-    CHAOS_CODE_SIMON_SAYS,    
+    CHAOS_CODE_SIMON_SAYS,
+    /* player randomly auto-jumps */
+    CHAOS_CODE_RANDOM_AUTO_JUMP,
+    /* player faceplants instead of roll-landing (unfinished) */
+    CHAOS_CODE_UNSTEADY_LEGS,
+    /* intentionally triggers a crash and resumes the game thread a few seconds later 
+
+        the exception type/text warning the progress is saved (if applicable) should
+        be mispelled somewhere. 
+    */
+    CHAOS_CODE_FAKE_CRASH,
+    /* spawns takkuri */
+    // CHAOS_CODE_ASSHOLE_BIRD,
+    /* a grotto entrance appears out of nowhere under link's feet */
+    // CHAOS_CODE_RANDOM_GROTTO,  
+    /* link stops, throws his hands to the sky and flops forwards/backwards */
+    // CHAOS_CODE_TRUST_EXERCISE,
+    /* gets hit by lighting strike (sets player on fire) */
+    // CHAOS_CODE_LUCKY,
     /* link's hands shake */
     // CHAOS_CODE_TOO_MUCH_CAFFEINE,
 
@@ -468,6 +487,7 @@ enum CHAOS_CONFIGS
     CHAOS_CONFIG_RANDOM_MOUNTAIN_VILLAGE_CLIMB,
     CHAOS_CONFIG_GIVE_FIERCE_DEITY_MASK,
     CHAOS_CONFIG_ALLOW_UNDERWATER_OCARINA,
+    CHAOS_CONFIG_SAVE_AT_GAME_CRASH,
     CHAOS_CONFIG_LAST,
 };
 
@@ -692,6 +712,7 @@ struct SimonSaysConfig
     const char *    str;
     u16             match_to_live;
     u16             text_x_offset;
+    u16             timeout;
 };
 
 struct ChaosActor
@@ -800,6 +821,8 @@ typedef struct ChaosContext
     u8                      queued_spawn_actor_code;
     u8                      loaded_object_id;
     u8                      chaos_keep_slot;
+    u8                      fake_crash;
+    u8 *                    fake_crash_pointer;
 
     void                  (*EnRr_SpitPlayer)(EnRr* this, PlayState* play);
 
@@ -878,7 +901,6 @@ typedef struct ChaosContext
         u8                              random_scaling_mode;
         u8                              scaled_limb_index;
         u8                              dpad_down_timer;
-
         u8                              magic_state;   
         s16                             magic_available;                           
         Player                          player_snapshot;
@@ -889,6 +911,8 @@ typedef struct ChaosContext
         struct ChaosMagicArrowSnapshot  arrow_snapshot;
         struct ChaosParentActorSnapshot parent_snapshot;
         struct ChaosDoorActorSnapshot   door_snapshot;
+
+        u8                              random_autojump_timer;
 
         u8                              bad_connection_mode;
         u8                              bad_connection_timer;
@@ -1146,6 +1170,8 @@ void Chaos_SetV046ConfigDefaults(void);
 void Chaos_SetV050ConfigDefaults(void);
 
 void Chaos_SetV053ConfigDefaults(void);
+
+void Chaos_SetV055ConfigDefaults(void);
 
 void Chaos_SetConfigDefaults(void);
 

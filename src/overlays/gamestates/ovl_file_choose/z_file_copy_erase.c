@@ -457,21 +457,22 @@ void FileSelect_CopyWaitForFlashSave(GameState* thisx) {
     Sram_UpdateWriteToFlashDefault(sramCtx);
 
     if (sramCtx->status == 0) {
+        struct save_info_t *dst_save_info = &this->save_info[this->copyDestFileIndex];
         this->configMode = CM_COPY_ANIM_1;
 
         for (i = 0; i < 6; i++) {
-            this->newf[this->copyDestFileIndex][i] = gSaveContext.save.saveInfo.playerData.newf[i];
+            dst_save_info->newf[i] = gSaveContext.save.saveInfo.playerData.newf[i];
         }
 
-        this->threeDayResetCount[this->copyDestFileIndex] = gSaveContext.save.saveInfo.playerData.threeDayResetCount;
+        dst_save_info->threeDayResetCount = gSaveContext.save.saveInfo.playerData.threeDayResetCount;
 
         for (i = 0; i < 8; i++) {
-            this->fileNames[this->copyDestFileIndex][i] = gSaveContext.save.saveInfo.playerData.playerName[i];
+            dst_save_info->fileName[i] = gSaveContext.save.saveInfo.playerData.playerName[i];
         }
 
-        this->healthCapacity[this->copyDestFileIndex] = gSaveContext.save.saveInfo.playerData.healthCapacity;
-        this->health[this->copyDestFileIndex] = gSaveContext.save.saveInfo.playerData.health;
-        this->defenseHearts[this->copyDestFileIndex] = gSaveContext.save.saveInfo.inventory.defenseHearts;
+        dst_save_info->healthCapacity = gSaveContext.save.saveInfo.playerData.healthCapacity;
+        dst_save_info->health = gSaveContext.save.saveInfo.playerData.health;
+        dst_save_info->defenseHearts = gSaveContext.save.saveInfo.inventory.defenseHearts;
     }
 }
 
@@ -1122,7 +1123,7 @@ void FileSelect_EraseWaitForFlashSave(GameState* thisx) {
     if (sramCtx->status == 0) {
         this->configMode = CM_ERASE_ANIM_1;
         for (i = 0; i < 6; i++) {
-            this->newf[this->selectedFileIndex][i] = gSaveContext.save.saveInfo.playerData.newf[i];
+            this->save_info[this->selectedFileIndex].newf[i] = gSaveContext.save.saveInfo.playerData.newf[i];
         }
     }
 }
