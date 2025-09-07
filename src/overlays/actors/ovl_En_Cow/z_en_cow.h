@@ -12,7 +12,8 @@
 typedef enum {
     /* 0 */ EN_COW_TYPE_DEFAULT,
     /* 1 */ EN_COW_TYPE_TAIL,
-    /* 2 */ EN_COW_TYPE_ABDUCTED
+    /* 2 */ EN_COW_TYPE_ABDUCTED,
+            EN_COW_TYPE_SMOL,
 } EnCowType;
 
 struct EnCow;

@@ -3844,7 +3844,7 @@ void FileSelect_ChaosOptions(GameState *thisx)
     if(CHECK_BTN_ALL(input->press.button, BTN_B))
     {
         Audio_PlaySfx(NA_SE_SY_FSEL_CLOSE);
-        Sram_SaveChaosConfig(&this->sramCtx, this->buttonIndex);
+        Sram_SaveChaosConfig(this, &this->sramCtx, this->buttonIndex);
         // this->chaos_config_mode = CCM_CHAOS_WAIT_FOR_FLASH_SAVE;
         this->menuMode = FS_MENU_MODE_SELECT;
         this->selectMode = SM_FADE_IN_FILE_INFO;

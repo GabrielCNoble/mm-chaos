@@ -88,8 +88,8 @@ void EnCow_SetColliderPos(EnCow* this) {
 
 void EnCow_SetTailPos(EnCow* this) {
     Vec3f vec;
-
-    VEC_SET(vec, 0.0f, 57.0f, -36.0f);
+    Actor *parent = this->actor.parent;
+    VEC_SET(vec, 0.0f * (parent->scale.x / 0.01f), 57.0f * (parent->scale.y / 0.01f), -36.0f * (parent->scale.z / 0.01f));
 
     EnCow_RotatePoint(&vec, this->actor.shape.rot.y);
     this->actor.world.pos.x += vec.x;
@@ -100,10 +100,21 @@ void EnCow_SetTailPos(EnCow* this) {
 void EnCow_Init(Actor* thisx, PlayState* play) {
     s32 pad;
     EnCow* this = (EnCow*)thisx;
+    f32 scale = 0.01f;
 
     ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 72.0f);
 
+    if(EN_COW_TYPE(thisx) == EN_COW_TYPE_SMOL || (thisx->parent != NULL && EN_COW_TYPE(thisx->parent) == EN_COW_TYPE_SMOL))
+    {
+        Actor_SetScale(&this->actor, 0.005f);
+    }
+    else
+    {
+        Actor_SetScale(&this->actor, 0.01f);
+    }
+
     switch (EN_COW_TYPE(thisx)) {
+        case EN_COW_TYPE_SMOL:
         case EN_COW_TYPE_DEFAULT:
         case EN_COW_TYPE_ABDUCTED:
             SkelAnime_InitFlex(play, &this->skelAnime, &gCowSkel, NULL, this->jointTable, this->morphTable,
@@ -154,7 +165,6 @@ void EnCow_Init(Actor* thisx, PlayState* play) {
     }
 
     this->actor.colChkInfo.mass = MASS_IMMOVABLE;
-    Actor_SetScale(&this->actor, 0.01f);
     this->flags = 0;
 
     CLEAR_WEEKEVENTREG(WEEKEVENTREG_TALKING_TO_COW_WITH_VOICE);
@@ -170,6 +180,14 @@ void EnCow_Destroy(Actor* thisx, PlayState* play) {
 }
 
 void EnCow_UpdateAnimation(EnCow* this, PlayState* play) {
+
+    f32 scale = 0.01f;
+
+    if(EN_COW_TYPE(&this->actor) == EN_COW_TYPE_SMOL)
+    {
+        scale = 0.005f;
+    }
+
     if (this->animTimer > 0) {
         this->animTimer--;
     } else {
@@ -191,15 +209,15 @@ void EnCow_UpdateAnimation(EnCow* this, PlayState* play) {
     }
 
     if (this->animCycle < 0x20) {
-        this->actor.scale.x = ((Math_SinS(this->animCycle * 0x400) * (1.0f / 100.0f)) + 1.0f) * 0.01f;
+        this->actor.scale.x = ((Math_SinS(this->animCycle * 0x400) * (1.0f / 100.0f)) + 1.0f) * scale;
     } else {
-        this->actor.scale.x = 0.01f;
+        this->actor.scale.x = scale;
     }
 
     if (this->animCycle > 0x10) {
-        this->actor.scale.y = ((Math_SinS((this->animCycle * 0x400) - 0x4000) * (1.0f / 100.0f)) + 1.0f) * 0.01f;
+        this->actor.scale.y = ((Math_SinS((this->animCycle * 0x400) - 0x4000) * (1.0f / 100.0f)) + 1.0f) * scale;
     } else {
-        this->actor.scale.y = 0.01f;
+        this->actor.scale.y = scale;
     }
 }
 

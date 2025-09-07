@@ -26,6 +26,7 @@
 #include "overlays/actors/ovl_En_Clear_Tag/z_en_clear_tag.h"
 #include "overlays/actors/ovl_Obj_Tsubo/z_obj_tsubo.h"
 #include "overlays/effects/ovl_Effect_Ss_Hahen/z_eff_ss_hahen.h"
+#include "chaos_fuckery.h"
 
 #define FLAGS                                                                                 \
     (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE | ACTOR_FLAG_UPDATE_CULLING_DISABLED | \
@@ -128,6 +129,7 @@ typedef enum MajorasMaskDamageEffect {
     /* 0x3 */ MAJORAS_MASK_DMGEFF_ICE_ARROW,
     /* 0x4 */ MAJORAS_MASK_DMGEFF_LIGHT_ARROW,
     /* 0x9 */ MAJORAS_MASK_DMGEFF_SWORD_BEAM = 9,
+              MAJORAS_MASK_DMGEFF_EXPLOSIVE = 0x0c,
     /* 0xF */ MAJORAS_MASK_DMGEFF_DAMAGE = 0xF
 } MajorasMaskDamageEffect;
 
@@ -457,7 +459,7 @@ static DamageTable sMajorasMaskDamageTable = {
     /* Deku Nut       */ DMG_ENTRY(0, MAJORAS_MASK_DMGEFF_IMMUNE),
     /* Deku Stick     */ DMG_ENTRY(1, MAJORAS_MASK_DMGEFF_DAMAGE),
     /* Horse trample  */ DMG_ENTRY(0, MAJORAS_MASK_DMGEFF_IMMUNE),
-    /* Explosives     */ DMG_ENTRY(2, MAJORAS_MASK_DMGEFF_DAMAGE),
+    /* Explosives     */ DMG_ENTRY(2, MAJORAS_MASK_DMGEFF_EXPLOSIVE),
     /* Zora boomerang */ DMG_ENTRY(1, MAJORAS_MASK_DMGEFF_DAMAGE),
     /* Normal arrow   */ DMG_ENTRY(1, MAJORAS_MASK_DMGEFF_DAMAGE),
     /* UNK_DMG_0x06   */ DMG_ENTRY(0, MAJORAS_MASK_DMGEFF_IMMUNE),
@@ -2044,9 +2046,9 @@ void Boss07_Wrath_Idle(Boss07* this, PlayState* play) {
     } else if (this->timers[0] == 0) {
         if (KREG(78) == 1) {
             Boss07_Wrath_SetupThrowTop(this, play);
-        } else if ((s8)this->actor.colChkInfo.health >= 28) {
+        } else if (this->actor.colChkInfo.health >= 28) {
             Boss07_Wrath_SetupAttack(this, play);
-        } else if (((s8)this->actor.colChkInfo.health <= 12) && (Rand_ZeroOne() < 0.65f)) {
+        } else if ((this->actor.colChkInfo.health <= 12) && (Rand_ZeroOne() < 0.65f)) {
             Boss07_Wrath_SetupThrowTop(this, play);
         } else if (Rand_ZeroOne() < 0.3f) {
             Boss07_Wrath_SetupTryGrab(this, play);
@@ -2227,7 +2229,7 @@ void Boss07_Wrath_SetupAttack(Boss07* this, PlayState* play) {
     } else {
         this->subAction = Rand_ZeroFloat(MAJORAS_WRATH_ATTACK_SUB_ACTION_WHIP_ATTACK_MAX - 0.01f);
 
-        if (((s8)this->actor.colChkInfo.health >= 28) &&
+        if ((this->actor.colChkInfo.health >= 28) &&
             ((this->subAction == MAJORAS_WRATH_ATTACK_SUB_ACTION_FLURRY) ||
              (this->subAction == MAJORAS_WRATH_ATTACK_SUB_ACTION_DOUBLE_WHIP))) {
             this->subAction = MAJORAS_WRATH_ATTACK_SUB_ACTION_QUICK_WHIP;
@@ -2741,12 +2743,12 @@ void Boss07_Wrath_Stunned(Boss07* this, PlayState* play) {
     }
 }
 
-void Boss07_Wrath_SetupDamaged(Boss07* this, PlayState* play, u8 damage, u8 dmgEffect) {
-    if ((s8)this->actor.colChkInfo.health >= 0) {
+void Boss07_Wrath_SetupDamaged(Boss07* this, PlayState* play, s16 damage, u8 dmgEffect) {
+    if (this->actor.colChkInfo.health >= 0) {
         this->actor.colChkInfo.health -= damage;
     }
 
-    if ((s8)this->actor.colChkInfo.health <= 0) {
+    if (this->actor.colChkInfo.health <= 0) {
         if (KREG(19) != 0) {
             Audio_PlaySfx_AtPos(&sMajoraSfxPos, NA_SE_EN_LAST3_VOICE_DEAD_OLD);
         } else {
@@ -2906,6 +2908,8 @@ void Boss07_Wrath_UpdateDamage(Boss07* this, PlayState* play) {
         Audio_PlaySfx(NA_SE_IT_HOOKSHOT_STICK_OBJ);
     }
 
+    damage = this->actor.colChkInfo.damage;
+
     for (i = 0; i < ARRAY_COUNT(this->bodyColliderElements); i++) {
         if (!(this->bodyCollider.elements[i].base.acElemFlags & ACELEM_HIT)) {
             continue;
@@ -2949,9 +2953,16 @@ void Boss07_Wrath_UpdateDamage(Boss07* this, PlayState* play) {
                 break;
         }
 
-        damage = this->actor.colChkInfo.damage;
-
-        if ((this->actionFunc == Boss07_Wrath_Stunned) || (this->actionFunc == Boss07_Wrath_Damaged)) {
+        
+        if(this->bodyCollider.elements[i].base.acHitElem != NULL && 
+            (this->bodyCollider.elements[i].base.acHitElem->atElemFlags & AT_ABSOLUTE_DAMAGE))
+        {
+            this->damagedFlashTimer = 15;
+            this->damagedTimer = 5;
+            Boss07_Wrath_SetupDamaged(this, play, damage, this->actor.colChkInfo.damageEffect);
+        }
+        else if ((this->actionFunc == Boss07_Wrath_Stunned) || (this->actionFunc == Boss07_Wrath_Damaged)) 
+        {
             if ((this->actionFunc == Boss07_Wrath_Stunned) &&
                 (this->actor.colChkInfo.damageEffect != MAJORAS_WRATH_DMGEFF_ANIM_FRAME_CHECK) &&
                 (this->actor.colChkInfo.damageEffect != MAJORAS_WRATH_DMGEFF_DAMAGE_NONE) &&
@@ -4338,7 +4349,7 @@ void Boss07_Incarnation_Stunned(Boss07* this, PlayState* play) {
     Boss07_Incarnation_SpawnDust(this, play, 1, MAJORAS_INCARNATION_DUST_SPAWN_POS_FOCUS);
 }
 
-void Boss07_Incarnation_SetupDamaged(Boss07* this, PlayState* play, u8 damage, u8 dmgEffect) {
+void Boss07_Incarnation_SetupDamaged(Boss07* this, PlayState* play, s16 damage, u8 dmgEffect) {
     if (this->actionFunc != Boss07_Incarnation_Damaged) {
         this->actionFunc = Boss07_Incarnation_Damaged;
         Animation_MorphToPlayOnce(&this->skelAnime, &gMajorasIncarnationDamagedAnim, -2.0f);
@@ -4352,10 +4363,14 @@ void Boss07_Incarnation_SetupDamaged(Boss07* this, PlayState* play, u8 damage, u
         }
     }
 
-    if (this->actor.colChkInfo.health != 0) {
+    if(this->actor.colChkInfo.health != 0)
+    {
         this->actor.colChkInfo.health -= damage;
+    }
 
-        if ((s8)this->actor.colChkInfo.health <= 0) {
+    if (this->actor.colChkInfo.health <= 0) {
+
+        if (this->actor.colChkInfo.health <= 0) {
             Actor_PlaySfx(&this->actor, NA_SE_EN_LAST2_DEAD_OLD);
             this->shouldStartDeath = true;
             this->damagedTimer = 100;
@@ -4791,7 +4806,7 @@ void Boss07_Incarnation_DeathCutscene(Boss07* this, PlayState* play) {
 void Boss07_Incarnation_UpdateDamage(Boss07* this, PlayState* play) {
     s32 i;
     s32 j;
-    u8 damage;
+    s16 damage;
 
     if (this->damagedTimer != 0) {
         return;
@@ -4840,7 +4855,15 @@ void Boss07_Incarnation_UpdateDamage(Boss07* this, PlayState* play) {
                 break;
         }
 
-        if ((this->actionFunc == Boss07_Incarnation_Stunned) || (this->actionFunc == Boss07_Incarnation_Damaged)) {
+        if(this->bodyCollider.elements[i].base.acHitElem != NULL && 
+            (this->bodyCollider.elements[i].base.acHitElem->atElemFlags & AT_ABSOLUTE_DAMAGE))
+        {
+            damage = this->actor.colChkInfo.damage;
+            // Chaos_ConsolePrintf("Damage: %d", damage);
+            Boss07_Incarnation_SetupDamaged(this, play, damage, this->actor.colChkInfo.damageEffect);
+            this->damagedFlashTimer = 15;
+        }
+        else if ((this->actionFunc == Boss07_Incarnation_Stunned) || (this->actionFunc == Boss07_Incarnation_Damaged)) {
             this->damagedTimer = (this->actor.colChkInfo.damageEffect == MAJORAS_INCARNATION_DMGEFF_EXPLOSIVE) ? 15 : 5;
             damage = this->actor.colChkInfo.damage;
             Boss07_Incarnation_SetupDamaged(this, play, damage, this->actor.colChkInfo.damageEffect);
@@ -5211,7 +5234,7 @@ void Boss07_Mask_Idle(Boss07* this, PlayState* play) {
 
     if (this->timers[0] == 0) {
         if (this->timers[2] == 0) {
-            if (((s8)this->actor.colChkInfo.health <= 8) && (player->transformation != PLAYER_FORM_FIERCE_DEITY) &&
+            if ((this->actor.colChkInfo.health <= 8) && (player->transformation != PLAYER_FORM_FIERCE_DEITY) &&
                 (Rand_ZeroOne() < 0.75f)) {
                 Boss07_Mask_SetupFireBeam(this, play);
             } else {
@@ -5399,7 +5422,7 @@ void Boss07_Mask_Stunned(Boss07* this, PlayState* play) {
     }
 }
 
-void Boss07_Mask_SetupDamaged(Boss07* this, PlayState* play, u8 damage, Actor* hitActor) {
+void Boss07_Mask_SetupDamaged(Boss07* this, PlayState* play, s16 damage, Actor* hitActor) {
     Player* player = GET_PLAYER(play);
 
     this->actionFunc = Boss07_Mask_Damaged;
@@ -5426,8 +5449,8 @@ void Boss07_Mask_SetupDamaged(Boss07* this, PlayState* play, u8 damage, Actor* h
     }
 
     this->actor.colChkInfo.health -= damage;
-
-    if ((s8)this->actor.colChkInfo.health <= 0) {
+    // Chaos_ConsolePrintf("%d -- %d", this->actor.colChkInfo.health, damage);
+    if (this->actor.colChkInfo.health <= 0) {
         this->timers[0] = 30;
     }
 
@@ -5452,14 +5475,14 @@ void Boss07_Mask_Damaged(Boss07* this, PlayState* play) {
         this->maskEyeTexIndex = MAJORAS_MASK_EYE_DULL;
     }
 
-    if ((this->timers[0] == 15) && ((s8)this->actor.colChkInfo.health < 10)) {
+    if ((this->timers[0] == 15) && (this->actor.colChkInfo.health < 10 && this->actor.colChkInfo.health > 0)) {
         this->startRemainsCs = true;
     }
 
     if (this->timers[0] == 0) {
         Boss07_Mask_SetupIdle(this, play);
 
-        if ((s8)this->actor.colChkInfo.health <= 0) {
+        if (this->actor.colChkInfo.health <= 0) {
             this->shouldStartDeath = true;
             Enemy_StartFinishingBlow(play, &this->actor);
             AudioSfx_StopByPos(&this->actor.projectedPos);
@@ -5694,7 +5717,7 @@ void Boss07_Mask_FireBeam(Boss07* this, PlayState* play) {
                                                             Rand_ZeroFloat(10.0f) + 25.0f);
                                 }
 
-                                if ((s8)this->actor.colChkInfo.health <= 0) {
+                                if (this->actor.colChkInfo.health <= 0) {
                                     this->fireTimer = 200;
                                 } else {
                                     this->fireTimer = 60;
@@ -6101,7 +6124,6 @@ void Boss07_Mask_IntroCutscene(Boss07* this, PlayState* play) {
 
                 if (this->cutsceneTimer == 175) {
                     Camera* mainCam = Play_GetCamera(play, CAM_ID_MAIN);
-
                     this->cutsceneState = MAJORAS_MASK_INTRO_CS_STATE_WAITING_FOR_PLAYER_OR_DONE;
                     Boss07_Mask_SetupIdle(this, play);
                     this->timers[0] = 50;
@@ -6230,6 +6252,7 @@ void Boss07_Mask_DeathCutscene(Boss07* this, PlayState* play) {
             Actor_Spawn(&play->actorCtx, play, ACTOR_BOSS_07, 0.0f, 0.0f, 0.0f, 0, this->actor.shape.rot.y,
                         this->subCamId, MAJORA_PARAMS(MAJORA_TYPE_INCARNATION));
             Actor_Kill(&this->actor);
+            sMajorasMask = NULL;
             break;
 
         default:
@@ -6274,6 +6297,8 @@ void Boss07_Mask_UpdateDamage(Boss07* this, PlayState* play) {
                 hitActor = this->maskBackCollider.base.ac;
                 acHitElem = this->maskBackCollider.elem.acHitElem;
                 damage = (acHitElem->atDmgInfo.dmgFlags & ~0x8300000) ? this->actor.colChkInfo.damage : 0;
+                // damage = this->actor.colChkInfo.damage;
+                // Chaos_ConsolePrintf("Damage: %d", damage);
                 this->damagedTimer = 50;
                 this->damagedFlashTimer = 15;
                 AudioSfx_StopByPos(&this->actor.projectedPos);
@@ -6877,7 +6902,7 @@ void Boss07_Remains_UpdateDamage(Boss07* this, PlayState* play) {
             this->damagedFlashTimer = 15;
             this->actionFunc = Boss07_Remains_Move;
 
-            if ((s8)this->actor.colChkInfo.health <= 0) {
+            if (this->actor.colChkInfo.health <= 0) {
                 this->subAction = REMAINS_MOVE_SUB_ACTION_DIE;
                 this->burnOnLanding = true;
                 Enemy_StartFinishingBlow(play, &this->actor);

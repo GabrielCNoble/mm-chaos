@@ -15,17 +15,18 @@ typedef void (*DoorWarp1ActionFunc)(struct DoorWarp1*, PlayState*);
 
 typedef enum {
     /* 0 */ ENDOORWARP1_FF_0,
-    /* 1 */ ENDOORWARP1_FF_1,
-    /* 2 */ ENDOORWARP1_FF_2,
-    /* 3 */ ENDOORWARP1_FF_3,
-    /* 4 */ ENDOORWARP1_FF_4,
-    /* 5 */ ENDOORWARP1_FF_5,
+    /* 1 */ ENDOORWARP1_FF_1, //boss room exit warp?
+    /* 2 */ ENDOORWARP1_FF_2, //odolwa boss fight warp?
+    /* 3 */ ENDOORWARP1_FF_3, //goht boss fight warp?
+    /* 4 */ ENDOORWARP1_FF_4, //gyorg boss fight warp?
+    /* 5 */ ENDOORWARP1_FF_5, //twinmold boss fight warp?
     /* 6 */ ENDOORWARP1_FF_6
 } DoorWarp1Param;
 
 typedef struct DoorWarp1 {
     /* 0x000 */ DynaPolyActor dyna;
     /* 0x15C */ SkelAnime skelAnime;
+    /* warp out cutscene actor? */
     /* 0x1A0 */ DmHina* unk_1A0;
     /* 0x1A4 */ f32 unk_1A4;
     /* 0x1A8 */ f32 unk_1A8;
@@ -35,7 +36,7 @@ typedef struct DoorWarp1 {
     /* 0x1B8 */ f32 unk_1B8;
     /* 0x1BC */ f32 unk_1BC;
     /* 0x1C0 */ f32 unk_1C0;
-    /* 0x1C4 */ s16 unk_1C4;
+    /* 0x1C4 */ s16 unk_1C4; // warp scale (used to make it slowly grow when spawn)
     /* 0x1C6 */ s16 unk_1C6;
     /* 0x1C8 */ s16 unk_1C8;
     /* 0x1CA */ s16 unk_1CA;

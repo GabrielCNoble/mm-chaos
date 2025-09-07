@@ -11,6 +11,7 @@
 #include "z64frameadvance.h"
 #include "zelda_arena.h"
 #include "z64math.h"
+#include "chaos_fuckery.h"
 
 typedef s32 (*ColChkResetFunc)(struct PlayState*, Collider*);
 typedef void (*ColChkBloodFunc)(struct PlayState*, Collider*, Vec3f*);
@@ -122,6 +123,7 @@ f32 CollisionCheck_GetDamageAndEffectOnElementAC(Collider* atCol, ColliderElemen
     damage = CollisionCheck_GetElementATDamage(atCol, atElem, acCol, acElem);
 
     if (acCol->actor->colChkInfo.damageTable != NULL) {
+
         dmgFlags = atElem->atDmgInfo.dmgFlags;
 
         for (i = 0; i < ARRAY_COUNT(acCol->actor->colChkInfo.damageTable->attack); i++) {
@@ -131,7 +133,11 @@ f32 CollisionCheck_GetDamageAndEffectOnElementAC(Collider* atCol, ColliderElemen
             dmgFlags >>= 1;
         }
 
-        damage *= sDamageMultipliers[acCol->actor->colChkInfo.damageTable->attack[i] & 0xF];
+        if(!(atElem->atElemFlags & AT_ABSOLUTE_DAMAGE))
+        {
+            damage *= sDamageMultipliers[acCol->actor->colChkInfo.damageTable->attack[i] & 0xF];
+        }
+
         *effect = (acCol->actor->colChkInfo.damageTable->attack[i] >> 4) & 0xF;
     }
     return damage;
@@ -1717,14 +1723,20 @@ s32 CollisionCheck_SetATvsAC(struct PlayState* play, Collider* atCol, ColliderEl
     f32 damage;
     u32 effect;
 
+    // Chaos_ConsolePrintf("AT damage: %d", atElem->atDmgInfo.damage);
+
     if (CollisionCheck_GetElementATDamage(atCol, atElem, acCol, acElem) != 0) {
         damage = CollisionCheck_GetDamageAndEffectOnElementAC(atCol, atElem, acCol, acElem, &effect);
-        if (damage < 1.0f) {
-            if (effect == 0) {
+
+        if(!(atElem->atElemFlags & AT_ABSOLUTE_DAMAGE))
+        {
+            if (damage < 1.0f) {
+                if (effect == 0) {
+                    return 0;
+                }
+            } else if ((CollisionCheck_ApplyElementATDefense(damage, acElem) < 1.0f) && (effect == 0)) {
                 return 0;
             }
-        } else if ((CollisionCheck_ApplyElementATDefense(damage, acElem) < 1.0f) && (effect == 0)) {
-            return 0;
         }
     }
     if ((acCol->acFlags & AC_HARD) && (atCol->actor != NULL) && (acCol->actor != NULL)) {
@@ -1746,17 +1758,21 @@ s32 CollisionCheck_SetATvsAC(struct PlayState* play, Collider* atCol, ColliderEl
         }
     }
     if (!(atElem->ocElemFlags & OCELEM_UNK2)) {
-        acCol->acFlags |= AC_HIT;
-        acCol->ac = atCol->actor;
-        acElem->acHit = atCol;
-        acElem->acHitElem = atElem;
-        acElem->acElemFlags |= ACELEM_HIT;
-        if (acCol->actor != NULL) {
-            acCol->actor->colChkInfo.acHitEffect = atElem->atDmgInfo.effect;
+        if(!(acCol->acFlags & AC_HIT) || acElem->acHitElem != NULL && 
+            acElem->acHitElem->atDmgInfo.damage < atElem->atDmgInfo.damage)
+        {
+            acCol->acFlags |= AC_HIT;
+            acCol->ac = atCol->actor;
+            acElem->acHit = atCol;
+            acElem->acHitElem = atElem;
+            acElem->acElemFlags |= ACELEM_HIT;
+            if (acCol->actor != NULL) {
+                acCol->actor->colChkInfo.acHitEffect = atElem->atDmgInfo.effect;
+            }
+            acElem->acDmgInfo.hitPos.x = hitPos->x;
+            acElem->acDmgInfo.hitPos.y = hitPos->y;
+            acElem->acDmgInfo.hitPos.z = hitPos->z;
         }
-        acElem->acDmgInfo.hitPos.x = hitPos->x;
-        acElem->acDmgInfo.hitPos.y = hitPos->y;
-        acElem->acDmgInfo.hitPos.z = hitPos->z;
     }
     if (!(atElem->atElemFlags & ATELEM_AT_HITMARK) && (acCol->colMaterial != COL_MATERIAL_METAL) &&
         (acCol->colMaterial != COL_MATERIAL_WOOD) && (acCol->colMaterial != COL_MATERIAL_HARD)) {
@@ -3553,16 +3569,23 @@ void CollisionCheck_ApplyDamage(struct PlayState* play, CollisionCheckContext* c
     if ((atCol != NULL) && (atElem != NULL) && (col != NULL) && (elem != NULL)) {
         damage = CollisionCheck_GetDamageAndEffectOnElementAC(atCol, atElem, col, elem, &effect);
 
-        if (CollisionCheck_GetElementATDamage(atCol, atElem, col, elem) != 0) {
-            if (damage < 1.0f) {
-                finalDamage = 0.0f;
-                if (effect == 0) {
-                    return;
-                }
-            } else {
-                finalDamage = CollisionCheck_ApplyElementATDefense(damage, elem);
-                if ((finalDamage < 1.0f) && (effect == 0)) {
-                    return;
+        if(atElem->atElemFlags & AT_ABSOLUTE_DAMAGE)
+        {
+            finalDamage = damage;
+        }
+        else
+        {
+            if (CollisionCheck_GetElementATDamage(atCol, atElem, col, elem) != 0) {
+                if (damage < 1.0f) {
+                    finalDamage = 0.0f;
+                    if (effect == 0) {
+                        return;
+                    }
+                } else {
+                    finalDamage = CollisionCheck_ApplyElementATDefense(damage, elem);
+                    if ((finalDamage < 1.0f) && (effect == 0)) {
+                        return;
+                    }
                 }
             }
         }

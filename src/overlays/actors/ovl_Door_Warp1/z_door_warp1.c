@@ -70,6 +70,7 @@ void DoorWarp1_SetupAction(DoorWarp1* this, DoorWarp1ActionFunc actionFunc) {
     this->actionFunc = actionFunc;
 }
 
+/* DoorWarp1_RemainsIndex */
 s32 func_808B849C(DoorWarp1* this, PlayState* play) {
     s32 ret = 0;
 
@@ -96,6 +97,7 @@ void func_808B8568(DoorWarp1* this, PlayState* play) {
     this->unk_1F0 = LightContext_InsertLight(play, &play->lightCtx, &this->unk_1F4);
 }
 
+/* DoorWarp1_IsPlayerInTriggerRange */
 s32 func_808B866C(DoorWarp1* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s32 ret = false;
@@ -206,6 +208,8 @@ void func_808B8924(DoorWarp1* this, PlayState* play) {
     DoorWarp1_SetupAction(this, func_808B96B0);
 }
 
+
+/* DoorWarp1_SetupBossRoomWarpOut? */
 void func_808B8A7C(DoorWarp1* this, PlayState* play) {
     SkelAnime_Init(play, &this->skelAnime, &gWarpCrystalSkel, &gWarpCrystalAnim, NULL, NULL, 0);
     Animation_ChangeImpl(&this->skelAnime, &gWarpCrystalAnim, 1.0f, 1.0f, 1.0f, 2, 40.0f, 1);
@@ -537,9 +541,9 @@ void func_808B9BE8(DoorWarp1* this, PlayState* play) {
     }
 }
 
+/* DoorWarp1_WarpWithRemains? */
 void func_808B9CE8(DoorWarp1* this, PlayState* play) {
     if (this->unk_203 != 0) {
-        if (1) {}
         return;
     }
 
@@ -579,8 +583,10 @@ void func_808B9CE8(DoorWarp1* this, PlayState* play) {
     DoorWarp1_SetupAction(this, func_808B9E94);
 }
 
+/* DoorWarp1_WaitForRemainsTextEnd */
 void func_808B9E94(DoorWarp1* this, PlayState* play) {
-    if (Message_GetState(&play->msgCtx) == TEXT_STATE_CLOSING) {
+    if (Message_GetState(&play->msgCtx) == TEXT_STATE_CLOSING) 
+    {
         this->unk_1CE = 110;
         DoorWarp1_SetupAction(this, func_808B9ED8);
     }
@@ -593,9 +599,10 @@ void func_808B9ED8(DoorWarp1* this, PlayState* play) {
     }
 }
 
+/* DoorWarp1_WarpWithoutRemains */
 void func_808B9F10(DoorWarp1* this, PlayState* play) {
     Actor_PlaySfx(&this->dyna.actor, NA_SE_EV_WARP_HOLE - SFX_FLAG);
-    if ((this->unk_203 == 0) && func_808B866C(this, play) && !Play_InCsMode(play) && (this->unk_203 == 0)) {
+    if ((this->unk_203 == 0) && func_808B866C(this, play) && !Play_InCsMode(play)) {
         Player* player = GET_PLAYER(play);
 
         Interface_SetHudVisibility(HUD_VISIBILITY_NONE);
@@ -879,14 +886,15 @@ void func_808BA550(DoorWarp1* this, PlayState* play) {
 void func_808BAAF4(DoorWarp1* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s16 csId;
-    f32 phi_f2;
+    // f32 phi_f2;
+    f32 warp_trigger_dist;
 
-    phi_f2 = 200.0f;
+    warp_trigger_dist = 200.0f;
     if (play->sceneId == SCENE_SEA) {
-        phi_f2 = 85.0f;
+        warp_trigger_dist = 85.0f;
     }
 
-    if (!CHECK_WEEKEVENTREG(WEEKEVENTREG_86_80) && (fabsf(this->dyna.actor.xzDistToPlayer) < phi_f2) &&
+    if (!CHECK_WEEKEVENTREG(WEEKEVENTREG_86_80) && (fabsf(this->dyna.actor.xzDistToPlayer) < warp_trigger_dist) &&
         ((player->actor.world.pos.y - 20.0f) < this->dyna.actor.world.pos.y) &&
         (this->dyna.actor.world.pos.y < (player->actor.world.pos.y + 20.0f))) {
         csId = this->dyna.actor.csId;

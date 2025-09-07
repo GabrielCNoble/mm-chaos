@@ -136,8 +136,11 @@ void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
     spaceSize += ALIGN16(gObjectTable[OBJECT_RR].vromEnd - gObjectTable[OBJECT_RR].vromStart);
     spaceSize += ALIGN16(gObjectTable[OBJECT_SKB].vromEnd - gObjectTable[OBJECT_SKB].vromStart);
     spaceSize += ALIGN16(gObjectTable[OBJECT_GI_SHIELD_2].vromEnd - gObjectTable[OBJECT_GI_SHIELD_2].vromStart);
-    spaceSize += ALIGN16(gObjectTable[OBJECT_BEYBLADE].vromEnd - gObjectTable[OBJECT_BEYBLADE].vromStart);
+    // spaceSize += ALIGN16(gObjectTable[OBJECT_BEYBLADE].vromEnd - gObjectTable[OBJECT_BEYBLADE].vromStart);
     spaceSize += ALIGN16(gObjectTable[OBJECT_ARWING].vromEnd - gObjectTable[OBJECT_ARWING].vromStart);
+    // spaceSize += ALIGN16(gObjectTable[OBJECT_DARK_LINK].vromEnd - gObjectTable[OBJECT_DARK_LINK].vromStart);
+    spaceSize += ALIGN16(gObjectTable[OBJECT_DAI].vromEnd - gObjectTable[OBJECT_DAI].vromStart);
+    // spaceSize += ALIGN16(gObjectTable[OBJECT_FALL_CAKE].vromEnd - gObjectTable[OBJECT_FALL_CAKE].vromStart);
     spaceSize += gChaosContext.chaos_keep_size;
 
     objectCtx->spaceStart = objectCtx->slots[0].segment = THA_AllocTailAlign16(&gameState->tha, spaceSize);
@@ -146,8 +149,12 @@ void Object_InitContext(GameState* gameState, ObjectContext* objectCtx) {
     Object_SpawnPersistent(objectCtx, OBJECT_RR);
     Object_SpawnPersistent(objectCtx, OBJECT_SKB);
     Object_SpawnPersistent(objectCtx, OBJECT_GI_SHIELD_2);
-    Object_SpawnPersistent(objectCtx, OBJECT_BEYBLADE);
+    // Object_SpawnPersistent(objectCtx, OBJECT_BEYBLADE);
     Object_SpawnPersistent(objectCtx, OBJECT_ARWING);
+    // Object_SpawnPersistent(objectCtx, OBJECT_DARK_LINK);
+    Object_SpawnPersistent(objectCtx, OBJECT_DAI);
+    // Object_SpawnPersistent(objectCtx, OBJECT_FALL_CAKE);
+
 
     /* allocate enough space for the largest object */
     gChaosContext.chaos_keep_slot = Object_AllocatePersistent(objectCtx, gChaosContext.chaos_keep_largest_object);
@@ -712,7 +719,7 @@ void Scene_CommandWindSettings(PlayState* play, SceneCmd* cmd) {
 
     play->envCtx.windDirection.x = temp1;
     play->envCtx.windDirection.y = temp2;
-    play->envCtx.windDirection.z = temp3;
+    play->envCtx.windDirection.z = temp3;;
     play->envCtx.windSpeed = cmd->windSettings.clothIntensity;
 }
 
@@ -868,19 +875,20 @@ void (*sSceneCmdHandlers[SCENE_CMD_MAX])(PlayState*, SceneCmd*) = {
 s32 Scene_ExecuteCommands(PlayState* play, SceneCmd* sceneCmd) {
     u32 cmdId;
 
+    
     Chaos_ClearActors();
-
+    
     while (true) {
         cmdId = sceneCmd->base.code;
-
+        
         if (cmdId == SCENE_CMD_ID_END) {
             break;
         }
-
+        
         if (cmdId < SCENE_CMD_MAX) {
             sSceneCmdHandlers[cmdId](play, sceneCmd);
         }
-
+        
         sceneCmd++;
     }
 

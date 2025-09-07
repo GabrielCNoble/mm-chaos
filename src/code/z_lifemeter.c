@@ -461,8 +461,12 @@ void LifeMeter_UpdateSizeAndBeep(PlayState* play) {
             interfaceCtx->lifeSizeChange = 0;
             interfaceCtx->lifeSizeChangeDirection = 0;
             if (!Player_InCsMode(play) && !IS_PAUSED(&play->pauseCtx) && LifeMeter_IsCritical() &&
-                !Play_InCsMode(play)) {
-                Audio_PlaySfx(NA_SE_SY_HITPOINT_ALARM);
+                !Play_InCsMode(play)) 
+            {
+                if(gChaosContext.link.hitpoint_alarm_timer > 0)
+                {
+                    gChaosContext.link.hitpoint_alarm_timer--;
+                }
             }
         }
     } else {
@@ -471,6 +475,19 @@ void LifeMeter_UpdateSizeAndBeep(PlayState* play) {
             interfaceCtx->lifeSizeChange = 10;
             interfaceCtx->lifeSizeChangeDirection = 1;
         }
+    }
+
+    if(LifeMeter_IsCritical())
+    {
+        if(gChaosContext.link.hitpoint_alarm_timer == 0)
+        {
+            gChaosContext.link.hitpoint_alarm_timer = HITPOINT_ALARM_DELAY;
+            Audio_PlaySfx(NA_SE_SY_HITPOINT_ALARM);
+        }
+    }
+    else if (!Chaos_IsCodeActive(CHAOS_CODE_CHANGE_HEALTH))
+    {
+        gChaosContext.link.hitpoint_alarm_timer = 0;
     }
 }
 

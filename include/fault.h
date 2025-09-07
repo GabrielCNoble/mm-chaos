@@ -11,6 +11,12 @@
 #include "stack.h"
 #include "unk.h"
 
+struct func_symbol_t
+{
+    uintptr_t   start_address;
+    char        name[60];
+};
+
 // These are the same as the 3-bit ansi color codes
 #define FAULT_COLOR_BLACK      0
 #define FAULT_COLOR_RED        1
@@ -453,6 +459,23 @@ typedef struct FaultAddrConvClient {
 
 typedef void(*FaultPadCallback)(Input* input);
 
+struct disasm_context_t
+{
+    u32 pc_offset;
+};
+
+struct mem_dump_context_t
+{
+    u32 pc_offset;
+    u32 dump_addr;
+};
+
+struct process_clients_context_t
+{
+    FaultClient *   current_client;
+    u32             current_client_index;
+};
+
 
 // Initialization
 
@@ -463,6 +486,7 @@ void Fault_Init(void);
 void Fault_AddHungupAndCrashImpl(const char* exp1, const char* exp2);
 void Fault_AddHungupAndCrash(const char* file, s32 line);
 void Fault_AddHangupPrintfAndCrash(const char *fmt, ...);
+void Fault_SoftwareInterrupt();
 
 // Client Registration
 
@@ -476,6 +500,9 @@ void Fault_RemoveAddrConvClient(FaultAddrConvClient* client);
 void Fault_WaitForInput(void);
 void Fault_FillScreenBlack(void);
 void Fault_SetFrameBuffer(void* fb, u16 w, u16 h);
+
+void FaultDrawer_Incinerate();
+void FaultDrawer_DrawFire();
 
 void FaultDrawer_SetForeColor(u16 color);
 void FaultDrawer_SetBackColor(u16 color);

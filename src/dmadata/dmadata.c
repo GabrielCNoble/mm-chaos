@@ -24,3 +24,4 @@ DmaEntry gDmaDataTable[] = {
 
 u8 sDmaDataPadding[0xF0] = { 0 };
 static s32 sBssPad;
+ 

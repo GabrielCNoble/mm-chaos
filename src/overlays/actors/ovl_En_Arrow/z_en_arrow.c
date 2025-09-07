@@ -173,11 +173,13 @@ void EnArrow_Init(Actor* thisx, PlayState* play) {
         }
     }
 
-    if(this->unk_262 & CHAOS_ARROW_EFFECT_BOMB)
-    {
-        // this->collider.base.atFlags |= AT_BYPASS_DMG_TABLE;
-        this->collider.elem.atDmgInfo.dmgFlags = DMG_NORMAL_ARROW;
-    }
+    // if(this->chaos_effect & CHAOS_ARROW_EFFECT_BOMB)
+    // {
+    //     // this->collider.base.atFlags |= AT_BYPASS_DMG_TABLE;
+    //     // this->collider.elem.atDmgInfo.dmgFlags = DMG_NORMAL_ARROW;
+    //     this->collider.elem.atElemFlags |= AT_ABSOLUTE_DAMAGE;
+    //     this->collider.elem.atDmgInfo.damage = 512;
+    // }
 
     this->actionFunc = func_8088A594;
 }
@@ -191,8 +193,8 @@ void EnArrow_Destroy(Actor* thisx, PlayState* play) {
 
     Collider_DestroyQuad(play, &this->collider);
 
-    if ((this->unk_264 != NULL) && (this->unk_264->update != NULL)) {
-        this->unk_264->flags &= ~ACTOR_FLAG_ATTACHED_TO_ARROW;
+    if ((this->attached_actor != NULL) && (this->attached_actor->update != NULL)) {
+        this->attached_actor->flags &= ~ACTOR_FLAG_ATTACHED_TO_ARROW;
     }
 
     if (ARROW_IS_MAGICAL(this->actor.params) && (this->actor.child == NULL)) {
@@ -301,9 +303,9 @@ void func_8088A894(EnArrow* this, PlayState* play) {
     s32 bgId;
 
     Math_Vec3f_Diff(&this->actor.world.pos, &this->unk_228, &sp68);
-    sp4C = ((this->actor.world.pos.x - this->unk_264->world.pos.x) * sp68.x) +
-           ((this->actor.world.pos.y - this->unk_264->world.pos.y) * sp68.y) +
-           ((this->actor.world.pos.z - this->unk_264->world.pos.z) * sp68.z);
+    sp4C = ((this->actor.world.pos.x - this->attached_actor->world.pos.x) * sp68.x) +
+           ((this->actor.world.pos.y - this->attached_actor->world.pos.y) * sp68.y) +
+           ((this->actor.world.pos.z - this->attached_actor->world.pos.z) * sp68.z);
     if (sp4C < 0.0f) {
         return;
     }
@@ -315,14 +317,14 @@ void func_8088A894(EnArrow* this, PlayState* play) {
 
     temp_f0 = sp4C / temp_f0;
     Math_Vec3f_Scale(&sp68, temp_f0);
-    Math_Vec3f_Sum(&this->unk_264->world.pos, &sp68, &sp5C);
-    if (BgCheck_EntityLineTest1(&play->colCtx, &this->unk_264->world.pos, &sp5C, &sp50, &sp74, true, true, true, true,
+    Math_Vec3f_Sum(&this->attached_actor->world.pos, &sp68, &sp5C);
+    if (BgCheck_EntityLineTest1(&play->colCtx, &this->attached_actor->world.pos, &sp5C, &sp50, &sp74, true, true, true, true,
                                 &bgId)) {
-        this->unk_264->world.pos.x = ((sp5C.x <= sp50.x) ? 1.0f : -1.0f) + sp50.x;
-        this->unk_264->world.pos.y = ((sp5C.y <= sp50.y) ? 1.0f : -1.0f) + sp50.y;
-        this->unk_264->world.pos.z = ((sp5C.z <= sp50.z) ? 1.0f : -1.0f) + sp50.z;
+        this->attached_actor->world.pos.x = ((sp5C.x <= sp50.x) ? 1.0f : -1.0f) + sp50.x;
+        this->attached_actor->world.pos.y = ((sp5C.y <= sp50.y) ? 1.0f : -1.0f) + sp50.y;
+        this->attached_actor->world.pos.z = ((sp5C.z <= sp50.z) ? 1.0f : -1.0f) + sp50.z;
     } else {
-        Math_Vec3f_Copy(&this->unk_264->world.pos, &sp5C);
+        Math_Vec3f_Copy(&this->attached_actor->world.pos, &sp5C);
     }
 }
 
@@ -389,16 +391,16 @@ void func_8088ACE0(EnArrow* this, PlayState* play) {
     f32 temp_f12_2;
     s32 sp50;
 
-    if(this->unk_262 & CHAOS_ARROW_EFFECT_BOMB)
-    {
-        this->collider.elem.atDmgInfo.damage = 32;
-        this->collider.elem.atDmgInfo.dmgFlags = DMG_NORMAL_ARROW;
-        // this->collider.base.atFlags |= AT_BYPASS_DMG_TABLE;
-    }
+    // if(this->chaos_effect & CHAOS_ARROW_EFFECT_BOMB)
+    // {
+    //     this->collider.elem.atDmgInfo.damage = 32;
+    //     // this->collider.elem.atDmgInfo.dmgFlags = DMG_NORMAL_ARROW;
+    //     // this->collider.base.atFlags |= AT_BYPASS_DMG_TABLE;
+    // }
 
     if ((DECR(this->unk_260) == 0) ||
         ((this->actor.params == ARROW_TYPE_DEKU_BUBBLE) &&
-         ((this->unk_261 & ARROW_HIT_FLAG_4) || (phi_a2 = (this->collider.base.atFlags & AT_HIT) != 0)))) {
+         ((this->hit_flags & ARROW_HIT_FLAG_4) || (phi_a2 = (this->collider.base.atFlags & AT_HIT) != 0)))) {
         if (this->actor.params == ARROW_TYPE_DEKU_BUBBLE) {
             if (phi_a2 && (this->collider.elem.atHitElem->elemMaterial != ELEM_MATERIAL_UNK4) &&
                 (this->collider.base.atFlags & AT_BOUNCED)) {
@@ -411,13 +413,13 @@ void func_8088ACE0(EnArrow* this, PlayState* play) {
                 }
             }
 
-            if ((this->unk_261 & ARROW_HIT_FLAG_4) || phi_a2) {
+            if ((this->hit_flags & ARROW_HIT_FLAG_4) || phi_a2) {
                 EffectSsStone1_Spawn(play, &this->actor.world.pos, 0);
             }
 
             SoundSource_PlaySfxAtFixedWorldPos(play, &this->actor.world.pos, 20, NA_SE_IT_DEKUNUTS_BUBLE_VANISH);
 
-            if ((this->unk_261 & ARROW_HIT_FLAG_4) && (this->actor.wallBgId == BG_ACTOR_MAX)) {
+            if ((this->hit_flags & ARROW_HIT_FLAG_4) && (this->actor.wallBgId == BG_ACTOR_MAX)) {
 
                 Math_Vec3f_Copy(&sp84.pos, &this->actor.world.pos);
                 sp84.colPoly = this->actor.wallPoly;
@@ -432,8 +434,14 @@ void func_8088ACE0(EnArrow* this, PlayState* play) {
     /* if a magic arrow or deku bubble hit something */
     sp50 = (this->actor.params != ARROW_TYPE_NORMAL_LIT) && (this->actor.params < ARROW_TYPE_DEKU_NUT) &&
            (this->collider.base.atFlags & AT_HIT);
+    hit_actor = this->collider.base.at;
 
-    if (sp50 || (this->unk_261 & ARROW_HIT_FLAG_4)) {
+    if(hit_actor != NULL)
+    {
+        this->hit_flags |= ARROW_HIT_ACTOR;
+    }
+
+    if (sp50 || (this->hit_flags & ARROW_HIT_FLAG_4)) {
         if (!ARROW_IS_ARROW(this->actor.params)) {
             /* deku bubble */
             if (sp50) {
@@ -460,11 +468,10 @@ void func_8088ACE0(EnArrow* this, PlayState* play) {
 
             if (sp50 && (this->collider.elem.atHitElem->elemMaterial != ELEM_MATERIAL_UNK4)) {
                 /* magic arrow hit something that's not background? */
-                hit_actor = this->collider.base.at;
 
                 if ((hit_actor->update != NULL) && !(this->collider.base.atFlags & AT_BOUNCED) &&
                     (hit_actor->flags & ACTOR_FLAG_CAN_ATTACH_TO_ARROW)) {
-                    this->unk_264 = hit_actor;
+                    this->attached_actor = hit_actor;
                     func_8088A894(this, play);
                     Math_Vec3f_Diff(&hit_actor->world.pos, &this->actor.world.pos, &this->unk_268);
                     hit_actor->flags |= ACTOR_FLAG_ATTACHED_TO_ARROW;
@@ -474,12 +481,12 @@ void func_8088ACE0(EnArrow* this, PlayState* play) {
                 } else {
                     // this->unk_261 |= 1;
                     // this->unk_261 |= 2;
-                    this->unk_261 |= ARROW_HIT_FLAG_1 | ARROW_HIT_FLAG_2;
+                    this->hit_flags |= ARROW_HIT_FLAG_1 | ARROW_HIT_FLAG_2;
                     Math_Vec3f_Copy(&this->actor.world.pos, &this->actor.prevPos);
                     func_8088A7D8(play, this);
                     Actor_PlaySfx(&this->actor, NA_SE_IT_HOOKSHOT_STICK_CRE);
                 }
-            } else if (this->unk_261 & ARROW_HIT_FLAG_4) {
+            } else if (this->hit_flags & ARROW_HIT_FLAG_4) {
                 this->actionFunc = func_8088B630;
                 Animation_PlayOnce(&this->arrow.skelAnime, &gameplay_keep_Anim_0128BC);
                 if (this->actor.params >= ARROW_TYPE_NORMAL_LIT) {
@@ -491,14 +498,32 @@ void func_8088ACE0(EnArrow* this, PlayState* play) {
                     this->actor.draw = NULL;
                 }
                 Actor_PlaySfx(&this->actor, NA_SE_IT_ARROW_STICK_OBJ);
-                this->unk_261 |= ARROW_HIT_FLAG_1;
+                this->hit_flags |= ARROW_HIT_FLAG_1;
             }
 
-            if((this->unk_262 & CHAOS_ARROW_EFFECT_BOMB) && this->unk_261)
+            if((this->chaos_effect & CHAOS_ARROW_EFFECT_BOMB) && this->hit_flags)
             {
-                EnBom *bomb = (EnBom *)Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_EN_BOM, 
-                    this->actor.world.pos.x, this->actor.world.pos.y, this->actor.world.pos.z,
-                    0, 0, 0, BOMB_TYPE_ARROW);
+                Vec3f hit_position = this->actor.world.pos;
+                EnBom *bomb = NULL;
+                
+                if(hit_actor != NULL)
+                {
+                    if(hit_actor->flags & ACTOR_FLAG_CAN_ATTACH_TO_ARROW)
+                    {
+                        // this->collider.elem.atDmgInfo.damage = 200;
+                        hit_position = hit_actor->world.pos;
+                    }
+
+                    hit_actor->colChkInfo.damage = 512;
+                    hit_actor->colChkInfo.health = 0;
+                    
+                    // this->collider.elem.atElemFlags |= AT_ABSOLUTE_DAMAGE;
+                    // this->collider.elem.atDmgInfo.damage = 512;
+                    // this->collider.elem.atHit
+                }
+
+                bomb = (EnBom *)Actor_SpawnAsChild(&play->actorCtx, &this->actor, play, ACTOR_EN_BOM, 
+                    hit_position.x, hit_position.y, hit_position.z, 0, 0, 0, BOMB_TYPE_ARROW);
                 bomb->timer = 0;
 
                 // if(hit_actor != NULL)
@@ -559,7 +584,7 @@ void func_8088ACE0(EnArrow* this, PlayState* play) {
             }
             Actor_UpdatePos(&this->actor);
         } else {
-            if(this->unk_262 & CHAOS_ARROW_EFFECT_WEIRD)
+            if(this->chaos_effect & CHAOS_ARROW_EFFECT_WEIRD)
             {
                 this->actor.world.rot.x += Rand_S16Offset(-1000, 2000);
                 this->actor.world.rot.y += Rand_S16Offset(-1000, 2000);
@@ -570,7 +595,7 @@ void func_8088ACE0(EnArrow* this, PlayState* play) {
 
         if (BgCheck_ProjectileLineTest(&play->colCtx, &this->actor.prevPos, &this->actor.world.pos,
                                                         &sp9C, &this->actor.wallPoly, true, true, true, true, &bgId)) {
-            this->unk_261 |= ARROW_HIT_FLAG_4;
+            this->hit_flags |= ARROW_HIT_FLAG_4;
             // `func_800B90AC` only returns a boolean, and does not process any code
             func_800B90AC(play, &this->actor, this->actor.wallPoly, bgId, &sp9C);
             Math_Vec3f_Copy(&this->actor.world.pos, &sp9C);
@@ -582,8 +607,8 @@ void func_8088ACE0(EnArrow* this, PlayState* play) {
         }
     }
 
-    if (this->unk_264 != NULL) {
-        if (this->unk_264->update != NULL) {
+    if (this->attached_actor != NULL) {
+        if (this->attached_actor->update != NULL) {
             Vec3f sp60;
             Vec3f sp54;
 
@@ -591,23 +616,23 @@ void func_8088ACE0(EnArrow* this, PlayState* play) {
             Math_Vec3f_Sum(&this->actor.world.pos, &this->unk_268, &sp54);
 
             if (BgCheck_EntityLineTest1(&play->colCtx, &sp60, &sp54, &sp9C, &spAC, true, true, true, true, &bgId)) {
-                this->unk_264->world.pos.x = ((sp54.x <= sp9C.x) ? 1.0f : -1.0f) + sp9C.x;
-                this->unk_264->world.pos.y = ((sp54.y <= sp9C.y) ? 1.0f : -1.0f) + sp9C.y;
-                this->unk_264->world.pos.z = ((sp54.z <= sp9C.z) ? 1.0f : -1.0f) + sp9C.z;
+                this->attached_actor->world.pos.x = ((sp54.x <= sp9C.x) ? 1.0f : -1.0f) + sp9C.x;
+                this->attached_actor->world.pos.y = ((sp54.y <= sp9C.y) ? 1.0f : -1.0f) + sp9C.y;
+                this->attached_actor->world.pos.z = ((sp54.z <= sp9C.z) ? 1.0f : -1.0f) + sp9C.z;
 
-                Math_Vec3f_Diff(&this->unk_264->world.pos, &this->actor.world.pos, &this->unk_268);
-                this->unk_264->flags &= ~ACTOR_FLAG_ATTACHED_TO_ARROW;
-                this->unk_264 = NULL;
+                Math_Vec3f_Diff(&this->attached_actor->world.pos, &this->actor.world.pos, &this->unk_268);
+                this->attached_actor->flags &= ~ACTOR_FLAG_ATTACHED_TO_ARROW;
+                this->attached_actor = NULL;
             } else {
-                Math_Vec3f_Sum(&this->actor.world.pos, &this->unk_268, &this->unk_264->world.pos);
+                Math_Vec3f_Sum(&this->actor.world.pos, &this->unk_268, &this->attached_actor->world.pos);
             }
 
-            if ((this->unk_261 & ARROW_HIT_FLAG_4) && (this->unk_264 != NULL)) {
-                this->unk_264->flags &= ~ACTOR_FLAG_ATTACHED_TO_ARROW;
-                this->unk_264 = NULL;
+            if ((this->hit_flags & ARROW_HIT_FLAG_4) && (this->attached_actor != NULL)) {
+                this->attached_actor->flags &= ~ACTOR_FLAG_ATTACHED_TO_ARROW;
+                this->attached_actor = NULL;
             }
         } else {
-            this->unk_264 = NULL;
+            this->attached_actor = NULL;
         }
     }
 }
@@ -642,6 +667,12 @@ void EnArrow_Update(Actor* thisx, PlayState* play) {
     s32 pad;
     EnArrow* this = (EnArrow*)thisx;
     Player* player = GET_PLAYER(play);
+
+    if(this->chaos_effect & CHAOS_ARROW_EFFECT_BOMB)
+    {
+        this->collider.elem.atElemFlags |= AT_ABSOLUTE_DAMAGE;
+        this->collider.elem.atDmgInfo.damage = 512;
+    }
 
     if ((this->unk_263 != 0) ||
         ((this->actor.params >= ARROW_TYPE_NORMAL_LIT) &&
@@ -690,11 +721,11 @@ void func_8088B88C(PlayState* play, EnArrow* this, EnArrowUnkStruct* arg2) {
         Matrix_MultVec3f(&sp4C[0], &sp40);
         Matrix_MultVec3f(&sp4C[1], &sp34);
         if (this->actor.params < ARROW_TYPE_DEKU_NUT) {
-            draw_trail = !(this->unk_262 & CHAOS_ARROW_EFFECT_BUCKSHOT) || 
+            draw_trail = !(this->chaos_effect & CHAOS_ARROW_EFFECT_BUCKSHOT) || 
                          !((ENARROW_ARROW_MAX_FLIGHT_TIME - (this->unk_260)) & 0x3);
             draw_trail &= ARROW_IS_ARROW(this->actor.params);
 
-            if (this->unk_264 == NULL) {
+            if (this->attached_actor == NULL) {
                 draw_trail &= func_80126440(play, &this->collider, &this->unk_244, &sp40, &sp34);
             } else if (draw_trail && (sp40.x == this->unk_244.tip.x) && (sp40.y == this->unk_244.tip.y) &&
                        (sp40.z == this->unk_244.tip.z) && (sp34.x == this->unk_244.base.x) &&

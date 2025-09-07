@@ -1,5 +1,30 @@
 #include "ultra64.h"
 
+s32 osPeekMesg(OSMesgQueue *queue, OSMesg *msg, s32 flags)
+{
+    register u32 saveMask = __osDisableInt();
+
+    while (MQ_IS_EMPTY(queue)) {
+        if (flags == OS_MESG_NOBLOCK) {
+            __osRestoreInt(saveMask);
+            return -1;
+        }
+        __osRunningThread->state = 8;
+        __osEnqueueAndYield(&queue->mtQueue);
+    }
+
+    if (msg != NULL) {
+        *msg = queue->msg[queue->first];
+    }
+
+    if (queue->fullQueue->next != NULL) {
+        osStartThread(__osPopThread(&queue->fullQueue));
+    }
+
+    __osRestoreInt(saveMask);
+    return 0;
+}
+
 s32 osRecvMesg(OSMesgQueue* mq, OSMesg* msg, s32 flags) {
     register u32 saveMask = __osDisableInt();
 

@@ -157,7 +157,7 @@ void ArrowIce_Fly(ArrowIce* this, PlayState* play) {
     }
     ArrowIce_LerpFiredPosition(&this->firedPos, &this->actor.world.pos, 0.05f);
 
-    if (arrow->unk_261 & 1) {
+    if (arrow->hit_flags & 1) {
         Actor_PlaySfx(&this->actor, NA_SE_IT_EXPLOSION_ICE);
         ArrowIce_SetupAction(this, ArrowIce_Hit);
         this->timer = 32;
@@ -190,7 +190,7 @@ void ArrowIce_Draw(Actor* thisx, PlayState* play) {
     EnArrow* arrow = (EnArrow*)this->actor.parent;
 
     if ((arrow != NULL) && (arrow->actor.update != NULL) && (this->timer < 255)) {
-        transform = (arrow->unk_261 & 2) ? &this->actor : &arrow->actor;
+        transform = (arrow->hit_flags & 2) ? &this->actor : &arrow->actor;
 
         OPEN_DISPS(play->state.gfxCtx);
 

@@ -361,5 +361,6 @@ extern s16 gOcarinaSongItemMap[];
 #define MESSAGE_ID_PRESS_KEY_NOT_TO_NOT_DIE                             0x3561
 #define MESSAGE_ID_DO_PRESS_KEY_NOR_KEY_NOT_TO_DIE                      0x3562
 #define MESSAGE_ID_DO_PRESS_KEY_NOR_KEY_TO_NOT_DIE                      0x3563
+#define MESSAGE_ID_MOON_CAKE_ASS_IS_PHAT                                0x3564
 
 #endif

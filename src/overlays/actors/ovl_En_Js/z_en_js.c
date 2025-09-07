@@ -911,9 +911,11 @@ void func_8096A2C0(EnJs* this, PlayState* play) {
         Actor_OfferTalkExchange(&this->actor, play, 1000.0f, 1000.0f, PLAYER_IA_MINUS1);
     } else {
         Actor_OfferGetItem(&this->actor, play, GI_MASK_FIERCE_DEITY, 10000.0f, 1000.0f);
+        gSaveContext.save.flags |= G_OBTAINED_FIERCE_DEITY_MASK;
     }
 }
 
+/* EnJs_SittingChildDialog */
 void func_8096A38C(EnJs* this, PlayState* play) {
     if (SkelAnime_Update(&this->skelAnime)) {
         Animation_MorphToLoop(&this->skelAnime, &gMoonChildStandingAnim, 0.0f);
@@ -1038,6 +1040,7 @@ void func_8096A38C(EnJs* this, PlayState* play) {
     }
 }
 
+/* EnJs_SittingChildIdle */
 void func_8096A6F4(EnJs* this, PlayState* play) {
     s32 pad;
 

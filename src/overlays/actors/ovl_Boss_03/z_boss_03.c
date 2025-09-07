@@ -1833,7 +1833,7 @@ void Boss03_UpdateCollision(Boss03* this, PlayState* play) {
     u8 sp4B = true;
     Player* player = GET_PLAYER(play);
     s32 i;
-    s32 phi_v1;
+    s32 damage;
     u32 phi_v0;
     Boss03ActionFunc stunnedActionFunc = Boss03_Stunned;
 
@@ -1875,11 +1875,11 @@ void Boss03_UpdateCollision(Boss03* this, PlayState* play) {
                                  ? this->bodyCollider.elements[i].base.acHitElem->atDmgInfo.damage
                                  : 0;
 
-                    phi_v1 = phi_v0;
+                    damage = phi_v0;
                     if (phi_v0 < 1) {
-                        phi_v1 = 1;
+                        damage = 1;
                     }
-                    this->actor.colChkInfo.health -= phi_v1;
+                    this->actor.colChkInfo.health -= damage;
 
                     if ((s8)this->actor.colChkInfo.health <= 0) {
                         Boss03_PlayUnderwaterSfx(&D_809E9848, NA_SE_EN_KONB_DEAD_OLD);
@@ -1897,11 +1897,15 @@ void Boss03_UpdateCollision(Boss03* this, PlayState* play) {
 
         for (i = 0; i < ARRAY_COUNT(sHeadJntSphElementsInit); i++) {
             if (this->headCollider.elements[i].base.acElemFlags & ACELEM_HIT) {
+                bool received_absolute_damage;
+
                 acHitElem = this->headCollider.elements[i].base.acHitElem;
                 this->headCollider.elements[i].base.acElemFlags &= ~ACELEM_HIT;
                 this->unk_25C = 15;
 
-                if (this->actionFunc != stunnedActionFunc) {
+                received_absolute_damage = acHitElem->atElemFlags & AT_ABSOLUTE_DAMAGE;
+
+                if (this->actionFunc != stunnedActionFunc && !received_absolute_damage) {
                     Boss03_SetupStunned(this, play);
                     Boss03_PlayUnderwaterSfx(&this->actor.projectedPos, NA_SE_EN_KONB_DAMAGE_OLD);
 
@@ -1915,7 +1919,7 @@ void Boss03_UpdateCollision(Boss03* this, PlayState* play) {
                     continue;
                 }
 
-                if (sp4B) {
+                if (sp4B || received_absolute_damage) {
                     this->unk_25E = 15;
 
                     // (DMG_SWORD_BEAM | DMG_SPIN_ATTACK | DMG_ZORA_PUNCH | DMG_ZORA_BARRIER | DMG_DEKU_LAUNCH |
@@ -1924,11 +1928,11 @@ void Boss03_UpdateCollision(Boss03* this, PlayState* play) {
                                  ? (this->headCollider.elements[i].base.acHitElem->atDmgInfo.damage)
                                  : 0;
 
-                    phi_v1 = phi_v0;
+                    damage = phi_v0;
                     if (phi_v0 < 1) {
-                        phi_v1 = 1;
+                        damage = 1;
                     }
-                    this->actor.colChkInfo.health -= phi_v1;
+                    this->actor.colChkInfo.health -= damage;
                     if ((s8)this->actor.colChkInfo.health <= 0) {
                         Boss03_PlayUnderwaterSfx(&D_809E9848, NA_SE_EN_KONB_DEAD_OLD);
                         Boss03_PlayUnderwaterSfx(&D_809E9848, NA_SE_EN_KONB_DEAD2_OLD);

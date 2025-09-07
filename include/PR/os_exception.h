@@ -11,6 +11,7 @@ typedef u32 OSHWIntr;
 
 #define OS_FLAG_CPU_BREAK   1   /* Break exception has occurred */
 #define OS_FLAG_FAULT       2   /* CPU fault has occurred */
+#define OS_FLAG_SW1         4
 
 /* Interrupt masks */
 
@@ -44,6 +45,7 @@ void __osSetHWIntrRoutine(OSHWIntr interrupt, s32 (*handler)(void), void* stackE
 void __osGetHWIntrRoutine(OSHWIntr interrupt, s32 (**handler)(void), void** stackEnd);
 void __osSetGlobalIntMask(OSHWIntr mask);
 void __osResetGlobalIntMask(OSHWIntr mask);
+void __osBreak();
 
 
 #endif

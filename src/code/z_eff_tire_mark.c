@@ -125,9 +125,12 @@ void func_800AE930(CollisionContext* colCtx, EffectTireMark* this, Vec3f* pos, f
 }
 
 void func_800AEF44(EffectTireMark* this) {
-    EffectTireMarkElement* elem = &this->elements[this->numElements - 1];
-
-    elem->flags |= EFFECT_TIRE_MARK_ELEMENT_FLAG_2;
+    if(this != NULL)
+    {
+        EffectTireMarkElement* elem = &this->elements[this->numElements - 1];
+    
+        elem->flags |= EFFECT_TIRE_MARK_ELEMENT_FLAG_2;
+    }
 }
 
 void EffectTireMark_InitElement(EffectTireMarkElement* elem) {

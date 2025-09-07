@@ -53,10 +53,15 @@ void func_80A1F470(DmHina* this, PlayState* play) {
     Math_SmoothStepToF(&this->unk148, 0.6f, 0.5f, 0.05f, 0.001f);
     this->unk154 = Math_SinS(play->gameplayFrames * 0x708) * 8.0f;
     if ((player->stateFlags1 & PLAYER_STATE1_400) && (this->actor.xzDistToPlayer < 80.0f)) {
-        this->isDrawn = false;
-        this->unk154 = 0.0f;
-        this->actor.world.pos.y += 40.0f;
-        this->actionFunc = func_80A1F56C;
+        
+        if(CHECK_QUEST_ITEM(QUEST_REMAINS_ODOLWA + this->actor.params))
+        {
+            /* make sure the player ACTUALLY got the remains before triggering the cutscene */
+            this->isDrawn = false;
+            this->unk154 = 0.0f;
+            this->actor.world.pos.y += 40.0f;
+            this->actionFunc = func_80A1F56C;
+        }
     }
 }
 

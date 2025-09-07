@@ -292,6 +292,24 @@ union FileSelectUI
     Vtx     vertices[0];
 };
 
+struct save_info_t { 
+    u8         newf[6];
+    u16        threeDayResetCount;
+    char       fileName[8];
+    s16        healthCapacity;
+    s16        health;
+    u32        questItems;
+    s8         defenseHearts;
+    u16        time;
+    s16        day;
+    u8         isOwlSave;
+    u8         is_crash_save;
+    s16        rupees;
+    u8         walletUpgrades;
+    u8         maskCount;
+    u8         heartPieceCount;
+};
+
 typedef struct FileSelectState {
     /* 0x00000 */ GameState state;
     /* 0x000A4 */ Vtx* windowVtx;
@@ -310,23 +328,7 @@ typedef struct FileSelectState {
     /* 0x243EC */ Vtx* nameEntryVtx;
     /* 0x243F0 */ Vtx* keyboard2Vtx;
 
-    struct save_info_t {
-            u8         newf[6];
-            u16        threeDayResetCount;
-            char       fileName[8];
-            s16        healthCapacity;
-            s16        health;
-            u32        questItems;
-            s8         defenseHearts;
-            u16        time;
-            s16        day;
-            u8         isOwlSave;
-            u8         is_crash_save;
-            s16        rupees;
-            u8         walletUpgrades;
-            u8         maskCount;
-            u8         heartPieceCount;
-    } save_info[4];
+    struct save_info_t save_info[4];
     // /* 0x243F4 */ u8 newf[4][6];
     // /* 0x2440C */ u16 threeDayResetCount[4];
     // /* 0x24414 */ char fileNames[4][8];

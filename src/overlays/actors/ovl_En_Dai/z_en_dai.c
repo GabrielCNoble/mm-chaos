@@ -32,97 +32,100 @@ ActorProfile En_Dai_Profile = {
 
 static Vec3f D_80B3FBF0 = { 1.0f, 1.0f, 1.0f };
 
-EnDaiEffect* func_80B3DFF0(EnDaiEffect* effect, Vec3f arg1, Vec3f arg2, Vec3f arg3, f32 arg4, f32 arg5, s32 arg6) {
-    s32 i;
+// EnDaiEffect* func_80B3DFF0(EnDaiEffect* effect, Vec3f arg1, Vec3f arg2, Vec3f arg3, f32 arg4, f32 arg5, s32 arg6) {
+//     s32 i;
 
-    for (i = 0; i < EN_DAI_EFFECT_COUNT; i++, effect++) {
-        if (!effect->isEnabled) {
-            effect->isEnabled = true;
-            effect->unk_01 = (Rand_ZeroOne() * (2.0f * (arg6 / 3.0f))) + (arg6 / 3.0f);
-            effect->unk_02 = effect->unk_01;
-            effect->unk_10 = arg1;
-            effect->unk_1C = arg2;
-            effect->unk_28 = arg3;
-            effect->unk_34 = arg4;
-            effect->unk_38 = arg5;
-            return effect;
-        }
-    }
+//     for (i = 0; i < EN_DAI_EFFECT_COUNT; i++, effect++) {
+//         if (!effect->isEnabled) {
+//             effect->isEnabled = true;
+//             effect->unk_01 = (Rand_ZeroOne() * (2.0f * (arg6 / 3.0f))) + (arg6 / 3.0f);
+//             effect->unk_02 = effect->unk_01;
+//             effect->unk_10 = arg1;
+//             effect->unk_1C = arg2;
+//             effect->unk_28 = arg3;
+//             effect->unk_34 = arg4;
+//             effect->unk_38 = arg5;
+//             return effect;
+//         }
+//     }
 
-    return NULL;
-}
+//     return NULL;
+// }
 
-void func_80B3E168(EnDaiEffect* effect, PlayState* play2) {
-    PlayState* play = play2;
-    s32 pad;
-    s32 isDisplayListSet = false;
-    s32 i;
-    f32 alpha;
+// void func_80B3E168(EnDaiEffect* effect, PlayState* play2) {
+//     PlayState* play = play2;
+//     s32 pad;
+//     s32 isDisplayListSet = false;
+//     s32 i;
+//     f32 alpha;
 
-    OPEN_DISPS(play->state.gfxCtx);
+//     OPEN_DISPS(play->state.gfxCtx);
 
-    Gfx_SetupDL25_Xlu(play->state.gfxCtx);
+//     Gfx_SetupDL25_Xlu(play->state.gfxCtx);
 
-    for (i = 0; i < EN_DAI_EFFECT_COUNT; i++, effect++) {
-        if (effect->isEnabled == true) {
-            gDPPipeSync(POLY_XLU_DISP++);
+//     for (i = 0; i < EN_DAI_EFFECT_COUNT; i++, effect++) {
+//         if (effect->isEnabled == true) {
+//             gDPPipeSync(POLY_XLU_DISP++);
 
-            if (!isDisplayListSet) {
-                gSPDisplayList(POLY_XLU_DISP++, object_dai_DL_000230);
-                isDisplayListSet = true;
-            }
+//             if (!isDisplayListSet) {
+//                 gSPDisplayList(POLY_XLU_DISP++, object_dai_DL_000230);
+//                 isDisplayListSet = true;
+//             }
 
-            Matrix_Push();
+//             Matrix_Push();
 
-            alpha = (effect->unk_02 / (f32)effect->unk_01);
-            alpha *= 255.0f;
+//             alpha = (effect->unk_02 / (f32)effect->unk_01);
+//             alpha *= 255.0f;
 
-            gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, 195, 225, 235, (u8)alpha);
+//             gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, 195, 225, 235, (u8)alpha);
 
-            gSPSegment(POLY_XLU_DISP++, 0x08,
-                       Gfx_TwoTexScroll(play->state.gfxCtx, 0, (effect->unk_02 + (i * 3)) * 3,
-                                        (effect->unk_02 + (i * 3)) * 15, 0x20, 0x40, 1, 0, 0, 0x20, 0x20));
+//             gSPSegment(POLY_XLU_DISP++, 0x08,
+//                        Gfx_TwoTexScroll(play->state.gfxCtx, 0, (effect->unk_02 + (i * 3)) * 3,
+//                                         (effect->unk_02 + (i * 3)) * 15, 0x20, 0x40, 1, 0, 0, 0x20, 0x20));
 
-            Matrix_Translate(effect->unk_10.x, effect->unk_10.y, effect->unk_10.z, MTXMODE_NEW);
-            Matrix_ReplaceRotation(&play->billboardMtxF);
-            Matrix_Scale(effect->unk_34, effect->unk_34, 1.0f, MTXMODE_APPLY);
+//             Matrix_Translate(effect->unk_10.x, effect->unk_10.y, effect->unk_10.z, MTXMODE_NEW);
+//             Matrix_ReplaceRotation(&play->billboardMtxF);
+//             Matrix_Scale(effect->unk_34, effect->unk_34, 1.0f, MTXMODE_APPLY);
 
-            MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx);
-            gSPDisplayList(POLY_XLU_DISP++, object_dai_DL_0002E8);
+//             MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx);
+//             gSPDisplayList(POLY_XLU_DISP++, object_dai_DL_0002E8);
 
-            Matrix_Pop();
-        }
-    }
+//             Matrix_Pop();
+//         }
+//     }
 
-    CLOSE_DISPS(play->state.gfxCtx);
-}
+//     CLOSE_DISPS(play->state.gfxCtx);
+// }
 
 s32 func_80B3E460(EnDai* this) {
-    EnDaiEffect* effect = this->effects;
-    s32 i;
-    s32 count;
+    EffectGoronBlizzard_UpdateParticles(&this->blizzard);
+    // EnDaiEffect* effect = this->effects;
+    // s32 i;
+    // s32 count;
 
-    for (i = 0, count = 0; i < ARRAY_COUNT(this->effects); i++, effect++) {
-        if (effect->isEnabled && effect->unk_02) {
-            effect->unk_10.x += effect->unk_28.x;
-            effect->unk_02--;
-            effect->unk_10.y += effect->unk_28.y;
-            effect->unk_10.z += effect->unk_28.z;
-            effect->unk_28.x += effect->unk_1C.x;
-            effect->unk_28.y += effect->unk_1C.y;
-            effect->unk_28.z += effect->unk_1C.z;
-            effect->unk_34 += effect->unk_38;
-            count++;
-        } else if (effect->isEnabled) {
-            effect->isEnabled = false;
-        }
-    }
+    // for (i = 0, count = 0; i < ARRAY_COUNT(this->effects); i++, effect++) {
+    //     if (effect->isEnabled && effect->unk_02) {
+    //         effect->unk_10.x += effect->unk_28.x;
+    //         effect->unk_02--;
+    //         effect->unk_10.y += effect->unk_28.y;
+    //         effect->unk_10.z += effect->unk_28.z;
+    //         effect->unk_28.x += effect->unk_1C.x;
+    //         effect->unk_28.y += effect->unk_1C.y;
+    //         effect->unk_28.z += effect->unk_1C.z;
+    //         effect->unk_34 += effect->unk_38;
+    //         count++;
+    //     } else if (effect->isEnabled) {
+    //         effect->isEnabled = false;
+    //     }
+    // }
 
-    return count;
+    // return count;
+    return 0;
 }
 
 s32 func_80B3E5B4(EnDai* this, PlayState* play) {
-    func_80B3E168(this->effects, play);
+    // func_80B3E168(this->effects, play);
+    EffectGoronBlizzard_Draw(&this->blizzard, play->state.gfxCtx);
     return 0;
 }
 
@@ -345,18 +348,36 @@ s32 func_80B3E96C(EnDai* this, PlayState* play) {
                 break;
         }
     } else if (this->unk_1DC == 2) {
-        sp50.x = sp50.y = 0.0f;
-        sp50.z = 200.0f;
+        Vec3f particle_start_pos_offset;
+        // sp50.x = sp50.y = 0.0f;
+        // sp50.z = 200.0f;
 
-        sp68.x = sp68.z = 0.0f;
-        sp68.y = 6.0f;
+        // sp68.x = sp68.z = 0.0f;
+        // sp68.y = 6.0f;
 
-        sp5C.x = Math_SinS(this->unk_1D4) * 80.0f;
-        sp5C.z = Math_CosS(this->unk_1D4) * 80.0f;
-        sp5C.y = -40.0f;
+        // sp5C.x = Math_SinS(this->unk_1D4) * 80.0f;
+        // sp5C.z = Math_CosS(this->unk_1D4) * 80.0f;
+        // sp5C.y = -40.0f;
 
-        Lib_Vec3f_TranslateAndRotateY(&this->unk_1E4, this->unk_1D4, &sp50, &sp74);
-        func_80B3DFF0(this->effects, sp74, sp68, sp5C, 0.03f, 0.04f, 0x10);
+        // Lib_Vec3f_TranslateAndRotateY(&this->unk_1E4, this->unk_1D4, &sp50, &sp74);
+        // func_80B3DFF0(this->effects, sp74, sp68, sp5C, 0.03f, 0.04f, 0x10);
+        particle_start_pos_offset.x = 0.0f;
+        particle_start_pos_offset.y = 0.0f;
+        particle_start_pos_offset.z = 200.0f;
+
+        this->blizzard.particle_start_velocity.x = 0.0f;
+        this->blizzard.particle_start_velocity.y = 6.0f;
+        this->blizzard.particle_start_velocity.x = 0.0f;
+
+        this->blizzard.particle_acceleration.x = Math_SinS(this->unk_1D4) * 80.0f;
+        this->blizzard.particle_acceleration.z = Math_CosS(this->unk_1D4) * 80.0f;
+        this->blizzard.particle_acceleration.y = -40.0f;
+        this->blizzard.particle_start_scale = 0.03f;
+        this->blizzard.particle_scale_increment = 0.04f;
+        this->blizzard.particle_min_life = 0x10;
+
+        Lib_Vec3f_TranslateAndRotateY(&this->unk_1E4, this->unk_1D4, &particle_start_pos_offset, &this->blizzard.particle_start_position);
+        EffectGoronBlizzard_SpawnParticles(&this->blizzard);
     }
 
     return 0;
@@ -552,7 +573,7 @@ void EnDai_HandleCutscene(EnDai* this, PlayState* play) {
 
 void EnDai_Init(Actor* thisx, PlayState* play) {
     EnDai* this = (EnDai*)thisx;
-
+    Vec3f particle_start_pos_offset;
     ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 0.0f);
     SkelAnime_InitFlex(play, &this->skelAnime, &object_dai_Skel_0130D0, NULL, this->jointTable, this->morphTable,
                        OBJECT_DAI_LIMB_MAX);
@@ -583,6 +604,32 @@ void EnDai_Init(Actor* thisx, PlayState* play) {
     this->unk_1CE |= (0x100 | 0x20);
     this->unk_1CE |= 0x80;
     this->actionFunc = func_80B3EEDC;
+
+    // particle_start_pos_offset.x = 0.0f;
+    // particle_start_pos_offset.y = 0.0f;
+    // particle_start_pos_offset.z = 200.0f;
+
+    // this->blizzard.particle_start_velocity.x = 0.0f;
+    // this->blizzard.particle_start_velocity.y = 6.0f;
+    // this->blizzard.particle_start_velocity.x = 0.0f;
+
+    // this->blizzard.particle_acceleration.x = Math_SinS(this->unk_1D4) * 80.0f;
+    // this->blizzard.particle_acceleration.z = Math_CosS(this->unk_1D4) * 80.0f;
+    // this->blizzard.particle_acceleration.y = -40.0f;
+    // this->blizzard.particle_start_scale = 0.03f;
+    // this->blizzard.particle_scale_increment = 0.04f;
+    // this->blizzard.particle_min_life = 0x10;
+
+
+    // // sp68.x = sp68.z = 0.0f;
+    // // sp68.y = 6.0f;
+
+    // // sp5C.x = Math_SinS(this->unk_1D4) * 80.0f;
+    // // sp5C.z = Math_CosS(this->unk_1D4) * 80.0f;
+    // // sp5C.y = -40.0f;
+
+    // Lib_Vec3f_TranslateAndRotateY(&this->unk_1E4, this->unk_1D4, &particle_start_pos_offset, &this->blizzard.particle_start_position);
+    // func_80B3DFF0(this->effects, sp74, sp68, sp5C, 0.03f, 0.04f, 0x10);
 }
 
 void EnDai_Destroy(Actor* thisx, PlayState* play) {

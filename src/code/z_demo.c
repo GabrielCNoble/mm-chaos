@@ -1,6 +1,7 @@
 #include "prevent_bss_reordering.h"
 #include "prevent_bss_reordering2.h"
 #include "chaos_fuckery.h"
+#include "fault.h"
 #include "PR/ultratypes.h"
 
 // Variables are put before most headers as a hacky way to bypass bss reordering
@@ -141,6 +142,7 @@ void CutsceneCmd_Misc(PlayState* play, CutsceneContext* csCtx, CsCmdMisc* cmd) {
     f32 lerp;
     u8 isFirstFrame = false;
     SceneTableEntry* loadedScene;
+    u32 *p = NULL;
 
     if (!((csCtx->curFrame >= cmd->startFrame) &&
           ((csCtx->curFrame < cmd->endFrame) || (cmd->endFrame == cmd->startFrame)))) {
@@ -386,10 +388,8 @@ void CutsceneCmd_Misc(PlayState* play, CutsceneContext* csCtx, CsCmdMisc* cmd) {
 
         case CS_MISC_DAWN_OF_A_NEW_DAY:
             gSaveContext.save.day = 9; // 9 % 5 is day number 4, see `CURRENT_DAY`
-
             STOP_GAMESTATE(&play->state);
             SET_NEXT_GAMESTATE(&play->state, DayTelop_Init, sizeof(DayTelopState));
-
             Sram_SaveSpecialNewDay(play);
             break;
 
@@ -399,6 +399,10 @@ void CutsceneCmd_Misc(PlayState* play, CutsceneContext* csCtx, CsCmdMisc* cmd) {
 
         case CS_MISC_FINALE:
             csCtx->curFrame = cmd->startFrame - 1; // the cutscene runs forever
+            gChaosContext.beat_the_game_crash = true;
+            *p = 69696969;
+            // Fault_AddHangupPrintfAndCrash("COCK");
+            // Audio_PlaySfx(NA_SE_SY_ERROR);
             break;
 
         default:

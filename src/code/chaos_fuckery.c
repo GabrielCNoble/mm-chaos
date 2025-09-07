@@ -38,7 +38,9 @@ u32             gPlayerActionChangeCount = 0;
 u32             gPlayerActionChanges[64];
 u32             gForcePause = false;
 
+struct ChaosConsole gChaosConsole;
 
+ 
 Vtx gMountainVillageLadderFragment[] = {
     VTX(-CHAOS_MOUNTAIN_VILLAGE_LADDER_HALF_WIDTH, CHAOS_MOUNTAIN_VILLAGE_LADDER_HALF_HEIGHT,-8, 0, 		-16 * 256, 0, 0, 120, 154),
 	VTX(-CHAOS_MOUNTAIN_VILLAGE_LADDER_HALF_WIDTH,-CHAOS_MOUNTAIN_VILLAGE_LADDER_HALF_HEIGHT,-8, 0, 		-64	  , 0, 0, 120, 154),
@@ -306,16 +308,20 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_BILLBOARD_ACTORS]         = */ CHAOS_CODE_DEF(21, 36, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0), 0.0045f),
     /* [CHAOS_CODE_SIGNPOST]                 = */ CHAOS_CODE_DEF(35, 60, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0), 0.0035f),
     /* [CHAOS_CODE_SILENT_FIELD]             = */ CHAOS_CODE_DEF(20, 35, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0), 0.00075f),
-    /* [CHAOS_CODE_BAD_CONNECTION]           = */ CHAOS_CODE_DEF(9, 18,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0), 0.0025f),
+    /* [CHAOS_CODE_BAD_CONNECTION]           = */ CHAOS_CODE_DEF(9, 18,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0), 0.0025f),
     /* [CHAOS_CODE_BEYBLADE]                 = */ CHAOS_CODE_DEF(20, 35, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.0025f),
     /* [CHAOS_CODE_DIRECTILE_DYSFUNCTION]    = */ CHAOS_CODE_DEF(5, 15,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.0045f),
     /* [CHAOS_CODE_LENGTH_CONTRACTION]       = */ CHAOS_CODE_DEF(15, 25, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.0025f),
     /* [CHAOS_CODE_FISH]                     = */ CHAOS_CODE_DEF(0, 0,   CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.0035f),
     /* [CHAOS_CODE_AIR_SUPPORT]              = */ CHAOS_CODE_DEF(25, 65, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.0035f),
-    /* [CHAOS_CODE_SIMON_SAYS]               = */ CHAOS_CODE_DEF(0, 0,   CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.0030f),
-    /* [CHAOS_CODE_RANDOM_AUTO_JUMP]         = */ CHAOS_CODE_DEF(5,  12, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1), 0.008f),
-    /* [CHAOS_CODE_UNSTEADY_LEGS]            = */ CHAOS_CODE_DEF(10, 15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.008f),
+    /* [CHAOS_CODE_SIMON_SAYS]               = */ CHAOS_CODE_DEF(0, 0,   CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0), 0.001f),
+    /* [CHAOS_CODE_RANDOM_AUTO_JUMP]         = */ CHAOS_CODE_DEF(12, 22, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1), 0.0035f),
+    /* [CHAOS_CODE_UNSTEADY_LEGS]            = */ CHAOS_CODE_DEF(10, 15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.0025f),
     /* [CHAOS_CODE_FAKE_CRASH]               = */ CHAOS_CODE_DEF(0, 0,   CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.00006f),
+    /* [CHAOS_CODE_LUCKY]                    = */ CHAOS_CODE_DEF(0, 0,   CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0), 0.001f),
+    /* [CHAOS_CODE_SWAP_LIMBS]               = */ CHAOS_CODE_DEF(0, 0,   CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0), 0.0025f),
+    /* [CHAOS_CODE_BLIZZARD]                 = */ CHAOS_CODE_DEF(15, 40, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0), 0.0015f),
+    // /* [CHAOS_CODE_SCREEN_SLAYER]            = */ CHAOS_CODE_DEF(0, 0,   CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.0025f),
 };
   
 const char *gChaosCodeNames[] = {
@@ -387,6 +393,10 @@ const char *gChaosCodeNames[] = {
     /* [CHAOS_CODE_RANDOM_AUTO_JUMP]            = */ "Random auto-jumps",
     /* [CHAOS_CODE_UNSTEADY_LEGS]               = */ "Unsteady legs",
     /* [CHAOS_CODE_FAKE_CRASH]                  = */ "Fake crash",
+    /* [CHAOS_CODE_LUCKY]                       = */ "Lucky",
+    /* [CHAOS_CODE_SWAP_LIMBS]                  = */ "Swap limbs",
+    /* [CHAOS_CODE_BLIZZARD]                    = */ "Blizzard",
+    // /* [CHAOS_CODE_SCREEN_SLAYER]               = */ "Screen slayer",
 };
 
 enum FAIRY_FOUNTAIN_EXITS
@@ -761,6 +771,10 @@ struct
     {ENTR_SCENE_WOODFALL_TEMPLE,            ARRAY_COUNT(gWoodfallTempleRooms),          gWoodfallTempleRooms},
 };
 
+u8        gThunderboltSegments = 0;
+Vec3f     gThunderboltSegmentVerts[CHAOS_MAX_THUNDERBOLT_SEGMENTS];
+// Vtx       gThunderboltVerts[CHAOS_MAX_THUNDERBOLT_SEGMENTS * 2 + 2];
+
 /* xorshift* */
 u32 Chaos_Rand(void)
 {
@@ -874,6 +888,7 @@ void Chaos_Init(void)
     gChaosContext.link.liftoff_timer = 0;
     gChaosContext.link.fierce_deity_counter = 0;
     gChaosContext.link.imaginary_friends_anim_index = 0;
+    gChaosContext.link.hitpoint_alarm_timer = 0;
 
     gChaosContext.chicken.cucco.niwType = NIW_TYPE_CHAOS;
     gChaosContext.chicken.cucco.actor.update = EnNiw_Update;
@@ -901,6 +916,7 @@ void Chaos_Init(void)
     for(index = 0; index < ARRAY_COUNT(gChaosContext.link.limb_scales); index++)
     {
         gChaosContext.link.limb_scales[index] = 1.0f;
+        gChaosContext.link.limb_map[index] = index;
     }
     gChaosContext.link.temp_limb_scale = 1.0f;
     
@@ -1100,10 +1116,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
 
         gChaosContext.code_elapsed_usec -= code_elapsed_seconds * 1000000;
 
-        // if(Chaos_GetConfigFlag(CHAOS_CONFIG_CHAOS))
-        // {
-        return;  
-        // }
+        // return;  
 
         if(chaos_elapsed_seconds > 0)
         {
@@ -1170,6 +1183,8 @@ void Chaos_UpdateChaos(PlayState *playstate)
                     {
                         next_code = Chaos_RandomCode();
                     }
+
+                    // next_code = CHAOS_CODE_CHANGE_MAGIC;
 
                     time_delta = gChaosCodeDefs[next_code].max_time - gChaosCodeDefs[next_code].min_time;
 
@@ -1432,11 +1447,19 @@ void Chaos_UpdateChaos(PlayState *playstate)
                                 continue;
                             }
                         break;
+
+                        case CHAOS_CODE_BLIZZARD:
+                            if(gChaosContext.env.blizzard_state == CHAOS_BLIZZARD_STATE_BLIZZARDING)
+                            {
+                                continue;
+                            }
+                        break;
                     }
 
                     code_add_result = Chaos_ActivateCode(next_code, next_code_timer);
                 }
                 while(code_add_result == CHAOS_ADD_RESULT_ALREADY_ACTIVE || attempts >= 50);
+                // while(0);
 
                 if(code_add_result == CHAOS_ADD_RESULT_OK)
                 {
@@ -1621,8 +1644,9 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
         gDPFillRectangle(OVERLAY_DISP++, 0, 0, SCREEN_WIDTH, 5 + ((2 + gChaosContext.active_code_count) << 3));
         gDPPipeSync(OVERLAY_DISP++);
 
-        polyOpa = POLY_OPA_DISP;
-        gfx = Gfx_Open(polyOpa);
+        // polyOpa = POLY_OPA_DISP;
+        // gfx = Gfx_Open(polyOpa);
+        gfx = POLY_OPA_DISP;
         gSPDisplayList(OVERLAY_DISP++, gfx);
 
         GfxPrint_Init(&gfx_print);
@@ -1782,7 +1806,10 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
             // GfxPrint_SetPos(&gfx_print, 1, y_pos++);
             GfxPrint_Printf(&gfx_print, "Allocated: %d, Free: %d", (u32)total_alloc_size, (u32)total_free_size);
             GfxPrint_SetPos(&gfx_print, 1, y_pos++);
-            GfxPrint_Printf(&gfx_print, "Clear flag: %d", Flags_GetClear(playstate, playstate->roomCtx.curRoom.num));
+            GfxPrint_Printf(&gfx_print, "%f", player->speedXZ);
+            GfxPrint_SetPos(&gfx_print, 1, y_pos++);
+
+            // GfxPrint_Printf(&gfx_print, "Clear flag: %d", Flags_GetClear(playstate, playstate->roomCtx.curRoom.num));
             // GfxPrint_Printf(&gfx_print, "%d", playstate->bButtonAmmoPlusOne);
             
         }
@@ -1790,7 +1817,7 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
         gfx = GfxPrint_Close(&gfx_print);
         GfxPrint_Destroy(&gfx_print);
         gSPEndDisplayList(gfx++);
-        Gfx_Close(polyOpa, gfx);
+        // Gfx_Close(polyOpa, gfx);
         POLY_OPA_DISP = gfx;
         CLOSE_DISPS(gfxCtx);
     }
@@ -1800,6 +1827,142 @@ void Chaos_PrintCodes(PlayState *playstate, Input *input)
     }
 
     gPlayerActionChangeCount = 0;
+}
+
+#define LINE_ALPHA_DECREMENT 35
+
+void Chaos_PrintConsoleLines(PlayState *play)
+{
+    u32 line_count = gChaosConsole.line_count;
+    u32 first_line = ((u32)gChaosConsole.next_free_line - line_count) % (0xffffffff - (CHAOS_CONSOLE_MAX_LINES - 1));
+    u32 first_line_box = first_line;
+    u32 line_index;
+    u32 y_pos = 1;
+    u32 rect_start = 0;
+    u32 rect_end = 0;
+    u8 text_alpha;
+
+    Gfx* gfx;
+    Gfx* polyOpa;
+    GfxPrint gfx_print;
+
+    OPEN_DISPS(play->state.gfxCtx);
+
+    gDPSetRenderMode(OVERLAY_DISP++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
+    gDPSetCombineMode(OVERLAY_DISP++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
+
+    rect_end = 12;
+
+    // for(line_index = 0; line_index < line_count; line_index++)
+    // {
+    //     gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 0, 0, 0, gChaosConsole.lines[first_line_box].alpha >> 3);
+    //     gDPFillRectangle(OVERLAY_DISP++, 0, rect_start, SCREEN_WIDTH, rect_end);
+    //     first_line_box = (first_line_box + 1) % CHAOS_CONSOLE_MAX_LINES;
+    //     rect_start = rect_end;
+    //     rect_end += 10;
+    // }
+    // gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 0, 0, 0, 80);
+    // if(gChaosConsole.line_count > 0)
+    // {
+    //     gDPFillRectangle(OVERLAY_DISP++, 0, 0, SCREEN_WIDTH, 12 + ((gChaosConsole.line_count) << 3));
+    // }
+    gDPPipeSync(OVERLAY_DISP++);
+
+    gfx = POLY_OPA_DISP;
+    // gfx = Gfx_Open(polyOpa);
+    gSPDisplayList(OVERLAY_DISP++, gfx);
+
+    GfxPrint_Init(&gfx_print);
+    GfxPrint_Open(&gfx_print, gfx);
+    gfx_print.flags |= GFXP_FLAG_BLEND | GFXP_FLAG_SHADOW;
+    
+
+    for(line_index = 0; line_index < line_count; line_index++)
+    {
+        
+        
+        GfxPrint_SetColor(&gfx_print, 255, 255, 255, 255);
+        GfxPrint_SetPos(&gfx_print, 1, y_pos++);
+        GfxPrint_Printf(&gfx_print, gChaosConsole.lines[first_line].buffer);
+        
+        if(gChaosConsole.lines[first_line].fade_time > 0)
+        {
+            gChaosConsole.lines[first_line].fade_time--;
+        }
+
+        if(gChaosConsole.lines[first_line].fade_time == 0)
+        {
+            gChaosConsole.lines[first_line].buffer[0] = '\0';
+            gChaosConsole.lines[first_line].length = 0;
+            gChaosConsole.line_count--;
+        }
+        // GfxPrint_Printf(&gfx_print, "%d", line_index);
+
+
+        // if(gChaosConsole.lines[first_line].fade_time <= 255 / LINE_ALPHA_DECREMENT)
+        // {
+        //     if(gChaosConsole.lines[first_line].alpha < LINE_ALPHA_DECREMENT)
+        //     {
+        //         gChaosConsole.lines[first_line].alpha = 0;    
+        //     }
+        //     else
+        //     {
+        //         gChaosConsole.lines[first_line].alpha -= LINE_ALPHA_DECREMENT;
+        //     }
+        // }
+
+        first_line = (first_line + 1) % CHAOS_CONSOLE_MAX_LINES;
+    }
+
+    gfx = GfxPrint_Close(&gfx_print);
+    GfxPrint_Destroy(&gfx_print);
+    gSPEndDisplayList(gfx++);
+    // Gfx_Close(polyOpa, gfx);
+    POLY_OPA_DISP = gfx;
+    CLOSE_DISPS(gfxCtx);
+}
+
+void *Chaos_ConsolePrintfCallback(void *arg, const char *fmt, size_t size)
+{
+    // char *buffer = (char *)arg;
+    struct ChaosConsoleLine *line = (struct ChaosConsoleLine *)arg;
+    u32 copy_size = size;
+    if((u32)line->length + size > CHAOS_CONSOLE_LINE_BUFFER_SIZE)
+    {
+        line->buffer[CHAOS_CONSOLE_LINE_BUFFER_SIZE - 1] = '\0';
+        copy_size = (CHAOS_CONSOLE_LINE_BUFFER_SIZE - line->length);
+    }
+
+    bcopy(fmt, line->buffer + line->length, copy_size);
+    line->length += size;
+
+    if(line->length >= CHAOS_CONSOLE_LINE_BUFFER_SIZE)
+    {
+        return NULL;
+    }
+
+    return arg;
+}
+
+void Chaos_ConsolePrintf(const char *fmt, ...)
+{
+    va_list args;
+    u32 line_index = gChaosConsole.next_free_line;
+    char *buffer = NULL;
+    va_start(args, fmt);
+
+    gChaosConsole.next_free_line = (gChaosConsole.next_free_line + 1) % CHAOS_CONSOLE_MAX_LINES;
+
+    if(gChaosConsole.line_count < CHAOS_CONSOLE_MAX_LINES)
+    {
+        gChaosConsole.line_count++;
+    }
+
+    gChaosConsole.lines[line_index].fade_time = 100;
+    // gChaosConsole.lines[line_index].alpha = 255;
+    gChaosConsole.lines[line_index].length = 0;
+    buffer = gChaosConsole.lines[line_index].buffer;
+    _Printf(Chaos_ConsolePrintfCallback, buffer, fmt, args);
 }
 
 void Chaos_AppendActionChange(PlayState *play, u32 action)
@@ -2721,7 +2884,7 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
 
     f32 disruptive_prob_scale = gChaosContext.interruption_probability_scale * gChaosContext.periodic_probability_scale;    
     Chaos_ClearEnabledCodes();
-    Chaos_EnableCode(CHAOS_CODE_YEET, 1.0f);
+    // Chaos_EnableCode(CHAOS_CODE_YEET, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_MOON_DANCE, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_ONE_HIT_KO, gChaosContext.periodic_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_TIMER_UP, 1.0f);
@@ -2739,6 +2902,7 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     Chaos_EnableCode(CHAOS_CODE_SWAP_HEAL_AND_HURT, gChaosContext.periodic_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_CHANGE_HEALTH, gChaosContext.periodic_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_SCALE_RANDOM_LIMB, 1.0f);
+    Chaos_EnableCode(CHAOS_CODE_SWAP_LIMBS, 1.0f);
     Chaos_EnableCode(CHAOS_CODE_HEART_SNAKE, gChaosContext.periodic_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_SIMON_SAYS, disruptive_prob_scale);
     Chaos_EnableCode(CHAOS_CODE_SPEEDBOOST, gChaosContext.periodic_probability_scale);
@@ -2749,8 +2913,10 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     Chaos_EnableCode(CHAOS_CODE_RANDOM_HEALTH_DOWN, gChaosContext.periodic_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_FISH, gChaosContext.periodic_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_RANDOM_AUTO_JUMP, disruptive_prob_scale);
-
+    Chaos_EnableCode(CHAOS_CODE_UNSTEADY_LEGS, disruptive_prob_scale);
+    Chaos_EnableCode(CHAOS_CODE_FAKE_CRASH, disruptive_prob_scale);
     Chaos_EnableCode(CHAOS_CODE_CHANGE_RUPEE, gChaosContext.periodic_probability_scale);
+    Chaos_EnableCode(CHAOS_CODE_BLIZZARD, disruptive_prob_scale);
 
     if(gSaveContext.save.saveInfo.playerData.isMagicAcquired)
     {
@@ -2793,6 +2959,7 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     Chaos_EnableCode(CHAOS_CODE_JUNK_ITEM, disruptive_prob_scale);
     Chaos_EnableCode(CHAOS_CODE_UNSTABLE_ROOMS, disruptive_prob_scale);
     Chaos_EnableCode(CHAOS_CODE_BAD_CONNECTION, disruptive_prob_scale);
+    
 
 
     if(!Chaos_IsCodeInActiveList(CHAOS_CODE_IMAGINARY_FRIENDS))
@@ -2877,7 +3044,7 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     {
         Chaos_EnableCode(CHAOS_CODE_PLAY_OCARINA, disruptive_prob_scale);
 
-        if (!CHECK_WEEKEVENTREG(WEEKEVENTREG_OBTAINED_FIERCE_DEITY_MASK)) 
+        if(!(gSaveContext.save.flags & G_OBTAINED_FIERCE_DEITY_MASK))
         {
             Chaos_EnableCode(CHAOS_CODE_RANDOM_FIERCE_DEITY, 1.0f);
         }
@@ -3206,8 +3373,9 @@ void Chaos_PrintSnakeGameStuff(PlayState *play)
         gDPFillRectangle(OVERLAY_DISP++, 0, y_pos - 4, SCREEN_WIDTH,  y_pos + (5 << 3));
         gDPPipeSync(OVERLAY_DISP++);
 
-        polyOpa = OVERLAY_DISP + 1;
-        gfx = Gfx_Open(polyOpa);
+        // polyOpa = OVERLAY_DISP + 1;
+        // gfx = Gfx_Open(polyOpa);
+        gfx = POLY_OPA_DISP;
         // gDPSetRenderMode(OVERLAY_DISP++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
         // gDPSetCombineMode(OVERLAY_DISP++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
 
@@ -3235,9 +3403,9 @@ void Chaos_PrintSnakeGameStuff(PlayState *play)
 
         gfx = GfxPrint_Close(&gfx_print);
         GfxPrint_Destroy(&gfx_print);
-        // gSPEndDisplayList(gfx++);
-        Gfx_Close(polyOpa, gfx);
-        OVERLAY_DISP = gfx;
+        gSPEndDisplayList(gfx++);
+        // Gfx_Close(polyOpa, gfx);
+        POLY_OPA_DISP = gfx;
         CLOSE_DISPS(gfxCtx);   
     }
 }
@@ -3264,8 +3432,9 @@ void Chaos_PrintSimonSaysStuff(PlayState *play)
         gDPFillRectangle(OVERLAY_DISP++, 0, y_pos - 4, SCREEN_WIDTH,  y_pos + (5 << 3));
         gDPPipeSync(OVERLAY_DISP++);
 
-        polyOpa = OVERLAY_DISP + 1;
-        gfx = Gfx_Open(polyOpa);    
+        // polyOpa = OVERLAY_DISP + 1;
+        // gfx = Gfx_Open(polyOpa);    
+        gfx = POLY_OPA_DISP;
 
         gSPDisplayList(OVERLAY_DISP++, gfx);
 
@@ -3284,8 +3453,8 @@ void Chaos_PrintSimonSaysStuff(PlayState *play)
         gfx = GfxPrint_Close(&gfx_print);
         GfxPrint_Destroy(&gfx_print);
         gSPEndDisplayList(gfx++);
-        Gfx_Close(polyOpa, gfx);
-        OVERLAY_DISP = gfx;
+        // Gfx_Close(polyOpa, gfx);
+        POLY_OPA_DISP = gfx;
         CLOSE_DISPS(gfxCtx);   
     }
 }
@@ -3772,16 +3941,12 @@ void Chaos_RandomizeMountainVillageClimb(struct PlayState *play)
     u32 wall_type;
     u32 scene = gSaveContext.save.entrance >> 9;
 
+
     if(scene == ENTR_SCENE_MOUNTAIN_VILLAGE_WINTER)
     {
         climbable_type = 3;
         wall_type = 2;
     }
-    // else if(scene == ENTR_SCENE_MOUNTAIN_VILLAGE_SPRING)
-    // {
-    //     climbable_type = 0;
-    //     wall_type = 14;
-    // }
     else
     {
         return;
@@ -3859,6 +4024,7 @@ void Chaos_RandomizeMountainVillageClimb(struct PlayState *play)
                 while(x_step == 0)
                 {
                     x_step = (f32)  Rand_S16Offset(-3, 6);
+                    // x_step = 0;
 
                     if(x_step > 0.0f)
                     {
@@ -3919,7 +4085,7 @@ void Chaos_RandomizeMountainVillageClimb(struct PlayState *play)
                     }
                 }
 
-                Chaos_AppendCollisionQuad(wall_type, max_x, min_x, max_y, min_y, &play->colCtx);
+                Chaos_AppendCollisionQuad(climbable_type, max_x, min_x, max_y, min_y, &play->colCtx);
 
                 x_step = fabsf(x_step);
                 segment[2].v.tc[0] *= (s32)x_step;
@@ -3949,3 +4115,156 @@ void Chaos_RandomizeMountainVillageClimb(struct PlayState *play)
 
     gSPEndDisplayList(gfx++);
 }
+
+// void Chaos_GenerateThunderbolt(struct PlayState *play)
+// {
+//     Player *player = GET_PLAYER(play);
+//     Vec3f center_pos = player->actor.world.pos;
+//     Vec3f cur_segment_pos;
+//     // u32 segment_count = Chaos_RandS16Offset(5, CHAOS_MAX_THUNDERBOLT_SEGMENTS - 5);
+//     // f32 thunderbolt_height = 1000.0f;
+//     // f32 height_offset = thunderbolt_height / (f32)segment_count;
+//     // f32 dist_from_center_scale_offset = height_offset / thunderbolt_height;
+//     f32 dist_from_center_scale = 1.0f;
+//     u32 segment_index;
+//     u32 display_list_index = 0;
+//     u32 remaining_vert_count = 0;
+//     u32 consumed_vert_count = 0;
+//     u32 vertex_offset = 0;
+//     Gfx *display_list;
+//     // Gfx *display_list = gChaosContext.env.thunderbolt_display_list;
+
+//     OPEN_DISPS(play->state.gfxCtx);
+
+//     display_list = POLY_OPA_DISP;
+//     POLY_OPA_DISP += 4;
+//     // display_list = GRAPH_ALLOC(play->state.gfxCtx, sizeof(Gfx) * 4);
+
+//     // Vtx vertices[] = {
+//     //     VTX(center_pos.x + 10, center_pos.y + 10, center_pos.z, 0, 0, 255, 255, 255, 255),
+//     //     VTX(center_pos.x - 10, center_pos.y + 10, center_pos.z - 10, 0, 0, 255, 255, 255, 255),
+//     //     VTX(center_pos.x - 10, center_pos.y + 10, center_pos.z + 10, 0, 0, 255, 255, 255, 255),
+//     // };
+
+//     gChaosContext.env.thunderbolt_verts[0].v.ob[0] = center_pos.x - 100;
+//     gChaosContext.env.thunderbolt_verts[0].v.ob[1] = center_pos.y + 100;
+//     gChaosContext.env.thunderbolt_verts[0].v.ob[2] = center_pos.z + 100;
+//     gChaosContext.env.thunderbolt_verts[0].v.cn[0] = 255;
+//     gChaosContext.env.thunderbolt_verts[0].v.cn[1] = 255;
+//     gChaosContext.env.thunderbolt_verts[0].v.cn[2] = 255;
+//     gChaosContext.env.thunderbolt_verts[0].v.cn[3] = 255;
+
+//     gChaosContext.env.thunderbolt_verts[1].v.ob[0] = center_pos.x - 100;
+//     gChaosContext.env.thunderbolt_verts[1].v.ob[1] = center_pos.y + 100;
+//     gChaosContext.env.thunderbolt_verts[1].v.ob[2] = center_pos.z - 100;
+//     gChaosContext.env.thunderbolt_verts[1].v.cn[0] = 255;
+//     gChaosContext.env.thunderbolt_verts[1].v.cn[1] = 255;
+//     gChaosContext.env.thunderbolt_verts[1].v.cn[2] = 255;
+//     gChaosContext.env.thunderbolt_verts[1].v.cn[3] = 255;
+
+//     gChaosContext.env.thunderbolt_verts[2].v.ob[0] = center_pos.x + 100;
+//     gChaosContext.env.thunderbolt_verts[2].v.ob[1] = center_pos.y + 100;
+//     gChaosContext.env.thunderbolt_verts[2].v.ob[2] = center_pos.z;
+//     gChaosContext.env.thunderbolt_verts[2].v.cn[0] = 255;
+//     gChaosContext.env.thunderbolt_verts[2].v.cn[1] = 255;
+//     gChaosContext.env.thunderbolt_verts[2].v.cn[2] = 255;
+//     gChaosContext.env.thunderbolt_verts[2].v.cn[3] = 255;
+
+//     // cur_segment_pos.y = center_pos.y + thunderbolt_height;
+
+//     // for(segment_index = 0; segment_index < segment_count; segment_index++)
+//     // {
+//     //     Vec3f center_vec;
+//     //     center_pos.y = cur_segment_pos.y;
+//     //     Math_Vec3f_DistXYZAndStoreNormDiff(&center_pos, &cur_segment_pos, 1.0f, &center_vec);
+
+//     //     cur_segment_pos.x = center_pos.x + Rand_Centered() * 10 * dist_from_center_scale;
+//     //     cur_segment_pos.y -= height_offset;
+//     //     cur_segment_pos.z = center_pos.z + Rand_Centered() * 10 * dist_from_center_scale;
+
+//     //     gThunderboltSegmentVerts[segment_index] = cur_segment_pos;
+
+//     //     dist_from_center_scale -= dist_from_center_scale_offset;
+//     // }
+
+
+//     // for(segment_index = 0; segment_index < segment_count; segment_index++)
+//     // {
+//     //     u32 tri_index = segment_index * 3;
+//     //     Vec3f *thunderbolt_vert = gThunderboltSegmentVerts + segment_index;
+
+//     //     gChaosContext.env.thunderbolt_verts[tri_index].v.ob[0] = thunderbolt_vert->x - 5;
+//     //     gChaosContext.env.thunderbolt_verts[tri_index].v.ob[1] = thunderbolt_vert->y;
+//     //     gChaosContext.env.thunderbolt_verts[tri_index].v.ob[2] = thunderbolt_vert->z + 5;
+//     //     gChaosContext.env.thunderbolt_verts[tri_index].v.cn[0] = 255;
+//     //     gChaosContext.env.thunderbolt_verts[tri_index].v.cn[1] = 255;
+//     //     gChaosContext.env.thunderbolt_verts[tri_index].v.cn[2] = 255;
+//     //     gChaosContext.env.thunderbolt_verts[tri_index].v.cn[3] = 255;
+//     //     tri_index++;
+
+//     //     gChaosContext.env.thunderbolt_verts[tri_index].v.ob[0] = thunderbolt_vert->x - 5;
+//     //     gChaosContext.env.thunderbolt_verts[tri_index].v.ob[1] = thunderbolt_vert->y;
+//     //     gChaosContext.env.thunderbolt_verts[tri_index].v.ob[2] = thunderbolt_vert->z - 5;
+//     //     gChaosContext.env.thunderbolt_verts[tri_index].v.cn[0] = 255;
+//     //     gChaosContext.env.thunderbolt_verts[tri_index].v.cn[1] = 255;
+//     //     gChaosContext.env.thunderbolt_verts[tri_index].v.cn[2] = 255;
+//     //     gChaosContext.env.thunderbolt_verts[tri_index].v.cn[3] = 255;
+//     //     tri_index++;
+
+//     //     gChaosContext.env.thunderbolt_verts[tri_index].v.ob[0] = thunderbolt_vert->x + 5;
+//     //     gChaosContext.env.thunderbolt_verts[tri_index].v.ob[1] = thunderbolt_vert->y;
+//     //     gChaosContext.env.thunderbolt_verts[tri_index].v.ob[2] = thunderbolt_vert->z;
+//     //     gChaosContext.env.thunderbolt_verts[tri_index].v.cn[0] = 255;
+//     //     gChaosContext.env.thunderbolt_verts[tri_index].v.cn[1] = 255;
+//     //     gChaosContext.env.thunderbolt_verts[tri_index].v.cn[2] = 255;
+//     //     gChaosContext.env.thunderbolt_verts[tri_index].v.cn[3] = 255;
+//     //     tri_index++;
+//     // }
+
+//     // remaining_vert_count = segment_count * 3;
+//     // consumed_vert_count = 0xffffffff;
+
+//     // for(segment_index = 0; segment_index < segment_count - 1; segment_index++)
+//     // {
+//     //     if(consumed_vert_count >= 15)
+//     //     {
+//     //         u32 copy_size = 15;
+
+//     //         if(copy_size > remaining_vert_count)
+//     //         {
+//     //             copy_size = remaining_vert_count;
+//     //         }
+
+//     //         gSPVertex(display_list++, gChaosContext.env.thunderbolt_verts + segment_index * 3, copy_size, 0);    
+//     //         consumed_vert_count = 0;
+//     //         remaining_vert_count -= copy_size;
+//     //     }
+
+//     //     gSP2Triangles(display_list++, consumed_vert_count, consumed_vert_count + 1, consumed_vert_count + 3, 0, 
+//     //         consumed_vert_count + 1, consumed_vert_count + 3, consumed_vert_count + 4, 0
+//     //     );
+
+//     //     gSP2Triangles(display_list++, consumed_vert_count + 1, consumed_vert_count + 2, consumed_vert_count + 4, 0, 
+//     //         consumed_vert_count + 2, consumed_vert_count + 4, consumed_vert_count + 5, 0
+//     //     );
+
+//     //     gSP2Triangles(display_list++, consumed_vert_count + 2, consumed_vert_count, consumed_vert_count + 5, 0, 
+//     //         consumed_vert_count, consumed_vert_count + 5, consumed_vert_count + 3, 0
+//     //     );
+
+//     //     consumed_vert_count += 3;
+//     // }
+
+//     // gSPVertex(display_list++, gChaosContext.env.thunderbolt_verts, 3, 0);
+//     // gSP1Triangle(display_list++, 0, 1, 2, 0);
+//     // gSPEndDisplayList(display_list++);
+//     gSPDisplayList(POLY_OPA_DISP++, display_list);
+//     gSPSegment(display_list++, 0x06, gChaosContext.env.thunderbolt_verts);
+//     gSPVertex(display_list++, 0x06000000, 3, 0);
+//     gSP1Triangle(display_list++, 0, 1, 2, 0);
+//     gSPEndDisplayList(display_list++);
+
+//     gChaosContext.env.draw_thunderbolt = true; 
+
+//     CLOSE_DISPS(play->state.gfxCtx);
+// }

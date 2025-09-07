@@ -183,6 +183,7 @@
 #define EXC_VCEI    EXC_CODE(14)    // Virt. Coherency on Inst. fetch
 #define EXC_FPE     EXC_CODE(15)    // Floating Point Exception
 #define EXC_WATCH   EXC_CODE(23)    // Watchpoint reference
+#define EXC_MASOCHIST EXC_CODE(24)
 #define EXC_VCED    EXC_CODE(31)    // Virt. Coherency on data read
 
 // C0_PRID Defines

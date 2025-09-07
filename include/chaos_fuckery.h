@@ -26,6 +26,7 @@
 #include "overlays/actors/ovl_En_Door/z_en_door.h"
 #include "overlays/actors/ovl_En_Door_Etc/z_en_door_etc.h"
 #include "overlays/actors/ovl_En_Arwing/z_en_arwing.h"
+#include "z64eff_goron_blizzard.h"
 
 #define CHAOS_MAJOR_VERSION 0
 #define CHAOS_MINOR_VERSION 5
@@ -171,7 +172,7 @@ enum CHAOS_CODES
     CHAOS_CODE_SIMON_SAYS,
     /* player randomly auto-jumps */
     CHAOS_CODE_RANDOM_AUTO_JUMP,
-    /* player faceplants instead of roll-landing (unfinished) */
+    /* player faceplants when landing */
     CHAOS_CODE_UNSTEADY_LEGS,
     /* intentionally triggers a crash and resumes the game thread a few seconds later 
 
@@ -179,16 +180,47 @@ enum CHAOS_CODES
         be mispelled somewhere. 
     */
     CHAOS_CODE_FAKE_CRASH,
+    /* gets hit by lighting strike (sets player on fire) (unfinished) */
+    CHAOS_CODE_LUCKY,
     /* spawns takkuri */
     // CHAOS_CODE_ASSHOLE_BIRD,
-    /* a grotto entrance appears out of nowhere under link's feet */
+    /* a grotto entrance leading to a random entrance appears out of nowhere under link's feet */
     // CHAOS_CODE_RANDOM_GROTTO,  
     /* link stops, throws his hands to the sky and flops forwards/backwards */
-    // CHAOS_CODE_TRUST_EXERCISE,
-    /* gets hit by lighting strike (sets player on fire) */
-    // CHAOS_CODE_LUCKY,
+    // CHAOS_CODE_FLOP,
     /* link's hands shake */
     // CHAOS_CODE_TOO_MUCH_CAFFEINE,
+    /* makes link's torso go limp */
+    // CHAOS_CODE_GONE_FLACCID,
+    /* moving around/bonking on stuff makes the player slowly lose money  */
+    // CHAOS_CODE_TORN_WALLET,
+    /* makes deku bubbles ultra powerful */
+    // CHAOS_CODE_SLAP_BUBBLE,
+    /* makes zora barrier much larger */
+    // CHAOS_CODE_WIDE_BARRIER,
+    /* randomly swaps two of link's limbs */
+    CHAOS_CODE_SWAP_LIMBS,
+    /* spawns snow head wind effect */
+    CHAOS_CODE_BLIZZARD,
+
+    // CHAOS_CODE_SCREEN_SLAYER,
+
+    /* unequip current item
+        if it's a sword, sheat it.
+        if it's bow/hookshot/anything holdable, put it away
+        if it's a mask, remove it
+     */
+    // CHAOS_CODE_UNEQUIP_ITEM,
+
+    /* drop/consume contents of a random bottle in the inventory */
+    // CHAOS_CODE_DUMP_RANDOM_BOTTLE,
+
+    /* intermitently scale the world along random directions */
+    // CHAOS_CODE_INTERMITENT_WOBBLY_WORLD,
+
+    /* everything becomes grabable */
+    // CHAOS_CODE_CLEPTOMANIAC,
+
 
     /* tatl randomly pipes up saying things like
         "The pit",
@@ -219,6 +251,36 @@ enum CHAOS_CODES
         "Hey, are you busy right now?"
 
         "AAAAAAAHHHHHHHH!!!!",
+
+        alternatively, she could give painfully obvious hints, like:
+
+        "Hey, running out of health kills you!"
+
+        or, when respawning after dying:
+
+        "Hey, I think you died!"
+
+        or, when fighting a boss:
+
+        "Suggestion: try hitting the boss to deal damage."
+
+        or, randomly, shows a two option text box:
+
+        "Hey, are you busy now?"
+
+        Answering yes:
+        "Oh, okay. I'll call you later, then."
+        "Ah, my bad. I'll call you later."
+        "Aight! You busy now!"
+        "Alrighty!"
+
+        Answering no:
+        "Uh... actually... I forgot what I was gonna ask. It's probably not important then, right?"
+        "Ah, nevermind. Figured it out myself. Hehe. Thank you."
+        "Nevermind! Managed to sort it out. Thanks."
+        "Hmm, actually... nevermind. It was a bad idea to begin with. Carry on."
+        "Ah, it's nothing, actually. Something silly. Nevermind, hehe."
+
         
      */
     // CHAOS_CODE_TATL, 
@@ -302,7 +364,6 @@ enum CHAOS_CODES
     // CHAOS_CODE_INFINITE_HOVER_BOOTS,
     // CHAOS_CODE_MAGIC_ARMOR,
 
-    // CHAOS_CODE_PUT_AWAY_ITEMS,
     // CHAOS_CODE_VOID_OUT,
     // CHAOS_CODE_CLIMB_EVERYTHING,
     // CHAOS_CODE_SUN_SONG,
@@ -317,8 +378,7 @@ enum CHAOS_CODES
     // CHAOS_CODE_PARTICIPATION_AWARD,
     /* drop bombs around player */
     // CHAOS_CODE_AIR_STRIKE,
-    /* spawns snow head wind effect */
-    // CHAOS_CODE_BLIZZARD,
+    
     /* spawns the 4 ghost sisters */
     // CHAOS_CODE_HEY_SOUL_SISTERS,
     /* spawns hostile redeads around player */
@@ -661,7 +721,7 @@ enum CHAOS_ROLLBACK_STATES
 #define MAX_SPAWNED_ACTORS      48
 #define ACTOR_DESPAWN_TIMER     10
 #define CHAOS_MAX_STALCHILDS    5
-
+#define CHAOS_MAX_THUNDERBOLT_SEGMENTS 16
 #define CHAOS_FAST_TIME_OFFSET 48
 
 #define CHAOS_MOUNTAIN_VILLAGE_LADDER_HALF_WIDTH     60
@@ -705,6 +765,19 @@ enum CHAOS_SIMON_SAYS_KEYS
     CHAOS_SIMON_SAYS_KEY_DDOWN,
     CHAOS_SIMON_SAYS_KEY_DLEFT,
     CHAOS_SIMON_SAYS_KEY_LAST
+};
+
+enum CHAOS_SCREEN_SLAYER_STATES
+{
+    CHAOS_SCREEN_SLAYER_STATE_IDLE = 0,
+    CHAOS_SCREEN_SLAYER_STATE_WAIT_FOR_TRANSITION,
+    CHAOS_SCREEN_SLAYER_STATE_READY,
+};
+
+enum CHAOS_BLIZZARD_STATES
+{
+    CHAOS_BLIZZARD_STATE_IDLE,
+    CHAOS_BLIZZARD_STATE_BLIZZARDING,
 };
 
 struct SimonSaysConfig
@@ -791,6 +864,7 @@ struct ChaosDoorActorSnapshot
 
 #define MAX_ACTIVE_CODES        8
 #define MAX_AIR_SUPPORT_ARWINGS 3
+#define HITPOINT_ALARM_DELAY    6
 
 typedef struct ChaosContext 
 {
@@ -822,6 +896,8 @@ typedef struct ChaosContext
     u8                      loaded_object_id;
     u8                      chaos_keep_slot;
     u8                      fake_crash;
+    u8                      beat_the_game_crash;
+    u8                      screen_slayer;
     u8 *                    fake_crash_pointer;
 
     void                  (*EnRr_SpitPlayer)(EnRr* this, PlayState* play);
@@ -896,6 +972,7 @@ typedef struct ChaosContext
         u8                              random_knockback_timer;
         u8                              magic_gauge_sfx_timer;
         u8                              trap_flap_timer;
+        u8                              limb_map[PLAYER_LIMB_MAX];
         f32                             limb_scales[PLAYER_LIMB_MAX];
         f32                             temp_limb_scale;
         u8                              random_scaling_mode;
@@ -927,6 +1004,8 @@ typedef struct ChaosContext
         // u8                              simon_says_death_queued;
         u8                              simon_says_timer;
         u8                              simon_says_state;
+
+        u8                              hitpoint_alarm_timer;
     } link;
 
     struct
@@ -1011,6 +1090,15 @@ typedef struct ChaosContext
         u8                      stalchild_spawn_timer;
         u8                      stalchild_count;
         u8                      spawn_stalchilds;
+        u8                      draw_thunderbolt;
+        EffectGoronBlizzard     blizzard;
+        u16                     blizzard_timer;
+        u16                     blizzard_effect_angle;
+        Actor *                 wind_actor;
+        u8                      blizzard_state;
+
+        // Vtx                     thunderbolt_verts[CHAOS_MAX_THUNDERBOLT_SEGMENTS * 3 + 1];
+        // Gfx                     thunderbolt_display_list[CHAOS_MAX_THUNDERBOLT_SEGMENTS * 3 + CHAOS_MAX_THUNDERBOLT_SEGMENTS + 2];
     } env;
 
     struct
@@ -1036,6 +1124,23 @@ struct ChaosConfigSetup
 #define CHAOS_ADD_RESULT_ALREADY_ACTIVE 1
 #define CHAOS_ADD_RESULT_NO_SLOTS       2
 
+#define CHAOS_CONSOLE_MAX_LINES 22
+#define CHAOS_CONSOLE_LINE_BUFFER_SIZE 126
+struct ChaosConsoleLine
+{
+    char buffer[CHAOS_CONSOLE_LINE_BUFFER_SIZE];
+    u8   fade_time;
+    u8   length;
+    // u8   alpha;
+};
+
+struct ChaosConsole
+{
+    struct ChaosConsoleLine lines[CHAOS_CONSOLE_MAX_LINES];
+    u8                      line_count;
+    u8                      next_free_line;
+};
+
 /* forward declaration */
 struct PlayState;
 
@@ -1054,6 +1159,10 @@ void Chaos_Init(void);
 void Chaos_UpdateChaos(PlayState *playstate);
 
 void Chaos_PrintCodes(PlayState *playstate, Input *input);
+
+void Chaos_PrintConsoleLines(PlayState *play);
+
+void Chaos_ConsolePrintf(const char *fmt, ...);
 
 void Chaos_AppendActionChange(PlayState *play, u32 action);
 
@@ -1176,5 +1285,7 @@ void Chaos_SetV055ConfigDefaults(void);
 void Chaos_SetConfigDefaults(void);
 
 void Chaos_RandomizeMountainVillageClimb(struct PlayState *play);
+
+void Chaos_GenerateThunderbolt(struct PlayState *play);
 
 #endif

@@ -62,6 +62,14 @@ extern struct ChaosContext  gChaosContext;
 extern const char *         gChaosCodeNames[];
 extern struct GameState *   gCurrentGameState;
 
+// extern struct func_symbol_t gFuncSymbols[];
+// u32                         gFuncSymbolCount;
+
+struct func_symbol_t test_symbol = {
+    (uintptr_t)&Player_ActionToModelGroup,
+    "Player_ActionToModelGroup"
+}; 
+
 #define LAST_LEFT_SUBPAGE  1
 #define LAST_RIGHT_SUBPAGE 2
 
@@ -85,6 +93,7 @@ const char* sCpuExceptions[] = {
     "Floating point exception",
     "Watchpoint exception",
     "Virtual coherency on data",
+    "Player is a masochist"
 };
 
 const char* sFpuExceptions[] = {
@@ -595,6 +604,10 @@ const char *sCp0Strs[] = {
     /* [FAULT_INST_CP0_RESERVED57] = */     "RESERVED57"
 };
 
+OSMesgQueue s_timer_queue;
+OSMesg      s_timer_message;
+OSTimer     s_timer;
+
 void Fault_SleepImpl(u32 msec) {
     OSTime value = (msec * OS_CPU_COUNTER) / 1000ULL;
 
@@ -908,6 +921,14 @@ u32 Fault_WaitForInput2(void)
     {
         Fault_Sleep(1000 / 60);
         Fault_UpdatePadImpl();
+
+        if(gChaosContext.fake_crash || gChaosContext.beat_the_game_crash)
+        {
+            if(osPeekMesg(&s_timer_queue, NULL, OS_MESG_NOBLOCK) == 0)
+            {
+                return 0xffffffff;
+            }
+        }
     }
     while(input->press.button == 0);
 
@@ -1001,17 +1022,27 @@ void Fault_LogFPCSR(u32 value) {
 void Fault_PrintThreadContextInfo(OSThread* thread)
 {
     __OSThreadContext* threadCtx;
-    s16 causeStrIndex = _SHIFTR((u32)thread->context.cause, 2, 5);
+    s16 exception_code = _SHIFTR((u32)thread->context.cause, 2, 5);
+    s16 causeStrIndex = exception_code;
     u32 index;
 
-    if (causeStrIndex == EXC(WATCH)) { // Watchpoint
+    if (exception_code == EXC(WATCH)) 
+    {
+        // Watchpoint
         causeStrIndex = 16;
     }
-    if (causeStrIndex == EXC(VCED)) { // Virtual coherency on data
+    else if (exception_code == EXC(VCED)) 
+    { 
+        // Virtual coherency on data
         causeStrIndex = 17;
+    } 
+    else if(exception_code == EXC(MASOCHIST))
+    {
+        /* Player is a masochist */
+        causeStrIndex = 18;
     }
 
-    FaultDrawer_FillScreen();
+    // FaultDrawer_FillScreen();
     FaultDrawer_SetForeColor(GPACK_RGBA5551(255, 255, 255, 1));
     FaultDrawer_SetBackColor(GPACK_RGBA5551(0, 0, 0, 0));
     FaultDrawer_SetCharPad(-2, 4);
@@ -1035,22 +1066,32 @@ void Fault_PrintThreadContextInfo(OSThread* thread)
     FaultDrawer_Printf("T9:%08xH GP:%08xH SP:%08xH\n", (u32)threadCtx->t9, (u32)threadCtx->gp, (u32)threadCtx->sp);
     FaultDrawer_Printf("S8:%08xH RA:%08xH LO:%08xH\n\n", (u32)threadCtx->s8, (u32)threadCtx->ra, (u32)threadCtx->lo);
 
-    FaultDrawer_Printf("\nActive codes:");
-    for(index = 0; index < gChaosContext.active_code_count; index++)
+    if(exception_code == EXC(MASOCHIST))
     {
-        struct ChaosCode *code = gChaosContext.active_codes + index;
-        if(code->code != CHAOS_CODE_FAKE_CRASH)
+        FaultDrawer_Printf("Conglaturashions!\n");
+        FaultDrawer_Printf("You're winner!\n");
+        FaultDrawer_Printf("You beat this pile of vomit!\n");
+    }
+    else
+    {
+        FaultDrawer_Printf("\nActive codes:");
+        for(index = 0; index < gChaosContext.active_code_count; index++)
         {
-            FaultDrawer_Printf("\n%s", gChaosCodeNames[code->code]);
+            struct ChaosCode *code = gChaosContext.active_codes + index;
+            if(code->code != CHAOS_CODE_FAKE_CRASH)
+            {
+                FaultDrawer_Printf("\n%s", gChaosCodeNames[code->code]);
+            }
+        }
+    
+        if(Chaos_GetConfigFlag(CHAOS_CONFIG_SAVE_AT_GAME_CRASH))
+        {
+            FaultDrawer_SetForeColor(GPACK_RGBA5551(255, 255, 0, 1));
+            FaultDrawer_SetCursor(22, 200);
+            FaultDrawer_Printf("Your progress has been saved.\nYou can safely reset the console.");
         }
     }
 
-    if(Chaos_GetConfigFlag(CHAOS_CONFIG_SAVE_AT_GAME_CRASH))
-    {
-        FaultDrawer_SetForeColor(GPACK_RGBA5551(255, 255, 0, 1));
-        FaultDrawer_SetCursor(22, 200);
-        FaultDrawer_Printf("Your progress has been saved.\nYou can safely reset the console.");
-    }
 }
 
 u32 Fault_PrintThreadContext(OSThread* thread) 
@@ -1133,7 +1174,7 @@ OSThread* Fault_FindFaultedThread(void) {
     // -1 indicates the end of the thread queue
     while (iter->priority != -1) {
         if ((iter->priority > OS_PRIORITY_IDLE) && (iter->priority < OS_PRIORITY_APPMAX) &&
-            (iter->flags & (OS_FLAG_CPU_BREAK | OS_FLAG_FAULT))) {
+            (iter->flags & (OS_FLAG_CPU_BREAK | OS_FLAG_FAULT | OS_FLAG_SW1))) {
             return iter;
         }
         iter = iter->tlnext;
@@ -1141,35 +1182,36 @@ OSThread* Fault_FindFaultedThread(void) {
 
     return NULL;
 }
-void Fault_Wait5Seconds(void) {
-    s32 pad;
-    OSTime start = osGetTime();
 
-    do {
-        Fault_Sleep(1000 / 60);
-    } while ((osGetTime() - start) <= OS_USEC_TO_CYCLES(5 * 1000 * 1000));
+// void Fault_Wait5Seconds(void) {
+//     s32 pad;
+//     OSTime start = osGetTime();
 
-    sFaultInstance->autoScroll = true;
-}
+//     do {
+//         Fault_Sleep(1000 / 60);
+//     } while ((osGetTime() - start) <= OS_USEC_TO_CYCLES(5 * 1000 * 1000));
+
+//     sFaultInstance->autoScroll = true;
+// }
 
 /**
  * Waits for the following button combination to be entered before returning:
  *
  * (DPad-Left & L & R & C-Right) & Start
  */
-void Fault_WaitForButtonCombo(void) {
-    Input* input = &sFaultInstance->inputs[0];
+// void Fault_WaitForButtonCombo(void) {
+//     Input* input = &sFaultInstance->inputs[0];
 
-    FaultDrawer_SetForeColor(GPACK_RGBA5551(255, 255, 255, 1));
-    FaultDrawer_SetBackColor(GPACK_RGBA5551(0, 0, 0, 1));
+//     FaultDrawer_SetForeColor(GPACK_RGBA5551(255, 255, 255, 1));
+//     FaultDrawer_SetBackColor(GPACK_RGBA5551(0, 0, 0, 1));
 
-    do {
-        do {
-            Fault_Sleep(1000 / 60);
-            Fault_UpdatePadImpl();
-        } while (!CHECK_BTN_ALL(input->press.button, BTN_RESET));
-    } while (!CHECK_BTN_ALL(input->cur.button, BTN_DLEFT | BTN_L | BTN_R | BTN_CRIGHT));
-}
+//     do {
+//         do {
+//             Fault_Sleep(1000 / 60);
+//             Fault_UpdatePadImpl();
+//         } while (!CHECK_BTN_ALL(input->press.button, BTN_RESET));
+//     } while (!CHECK_BTN_ALL(input->cur.button, BTN_DLEFT | BTN_L | BTN_R | BTN_CRIGHT));
+// }
 
 void Fault_DrawMemDumpContents(const char* title, uintptr_t addr, u32 param_3) {
     uintptr_t alignedAddr = addr;
@@ -1193,9 +1235,8 @@ void Fault_DrawMemDumpContents(const char* title, uintptr_t addr, u32 param_3) {
     alignedAddr &= ~3;
     writeAddr = (u32*)alignedAddr;
 
-    Fault_FillScreenBlack();
+    // Fault_FillScreenBlack();
     FaultDrawer_SetCharPad(-2, 0);
-
     FaultDrawer_DrawText(36, 18, "%s %08x", title ? title : "PrintDump", alignedAddr);
 
     if (alignedAddr >= K0BASE && alignedAddr < K2BASE) {
@@ -1226,11 +1267,11 @@ void Fault_DrawMemDumpContents(const char* title, uintptr_t addr, u32 param_3) {
  * @param cLeftJump Unused parameter, pressing C-Left jumps to this address
  * @param cRightJump Unused parameter, pressing C-Right jumps to this address
  */
-bool Fault_DrawMemDump(OSThread *thread, u32 button) {
+u32 Fault_DrawMemDump(OSThread *thread, struct mem_dump_context_t *mem_dump_context, u32 button) {
     // s32 scrollCountdown;
     s32 off;
     Input* input = &sFaultInstance->inputs[0];
-    uintptr_t addr = thread->context.pc;
+    uintptr_t addr = thread->context.pc + mem_dump_context->pc_offset;
 
     // if(just_changed)
     // {
@@ -1239,7 +1280,7 @@ bool Fault_DrawMemDump(OSThread *thread, u32 button) {
 
     // addr = sFaultInstance->current_memdump_pc;
 
-    do 
+    // do 
     {
         // scrollCountdown = 0;
         // Ensure address is within the bounds of RDRAM
@@ -1252,8 +1293,7 @@ bool Fault_DrawMemDump(OSThread *thread, u32 button) {
         }
 
             // Align down the address to 0x10 bytes and draw the page contents
-        addr &= ~0xF;
-        Fault_DrawMemDumpContents("Dump", addr, 0);
+        
 
             // scrollCountdown = 600;
             // while (sFaultInstance->autoScroll) {
@@ -1278,38 +1318,56 @@ bool Fault_DrawMemDump(OSThread *thread, u32 button) {
             //     Fault_UpdatePadImpl();
             // } while (input->press.button == 0);
 
-        button = Fault_WaitForInput2();
+        // button = Fault_WaitForInput2();
 
         // Move to next page
-        if (CHECK_BTN_ANY(button, BTN_L | BTN_R)) 
-        {
-            return button;
-        }
+        // if (CHECK_BTN_ANY(button, BTN_L | BTN_R)) 
+        // {
+        //     return button;
+        // }
 
         // Memory dump controls
 
         off = 0x10;
         if (CHECK_BTN_ALL(button, BTN_A)) {
             off *= 0x10;
+            button = 0;
         }
         if (CHECK_BTN_ALL(button, BTN_B)) {
             off *= 0x100;
+            button = 0;
         }
         if (CHECK_BTN_ALL(button, BTN_DUP)) {
             addr -= off;
+            mem_dump_context->pc_offset -= off;
+            button = 0;
         }
         if (CHECK_BTN_ALL(button, BTN_DDOWN)) {
             addr += off;
+            mem_dump_context->pc_offset += off;
+            button = 0;
         }
         if (CHECK_BTN_ALL(button, BTN_CUP)) {
             addr = thread->context.pc;
+            mem_dump_context->pc_offset = 0;
+            button = 0;
         }
         if (CHECK_BTN_ALL(button, BTN_CDOWN)) {
             addr = thread->context.sp;
+            mem_dump_context->pc_offset = 0;
+            button = 0;
         }
 
+        addr &= ~0xF;
+        Fault_DrawMemDumpContents("Dump", addr, 0);
+
+        // addr += mem_dump_context->pc_offset;
+
     }
-    while(true);
+
+    return Fault_WaitForInput2();
+    // return 1;
+    // while(true);
     // } while (!CHECK_BTN_ALL(input->press.button, BTN_L));
 
     // Resume auto-scroll and move to next page
@@ -1514,9 +1572,9 @@ void Fault_InstructionStr(char *instruction_str, const char *opcode_str, u32 ins
     }
 }
 
-u32 Fault_Disasm(OSThread *thread, u32 button)
+u32 Fault_Disasm(OSThread *thread, struct disasm_context_t *context, u32 button)
 {
-    u32 *pc = (u32 *)thread->context.pc;
+    u32 *pc = NULL;
     // u32 *pc = NULL;
     // u32 button;
     u32 multiplier = 1;
@@ -1529,10 +1587,35 @@ u32 Fault_Disasm(OSThread *thread, u32 button)
     // }
 
     // pc = (u32 *)sFaultInstance->current_disasm_pc;
-    do
+    // do
     {    
+        multiplier = 1;
 
-        Fault_FillScreenBlack();
+        if(CHECK_BTN_ALL(button, BTN_A | BTN_B))
+        {
+            multiplier = 1024;
+        }
+        else if(CHECK_BTN_ALL(button, BTN_A))
+        {
+            multiplier = 4;
+        }
+        else if(CHECK_BTN_ALL(button, BTN_B))
+        {
+            multiplier = 64;
+        }
+        
+        if(CHECK_BTN_ANY(button, BTN_DUP))
+        {
+            context->pc_offset -= multiplier;
+        }
+        else if(CHECK_BTN_ANY(button, BTN_DDOWN))
+        {
+            context->pc_offset += multiplier;
+        }
+
+        pc = (u32 *)thread->context.pc + context->pc_offset;
+
+        // Fault_FillScreenBlack();
         FaultDrawer_SetCharPad(-1, 0);
         FaultDrawer_Printf("Disasm: %08x\n", pc);
 
@@ -1628,40 +1711,16 @@ u32 Fault_Disasm(OSThread *thread, u32 button)
             // FaultDrawer_Printf("%08x | %08x |%s%s\n", pc + line, instruction, ((u32)(pc + line) == thread->context.pc) ? "*" : " ", instruction_str);
         }
 
-        button = Fault_WaitForInput2();
+        // button = Fault_WaitForInput2();
 
-        if(CHECK_BTN_ANY(button, BTN_L | BTN_R))
-        {
-            return button;
-        }
-
-        multiplier = 1;
-
-
-        if(CHECK_BTN_ALL(button, BTN_A | BTN_B))
-        {
-            multiplier = 1024;
-        }
-        else if(CHECK_BTN_ALL(button, BTN_A))
-        {
-            multiplier = 4;
-        }
-        else if(CHECK_BTN_ALL(button, BTN_B))
-        {
-            multiplier = 64;
-        }
-        
-
-        if(CHECK_BTN_ANY(button, BTN_DUP))
-        {
-            pc -= multiplier;
-        }
-        else if(CHECK_BTN_ANY(button, BTN_DDOWN))
-        {
-            pc += multiplier;
-        }
+        // if(CHECK_BTN_ANY(button, BTN_L | BTN_R))
+        // {
+        //     return button;
+        // }
     }
-    while(true);
+    // while(true);
+
+    return Fault_WaitForInput2();
 }
 
 /**
@@ -2018,7 +2077,7 @@ u32 Fault_DrawStackTrace2(OSThread* thread, u32 flags) {
     uintptr_t addr;
     struct FaultStackTraceInfo trace_info;
 
-    Fault_FillScreenBlack();
+    // Fault_FillScreenBlack();
     FaultDrawer_DrawText(120, 16, "STACK TRACE");
     FaultDrawer_DrawText(36, 24, "  FUNC  :  PC");
     FaultDrawer_SetCharPad(-1, 0);
@@ -2132,10 +2191,10 @@ void Fault_DisplayFrameBuffer(void) {
  * Runs all registered fault clients. Each fault client displays a page
  * on the crash screen.
  */
-u32 Fault_ProcessClients(u32 button) {
+u32 Fault_ProcessClients(struct process_clients_context_t *context, u32 button) {
     // FaultClient* client = sFaultInstance->clients;
     FaultClient *client = NULL;
-    s32 client_index = 0;
+    // s32 client_index = 0;
     u32 client_count = 0;
 
     client = sFaultInstance->first_client;
@@ -2144,81 +2203,61 @@ u32 Fault_ProcessClients(u32 button) {
         client_count++;
         client = client->next;
     }
-    // u32 last_page_bitmask = 0;
 
-    // if(just_changed)
-    // {
-    //     if(button == BTN_L)
-    //     {
-    //         sFaultInstance->current_displayed_client = sFaultInstance->last_client;
-    //     }
-    //     else if(button == BTN_R)
-    //     {
-    //         sFaultInstance->current_displayed_client = sFaultInstance->first_client;
-    //     }
-    // }
-    // else
-    // {
-    //     if(button == BTN_L)
-    //     {
-    //         sFaultInstance->current_displayed_client = sFaultInstance->current_displayed_client->prev;
-    //         sFaultInstance->current_displayed_client_index--;
-    //         // idx--;
-    //     }
-    //     else if(button == BTN_R)
-    //     {
-    //         sFaultInstance->current_displayed_client = sFaultInstance->current_displayed_client->next;
-    //         sFaultInstance->current_displayed_client_index++;
-    //         // idx++;
-    //     }
-
-    // }
-
-    if(button == BTN_L)
+    if(CHECK_BTN_ALL(button, BTN_L))
     {
-        client = sFaultInstance->last_client;
-        client_index = client_count - 1;
-    }
-    else if(button == BTN_R)
-    {
-        client = sFaultInstance->first_client;
-        client_index = 0;
-    }
-
-    // while (client != NULL) {
-
-    while(true)
-    {
-
-        if(client != NULL)
+        if(context->current_client == NULL)
         {
-            if (client->callback != NULL) 
-            {
-                FaultDrawer_FillScreen();
-                FaultDrawer_SetCharPad(-2, 0);
-                FaultDrawer_Printf(FAULT_COLOR(DARK_GRAY) "CallBack (%d) %08x %08x %08x\n" FAULT_COLOR(WHITE), client_index, client, client->arg0, client->arg1);
-
-                FaultDrawer_SetCharPad(0, 0);
-                client->callback(client->arg0, client->arg1);
-            }
-
-            button = Fault_WaitForInput2();
-
-            if(button == BTN_L)
-            {
-                client = client->prev;
-                client_index--;
-            }
-            else if(button == BTN_R)
-            {
-                client = client->next;
-                client_index++;
-            }
+            context->current_client = sFaultInstance->last_client;
+            context->current_client_index = client_count - 1;
         }
         else
         {
-            break;
+            context->current_client = context->current_client->prev;
+            context->current_client_index--;
         }
+    }
+    else if(CHECK_BTN_ALL(button, BTN_R))
+    {
+        if(context->current_client == NULL)
+        {
+            context->current_client = sFaultInstance->first_client;
+            context->current_client_index = 0;
+        }
+        else
+        {
+            context->current_client = context->current_client->next;
+            context->current_client_index++;
+        }
+    }
+
+    if(context->current_client != NULL)
+    {
+        button = 0;
+
+        if (context->current_client->callback != NULL) 
+        {
+            // FaultDrawer_FillScreen();
+            FaultDrawer_SetCharPad(-2, 0);
+            FaultDrawer_Printf(FAULT_COLOR(DARK_GRAY) "CallBack (%d) %08x %08x %08x\n" FAULT_COLOR(WHITE), context->current_client_index,
+                context->current_client, context->current_client->arg0, context->current_client->arg1);
+
+            FaultDrawer_SetCharPad(0, 0);
+            context->current_client->callback(context->current_client->arg0, context->current_client->arg1);
+        }
+
+        // button = Fault_WaitForInput2();
+
+        // if(button == BTN_L)
+        // {
+        //     client = client->prev;
+        //     client_index--;
+        // }
+        // else if(button == BTN_R)
+        // {
+        //     client = client->next;
+        //     client_index++;
+        // }
     }
 
     return button;
@@ -2277,14 +2316,24 @@ void Fault_ThreadEntry(void* arg) {
     OSMesg msg;
     u32 pad;
     OSThread* faultedThread;
+    struct disasm_context_t disasm_context;
+    struct mem_dump_context_t mem_dump_context;
+    struct process_clients_context_t process_clients_context;
+    // OSThread faulted_thread_context;
     Input* input;
     u32 page_index;
     u32 next_page_index;
     u32 prev_page_index;
     u32 button;
+    u32 next_button;
+    u32 can_advance_page = 0;
     u32 last_page_bitmask = 0;
     bool just_changed_page = false;
     bool skip_input_pooling = true;
+    // OSMesgQueue timer_queue;
+    // OSMesg timer_message;
+    // OSTimer timer;
+    u32 return_address;
 
     // Direct OS event messages to the fault event queue
     osSetEventMesg(OS_EVENT_CPU_BREAK, &sFaultInstance->queue, FAULT_MSG_CPU_BREAK);
@@ -2309,15 +2358,10 @@ void Fault_ThreadEntry(void* arg) {
                 faultedThread = NULL;
                 continue;
             } 
-            else if (msg == FAULT_MSG_SW1)
-            {
-                FaultDrawer_FillScreen();
-                FaultDrawer_SetCharPad(-2, 4);
-                FaultDrawer_SetCursor(22, 20);
-                FaultDrawer_Printf("SHIT'S FUCKED ");
-                Fault_DisplayFrameBuffer();
-                while(true){}
-            }
+            // else if (msg == FAULT_MSG_SW1)
+            // {
+            //     sFaultInstance->msgId = (u32)FAULT_MSG_SW1;
+            // }
             else {
                 sFaultInstance->msgId = (u32)FAULT_MSG_UNK;
                 // "Fault manager: received an unknown message"
@@ -2333,6 +2377,10 @@ void Fault_ThreadEntry(void* arg) {
             }
         } while (faultedThread == NULL);
 
+        bzero(&disasm_context, sizeof(disasm_context));
+        bzero(&mem_dump_context, sizeof(mem_dump_context));
+        bzero(&process_clients_context, sizeof(process_clients_context));
+
 
         // if(msg == FAULT_MSG_FAULT)
         {
@@ -2347,96 +2395,77 @@ void Fault_ThreadEntry(void* arg) {
             // Show fault framebuffer
             Fault_DisplayFrameBuffer();
 
-            if(gCurrentGameState != NULL && gCurrentGameState->main == Play_Main && 
-                Chaos_GetConfigFlag(CHAOS_CONFIG_SAVE_AT_GAME_CRASH) &&
-                !gChaosContext.fake_crash)
+            if(gCurrentGameState != NULL && gCurrentGameState->main == Play_Main)
             {
-                Sram_SaveAtGameCrashTime((struct PlayState *)gCurrentGameState);
+                if(Chaos_GetConfigFlag(CHAOS_CONFIG_SAVE_AT_GAME_CRASH) && !gChaosContext.fake_crash &&
+                    !gChaosContext.beat_the_game_crash && !gChaosContext.screen_slayer)
+                {
+                    Sram_SaveAtGameCrashTime((struct PlayState *)gCurrentGameState);
+                }
             }
 
-            // if (sFaultInstance->autoScroll) {
-            //     Fault_Wait5Seconds();
-            // } else {
-            //     // Draw error bar signifying the crash screen is available
-            //     Fault_DrawCornerRec(GPACK_RGBA5551(255, 0, 0, 1));
-            //     // Fault_WaitForButtonCombo();
-            // }
+            input = &sFaultInstance->inputs[0];
+            page_index = 0;
+            button = 0;
 
-            // Set auto-scrolling and default colors
-            // sFaultInstance->autoScroll = true;
-            // FaultDrawer_SetForeColor(GPACK_RGBA5551(255, 255, 255, 1));
-            // FaultDrawer_SetBackColor(GPACK_RGBA5551(0, 0, 0, 0));
-
-
-            // sFaultInstance->current_disasm_pc = faultedThread->context.pc;
-            // Draw pages
-
-            if(gChaosContext.fake_crash)
+            if(gChaosContext.fake_crash /* || gChaosContext.screen_slayer */)
             {
-                OSMesgQueue timer_queue;
-                OSMesg timer_message;
-                OSTimer timer;
-                u32 timeout = Chaos_RandS16Offset(1200, 1800);
-                u32 return_address = faultedThread->context.pc;
-                faultedThread->context.pc = 0x80000000 + ((Chaos_RandNext() % 0xffffff) & 0xfffffc);
-                FaultDrawer_SetForeColor(GPACK_RGBA5551(255, 255, 255, 1));
-                FaultDrawer_SetBackColor(GPACK_RGBA5551(0, 0, 0, 0));
-                Fault_PrintThreadContextInfo(faultedThread);
-                faultedThread->context.pc = return_address;
-                gChaosContext.fake_crash_pointer = &gChaosContext.fake_crash;
-                osCreateMesgQueue(&timer_queue, &timer_message, 1);
-                osSetTimer(&timer, OS_USEC_TO_CYCLES(timeout * 1000), 0, &timer_queue, (OSMesg)0);
-                osRecvMesg(&timer_queue, NULL, OS_MESG_BLOCK);
+                u32 timeout;
+
+                // if(gChaosContext.fake_crash)
+                // {
+                    gChaosContext.fake_crash_pointer = &gChaosContext.fake_crash;
+                    timeout = Chaos_RandS16Offset(600, 1800);
+                // }
+                // else
+                // {
+                //     gChaosContext.fake_crash_pointer = &gChaosContext.screen_slayer;
+                //     timeout = 4500;
+                // }
+
+                osCreateMesgQueue(&s_timer_queue, &s_timer_message, 1);
+                osSetTimer(&s_timer, OS_USEC_TO_CYCLES(timeout * 1000), 0, &s_timer_queue, (OSMesg)0);
             }
-            else
+            else if(gChaosContext.beat_the_game_crash)
             {
-                input = &sFaultInstance->inputs[0];
-                page_index = 0;
-                prev_page_index = 0xffffffff;
-                just_changed_page = true;
-                button = 0;
-
-                do {
-                    // Fault_FillScreenBlack();
+                // faultedThread->context.cause = _SHIFTL(faultedThread->context.cause,)
+                faultedThread->context.cause &= ~0x7c;
+                faultedThread->context.cause |= EXC_MASOCHIST;
+                osCreateMesgQueue(&s_timer_queue, &s_timer_message, 1);
+                osSetTimer(&s_timer, OS_USEC_TO_CYCLES(50000 * 1000), 0, &s_timer_queue, (OSMesg)0);
+            }
+            
+            // if(!gChaosContext.screen_slayer)
+            // {
+                do 
+                {
+                    Fault_FillScreenBlack();
                     FaultDrawer_SetForeColor(GPACK_RGBA5551(255, 255, 255, 1));
                     FaultDrawer_SetBackColor(GPACK_RGBA5551(0, 0, 0, 0));
-                    // Fault_DisplayFrameBuffer()
-
+    
                     switch(page_index)
                     {
                         case 0:
                             button = Fault_PrintThreadContext(faultedThread);
                         break;
-
+    
                         case 1:
-                            // Fault_DrawStackTrace(faultedThread, 0);
-                            // Fault_LogStackTrace(faultedThread, 0);
                             button = Fault_DrawStackTrace2(faultedThread, 0);
                         break;
-
+    
                         case 2:
-                            button = Fault_Disasm(faultedThread, button);
+                            button = Fault_Disasm(faultedThread, &disasm_context, button);
                         break;
-
+    
                         case 3:
-                            button = Fault_ProcessClients(button);
+                            button = Fault_ProcessClients(&process_clients_context, button);
                         break;    
-
+    
                         case 4:
-                            button = Fault_DrawMemDump(faultedThread, button);
+                            button = Fault_DrawMemDump(faultedThread, &mem_dump_context, button);
                         break;
-
-                        // case 5:
-                        //     Fault_DrawStackTrace(faultedThread, 1);
-                        //     Fault_LogStackTrace(faultedThread, 1);
-                        // break;
                     }
-
-                    if(button == 0)
-                    {
-                        button = Fault_WaitForInput2();
-                    }
-
+                    
                     if(button == BTN_L)
                     {
                         page_index = (page_index - 1) % 0xfffffffb;
@@ -2445,8 +2474,48 @@ void Fault_ThreadEntry(void* arg) {
                     {
                         page_index = (page_index + 1) % 5;
                     }
+                    else if(button == 0)
+                    {
+                        button = Fault_WaitForInput2(); 
+                    }
+                    
+                    if(osRecvMesg(&s_timer_queue, NULL, OS_MESG_NOBLOCK) == 0)
+                    {
+                        if(gChaosContext.fake_crash)
+                        {
+                            Fault_FillScreenBlack();
+                            FaultDrawer_SetCharPad(-2, 4);
+                            FaultDrawer_SetCursor(22, 20);
+                            FaultDrawer_Printf((Chaos_RandNext() & 0x1) ? "LOL, jk" : "...Or did it?");
+                            Fault_Sleep(450);
+                            break;
+                        }
+                        else if(gChaosContext.beat_the_game_crash)
+                        {
+                            while(true)
+                            {
+                                FaultDrawer_DrawFire();
+                                // Fault_DisplayFrameBuffer();
+                                Fault_Sleep(10);
+                            }     
+                        }
+                    }
+                    
                 } while (true);
-            }
+            // }
+            // else
+            // {
+            //     bool can_exit = false;  
+            //     while(!can_exit || input->press.button == 0)
+            //     {
+            //         FaultDrawer_DrawFire();
+            //         Fault_DisplayFrameBuffer;
+            //         Fault_Sleep(1000);
+            //         Fault_UpdatePadImpl();
+            //         can_exit |= osRecvMesg(&s_timer_queue, NULL, OS_MESG_NOBLOCK) == 0;
+            //     }
+            //     FaultDrawer_Incinerate();
+            // }
         }
 
         Fault_ResumeThread(faultedThread);
@@ -2547,4 +2616,16 @@ void Fault_AddHangupPrintfAndCrash(const char *fmt, ...)
 
     Fault_AddClient(&client, (void*)Fault_HangupFaultPrintfClient, (void*)&params, NULL);
     *(u32*)0x11111111 = 0; // trigger an exception via unaligned memory access
+}
+
+void Fault_SoftwareInterrupt()
+{
+    u32 *p = NULL;
+    gChaosContext.beat_the_game_crash = true;
+    *p = 5;
+    // sFaultInstance->
+    // osSendMesg(&sFaultInstance->queue, FAULT_MSG_SW1, OS_MESG_NOBLOCK);
+    // __osRunningThread->flags |= OS_FLAG_SW1;
+    // osYieldThread();
+    // __osBreak();
 }

@@ -948,6 +948,8 @@ void func_800BBFB0(struct PlayState* play, Vec3f* position, f32 arg2, s32 arg3, 
 void Actor_ChangeCategory(struct PlayState* play, ActorContext* actorCtx, Actor* actor, u8 actorCategory);
 u32 Actor_GetArrowDmgFlags(s32 params);
 Actor* func_800BC270(struct PlayState* play, Actor* actor, f32 distance, u32 dmgFlags);
+Actor* Actor_GetProjectileActor(struct PlayState* play, Actor* refActor, f32 radius);
+Actor* Actor_GetExplosiveActor(struct PlayState* play, Actor* explosiveActor);
 Actor* func_800BC444(struct PlayState* play, Actor* actor, f32 distance);
 s16 Actor_TestFloorInDirection(Actor* actor, struct PlayState* play, f32 distance, s16 angle);
 s32 Actor_IsTargeted(struct PlayState* play, Actor* actor);

@@ -331,6 +331,9 @@ struct ChaosSaveInfo
     f32 evilness_probability_scale;
 };
 
+#define G_IS_CRASH_SAVE               1
+#define G_OBTAINED_FIERCE_DEITY_MASK (1 << 1)
+
 typedef struct Save {
     /* 0x00 */ s32 entrance;        // "scene_no"
     /* 0x04 */ u8 equippedMask;     // "player_mask"
@@ -350,7 +353,7 @@ typedef struct Save {
     /* 0x23 */ u8 isOwlSave;
     /* 0x24 */ SaveInfo saveInfo;
     struct ChaosSaveInfo chaos;
-               u8 is_crash_save;
+               u8 flags;
 } Save; // size = 0x100C
 
 typedef struct SaveContext {
@@ -1749,10 +1752,24 @@ void Sram_SetFlashPagesOwlSave(SramContext* sramCtx, s32 curPage, s32 numPages);
 void Sram_StartWriteToFlashOwlSave(SramContext* sramCtx);
 void Sram_UpdateWriteToFlashOwlSave(SramContext* sramCtx);
 void Sram_LoadChaosConfig(SramContext *sram_ctx, u8 file_index);
-void Sram_SaveChaosConfig(SramContext *sram_ctx, u8 file_index);
+void Sram_SaveChaosConfig(struct FileSelectState *fileSelect, SramContext *sram_ctx, u8 file_index);
 void func_80145698(SramContext* sramCtx);
 
 void SaveContext_Init(void);
+
+#define SAVE_FILE0_INDEX 0
+#define SAVE_FILE1_INDEX 1
+#define SAVE_OWL0_INDEX  2
+#define SAVE_OWL1_INDEX  3
+
+struct SaveFileInfo
+{
+    u32 save_size;
+    u32 main_start_page;
+    u32 main_page_count;
+    u32 backup_start_page;
+    u32 backup_page_count;
+};
 
 extern u32 gSramSlotOffsets[];
 extern u8 gAmmoItems[];
@@ -1761,6 +1778,7 @@ extern s32 gFlashSaveNumPages[];
 extern s32 gFlashSpecialSaveNumPages[];
 extern s32 gFlashOwlSaveStartPages[];
 extern s32 gFlashOwlSaveNumPages[];
+extern struct SaveFileInfo gSaveFileInfo[];
 
 extern SaveContext gSaveContext;
 extern Save        gSaveCopy;

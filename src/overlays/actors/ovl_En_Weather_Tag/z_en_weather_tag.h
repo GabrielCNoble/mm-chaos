@@ -14,9 +14,11 @@ typedef struct EnWeatherTag {
     /* 0x14C */ u8 pathCount;
     /* 0x150 */ Vec3s* pathPoints;
     // 154: the code avoids what would be a negative value if signed, but signed wont match
-    /* 0x154 */ u16 unk154;
+    // /* 0x154 */ u16 unk154; // effect progress accumulator
+    /* 0x154 */ u16 progress_accumulator; // effect progress accumulator 
     /* 0x156 */ u16 fadeDistance;
-    /* 0x158 */ u16 unk158; // increment/decrement amount for 154
+    // /* 0x158 */ u16 unk158; // effect progress increment/decrement amount for 154
+    /* 0x158 */ u16 progress_step; // effect progress increment/decrement amount for 154
 } EnWeatherTag; // size = 0x15C
 
 #define WEATHER_TAG_TYPE(thisx) ((thisx)->params & 0xF)
@@ -25,14 +27,15 @@ typedef struct EnWeatherTag {
 #define WEATHER_TAG_GET_SKYBOX_NUM_STARS(thisx) ((u8)(((thisx)->params >> 8) & 0xFF) * 100)
 
 typedef enum {
-    /* 0 */ WEATHERTAG_TYPE_UNK0,
+    /* 0 */ WEATHERTAG_TYPE_UNK0, // snowhead blizzard?
     /* 1 */ WEATHERTAG_TYPE_UNK1,
     /* 2 */ WEATHERTAG_TYPE_WINTERFOG,
     /* 3 */ WEATHERTAG_TYPE_UNK3,
     /* 4 */ WEATHERTAG_TYPE_SKYBOX_STARS,
     /* 5 */ WEATHERTAG_TYPE_UNK5,
     /* 6 */ WEATHERTAG_TYPE_WATERMURK,
-    /* 7 */ WEATHERTAG_TYPE_LOCALDAY2RAIN
+    /* 7 */ WEATHERTAG_TYPE_LOCALDAY2RAIN,
+            WEATHERTAG_TYPE_CHAOS,
 } WeatherTagType;
 
 #endif // Z_EN_WEATHER_TAG_H

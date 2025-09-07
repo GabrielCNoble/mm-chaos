@@ -53,6 +53,7 @@ typedef struct OSMesgQueue {
 void osCreateMesgQueue(OSMesgQueue* mq, OSMesg* msq, s32 count);
 s32 osSendMesg(OSMesgQueue* mq, OSMesg msg, s32 flags);
 s32 osJamMesg(OSMesgQueue* mq, OSMesg msg, s32 flag);
+s32 osPeekMesg(OSMesgQueue *queue, OSMesg *msg, s32 flags);
 s32 osRecvMesg(OSMesgQueue* mq, OSMesg* msg, s32 flags);
 
 void osSetEventMesg(OSEvent e, OSMesgQueue* mq, OSMesg m);

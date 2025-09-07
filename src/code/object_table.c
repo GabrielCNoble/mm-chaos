@@ -39,4 +39,4 @@ RomFile gObjectTable[] = {
 #define DEFINE_OBJECT_EMPTY(name, _enumValue)   "empty",
 const char *gObjectNames[] = {
 #include "tables/object_table.h"
-};
+}; 

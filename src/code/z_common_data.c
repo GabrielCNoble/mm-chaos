@@ -7,7 +7,7 @@
 #include "z64transition.h"
 
 SaveContext gSaveContext ALIGNED(16);
-Save gSaveCopy;
+// Save gSaveCopy;
 
 void SaveContext_Init(void) {
     bzero(&gSaveContext, sizeof(SaveContext));

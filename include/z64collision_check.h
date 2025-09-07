@@ -48,8 +48,8 @@ typedef struct {
 
 typedef struct {
     /* 0x0 */ u32 dmgFlags; // Damage types dealt by this collider element as AT.
-    /* 0x4 */ u8 effect; // Damage Effect (Knockback, Fire, etc.)
-    /* 0x5 */ u8 damage; // Damage or Stun Timer
+    /* 0x4 */ s16 damage; // Damage or Stun Timer
+    /* 0x6 */ u8 effect; // Damage Effect (Knockback, Fire, etc.)
 } ColliderElementDamageInfoAT; // size = 0x8
 
 typedef struct {
@@ -235,7 +235,7 @@ typedef struct {
 
 typedef struct {
     /* 0x00 */ Collider base;
-    /* 0x18 */ ColliderElement elem;
+    /* 0x18 */ ColliderElement elem;    
     /* 0x40 */ ColliderQuadDim dim;
 } ColliderQuad; // size = 0x80
 
@@ -374,6 +374,7 @@ typedef enum ElementMaterial {
 #define AT_TYPE_ENEMY (1 << 4) // Has enemy-aligned damage
 #define AT_TYPE_OTHER (1 << 5) // Has non-aligned damage
 #define AT_SELF (1 << 6) // Can have AT collisions with colliders attached to the same actor
+#define AT_ABSOLUTE_DAMAGE (1 << 7)
 #define AT_TYPE_ALL (AT_TYPE_PLAYER | AT_TYPE_ENEMY | AT_TYPE_OTHER) // Has all three damage alignments
 
 #define AC_NONE 0 // No flags set. Cannot have AC collisions when set as AC
@@ -440,38 +441,39 @@ typedef enum ElementMaterial {
 
 // Don't use combinations of these flags in code until we figure out how we want to format them.
 // It's okay to use these flags if the code is only checking a single flag, though.
-#define DMG_DEKU_NUT       (1 << 0x00)
-#define DMG_DEKU_STICK     (1 << 0x01)
-#define DMG_HORSE_TRAMPLE  (1 << 0x02)
-#define DMG_EXPLOSIVES     (1 << 0x03)
-#define DMG_ZORA_BOOMERANG (1 << 0x04)
-#define DMG_NORMAL_ARROW   (1 << 0x05)
-#define DMG_UNK_0x06       (1 << 0x06)
-#define DMG_HOOKSHOT       (1 << 0x07)
-#define DMG_GORON_PUNCH    (1 << 0x08)
-#define DMG_SWORD          (1 << 0x09)
-#define DMG_GORON_POUND    (1 << 0x0A)
-#define DMG_FIRE_ARROW     (1 << 0x0B)
-#define DMG_ICE_ARROW      (1 << 0x0C)
-#define DMG_LIGHT_ARROW    (1 << 0x0D)
-#define DMG_GORON_SPIKES   (1 << 0x0E)
-#define DMG_DEKU_SPIN      (1 << 0x0F)
-#define DMG_DEKU_BUBBLE    (1 << 0x10)
-#define DMG_DEKU_LAUNCH    (1 << 0x11)
-#define DMG_UNK_0x12       (1 << 0x12)
-#define DMG_ZORA_BARRIER   (1 << 0x13)
-#define DMG_NORMAL_SHIELD  (1 << 0x14)
-#define DMG_LIGHT_RAY      (1 << 0x15)
-#define DMG_THROWN_OBJECT  (1 << 0x16)
-#define DMG_ZORA_PUNCH     (1 << 0x17)
-#define DMG_SPIN_ATTACK    (1 << 0x18)
-#define DMG_SWORD_BEAM     (1 << 0x19)
-#define DMG_NORMAL_ROLL    (1 << 0x1A)
-#define DMG_UNK_0x1B       (1 << 0x1B)
-#define DMG_UNK_0x1C       (1 << 0x1C)
-#define DMG_UNBLOCKABLE    (1 << 0x1D)
-#define DMG_UNK_0x1E       (1 << 0x1E)
-#define DMG_POWDER_KEG     (1 << 0x1F)
+#define DMG_DEKU_NUT                (1 << 0x00)
+#define DMG_DEKU_STICK              (1 << 0x01)
+#define DMG_HORSE_TRAMPLE           (1 << 0x02)
+#define DMG_EXPLOSIVES              (1 << 0x03)
+#define DMG_ZORA_BOOMERANG          (1 << 0x04)
+#define DMG_NORMAL_ARROW            (1 << 0x05)
+#define DMG_UNK_0x06                (1 << 0x06)
+// #define DMG_BYPASS_DAMAGE_TABLE     DMG_UNK_0x06
+#define DMG_HOOKSHOT                (1 << 0x07)
+#define DMG_GORON_PUNCH             (1 << 0x08)
+#define DMG_SWORD                   (1 << 0x09)
+#define DMG_GORON_POUND             (1 << 0x0A)
+#define DMG_FIRE_ARROW              (1 << 0x0B)
+#define DMG_ICE_ARROW               (1 << 0x0C)
+#define DMG_LIGHT_ARROW             (1 << 0x0D)
+#define DMG_GORON_SPIKES            (1 << 0x0E)
+#define DMG_DEKU_SPIN               (1 << 0x0F)
+#define DMG_DEKU_BUBBLE             (1 << 0x10)
+#define DMG_DEKU_LAUNCH             (1 << 0x11)
+#define DMG_UNK_0x12                (1 << 0x12)
+#define DMG_ZORA_BARRIER            (1 << 0x13)
+#define DMG_NORMAL_SHIELD           (1 << 0x14)
+#define DMG_LIGHT_RAY               (1 << 0x15)
+#define DMG_THROWN_OBJECT           (1 << 0x16)
+#define DMG_ZORA_PUNCH              (1 << 0x17)
+#define DMG_SPIN_ATTACK             (1 << 0x18)
+#define DMG_SWORD_BEAM              (1 << 0x19)
+#define DMG_NORMAL_ROLL             (1 << 0x1A)
+#define DMG_UNK_0x1B                (1 << 0x1B)
+#define DMG_UNK_0x1C                (1 << 0x1C)
+#define DMG_UNBLOCKABLE             (1 << 0x1D)
+#define DMG_UNK_0x1E                (1 << 0x1E)
+#define DMG_POWDER_KEG              (1 << 0x1F)
 
 typedef struct DamageTable {
     /* 0x00 */ u8 attack[32];
@@ -498,9 +500,9 @@ typedef struct CollisionCheckInfo {
     /* 0x10 */ s16 cylRadius;
     /* 0x12 */ s16 cylHeight;
     /* 0x14 */ s16 cylYShift;
+    /* 0x17 */ s16 health;
+    /* 0x18 */ s16 damage;
     /* 0x16 */ u8 mass;
-    /* 0x17 */ u8 health;
-    /* 0x18 */ u8 damage;
     /* 0x19 */ u8 damageEffect;
     /* 0x1A */ u8 atHitEffect;
     /* 0x1B */ u8 acHitEffect;

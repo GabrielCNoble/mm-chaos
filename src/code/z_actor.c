@@ -45,6 +45,7 @@ extern struct ChaosContext gChaosContext;
 #include "overlays/actors/ovl_En_Horse/z_en_horse.h"
 #include "overlays/actors/ovl_En_Part/z_en_part.h"
 #include "overlays/actors/ovl_En_Box/z_en_box.h"
+#include "overlays/actors/ovl_Arms_Hook/z_arms_hook.h"
 
 #include "assets/objects/gameplay_keep/gameplay_keep.h"
 #include "assets/objects/gameplay_dangeon_keep/gameplay_dangeon_keep.h"
@@ -4200,6 +4201,81 @@ Actor* func_800BC270(PlayState* play, Actor* actor, f32 distance, u32 dmgFlags) 
     }
 
     return itemAction;
+}
+
+Actor* Actor_GetProjectileActor(PlayState* play, Actor* refActor, f32 radius) 
+{
+    Actor* actor;
+    Vec3f spA8;
+    f32 deltaX;
+    f32 deltaY;
+    f32 deltaZ;
+    Vec3f sp90;
+    Vec3f sp84;
+
+    actor = play->actorCtx.actorLists[ACTORCAT_ITEMACTION].first;
+    while (actor != NULL) {
+        if (((actor->id != ACTOR_ARMS_HOOK) && (actor->id != ACTOR_EN_ARROW)) || (actor == refActor)) 
+        {
+            actor = actor->next;
+        } 
+        else 
+        {
+            if ((Math_Vec3f_DistXYZ(&refActor->world.pos, &actor->world.pos) > radius) ||
+                actor->id == ACTOR_ARMS_HOOK && ((ArmsHook*)actor)->timer == 0) 
+            {
+                actor = actor->next;
+            } 
+            else 
+            {
+                deltaX = Math_SinS(actor->world.rot.y) * (actor->speed * 10.0f);
+                deltaY = actor->velocity.y + (actor->gravity * 10.0f);
+                deltaZ = Math_CosS(actor->world.rot.y) * (actor->speed * 10.0f);
+
+                spA8.x = actor->world.pos.x + deltaX;
+                spA8.y = actor->world.pos.y + deltaY;
+                spA8.z = actor->world.pos.z + deltaZ;
+
+                if (CollisionCheck_CylSideVsLineSeg(refActor->colChkInfo.cylRadius, refActor->colChkInfo.cylHeight,
+                                                    0.0f, &refActor->world.pos, &actor->world.pos, &spA8, &sp90,  &sp84)) 
+                {
+                    return actor;
+                } 
+                else 
+                {
+                    actor = actor->next;
+                }
+            }
+        }
+    }
+
+    return NULL;
+}
+
+Actor* Actor_GetExplosiveActor(PlayState* play, Actor* explosiveActor)
+{
+    Actor* actor = play->actorCtx.actorLists[ACTORCAT_EXPLOSIVES].first;
+
+    while (actor != NULL) 
+    {
+        if ((actor == explosiveActor) || (actor->params != 1)) 
+        {
+            actor = actor->next;
+        } 
+        else 
+        {
+            if (Actor_WorldDistXYZToActor(explosiveActor, actor) <= (actor->shape.rot.z * 10) + 80.0f) 
+            {
+                return actor;
+            } 
+            else 
+            {
+                actor = actor->next;
+            }
+        }
+    }
+
+    return NULL;
 }
 
 Actor* func_800BC444(PlayState* play, Actor* actor, f32 distance) {

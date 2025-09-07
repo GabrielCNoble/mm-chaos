@@ -176,7 +176,8 @@ void EnBom_Init(Actor* thisx, PlayState* play) {
 
     if(this->actor.params == BOMB_TYPE_ARROW)
     {
-        this->collider2.elements[0].base.atDmgInfo.damage = 32;
+        this->collider2.elements[0].base.atDmgInfo.damage = 512;
+        this->collider2.elements[0].base.atElemFlags |= AT_ABSOLUTE_DAMAGE;
     }
 
     this->collider2.elements[0].dim.worldSphere.center.x = this->actor.world.pos.x;

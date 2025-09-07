@@ -616,6 +616,7 @@ beginseg
     include "$(BUILD_DIR)/src/code/z_eff_spark.o"
     include "$(BUILD_DIR)/src/code/z_eff_ss_dead.o"
     include "$(BUILD_DIR)/src/code/z_eff_tire_mark.o"
+    include "$(BUILD_DIR)/src/code/z_effect_goron_blizzard.o"
     include "$(BUILD_DIR)/src/code/z_effect.o"
     include "$(BUILD_DIR)/src/code/z_effect_soft_sprite.o"
     include "$(BUILD_DIR)/src/code/z_effect_soft_sprite_old_init.o"
@@ -7046,6 +7047,14 @@ beginseg
     romalign 0x1000
     number 6
     include "$(BUILD_DIR)/assets/objects/object_fall/object_fall.o"
+endseg
+
+beginseg
+    name "object_fall_cake"
+    compress
+    romalign 0x1000
+    number 6
+    include "$(BUILD_DIR)/assets/objects/object_fall_cake/object_fall_cake.o"
 endseg
 
 beginseg

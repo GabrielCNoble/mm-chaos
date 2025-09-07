@@ -7,4 +7,4 @@
 
 #include "assets/text/message_data_staff.enc.h"
 
-#undef DEFINE_MESSAGE
+#undef DEFINE_MESSAGE 

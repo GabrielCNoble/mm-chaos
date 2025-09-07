@@ -23,7 +23,7 @@ typedef struct EnJgameTsn {
     /* 0x1D8 */ EnJgameTsnStruct unk_1D8[4];
     /* 0x1F8 */ EnJgameTsnStruct unk_1F8;
     /* 0x200 */ EnJgameTsnStruct unk_200;
-    /* 0x208 */ u8* unk_208[4];
+    /* 0x208 */ s16* unk_208[4];
     /* 0x218 */ s32 unk_218;
     /* 0x21C */ s32 unk_21C;
     /* 0x220 */ Vec3s jointTable[OBJECT_TSN_LIMB_MAX];

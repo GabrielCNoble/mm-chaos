@@ -17,6 +17,7 @@
 
 #include "z_en_fall.h"
 #include "overlays/actors/ovl_En_Clear_Tag/z_en_clear_tag.h"
+#include "assets/objects/object_fall_cake/object_fall_cake.h"
 #include "assets/objects/object_fall/object_fall.h"
 #include "assets/objects/object_fall2/object_fall2.h"
 #include "assets/objects/object_lodmoon/object_lodmoon.h"
@@ -168,6 +169,7 @@ void EnFall_Init(Actor* thisx, PlayState* play) {
         case EN_FALL_TYPE_LODMOON:
         case EN_FALL_TYPE_LODMOON_INVERTED_STONE_TOWER:
             objectSlot = Object_GetSlot(&play->objectCtx, OBJECT_LODMOON);
+            // objectSlot = Object_GetSlot(&play->objectCtx, OBJECT_FALL_CAKE);
             break;
 
         case EN_FALL_TYPE_MOONS_TEAR:
@@ -176,10 +178,12 @@ void EnFall_Init(Actor* thisx, PlayState* play) {
 
         case EN_FALL_TYPE_STOPPED_MOON_OPEN_MOUTH:
             objectSlot = Object_GetSlot(&play->objectCtx, OBJECT_FALL2);
+            // objectSlot = Object_GetSlot(&play->objectCtx, OBJECT_FALL_CAKE);
             break;
 
         default:
             objectSlot = Object_GetSlot(&play->objectCtx, OBJECT_FALL);
+            // objectSlot = Object_GetSlot(&play->objectCtx, OBJECT_FALL_CAKE);
             break;
     }
 
@@ -218,12 +222,14 @@ void EnFall_Setup(EnFall* this, PlayState* play) {
         switch (EN_FALL_TYPE(&this->actor)) {
             case EN_FALL_TYPE_TITLE_SCREEN_MOON:
                 this->actor.draw = EnFall_Moon_Draw;
+                // this->actor.draw = EnFall_LodMoon_DrawWithoutLerp;
                 this->actionFunc = EnFall_ClockTowerOrTitleScreenMoon_PerformCutsceneActions;
                 Actor_SetScale(&this->actor, this->scale);
                 break;
 
             case EN_FALL_TYPE_STOPPED_MOON_CLOSED_MOUTH:
                 this->actor.draw = EnFall_Moon_Draw;
+                // this->actor.draw = EnFall_LodMoon_DrawWithoutLerp;
                 this->actionFunc = EnFall_StoppedClosedMouthMoon_PerformCutsceneActions;
                 Actor_SetScale(&this->actor, this->scale * 3.0f);
                 if (!CHECK_WEEKEVENTREG(WEEKEVENTREG_25_02)) {
@@ -235,6 +241,7 @@ void EnFall_Setup(EnFall* this, PlayState* play) {
                 this->actionFunc = EnFall_ClockTowerOrTitleScreenMoon_PerformCutsceneActions;
                 Actor_SetScale(&this->actor, this->scale * 3.0f);
                 this->actor.draw = EnFall_Moon_Draw;
+                // this->actor.draw = EnFall_LodMoon_DrawWithoutLerp;
                 if (CHECK_WEEKEVENTREG(WEEKEVENTREG_25_02)) {
                     Actor_Kill(&this->actor);
                 }
@@ -242,6 +249,7 @@ void EnFall_Setup(EnFall* this, PlayState* play) {
 
             case EN_FALL_TYPE_CRASHING_MOON:
                 this->actor.draw = EnFall_Moon_Draw;
+                // this->actor.draw = EnFall_LodMoon_DrawWithoutLerp;
                 Actor_SetScale(&this->actor, this->scale * 5.3999996f);
                 this->actionFunc = EnFall_CrashingMoon_PerformCutsceneActions;
                 break;
@@ -275,6 +283,7 @@ void EnFall_Setup(EnFall* this, PlayState* play) {
             case EN_FALL_TYPE_LODMOON:
             case EN_FALL_TYPE_LODMOON_INVERTED_STONE_TOWER:
                 this->actor.draw = EnFall_LodMoon_DrawWithLerp;
+                // this->actor.draw = EnFall_LodMoon_DrawWithoutLerp;
                 this->dayStartTime = CLOCK_TIME(6, 0);
                 this->currentDay = CURRENT_DAY;
                 EnFall_Moon_AdjustScaleAndPosition(this, play);
@@ -310,6 +319,7 @@ void EnFall_Setup(EnFall* this, PlayState* play) {
             default:
                 // used for EN_FALL_TYPE_TERMINA_FIELD_MOON and anything else that isn't in the enum
                 this->actor.draw = EnFall_Moon_Draw;
+                // this->actor.draw = EnFall_LodMoon_DrawWithoutLerp;
                 this->dayStartTime = CLOCK_TIME(6, 0);
                 this->currentDay = CURRENT_DAY;
                 EnFall_Moon_AdjustScaleAndPosition(this, play);
@@ -494,6 +504,7 @@ void EnFall_Moon_PerformDefaultActions(EnFall* this, PlayState* play) {
         } else {
             Actor_SetScale(&this->actor, this->scale * 3.6f);
             this->actor.draw = EnFall_Moon_Draw;
+            // this->actor.draw = EnFall_LodMoon_DrawWithoutLerp;
             if (Cutscene_IsCueInChannel(play, CS_CMD_ACTOR_CUE_133) &&
                 play->csCtx.actorCues[Cutscene_GetCueChannel(play, CS_CMD_ACTOR_CUE_133)]->id == 2) {
                 Cutscene_ActorTranslateAndYaw(&this->actor, play, Cutscene_GetCueChannel(play, CS_CMD_ACTOR_CUE_133));
@@ -502,6 +513,7 @@ void EnFall_Moon_PerformDefaultActions(EnFall* this, PlayState* play) {
     } else {
         if (this->actor.draw == NULL) {
             this->actor.draw = EnFall_Moon_Draw;
+            // this->actor.draw = EnFall_LodMoon_DrawWithoutLerp;
         }
         currentDay = CURRENT_DAY;
         if ((u16)this->currentDay != (u32)currentDay) {
@@ -943,6 +955,8 @@ void EnFall_Moon_Draw(Actor* thisx, PlayState* play) {
     gDPSetPrimColor(POLY_OPA_DISP++, 0, 0x80, primColor, primColor, primColor, 255);
 
     gSPDisplayList(POLY_OPA_DISP++, gMoonDL);
+    // gSPDisplayList(POLY_OPA_DISP++, gCakeMoonEyesDL);
+    // gSPDisplayList(POLY_OPA_DISP++, gCakeMoonDL);
 
     CLOSE_DISPS(play->state.gfxCtx);
 }
@@ -961,6 +975,8 @@ void EnFall_OpenMouthMoon_Draw(Actor* thisx, PlayState* play) {
     gDPSetPrimColor(POLY_OPA_DISP++, 0, 0x80, primColor, primColor, primColor, 255);
 
     gSPDisplayList(POLY_OPA_DISP++, gOpenMouthMoonDL);
+    // gSPDisplayList(POLY_OPA_DISP++, gCakeMoonEyesDL);
+    // gSPDisplayList(POLY_OPA_DISP++, gCakeMoonDL);
 
     CLOSE_DISPS(play->state.gfxCtx);
 }
@@ -986,8 +1002,10 @@ void EnFall_LodMoon_Draw(Actor* thisx, PlayState* play) {
     gDPSetPrimColor(POLY_OPA_DISP++, 0, 0x80, primColor, primColor, primColor, 255);
 
     gSPDisplayList(POLY_OPA_DISP++, gLodmoonEyesDL);
+    // gSPDisplayList(POLY_OPA_DISP++, gCakeMoonEyesDL);
     gSPLoadGeometryMode(POLY_OPA_DISP++, G_ZBUFFER | G_SHADE | G_CULL_BACK | G_LIGHTING | G_SHADING_SMOOTH);
     gSPDisplayList(POLY_OPA_DISP++, gLodmoonMoonDL);
+    // gSPDisplayList(POLY_OPA_DISP++, gCakeMoonDL);
     POLY_OPA_DISP = Play_SetFog(play, POLY_OPA_DISP);
 
     CLOSE_DISPS(play->state.gfxCtx);

@@ -16,6 +16,7 @@
 
 #include "assets/interface/parameter_static/parameter_static.h"
 #include "chaos_fuckery.h"
+#include "fault.h"
  
 extern struct ChaosContext gChaosContext;
 
@@ -75,7 +76,7 @@ MessageTableEntry sMessageTableCredits[] = {
 #include "assets/text/message_data_staff.h"
     { 0xFFFF, 0, NULL },
 };
-
+ 
 #undef DEFINE_MESSAGE
 
 s16 D_801CFC78[TEXTBOX_TYPE_MAX] = {
@@ -6141,10 +6142,11 @@ void Message_Update(PlayState* play) {
             sp44 = gSaveContext.save.cutsceneIndex;
             sp3E = CURRENT_TIME;
             sp40 = gSaveContext.save.day;
-            gSaveContext.save.is_crash_save = false;
             Sram_SaveEndOfCycle(play);
             /* invalidate any crash save */
             Sram_InvalidateOwlSave(&play->sramCtx, gSaveContext.fileNum);
+            gSaveContext.save.flags &= ~G_IS_CRASH_SAVE;
+            gSaveContext.save.isOwlSave = false;
             gSaveContext.timerStates[TIMER_ID_MOON_CRASH] = TIMER_STATE_OFF;
             func_8014546C(&play->sramCtx);
 
@@ -6153,8 +6155,9 @@ void Message_Update(PlayState* play) {
             gSaveContext.save.cutsceneIndex = sp44;
 
             if (gSaveContext.fileNum != 0xFF) {
-                Sram_SetFlashPagesDefault(&play->sramCtx, gFlashSaveStartPages[gSaveContext.fileNum * 2],
-                                          gFlashSpecialSaveNumPages[gSaveContext.fileNum * 2]);
+                Sram_SetFlashPagesDefault(&play->sramCtx, gSaveFileInfo[gSaveContext.fileNum].main_start_page,
+                                          gSaveFileInfo[gSaveContext.fileNum].main_page_count + 
+                                          gSaveFileInfo[gSaveContext.fileNum].backup_page_count);
                 Sram_StartWriteToFlashDefault(&play->sramCtx);
             }
             msgCtx->msgMode = MSGMODE_NEW_CYCLE_1;
@@ -6176,7 +6179,7 @@ void Message_Update(PlayState* play) {
         case MSGMODE_OWL_SAVE_0:
             play->state.unk_A3 = 1;
             gSaveContext.save.isOwlSave = true;
-            gSaveContext.save.is_crash_save = false;
+            gSaveContext.save.flags &= ~G_IS_CRASH_SAVE;
             Play_SaveCycleSceneFlags(play);
             func_8014546C(&play->sramCtx);
 

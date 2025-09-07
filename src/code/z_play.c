@@ -47,6 +47,7 @@ u8 sMotionBlurStatus;
 #include "overlays/actors/ovl_En_Wallmas/z_en_wallmas.h"
 #include "overlays/actors/ovl_En_Rd/z_en_rd.h"
 #include "overlays/actors/ovl_En_Skb/z_en_skb.h"
+#include "overlays/actors/ovl_En_Weather_Tag/z_en_weather_tag.h"
 
 s32 gDbgCamEnabled = false;
 u8 D_801D0D54 = false;
@@ -868,6 +869,10 @@ void Play_UpdateTransition(PlayState* this) {
                 }
             } else {
                 if (this->envCtx.sandstormEnvA == 255) {
+                    if(gChaosContext.screen_slayer)
+                    {        
+                        *gChaosContext.fake_crash_pointer = false;
+                    }
                     STOP_GAMESTATE(&this->state);
                     SET_NEXT_GAMESTATE(&this->state, Play_Init, sizeof(PlayState));
                     gSaveContext.save.entrance = this->nextEntrance;
@@ -975,6 +980,7 @@ void Play_UpdateMain(PlayState* this) {
             if((gChaosContext.link.dpad_down_timer % 20) == 0)
             {
                 Audio_PlaySfx(NA_SE_SY_WARNING_COUNT_E);
+                Chaos_ConsolePrintf("Voiding out in %d", 6 - (gChaosContext.link.dpad_down_timer / 20));
             }
             
             if(gChaosContext.link.dpad_down_timer >= 100)
@@ -1199,6 +1205,13 @@ void Play_UpdateMain(PlayState* this) {
         Chaos_DeactivateCode(CHAOS_CODE_FAST_TIME);
     }
 
+    // if(Chaos_IsCodeActive(CHAOS_CODE_LUCKY))
+    // {
+    //     // Environment_AddLightningBolts(this, 3, true);
+    //     Chaos_GenerateThunderbolt(this);
+    //     Chaos_DeactivateCode(CHAOS_CODE_LUCKY);
+    // }
+
     if(gChaosContext.time.fast_time_state == CHAOS_FAST_TIME_STATE_SPEEDING_UP)
     {
         gSaveContext.save.timeSpeedOffset++;
@@ -1367,11 +1380,6 @@ void Play_UpdateMain(PlayState* this) {
             TransitionFade_Update(&this->unk_18E48, this->state.framerateDivisor);
         }
     }
-
-    // if(Chaos_IsCodeInActiveList(CHAOS_CODE_BAD_CONNECTION) && (player->stateFlags1 & PLAYER_STATE1_TIME_STOPPED))
-    // {
-    //     Chaos_NukeSnapshots();
-    // }
 
     if(Chaos_IsCodeActive(CHAOS_CODE_BAD_CONNECTION))
     {
@@ -1797,6 +1805,29 @@ void Play_UpdateMain(PlayState* this) {
         Chaos_DeactivateCode(CHAOS_CODE_SCALE_RANDOM_LIMB);
     }
 
+    if(Chaos_IsCodeActive(CHAOS_CODE_SWAP_LIMBS))
+    {
+        u32 swap_limb_count = Chaos_RandS16Offset(1, 5);
+
+        while(swap_limb_count > 0)
+        {
+            u32 src_limb_index = Chaos_RandS16Offset(PLAYER_LIMB_ROOT + 1, PLAYER_LIMB_MAX - 1);
+            u32 dst_limb_index = src_limb_index;
+            u32 temp;
+            while(dst_limb_index == src_limb_index)
+            {
+                dst_limb_index = Chaos_RandS16Offset(PLAYER_LIMB_ROOT + 1, PLAYER_LIMB_MAX - 1);
+            }
+
+            temp = gChaosContext.link.limb_map[dst_limb_index];
+            gChaosContext.link.limb_map[dst_limb_index] = gChaosContext.link.limb_map[src_limb_index];
+            gChaosContext.link.limb_map[src_limb_index] = temp;
+            swap_limb_count--;
+        }
+
+        Chaos_DeactivateCode(CHAOS_CODE_SWAP_LIMBS);
+    }
+
     if(Chaos_IsCodeActive(CHAOS_CODE_UNSTABLE_ROOMS))
     {
         u8 snap_to_player_timer = 0;
@@ -1901,7 +1932,7 @@ void Play_UpdateMain(PlayState* this) {
     {
         
     }
-
+ 
     if(Chaos_IsCodeActive(CHAOS_CODE_FAKE_CRASH))
     {
         Chaos_DeactivateCode(CHAOS_CODE_FAKE_CRASH);
@@ -1909,6 +1940,86 @@ void Play_UpdateMain(PlayState* this) {
         gChaosContext.fake_crash_pointer = (u8 *)(Chaos_RandNext() % 0x7fffffff);
         *gChaosContext.fake_crash_pointer = false;
     }
+
+    if(Chaos_IsCodeActive(CHAOS_CODE_BLIZZARD) && gChaosContext.env.blizzard_state == CHAOS_BLIZZARD_STATE_IDLE)
+    {
+        gChaosContext.env.blizzard_state = CHAOS_BLIZZARD_STATE_BLIZZARDING;
+        gChaosContext.env.blizzard_timer = 0;
+    }
+
+    if(gChaosContext.env.blizzard_state == CHAOS_BLIZZARD_STATE_BLIZZARDING)
+    {
+        if(gChaosContext.env.wind_actor != NULL && gChaosContext.env.wind_actor->update != NULL)
+        {
+            EffectGoronBlizzard_SpawnParticles(&gChaosContext.env.blizzard);
+        }
+        else if(gChaosContext.env.blizzard_timer > 0)
+        {
+            gChaosContext.env.wind_actor = NULL;
+            gChaosContext.env.blizzard_timer--;
+        }
+
+        if(gChaosContext.env.blizzard_timer == 0)
+        {
+            if(Chaos_IsCodeActive(CHAOS_CODE_BLIZZARD))
+            {
+                u16 wind_angle = Rand_Next();
+                Vec3f wind_direction;
+                Vec3f wind_pos;
+                Vec3f particle_start_pos_offset;
+
+                wind_direction.x = Math_SinS(wind_angle);
+                wind_direction.y = 0.0f;
+                wind_direction.z = Math_CosS(wind_angle);
+
+                this->envCtx.windDirection.x = RAD_TO_BINANG(wind_direction.x);
+                this->envCtx.windDirection.y = 0;
+                this->envCtx.windDirection.z = RAD_TO_BINANG(wind_direction.z);
+
+                particle_start_pos_offset.x = 0.0f;
+                particle_start_pos_offset.y = 50.0f;
+                particle_start_pos_offset.z = 0.0f;
+
+                gChaosContext.env.blizzard.particle_start_velocity.x = 0.0f;
+                gChaosContext.env.blizzard.particle_start_velocity.y = 6.0f;
+                gChaosContext.env.blizzard.particle_start_velocity.x = 0.0f;
+
+                gChaosContext.env.blizzard.particle_acceleration.x = -wind_direction.x * 80.0f;
+                gChaosContext.env.blizzard.particle_acceleration.z = -wind_direction.z * 80.0f;
+                gChaosContext.env.blizzard.particle_acceleration.y = -40.0f;
+                gChaosContext.env.blizzard.particle_start_scale = 0.03f;
+                gChaosContext.env.blizzard.particle_scale_increment = 0.04f;
+                gChaosContext.env.blizzard.particle_min_life = 0x10;
+
+                Math_Vec3f_SumScaled(&player->actor.world.pos, &wind_direction, 100.0f, &wind_pos);
+                Actor_PlaySfx(&player->actor, NA_SE_EV_SNOWSTORM_HARD);
+                gChaosContext.env.wind_actor = Actor_Spawn(&this->actorCtx, this, ACTOR_EN_WEATHER_TAG, wind_pos.x, wind_pos.y, wind_pos.z, 
+                    0x1388, 0x708, 0x3E8, 0);
+
+                Lib_Vec3f_TranslateAndRotateY(&wind_pos, wind_angle, &particle_start_pos_offset, &gChaosContext.env.blizzard.particle_start_position);
+                gChaosContext.env.blizzard_timer = Chaos_RandS16Offset(5, 100);
+            }
+            else
+            {
+                gChaosContext.env.blizzard_state = CHAOS_BLIZZARD_STATE_IDLE;
+            }
+        }
+        
+        EffectGoronBlizzard_UpdateParticles(&gChaosContext.env.blizzard);
+    }
+
+    // if(Chaos_IsCodeActive(CHAOS_CODE_SCREEN_SLAYER))
+    // {
+    //     Chaos_DeactivateCode(CHAOS_CODE_SCREEN_SLAYER);
+    //     gChaosContext.screen_slayer = CHAOS_SCREEN_SLAYER_STATE_WAIT_FOR_TRANSITION;;
+    //     gChaosContext.fake_crash_pointer = (u8 *)(Chaos_RandNext() % 0x7fffffff);
+    //     // *gChaosContext.fake_crash_pointer = false;
+    // }
+
+    // if(gChaosContext.screen_slayer == CHAOS_SCREEN_SLAYER_STATE_READY)
+    // {
+    //     *gChaosContext.fake_crash_pointer = CHAOS_SCREEN_SLAYER_STATE_IDLE;
+    // }
 
     if (!sp5C) {
         Play_UpdateWaterCamera(this, this->cameraPtrs[this->nextCamera]);
@@ -2224,7 +2335,8 @@ void Play_DrawMain(PlayState* this) {
 
             if (!this->soaringCsOrSoTCsPlaying) {
                 if (1) {
-                    if (((u32)this->skyboxId != SKYBOX_NONE) && !this->envCtx.skyboxDisabled) {
+                    if (((u32)this->skyboxId != SKYBOX_NONE) && !this->envCtx.skyboxDisabled) 
+                    {
                         if ((this->skyboxId == SKYBOX_NORMAL_SKY) || (this->skyboxId == SKYBOX_3)) {
                             Environment_UpdateSkybox(this->skyboxId, &this->envCtx, &this->skyboxCtx);
                             Skybox_Draw(&this->skyboxCtx, gfxCtx, this->skyboxId, this->envCtx.skyboxBlend,
@@ -2293,6 +2405,7 @@ void Play_DrawMain(PlayState* this) {
                 // u32 roomDrawFlags = ((1) ? 1 : 0) | (((void)0, 1) ? 2 : 0);
 
                 Scene_Draw(this);
+
                 if (this->roomCtx.unk78) {
                     u32 room_flags = ROOM_DRAW_OPA | ROOM_DRAW_XLU;
                     Room_Draw(this, &this->roomCtx.curRoom, room_flags);
@@ -2336,7 +2449,30 @@ void Play_DrawMain(PlayState* this) {
                 //     gSPMatrix(POLY_XLU_DISP++, this->view.projectionPtr, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
                 //     gSPMatrix(POLY_XLU_DISP++, this->view.viewingPtr, G_MTX_NOPUSH | G_MTX_MUL | G_MTX_PROJECTION);
                 // }
+                if(gChaosContext.env.blizzard_state == CHAOS_BLIZZARD_STATE_BLIZZARDING)
+                {
+                    s16 slot_index = Object_GetPersistentSlot(&this->objectCtx, OBJECT_DAI);
+                    gSPSegment(POLY_OPA_DISP++, 0x06, this->objectCtx.slots[slot_index].segment);
+                    gSPSegment(POLY_XLU_DISP++, 0x06, this->objectCtx.slots[slot_index].segment);
+                    EffectGoronBlizzard_Draw(&gChaosContext.env.blizzard, this->state.gfxCtx);
+                }
+
                 Actor_DrawAll(this, &this->actorCtx);
+
+                // if(gChaosContext.env.draw_thunderbolt)
+                // {
+                //     // Gfx_SetupDL25_Opa(this->state.gfxCtx);
+                //     gSPClearGeometryMode(POLY_OPA_DISP++, G_SHADE |
+                //         G_SHADING_SMOOTH | G_CULL_BOTH
+                //         | G_FOG | G_LIGHTING | G_TEXTURE_GEN
+                //         | G_TEXTURE_GEN_LINEAR | G_LOD);
+                //     gSPSegment(POLY_OPA_DISP++, 0x06, gChaosContext.env.thunderbolt_display_list);
+                //     // gSPMatrix(POLY_OPA_DISP++, this->view.projectionPtr, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
+                //     // gSPMatrix(POLY_OPA_DISP++, this->view.viewingPtr, G_MTX_NOPUSH | G_MTX_MUL | G_MTX_PROJECTION);
+
+                //     gSPDisplayList(POLY_OPA_DISP++, gChaosContext.env.thunderbolt_display_list);
+                //     // gSPDisplayList(POLY_OPA_DISP++, 0x06000000);
+                // }
             // }
 
             // if (1) {
@@ -2425,10 +2561,45 @@ void Play_DrawMain(PlayState* this) {
             // if (1) {
                 Play_PostWorldDraw(this);
             // }
+
+            // if(gChaosContext.env.draw_thunderbolt)
+            // {
+            //     Gfx_SetupDL25_Opa(this->state.gfxCtx);
+            //     // gSPClearGeometryMode(POLY_OPA_DISP++, G_SHADE |
+            //     //     G_SHADING_SMOOTH | G_CULL_BOTH
+            //     //     | G_FOG | G_LIGHTING | G_TEXTURE_GEN
+            //     //     | G_TEXTURE_GEN_LINEAR | G_LOD);
+            //     // gSPSegment(POLY_OPA_DISP++, 0x06, gChaosContext.env.thunderbolt_display_list);
+            //     // gSPMatrix(POLY_OPA_DISP++, this->view.projectionPtr, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
+            //     // gSPMatrix(POLY_OPA_DISP++, this->view.viewingPtr, G_MTX_NOPUSH | G_MTX_MUL | G_MTX_PROJECTION);
+
+            //     gSPDisplayList(POLY_OPA_DISP++, gChaosContext.env.thunderbolt_display_list);
+            //     // gSPDisplayList(POLY_OPA_DISP++, 0x06000000);
+            // }
         }
     }
 
 SkipPostWorldDraw:
+
+    // if(gChaosContext.env.draw_thunderbolt)
+    // {
+    //     Chaos_GenerateThunderbolt(this);
+    //     // Gfx_SetupDL25_Opa(this->state.gfxCtx);
+    //     // gSPClearGeometryMode(POLY_OPA_DISP++, G_SHADE |
+    //     //     G_SHADING_SMOOTH | G_CULL_BOTH
+    //     //     | G_FOG | G_LIGHTING | G_TEXTURE_GEN
+    //     //     | G_TEXTURE_GEN_LINEAR | G_LOD);
+    //     // gSPSetGeometryMode(POLY_OPA_DISP++, G_SHADE | G_LIGHTING |
+    //     //     G_SHADING_SMOOTH
+    //     //     | G_ZBUFFER | G_CULL_BACK);
+    //     // gDPSetRenderMode(POLY_OPA_DISP++,G_RM_ZB_OPA_SURF, G_RM_ZB_OPA_SURF2);
+    //     // // gSPSegment(POLY_OPA_DISP++, 0x06, NULL);
+    //     // // gSPMatrix(POLY_OPA_DISP++, this->view.projectionPtr, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
+    //     // // gSPMatrix(POLY_OPA_DISP++, this->view.viewingPtr, G_MTX_NOPUSH | G_MTX_MUL | G_MTX_PROJECTION);
+
+    //     // gSPDisplayList(POLY_OPA_DISP++, gChaosContext.env.thunderbolt_display_list);
+    //     // gSPDisplayList(POLY_OPA_DISP++, 0x00000000); 
+    // }
 
     if ((this->view.unk164 != 0) && !gDbgCamEnabled) {
         Camera_Update(GET_ACTIVE_CAM(this));
@@ -2443,11 +2614,13 @@ SkipPostWorldDraw:
         Environment_DrawSkyboxStars(this);
     }
 
+
     CLOSE_DISPS(gfxCtx);
 
     bzero(inputs, sizeof(inputs));
     PadMgr_GetInput(inputs, false);
     Chaos_PrintCodes(this, &inputs[0]);
+    Chaos_PrintConsoleLines(this);
 
     if(this->pauseCtx.state == PAUSE_STATE_OFF)
     {
@@ -2630,7 +2803,7 @@ void Play_SpawnScene(PlayState* this, s32 sceneId, s32 spawn) {
     Play_InitScene(this, spawn);
     Room_SetupFirstRoom(this, &this->roomCtx);
 
-    if(sceneId == SCENE_MITURIN)
+    if(sceneId == SCENE_MITURIN || sceneId == SCENE_MITURIN_BS)
     {
         SET_WEEKEVENTREG(WEEKEVENTREG_WOODFALL_TEMPLE_RISEN);
     }
@@ -3126,7 +3299,7 @@ void Play_Init(GameState* thisx) {
     // u32 scene_bgm;
     s32 scene = gSaveContext.save.entrance >> 9;
 
-    gSaveCopy = gSaveContext.save;
+    // gSaveCopy = gSaveContext.save;
     // u32 index;
     // s16 cur_cs_id;
     // u8 override_cutscene = false;
@@ -3397,6 +3570,8 @@ void Play_Init(GameState* thisx) {
         // bzero(&gChaosContext.link.parent_snapshot, sizeof(gChaosContext.link.parent_snapshot));
         Chaos_NukeSnapshots();
     }
+
+    gChaosContext.env.wind_actor = NULL;
     
     CutsceneManager_StoreCamera(&this->mainCamera);
     Interface_SetSceneRestrictions(this);
@@ -3409,6 +3584,11 @@ void Play_Init(GameState* thisx) {
     gSaveContext.respawnFlag = 0;
     sBombersNotebookOpen = false;
     BombersNotebook_Init(&sBombersNotebook);
+
+    if(gChaosContext.screen_slayer == CHAOS_SCREEN_SLAYER_STATE_WAIT_FOR_TRANSITION)
+    {
+        gChaosContext.screen_slayer = CHAOS_SCREEN_SLAYER_STATE_READY;
+    }
 
     // cur_cs_id = CutsceneManager_GetCurrentCsId();
     // override_cutscene = /* this->csCtx.state == CS_STATE_IDLE || */ cur_cs_id == CS_ID_NONE;

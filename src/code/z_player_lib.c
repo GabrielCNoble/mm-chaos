@@ -2510,6 +2510,8 @@ s32 Player_OverrideLimbDrawGameplayDefault(PlayState* play, s32 limbIndex, Gfx**
 
     if (!Player_OverrideLimbDrawGameplayCommon(play, limbIndex, dList, pos, rot, &player->actor)) 
     {
+        limbIndex = gChaosContext.link.limb_map[limbIndex];
+
         if(Chaos_IsCodeActive(CHAOS_CODE_SIGNPOST))
         {
             if(limbIndex == PLAYER_LIMB_ROOT)
@@ -3750,7 +3752,7 @@ void Player_SetFeetPos(PlayState* play, Player* player, s32 limbIndex) {
 void Player_PostLimbDrawGameplay(PlayState* play, s32 limbIndex, Gfx** dList1, Gfx** dList2, Vec3s* rot, Actor* actor) {
     Player* player = (Player*)actor;
 
-    if (*dList2 != NULL) {
+    if (dList2 == NULL || *dList2 != NULL) {
         Matrix_MultZero(sPlayerCurBodyPartPos);
     }
 

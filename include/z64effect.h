@@ -13,6 +13,7 @@
 #include "z64eff_spark.h"
 #include "z64eff_shield_particle.h"
 #include "z64effect_ss.h"
+#include "z64eff_goron_blizzard.h"
 
 struct GraphicsContext;
 struct PlayState;
@@ -23,6 +24,7 @@ typedef enum EffectType {
     /* 2 */ EFFECT_BLURE2,
     /* 3 */ EFFECT_SHIELD_PARTICLE,
     /* 4 */ EFFECT_TIRE_MARK,
+            EFFECT_GORON_BLIZZARD,
     /* 5 */ EFFECT_MAX
 } EffectType;
 

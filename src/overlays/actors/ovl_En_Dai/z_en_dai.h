@@ -3,7 +3,7 @@
 
 #include "global.h"
 #include "assets/objects/object_dai/object_dai.h"
-
+#include "z64eff_goron_blizzard.h"
 struct EnDai;
 
 typedef void (*EnDaiActionFunc)(struct EnDai*, PlayState*);
@@ -11,13 +11,13 @@ typedef void (*EnDaiActionFunc)(struct EnDai*, PlayState*);
 typedef struct EnDaiEffect {
     /* 0x00 */ u8 isEnabled;
     /* 0x01 */ u8 unk_01;
-    /* 0x02 */ u8 unk_02;
+    /* 0x02 */ u8 unk_02; // effect tex coord scroll
     /* 0x03 */ UNK_TYPE1 unk_03[0xD];
-    /* 0x10 */ Vec3f unk_10;
-    /* 0x1C */ Vec3f unk_1C;
-    /* 0x28 */ Vec3f unk_28;
-    /* 0x34 */ f32 unk_34;
-    /* 0x38 */ f32 unk_38;
+    /* 0x10 */ Vec3f unk_10; // effect position
+    /* 0x1C */ Vec3f unk_1C; // effect velocity
+    /* 0x28 */ Vec3f unk_28; // effect acceleration
+    /* 0x34 */ f32 unk_34; // effect scale
+    /* 0x38 */ f32 unk_38; // effect scale increment
 } EnDaiEffect; // size = 0x3C
 
 #define EN_DAI_EFFECT_COUNT 32
@@ -37,12 +37,13 @@ typedef struct EnDai {
     /* 0x1DA */ s16 unk_1DA;
     /* 0x1DC */ s16 unk_1DC;
     /* 0x1E0 */ f32 unk_1E0;
-    /* 0x1E4 */ Vec3f unk_1E4;
+    /* 0x1E4 */ Vec3f unk_1E4; // effect position
     /* 0x1F0 */ Vec3f unk_1F0;
     /* 0x1FC */ Vec3f unk_1FC;
     /* 0x208 */ Vec3s jointTable[OBJECT_DAI_LIMB_MAX];
     /* 0x27A */ Vec3s morphTable[OBJECT_DAI_LIMB_MAX];
-    /* 0x2EC */ EnDaiEffect effects[EN_DAI_EFFECT_COUNT];
+    // /* 0x2EC */ EnDaiEffect effects[EN_DAI_EFFECT_COUNT];
+    EffectGoronBlizzard blizzard; 
     /* 0xA6C */ s32 unk_A6C;
     /* 0xA70 */ s32 animIndex;
 } EnDai; // size = 0xA74

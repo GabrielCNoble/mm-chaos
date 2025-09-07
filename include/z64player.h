@@ -804,6 +804,7 @@ typedef enum PlayerCsAction {
     /* 0x89 */ PLAYER_CSACTION_137,
     /* 0x8A */ PLAYER_CSACTION_138,
     /* 0x8B */ PLAYER_CSACTION_139,
+               PLAYER_CSACTION_STUPID_NOD,
     /* 0x8C */ PLAYER_CSACTION_MAX
 } PlayerCsAction;
 
@@ -900,6 +901,7 @@ typedef enum PlayerCueId {
     /* 0x59 */ PLAYER_CUEID_89,
     /* 0x5A */ PLAYER_CUEID_90,
     /* 0x5B */ PLAYER_CUEID_91,
+               PLAYER_CUEID_STUPID_NOD,
     /* 0x5C */ PLAYER_CUEID_MAX
 } PlayerCueId;
 
@@ -1349,11 +1351,11 @@ typedef struct Player {
     /* 0xB6E */ s16 floorPitchAlt; // the calculation for this value is bugged and doesn't represent anything meaningful
     /* 0xB70 */ s16 unk_B70;
     /* 0xB72 */ u16 floorSfxOffset;
-    /* 0xB74 */ u8 unk_B74;
-    /* 0xB75 */ u8 unk_B75;
-    /* 0xB76 */ s16 unk_B76;
-    /* 0xB78 */ f32 unk_B78;
-    /* 0xB7C */ f32 unk_B7C;
+    /* 0xB74 */ u8 unk_B74;     // hit damage?
+    /* 0xB75 */ u8 unk_B75;     // hit type?
+    /* 0xB76 */ s16 unk_B76;    // hit angle?
+    /* 0xB78 */ f32 unk_B78;    // hit speed?
+    /* 0xB7C */ f32 unk_B7C;    // hit y velocity?
     /* 0xB80 */ f32 pushedSpeed; // Pushing player, examples include water currents, floor conveyors, climbing sloped surfaces
     /* 0xB84 */ s16 pushedYaw; // Yaw of direction in which player is being pushed
     /* 0xB86 */ union

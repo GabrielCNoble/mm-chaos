@@ -2276,10 +2276,10 @@ void Environment_UpdateLightningStrike(PlayState* play) {
     u32 chaos_bolt = false;
     if (play->envCtx.lightningState != LIGHTNING_OFF) {
         switch (gLightningStrike.state) {
-            case LIGHTNING_STRIKE_CHAOS:
-                gLightningStrike.delayTimer = 600.0f;
-                bolt_count = 10;
-                chaos_bolt = true;
+            // case LIGHTNING_STRIKE_CHAOS:
+            //     gLightningStrike.delayTimer = 600.0f;
+            //     bolt_count = 10;
+            //     chaos_bolt = true;
             case LIGHTNING_STRIKE_WAIT:
                 // every frame theres a 10% chance of the timer advancing 10 units
                 if (Rand_ZeroOne() < 0.1f) {
@@ -2389,14 +2389,37 @@ void Environment_DrawLightning(PlayState* play, s32 unused) {
     s32 pad[2];
     f32 position_scale = 9500.0f;
     f32 offset_scale = 5000.0f;
+    Player *player = GET_PLAYER(play);
 
     OPEN_DISPS(play->state.gfxCtx);
 
     for (i = 0; i < ARRAY_COUNT(sLightningBolts); i++) {
         switch (sLightningBolts[i].state) {
-            case LIGHTNING_BOLT_CHAOS:
-                position_scale = 0.0f;
-                offset_scale = 0.1f;
+            // case LIGHTNING_BOLT_CHAOS:
+            //     // dx = play->view.at.x - play->view.eye.x;
+            //     // dz = play->view.at.z - play->view.eye.z;
+
+            //     // x = dx / sqrtf(SQ(dx) + SQ(dz));
+            //     // z = dz / sqrtf(SQ(dx) + SQ(dz));
+
+            //     sLightningBolts[i].pos.x = player->actor.world.pos.x;
+            //     sLightningBolts[i].pos.y = Rand_ZeroOne() * 1000.0f + 4000.0f;
+            //     sLightningBolts[i].pos.z = player->actor.world.pos.z;
+
+            //     sLightningBolts[i].offset.x = 0.0f;
+            //     sLightningBolts[i].offset.y = 0.0f;
+            //     sLightningBolts[i].offset.z = 0.0f;
+            //     // sLightningBolts[i].offset.x = (Rand_ZeroOne() - 0.5f) * 0.001f;
+            //     // sLightningBolts[i].offset.y = 0.0f;
+            //     // sLightningBolts[i].offset.z = (Rand_ZeroOne() - 0.5f) * 0.001f;
+
+            //     sLightningBolts[i].textureIndex = 0;
+            //     sLightningBolts[i].pitch = (Rand_ZeroOne() - 0.5f) * 40.0f;
+            //     sLightningBolts[i].roll = (Rand_ZeroOne() - 0.5f) * 40.0f;
+            //     sLightningBolts[i].delayTimer = (i + 1) * 2;
+            //     sLightningBolts[i].state = LIGHTNING_BOLT_WAIT;
+            // break;
+
             case LIGHTNING_BOLT_START:
                 dx = play->view.at.x - play->view.eye.x;
                 dz = play->view.at.z - play->view.eye.z;
@@ -2424,6 +2447,10 @@ void Environment_DrawLightning(PlayState* play, s32 unused) {
 
                 if (sLightningBolts[i].delayTimer <= 0) {
                     sLightningBolts[i].state = LIGHTNING_BOLT_DRAW;
+                    if(i == 0)
+                    {
+                        Audio_PlaySfx(NA_SE_EV_LIGHTNING);
+                    }
                 }
                 break;
 
@@ -2445,7 +2472,7 @@ void Environment_DrawLightning(PlayState* play, s32 unused) {
                              sLightningBolts[i].pos.z + sLightningBolts[i].offset.z, MTXMODE_NEW);
             Matrix_RotateXFApply(DEG_TO_RAD(sLightningBolts[i].pitch));
             Matrix_RotateZF(DEG_TO_RAD(sLightningBolts[i].roll), MTXMODE_APPLY);
-            Matrix_Scale(22.0f, 100.0f, 22.0f, MTXMODE_APPLY);
+            Matrix_Scale(5.0f, 100.0f, 5.0f, MTXMODE_APPLY);
             gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, 255, 255, 255, 128);
             gDPSetEnvColor(POLY_XLU_DISP++, 0, 255, 255, 128);
             MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx);

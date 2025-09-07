@@ -21,6 +21,12 @@ docs/doxygen/
 *.z64
 *.n64
 *.v64
+*.bps
+*.flash
+*.py
+notes
+changelog
+todo
 
 # Tools
 .venv/

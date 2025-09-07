@@ -80,6 +80,13 @@ EffectInfo sEffectInfoTable[EFFECT_MAX] = {
         EffectTireMark_Update,
         EffectTireMark_Draw,
     },
+    {
+        sizeof(EffectGoronBlizzard),
+        EffectGoronBlizzard_Init,
+        EffectGoronBlizzard_Destroy,
+        EffectGoronBlizzard_Update,
+        EffectGoronBlizzard_Draw
+    }
 };
 
 PlayState* Effect_GetPlayState(void) {

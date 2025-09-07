@@ -89,10 +89,12 @@ void GfxPrint_PrintCharImpl(GfxPrint* this, u8 c) {
     u16 s = c & 4;
     u16 t = c >> 3;
 
+    
     if (this->flags & GFXP_FLAG_UPDATE) {
         this->flags &= ~GFXP_FLAG_UPDATE;
-
+        
         gDPPipeSync(this->dList++);
+
         if (this->flags & GFXP_FLAG_RAINBOW) {
             gDPSetTextureLUT(this->dList++, G_TT_RGBA16);
             gDPSetCycleType(this->dList++, G_CYC_2CYCLE);
@@ -103,7 +105,7 @@ void GfxPrint_PrintCharImpl(GfxPrint* this, u8 c) {
         {
             gDPSetTextureLUT(this->dList++, G_TT_IA16);
             gDPSetCycleType(this->dList++, G_CYC_1CYCLE);
-            gDPSetRenderMode(this->dList++, G_RM_ZB_XLU_SURF, G_RM_ZB_XLU_SURF2);
+            gDPSetRenderMode(this->dList++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
             // gDPSetCombineMode(this->dList++, G_CC_MODULATEIDECALA_PRIM, G_CC_MODULATEIDECALA_PRIM);
             gDPSetCombineMode(this->dList++, G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM);
         } 

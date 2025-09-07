@@ -1141,6 +1141,11 @@ void EnGk_Update(Actor* thisx, PlayState* play) {
 }
 
 s32 EnGk_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, Actor* thisx) {
+    EnGk* this = (EnGk*)thisx;
+    if(limbIndex == OBJECT_GK_LIMB_11 && this->animIndex == ENGK_ANIM_0)
+    {
+        pos->y += BINANG_TO_DEG(rot->z) * 200;
+    }
     return false;
 }
 

@@ -5,6 +5,7 @@
  */
 
 #include "z_en_weather_tag.h"
+#include "chaos_fuckery.h"
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED)
 
@@ -63,9 +64,9 @@ void EnWeatherTag_Init(Actor* thisx, PlayState* play) {
 
     switch (WEATHER_TAG_TYPE(&this->actor)) {
         case WEATHERTAG_TYPE_UNK0:
-            this->unk154 = 0;
+            this->progress_step = 0;
             this->fadeDistance = this->actor.world.rot.x;
-            this->unk158 = this->actor.world.rot.y;
+            this->progress_step = this->actor.world.rot.y;
             EnWeatherTag_SetupAction(this, func_80966A08);
             break;
 
@@ -189,9 +190,10 @@ void func_8096689C(EnWeatherTag* this, PlayState* play) {
 
     // this separation is to match, can't be separate temps without regalloc
     partialResult = 1.0f - (distance / this->fadeDistance);    // strength based on distance?
-    partialResult = (this->unk154 / 32768.0f) * partialResult; // another scale applied
+    partialResult = (this->progress_accumulator / 32768.0f) * partialResult; // another scale applied
 
     play->envCtx.windSpeed = (this->actor.world.rot.z * partialResult) + 30.0f;
+    // Chaos_ConsolePrintf("%f", play->envCtx.windSpeed);
     if (partialResult > 0.01f) {
         play->envCtx.sandstormState = SANDSTORM_8;
         D_801F4E30 = 0x9B;
@@ -201,11 +203,42 @@ void func_8096689C(EnWeatherTag* this, PlayState* play) {
     }
 }
 
+// void EnWeatherTag_ChaosBlizzard(EnWeatherTag *this, PlayState *play)
+// {
+//     Player* player = GET_PLAYER(play);
+//     f32 distance;
+//     f32 partialResult;
+//     Vec3f player_vec;
+
+//     // distance = Actor_WorldDistXZToActor(&player->actor, &this->actor);
+//     if (this->fadeDistance < distance) {
+//         distance = this->fadeDistance;
+//     }
+
+//     if (this->fadeDistance == 0) {
+//         this->fadeDistance = 1; // div by zero protection
+//     }
+
+//     // this separation is to match, can't be separate temps without regalloc
+//     partialResult = 1.0f - (distance / this->fadeDistance);    // strength based on distance?
+//     partialResult = (this->progress_accumulator / 32768.0f) * partialResult; // another scale applied
+
+//     play->envCtx.windSpeed = (this->actor.world.rot.z * partialResult) + 30.0f;
+//     Chaos_ConsolePrintf("%f", play->envCtx.windSpeed);
+//     if (partialResult > 0.01f) {
+//         play->envCtx.sandstormState = SANDSTORM_8;
+//         D_801F4E30 = 0x9B;
+//     } else if (play->envCtx.sandstormState == SANDSTORM_8) {
+//         D_801F4E30 = 0;
+//         play->envCtx.sandstormState = SANDSTORM_9;
+//     }
+// }
+
 // WEATHERTAG_TYPE_UNK0
 void func_80966A08(EnWeatherTag* this, PlayState* play) {
-    this->unk154 += this->unk158;
-    if (this->unk154 > 0x8000) {
-        this->unk154 = 0x8000;
+    this->progress_accumulator += this->progress_step;
+    if (this->progress_accumulator > 0x8000) {
+        this->progress_accumulator = 0x8000;
         EnWeatherTag_SetupAction(this, func_80966A68);
     }
     func_8096689C(this, play);
@@ -213,13 +246,13 @@ void func_80966A08(EnWeatherTag* this, PlayState* play) {
 
 // WEATHERTAG_TYPE_UNK0 2
 void func_80966A68(EnWeatherTag* this, PlayState* play) {
-    this->unk154 -= (this->unk158 >> 1);
-    if (this->unk154 == 0) {
-        this->unk154 = 1;
+    this->progress_accumulator -= (this->progress_step >> 1);
+    if (this->progress_accumulator == 0) {
+        this->progress_accumulator = 1;
     }
 
-    if ((s16)this->unk154 < 0) { // cast req
-        this->unk154 = 0;
+    if ((s16)this->progress_accumulator < 0) { // cast req
+        this->progress_accumulator = 0;
         // redundant code
         Actor_Kill(&this->actor);
         EnWeatherTag_SetupAction(this, EnWeatherTag_Die);

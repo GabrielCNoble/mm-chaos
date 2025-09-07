@@ -7,6 +7,8 @@
 #include "z_en_ik.h"
 #include "z64rumble.h"
 #include "overlays/actors/ovl_En_Clear_Tag/z_en_clear_tag.h"
+#include "fault.h"
+#include "chaos_fuckery.h"
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE | ACTOR_FLAG_HOOKSHOT_PULLS_PLAYER)
 
@@ -789,6 +791,12 @@ void EnIk_UpdateDamage(EnIk* this, PlayState* play) {
             this->invincibilityFrames = 12;
             EnIk_Thaw(this, play);
             this->colliderQuad.base.atFlags &= ~AT_ON;
+
+            // if(this->drawArmorFlags)
+            // {
+            //     Chaos_ConsolePrintf("%d -- %d", this->actor.colChkInfo.damage, this->actor.colChkInfo.health);
+            // }
+
             if (Actor_ApplyDamage(&this->actor) == 0) {
                 if (this->drawArmorFlags == 0) {
                     this->actor.colChkInfo.health = 9;
@@ -798,6 +806,7 @@ void EnIk_UpdateDamage(EnIk* this, PlayState* play) {
                     Audio_RestorePrevBgm();
                 }
             }
+
             if (isArmorBroken == true) {
                 this->drawArmorFlags = 1;
                 this->colliderCylinder.base.colMaterial = COL_MATERIAL_HIT3;

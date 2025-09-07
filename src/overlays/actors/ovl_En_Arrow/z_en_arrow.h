@@ -43,7 +43,8 @@ typedef enum ArrowMagic {
 typedef enum ArrowHitFlags {
     ARROW_HIT_FLAG_1    = 1,
     ARROW_HIT_FLAG_2    = 1 << 1,
-    ARROW_HIT_FLAG_4    = 1 << 2
+    ARROW_HIT_FLAG_4    = 1 << 2,
+    ARROW_HIT_ACTOR     = 1 << 4,
 } ArrowHitFlags;
 
 typedef struct {
@@ -71,10 +72,10 @@ typedef struct EnArrow {
     /* 0x240 */ s32 unk_240;
     /* 0x244 */ WeaponInfo unk_244;
     /* 0x260 */ u8 unk_260; // timer in OoT (alive timer)
-    /* 0x261 */ u8 unk_261; // hitFlags in OoT
-    /* 0x262 */ u8 unk_262; // hit background? (now chaos effect)
+    /* 0x261 */ u8 hit_flags; // hitFlags in OoT
+    /* 0x262 */ u8 chaos_effect; // hit background? (now chaos effect)
     /* 0x263 */ u8 unk_263;
-    /* 0x264 */ Actor* unk_264; // hit actor
+    /* 0x264 */ Actor* attached_actor; // hit actor 
     /* 0x268 */ Vec3f unk_268;
     /* 0x274 */ EnArrowActionFunc actionFunc;
 } EnArrow; // size = 0x278

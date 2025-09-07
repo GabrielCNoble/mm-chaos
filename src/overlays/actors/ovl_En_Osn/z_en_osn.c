@@ -275,13 +275,31 @@ void EnOsn_LookFromMask(EnOsn* this) {
     }
 }
 
-void EnOsn_FadeOut(EnOsn* this) {
+void EnOsn_FadeOut(PlayState *play, EnOsn* this) {
     s16 curFrame = this->skelAnime.curFrame;
     s16 endFrame = Animation_GetLastFrame(sAnimationInfo[this->animIndex].animation);
 
     if (curFrame == endFrame) {
-        this->alpha -= 8;
-        if (this->alpha < 8) {
+        if(this->alpha == 255)
+        {
+            Vec3f position = this->actor.world.pos;
+            Vec3f velocity;
+            Vec3f accel;
+
+            position.y += 30.0;
+            velocity.x = 0;
+            velocity.y = 0;
+            velocity.z = 0;
+
+            accel.x = 0;
+            accel.y = 0;
+            accel.z = 0;
+
+            Actor_PlaySfx(&this->actor, NA_SE_IT_BOMB_EXPLOSION);
+            EffectSsBomb2_SpawnLayered(play, &position, &velocity, &accel, 60, 15);
+        }
+        this->alpha -= 100;
+        if (this->alpha < 100) {
             this->alpha = 0;
             Actor_Kill(&this->actor);
         }
@@ -755,6 +773,7 @@ void EnOsn_HandleCutscene(EnOsn* this, PlayState* play) {
     s32 cueChannel;
 
     if (Cutscene_IsCueInChannel(play, CS_CMD_ACTOR_CUE_130)) {
+        u32 prev_anim_index = this->animIndex;
         cueChannel = Cutscene_GetCueChannel(play, CS_CMD_ACTOR_CUE_130);
         this->shouldRotateHead = false;
         if (this->cueId != play->csCtx.actorCues[cueChannel]->id) {
@@ -865,7 +884,26 @@ void EnOsn_HandleCutscene(EnOsn* this, PlayState* play) {
         }
 
         if (this->animIndex == OSN_ANIM_WALK_AWAY_END) {
-            EnOsn_FadeOut(this);
+            // Vec3f position = this->actor.world.pos;
+            // Vec3f velocity;
+            // Vec3f accel;
+
+            // position.y += 30.0;
+            // velocity.x = 0;
+            // velocity.y = 0;
+            // velocity.z = 0;
+
+            // accel.x = 0;
+            // accel.y = 0;
+            // accel.z = 0;
+
+            // if(prev_anim_index != this->animIndex)
+            // {
+            //     Actor_PlaySfx(&this->actor, NA_SE_IT_BOMB_EXPLOSION);
+            //     EffectSsBomb2_SpawnLayered(play, &position, &velocity, &accel, 60, 15);
+            // }
+
+            EnOsn_FadeOut(play, this);
         }
 
         if ((this->animIndex == OSN_ANIM_WALK_AWAY) &&
