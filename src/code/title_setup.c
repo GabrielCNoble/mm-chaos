@@ -1,6 +1,6 @@
 #include "z_title_setup.h"
 #include "sys_flashrom.h"
-
+#include "fault.h"
 #include "overlays/gamestates/ovl_title/z_title.h"
 
 void Setup_InitRegs(void) {
@@ -52,6 +52,11 @@ void Setup_InitRegs(void) {
 void Setup_InitImpl(SetupState* this) {
     SysFlashrom_InitFlash();
     SaveContext_Init();
+
+    gSaveContext.options.language = LANGUAGE_ENG;
+    gSaveContext.options.audioSetting = SAVE_AUDIO_STEREO;
+    gSaveContext.options.zTargetSetting = 0;
+    
     Setup_InitRegs();
 
     STOP_GAMESTATE(&this->state);

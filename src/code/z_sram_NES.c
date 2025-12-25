@@ -1470,6 +1470,7 @@ void func_801457CC(GameState* gameState, SramContext* sramCtx) {
         for (save_file_index = 0; save_file_index < 5; save_file_index++ /*, save_file_offset += 2 */) {
             struct save_info_t *save_info = &fileSelect->save_info[save_file_index];
             bzero(sramCtx->saveBuf, SAVE_BUFFER_SIZE);
+            SaveContext_Init();
 
             flash_load_failed = false;
             backup_file_loaded = false;

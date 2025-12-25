@@ -4284,6 +4284,7 @@ void FileSelect_InitContext(GameState* thisx) {
 
     Sram_Alloc(&this->state, &this->sramCtx);
     func_801457CC(&this->state, &this->sramCtx);
+    // SaveContext_Init();
 
     this->menuMode = FS_MENU_MODE_INIT;
 
@@ -4417,8 +4418,10 @@ void FileSelect_Init(GameState* thisx) {
     View_Init(&this->view, this->state.gfxCtx);
     this->state.main = FileSelect_Main;
     this->state.destroy = FileSelect_Destroy;
+    
     FileSelect_InitContext(&this->state);
     Font_LoadOrderedFont(&this->font);
+
 
     size = SEGMENT_ROM_SIZE(title_static);
     this->staticSegment = THA_AllocTailAlign16(&this->state.tha, size);

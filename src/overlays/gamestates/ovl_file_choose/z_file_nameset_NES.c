@@ -9,6 +9,7 @@
 #include "z64rumble.h"
 #include "assets/misc/title_static/title_static.h"
 #include "assets/overlays/ovl_file_choose/ovl_file_choose.h"
+#include "fault.h"
 
 void FileSelect_DrawTexQuadI4(GraphicsContext* gfxCtx, TexturePtr texture, s16 point) {
     OPEN_DISPS(gfxCtx);
@@ -712,6 +713,7 @@ void FileSelect_NameEntryWaitForFlashSave(GameState* thisx) {
     SramContext* sramCtx = &this->sramCtx;
 
     Sram_UpdateWriteToFlashDefault(sramCtx);
+
 
     if (sramCtx->status == 0) {
         this->configMode = CM_NAME_ENTRY_TO_MAIN;
