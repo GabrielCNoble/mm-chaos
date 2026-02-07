@@ -30,7 +30,7 @@
 
 #define CHAOS_MAJOR_VERSION 0
 #define CHAOS_MINOR_VERSION 5
-#define CHAOS_PATCH_VERSION 6
+#define CHAOS_PATCH_VERSION 7
 
 enum CHAOS_CODES
 {
@@ -202,6 +202,15 @@ enum CHAOS_CODES
     CHAOS_CODE_SWAP_LIMBS,
     /* spawns snow head wind effect */
     CHAOS_CODE_BLIZZARD,
+    /* Stick drift */
+    CHAOS_CODE_STICK_DRIFT,
+
+    /* camera locks on some random bullshit for a few seconds */
+    // CHAOS_CODE_LOOK_AT_THAAAAAT,
+
+    /* Link's actions randomly makes him fart */
+    // CHAOS_CODE_FLATULENT,
+
 
     // CHAOS_CODE_SCREEN_SLAYER,
 
@@ -709,7 +718,7 @@ enum CHAOS_ROLLBACK_STATES
 };
  
 #define INVALID_CODE_INDEX      0xff 
-#define MAX_CHAOS_TIMER         8
+#define MAX_CHAOS_TIMER         12
 #define MIN_CHAOS_TIMER         2
 #define CHAOS_SECONDS_TO_FRAMES(seconds)    (((u16)(seconds)) * (20))
 #define CHAOS_MAX_DISRUPTIVE_PROBABILITY_SCALE 7.0f
@@ -1006,6 +1015,10 @@ typedef struct ChaosContext
         u8                              simon_says_state;
 
         u8                              hitpoint_alarm_timer;
+
+        s8                              input_rel_x;
+        s8                              input_rel_y;
+        s16                             control_stick_angle;
     } link;
 
     struct

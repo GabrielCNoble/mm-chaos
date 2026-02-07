@@ -97,7 +97,7 @@ void EffectGoronBlizzard_Draw(void* thisx, struct GraphicsContext* gfxCtx)
         Gfx_SetupDL25_Xlu(gfxCtx);
         gDPPipeSync(POLY_XLU_DISP++);
         gSPDisplayList(POLY_XLU_DISP++, object_dai_DL_000230);
-        // for (i = 0; i < EFF_GORON_BLIZZARD_PARTICLES; i++, effect++) {
+        
         for(particle_index = 0; particle_index < ARRAY_COUNT(goron_blizzard->particles); particle_index++)
         {
             EffectGoronBlizzardParticle *particle = goron_blizzard->particles + particle_index;
@@ -132,7 +132,6 @@ void EffectGoronBlizzard_Draw(void* thisx, struct GraphicsContext* gfxCtx)
     
                 Matrix_Pop();
             }
-            // }
         }
     }
 

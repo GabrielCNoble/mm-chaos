@@ -3521,7 +3521,7 @@ void KaleidoScope_Update(PlayState* play) {
                 msgCtx->msgLength = 0;
                 msgCtx->msgMode = MSGMODE_NONE;
 
-                if(/* Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI) && */ Rand_S16Offset(0, 16) == 3)
+                if(/* Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI) && */ (Rand_S16Offset(0, 16) % 8) == 0)
                 {
                     choice_index ^= 1;
                 }

@@ -269,7 +269,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_BUCKSHOT_ARROWS]          = */ CHAOS_CODE_DEF(15, 25, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.02f),
     /* [CHAOS_CODE_RANDOM_BOMB_TIMER]        = */ CHAOS_CODE_DEF(10, 15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.028f),
     /* [CHAOS_CODE_LOVELESS_MARRIAGE]        = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0), 0.0055f),
-    /* [CHAOS_CODE_WEIRD_UI]                 = */ CHAOS_CODE_DEF(8,  15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.04f),
+    /* [CHAOS_CODE_WEIRD_UI]                 = */ CHAOS_CODE_DEF(8,  15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), 0.015f),
     /* [CHAOS_CODE_BEER_GOGGLES]             = */ CHAOS_CODE_DEF(25, 55, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0), 0.0044f),
     /* [CHAOS_CODE_CHANGE_MAGIC]             = */ CHAOS_CODE_DEF(1,  10, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0), 0.04f),
     /* [CHAOS_CODE_INVINCIBLE]               = */ CHAOS_CODE_DEF(8,  23, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.005f),
@@ -284,7 +284,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_INCREDIBLE_KNOCKBACK]     = */ CHAOS_CODE_DEF(10, 21, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.008f),
     /* [CHAOS_CODE_RANDOM_SCALING]           = */ CHAOS_CODE_DEF(10, 21, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0), 0.007f),
     /* [CHAOS_CODE_BIG_BROTHER]              = */ CHAOS_CODE_DEF(25, 70, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0), 0.002f),
-    /* [CHAOS_CODE_OUT_OF_SHAPE]             = */ CHAOS_CODE_DEF(5,  12, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1), 0.008f),
+    /* [CHAOS_CODE_OUT_OF_SHAPE]             = */ CHAOS_CODE_DEF(5,  12, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1), 0.0035f),
     // /* [CHAOS_CODE_TUNIC_COLOR]              = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0), 0.006f),
     /* [CHAOS_CODE_WEIRD_SKYBOX]             = */ CHAOS_CODE_DEF(10, 15, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0), 0.006f),
     /* [CHAOS_CODE_PLAY_OCARINA]             = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1), 0.004f),
@@ -295,7 +295,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_JUNK_ITEM]                = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1), 0.0055f),
     /* [CHAOS_CODE_RANDOM_HEALTH_UP]         = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.001f),
     /* [CHAOS_CODE_RANDOM_HEALTH_DOWN]       = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.001f),
-    /* [CHAOS_CODE_IMAGINARY_FRIENDS]        = */ CHAOS_CODE_DEF(5,  12, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1), 0.008f),
+    /* [CHAOS_CODE_IMAGINARY_FRIENDS]        = */ CHAOS_CODE_DEF(5,  12, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1), 0.0035f),
     /* [CHAOS_CODE_WALLMASTER]               = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0), 0.0055f),
     /* [CHAOS_CODE_REDEADASS_GROOVE]         = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0), 0.0065f),
     /* [CHAOS_CODE_SCALE_RANDOM_LIMB]        = */ CHAOS_CODE_DEF(0,  0,  CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.0016f),
@@ -321,7 +321,7 @@ struct ChaosCodeDef gChaosCodeDefs[] = {
     /* [CHAOS_CODE_LUCKY]                    = */ CHAOS_CODE_DEF(0, 0,   CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0), 0.001f),
     /* [CHAOS_CODE_SWAP_LIMBS]               = */ CHAOS_CODE_DEF(0, 0,   CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0), 0.0025f),
     /* [CHAOS_CODE_BLIZZARD]                 = */ CHAOS_CODE_DEF(15, 40, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0), 0.0015f),
-    // /* [CHAOS_CODE_SCREEN_SLAYER]            = */ CHAOS_CODE_DEF(0, 0,   CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1), 0.0025f),
+    /* [CHAOS_CODE_STICK_DRIFT]              = */ CHAOS_CODE_DEF(10, 30, CHAOS_CODE_RESTRICTION_FLAG_MASK(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0), 0.0028f),
 };
   
 const char *gChaosCodeNames[] = {
@@ -396,6 +396,7 @@ const char *gChaosCodeNames[] = {
     /* [CHAOS_CODE_LUCKY]                       = */ "Lucky",
     /* [CHAOS_CODE_SWAP_LIMBS]                  = */ "Swap limbs",
     /* [CHAOS_CODE_BLIZZARD]                    = */ "Blizzard",
+    /* [CHAOS_CODE_STICK_DRIFT]                 = */ "Stick drift",
     // /* [CHAOS_CODE_SCREEN_SLAYER]               = */ "Screen slayer",
 };
 
@@ -1116,7 +1117,7 @@ void Chaos_UpdateChaos(PlayState *playstate)
 
         gChaosContext.code_elapsed_usec -= code_elapsed_seconds * 1000000;
 
-        // return;  
+        return;  
 
         if(chaos_elapsed_seconds > 0)
         {
@@ -2917,6 +2918,7 @@ void Chaos_UpdateEnabledChaosEffectsAndEntrances(PlayState *this)
     Chaos_EnableCode(CHAOS_CODE_FAKE_CRASH, disruptive_prob_scale);
     Chaos_EnableCode(CHAOS_CODE_CHANGE_RUPEE, gChaosContext.periodic_probability_scale);
     Chaos_EnableCode(CHAOS_CODE_BLIZZARD, disruptive_prob_scale);
+    Chaos_EnableCode(CHAOS_CODE_STICK_DRIFT, disruptive_prob_scale);
 
     if(gSaveContext.save.saveInfo.playerData.isMagicAcquired)
     {

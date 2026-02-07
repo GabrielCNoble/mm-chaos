@@ -58,7 +58,6 @@ void EnWeatherTag_Init(Actor* thisx, PlayState* play) {
     s32 pad;
     Path* path;
     s32 pathIndex;
-
     // flag: is targetable. Should do nothing as not set by default above
     this->actor.flags &= ~ACTOR_FLAG_ATTENTION_ENABLED;
 
@@ -184,14 +183,15 @@ void func_8096689C(EnWeatherTag* this, PlayState* play) {
         distance = this->fadeDistance;
     }
 
+    
     if (this->fadeDistance == 0) {
         this->fadeDistance = 1; // div by zero protection
     }
-
+    
     // this separation is to match, can't be separate temps without regalloc
     partialResult = 1.0f - (distance / this->fadeDistance);    // strength based on distance?
     partialResult = (this->progress_accumulator / 32768.0f) * partialResult; // another scale applied
-
+    
     play->envCtx.windSpeed = (this->actor.world.rot.z * partialResult) + 30.0f;
     // Chaos_ConsolePrintf("%f", play->envCtx.windSpeed);
     if (partialResult > 0.01f) {

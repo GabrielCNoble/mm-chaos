@@ -3978,8 +3978,8 @@ void Magic_DrawMeter(PlayState* play) {
         u32 index;
         for(index = 0; index < ARRAY_COUNT(chaos_offset); index++)
         {
-            chaos_offset[index][0] = Rand_S16Offset(-18, 36);
-            chaos_offset[index][1] = Rand_S16Offset(-18, 36);
+            chaos_offset[index][0] = Rand_S16Offset(-48, 96);
+            chaos_offset[index][1] = Rand_S16Offset(-48, 96);
         }
     }
     else
@@ -4133,12 +4133,12 @@ void Interface_DrawItemButtons(PlayState* play) {
     {
         for(temp = 0; temp < ARRAY_COUNT(chaos_cbutton_offsets); temp++)
         {
-            chaos_cbutton_offsets[temp][0] = Rand_S16Offset(-18, 36);
-            chaos_cbutton_offsets[temp][1] = Rand_S16Offset(-18, 36);
+            chaos_cbutton_offsets[temp][0] = Rand_S16Offset(-48, 96);
+            chaos_cbutton_offsets[temp][1] = Rand_S16Offset(-48, 96);
         }
 
-        chaos_bbutton_x = Rand_S16Offset(-18, 36);
-        chaos_bbutton_y = Rand_S16Offset(-18, 36);
+        chaos_bbutton_x = Rand_S16Offset(-48, 96);
+        chaos_bbutton_y = Rand_S16Offset(-48, 96);
     }
     else
     {
@@ -4276,8 +4276,8 @@ void Interface_DrawItemIconTexture(PlayState* play, TexturePtr texture, s16 butt
 
     if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
     {
-        chaos_x = Rand_S16Offset(-24, 48);
-        chaos_y = Rand_S16Offset(-24, 48);
+        chaos_x = Rand_S16Offset(-48, 96);
+        chaos_y = Rand_S16Offset(-48, 96);
     }
 
     OPEN_DISPS(play->state.gfxCtx);
@@ -4307,10 +4307,10 @@ void Interface_DrawAmmoCount(PlayState* play, s16 button, s16 alpha) {
 
     if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
     {
-        chaos_x0 = Rand_S16Offset(-18, 36);
-        chaos_y0 = Rand_S16Offset(-18, 36);
-        chaos_x1 = Rand_S16Offset(-18, 36);
-        chaos_y1 = Rand_S16Offset(-18, 36);
+        chaos_x0 = Rand_S16Offset(-48, 96);
+        chaos_y0 = Rand_S16Offset(-48, 96);
+        chaos_x1 = Rand_S16Offset(-48, 96);
+        chaos_y1 = Rand_S16Offset(-48, 96);
     }
 
     OPEN_DISPS(play->state.gfxCtx);
@@ -4391,8 +4391,8 @@ void Interface_DrawBButtonIcons(PlayState* play) {
 
     if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
     {
-        chaos_x = Rand_S16Offset(-18, 36);
-        chaos_y = Rand_S16Offset(-18, 36);
+        chaos_x = Rand_S16Offset(-48, 96);
+        chaos_y = Rand_S16Offset(-48, 96);
     }
 
     OPEN_DISPS(play->state.gfxCtx);
@@ -4546,10 +4546,10 @@ void Interface_DrawAButton(PlayState* play) {
 
     if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
     {
-        chaos_x0 = (Rand_ZeroOne() * 2.0 - 1.0f) * 8.0f;
-        chaos_y0 = (Rand_ZeroOne() * 2.0 - 1.0f) * 8.0f;
-        chaos_x1 = (Rand_ZeroOne() * 2.0 - 1.0f) * 8.0f;
-        chaos_y1 = (Rand_ZeroOne() * 2.0 - 1.0f) * 8.0f;
+        chaos_x0 = (Rand_ZeroOne() * 2.0 - 1.0f) * 32.0f;
+        chaos_y0 = (Rand_ZeroOne() * 2.0 - 1.0f) * 32.0f;
+        chaos_x1 = (Rand_ZeroOne() * 2.0 - 1.0f) * 32.0f;
+        chaos_y1 = (Rand_ZeroOne() * 2.0 - 1.0f) * 32.0f;
     }
 
     Gfx_SetupDL42_Overlay(play->state.gfxCtx);
@@ -4798,8 +4798,8 @@ void Interface_DrawClock(PlayState* play) {
         u32 index;
         for(index = 0; index < 18; index++)
         {
-            chaos_x[index] = Rand_S16Offset(-18, 36);
-            chaos_y[index] = Rand_S16Offset(-18, 36);
+            chaos_x[index] = Rand_S16Offset(-48, 96);
+            chaos_y[index] = Rand_S16Offset(-48, 96);
         }
     }
     else
@@ -6611,8 +6611,8 @@ void Interface_DrawMinigameIcons(PlayState* play) {
         u32 index;
         for(index = 0; index < ARRAY_COUNT(chaos_x); index++)
         {
-            chaos_x[index] = Rand_S16Offset(-12, 24);
-            chaos_y[index] = Rand_S16Offset(-12, 24);
+            chaos_x[index] = Rand_S16Offset(-48, 96);
+            chaos_y[index] = Rand_S16Offset(-48, 96);
         }
     }
     else
@@ -6797,8 +6797,8 @@ void Interface_Draw(PlayState* play) {
         u32 index;
         for(index = 0; index < ARRAY_COUNT(chaos_x); index++)
         {
-            chaos_x[index] = Rand_S16Offset(-18, 36);
-            chaos_y[index] = Rand_S16Offset(-18, 36);
+            chaos_x[index] = Rand_S16Offset(-48, 96);
+            chaos_y[index] = Rand_S16Offset(-48, 96);
         }
     }
     else

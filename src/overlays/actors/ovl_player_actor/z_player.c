@@ -2118,6 +2118,37 @@ void Player_ProcessControlStick(PlayState* play, Player* this) {
 
     Lib_GetControlStickData(&sControlStickMagnitude, &sControlStickAngle, sPlayerControlInput);
 
+    if(Chaos_IsCodeActive(CHAOS_CODE_STICK_DRIFT))
+    {
+        if(sControlStickMagnitude >= 8.0f)
+        {
+            f32 rel_x = (float)sPlayerControlInput->rel.stick_x / 128.0f;
+            f32 rel_y = (float)sPlayerControlInput->rel.stick_y / 128.0f;
+            gChaosContext.link.input_rel_x = (s8)(rel_x * 23.0f);
+            gChaosContext.link.input_rel_y = (s8)(rel_y * 23.0f);
+            gChaosContext.link.control_stick_angle = sControlStickAngle;
+        }
+        else
+        {
+            if(this->unk_AA5 == FIRST_PERSON_MODE_NONE)
+            {
+                sControlStickMagnitude = 21.0f;
+                sControlStickAngle = gChaosContext.link.control_stick_angle;
+            }
+            else
+            {    
+                sPlayerControlInput->rel.stick_x = gChaosContext.link.input_rel_x;
+                sPlayerControlInput->rel.stick_y = gChaosContext.link.input_rel_y;
+            }
+        }
+
+    }
+    else
+    {
+        gChaosContext.link.input_rel_x = 0;
+        gChaosContext.link.input_rel_y = 0;
+    }
+
     if (sControlStickMagnitude < 8.0f) {
         sControlStickMagnitude = 0.0f;
     }
@@ -4863,7 +4894,7 @@ bool Player_UpdateUpperBody(Player* this, PlayState* play) {
         func_8082DAD4(this);
         this->yaw = this->actor.shape.rot.y;
         this->actor.bgCheckFlags &= ~BGCHECKFLAG_GROUND;
-        this->unk_AA6_rotFlags |= UNKAA6_ROT_FOCUS_X | UNKAA6_ROT_FOCUS_Y | UNKAA6_ROT_UPPER_X;
+        this->unk_AA6_rotFlags |= PRESERVE_ROT_FOCUS_X | PRESERVE_ROT_FOCUS_Y | PRESERVE_ROT_UPPER_X;
         Player_AnimSfx_PlayVoice(this, NA_SE_VO_LI_LASH);
         return true;
     }
@@ -5038,10 +5069,9 @@ s16 func_80832754(Player* this, s32 arg1) {
     if (arg1) {
         this->upperLimbRot.x = this->actor.focus.rot.x;
         yaw = this->actor.focus.rot.y;
-        this->unk_AA6_rotFlags |= UNKAA6_ROT_FOCUS_X | UNKAA6_ROT_UPPER_X;
+        this->unk_AA6_rotFlags |= PRESERVE_ROT_FOCUS_X | PRESERVE_ROT_UPPER_X;
     } else {
-        s16 temp = Player_ScaledStepBinangClamped(&this->headLimbRot.x, this->actor.focus.rot.x, 0x258, 0x2710,
-                                                  this->actor.focus.rot.x, 0);
+        s16 temp = Player_ScaledStepBinangClamped(&this->headLimbRot.x, this->actor.focus.rot.x, 0x258, 0x2710, this->actor.focus.rot.x, 0);
 
         Player_ScaledStepBinangClamped(&this->upperLimbRot.x, temp, 0xC8, 0xFA0, this->headLimbRot.x, 0x2710);
 
@@ -5050,13 +5080,10 @@ s16 func_80832754(Player* this, s32 arg1) {
         targetUpperBodyYaw = this->actor.focus.rot.y - yaw;
         Player_ScaledStepBinangClamped(&targetUpperBodyYaw, 0, 0xC8, 0x5DC0, this->upperLimbRot.y, 0x1F40);
         yaw = this->actor.focus.rot.y - targetUpperBodyYaw;
-        Player_ScaledStepBinangClamped(&this->headLimbRot.y, (targetUpperBodyYaw - this->upperLimbRot.y), 0xC8, 0x1F40,
-                                       targetUpperBodyYaw, 0x1F40);
-        Player_ScaledStepBinangClamped(&this->upperLimbRot.y, targetUpperBodyYaw, 0xC8, 0x1F40, this->headLimbRot.y,
-                                       0x1F40);
+        Player_ScaledStepBinangClamped(&this->headLimbRot.y, (targetUpperBodyYaw - this->upperLimbRot.y), 0xC8, 0x1F40, targetUpperBodyYaw, 0x1F40);
+        Player_ScaledStepBinangClamped(&this->upperLimbRot.y, targetUpperBodyYaw, 0xC8, 0x1F40, this->headLimbRot.y, 0x1F40);
 
-        this->unk_AA6_rotFlags |=
-            UNKAA6_ROT_FOCUS_X | UNKAA6_ROT_HEAD_X | UNKAA6_ROT_HEAD_Y | UNKAA6_ROT_UPPER_X | UNKAA6_ROT_UPPER_Y;
+        this->unk_AA6_rotFlags |= PRESERVE_ROT_FOCUS_X | PRESERVE_ROT_HEAD_X | PRESERVE_ROT_HEAD_Y | PRESERVE_ROT_UPPER_X | PRESERVE_ROT_UPPER_Y;
     }
 
     return yaw;
@@ -5610,7 +5637,7 @@ s32 Player_TryActionHandlerList(PlayState* play, Player* this, s8* actionHandler
         }
 
         if (func_801240DC(this)) {
-            this->unk_AA6_rotFlags |= UNKAA6_ROT_FOCUS_X | UNKAA6_ROT_UPPER_X;
+            this->unk_AA6_rotFlags |= PRESERVE_ROT_FOCUS_X | PRESERVE_ROT_UPPER_X;
             return true;
         }
 
@@ -9679,7 +9706,7 @@ s32 func_8083C62C(Player* this, s32 arg1) {
     Math_SmoothStepToS(&this->actor.focus.rot.y, yawTarget, 4, 0x2710, 0);
     Math_SmoothStepToS(&this->actor.focus.rot.x, pitchTarget, 4, 0x2710, 0);
 
-    this->unk_AA6_rotFlags |= UNKAA6_ROT_FOCUS_Y;
+    this->unk_AA6_rotFlags |= PRESERVE_ROT_FOCUS_Y;
 
     return func_80832754(this, arg1);
 }
@@ -9719,7 +9746,7 @@ void func_8083C6E8(Player* this, PlayState* play) {
 void func_8083C85C(Player* this) {
     Math_ScaledStepToS(&this->upperLimbRot.x, D_80862B3C * -500.0f, 0x384);
     this->headLimbRot.x = (-(f32)this->upperLimbRot.x * 0.5f);
-    this->unk_AA6_rotFlags |= UNKAA6_ROT_HEAD_X | UNKAA6_ROT_UPPER_X;
+    this->unk_AA6_rotFlags |= PRESERVE_ROT_HEAD_X | PRESERVE_ROT_UPPER_X;
 }
 
 void func_8083C8E8(Player* this, PlayState* play) {
@@ -9755,7 +9782,7 @@ void func_8083C8E8(Player* this, PlayState* play) {
         this->headLimbRot.x = -(f32)this->upperLimbRot.x * 0.5f;
         Math_ScaledStepToS(&this->headLimbRot.z, head_torso_lean, 0x12C);
         Math_ScaledStepToS(&this->upperLimbRot.z, head_torso_lean, 0xC8);
-        this->unk_AA6_rotFlags |= UNKAA6_ROT_HEAD_X | UNKAA6_ROT_HEAD_Z | UNKAA6_ROT_UPPER_X | UNKAA6_ROT_UPPER_Z;
+        this->unk_AA6_rotFlags |= PRESERVE_ROT_HEAD_X | PRESERVE_ROT_HEAD_Z | PRESERVE_ROT_UPPER_X | PRESERVE_ROT_UPPER_Z;
     } else {
         func_8083C6E8(this, play);
     }
@@ -11617,7 +11644,7 @@ void Player_InitCommon(Player* this, PlayState* play, FlexSkeletonHeader* skelHe
 
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_BUNNY] = ITEM_MASK_BUNNY;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ROMANI] = ITEM_MASK_ROMANI;
-    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_ZORA] = ITEM_MASK_ZORA;
+    // gSaveContext.save.saveInfo.inventory.items[SLOT_MASK_DEKU] = ITEM_MASK_DEKU;
     // gSaveContext.save.saveInfo.inventory.items[SLOT_OCARINA] = ITEM_OCARINA_OF_TIME;
     // gSaveContext.save.saveInfo.inventory.questItems = (1 << QUEST_SONG_TIME);
     // gSaveContext.save.saveInfo.inventory.questItems |= (1 << QUEST_SONG_EPONA);
@@ -12144,38 +12171,38 @@ void Player_ApproachZeroBinang(s16* pValue) {
 
 /* Player_ResetLimbRotations */
 void func_808425B4(Player* this) {
-    if (!(this->unk_AA6_rotFlags & UNKAA6_ROT_FOCUS_Y)) {
+    if (!(this->unk_AA6_rotFlags & PRESERVE_ROT_FOCUS_Y)) {
         s16 diff = this->actor.focus.rot.y - this->actor.shape.rot.y;
 
         Player_ApproachZeroBinang(&diff);
         this->actor.focus.rot.y = this->actor.shape.rot.y + diff;
     }
 
-    if (!(this->unk_AA6_rotFlags & UNKAA6_ROT_FOCUS_X)) {
+    if (!(this->unk_AA6_rotFlags & PRESERVE_ROT_FOCUS_X)) {
         Player_ApproachZeroBinang(&this->actor.focus.rot.x);
     }
 
-    if (!(this->unk_AA6_rotFlags & UNKAA6_ROT_HEAD_X)) {
+    if (!(this->unk_AA6_rotFlags & PRESERVE_ROT_HEAD_X)) {
         Player_ApproachZeroBinang(&this->headLimbRot.x);
     }
 
-    if (!(this->unk_AA6_rotFlags & UNKAA6_ROT_UPPER_X)) {
+    if (!(this->unk_AA6_rotFlags & PRESERVE_ROT_UPPER_X)) {
         Player_ApproachZeroBinang(&this->upperLimbRot.x);
     }
 
-    if (!(this->unk_AA6_rotFlags & UNKAA6_ROT_FOCUS_Z)) {
+    if (!(this->unk_AA6_rotFlags & PRESERVE_ROT_FOCUS_Z)) {
         Player_ApproachZeroBinang(&this->actor.focus.rot.z);
     }
 
-    if (!(this->unk_AA6_rotFlags & UNKAA6_ROT_HEAD_Y)) {
+    if (!(this->unk_AA6_rotFlags & PRESERVE_ROT_HEAD_Y)) {
         Player_ApproachZeroBinang(&this->headLimbRot.y);
     }
 
-    if (!(this->unk_AA6_rotFlags & UNKAA6_ROT_HEAD_Z)) {
+    if (!(this->unk_AA6_rotFlags & PRESERVE_ROT_HEAD_Z)) {
         Player_ApproachZeroBinang(&this->headLimbRot.z);
     }
 
-    if (!(this->unk_AA6_rotFlags & UNKAA6_ROT_UPPER_Y)) {
+    if (!(this->unk_AA6_rotFlags & PRESERVE_ROT_UPPER_Y)) {
         if (this->upperLimbYawSecondary != 0) {
             Player_ApproachZeroBinang(&this->upperLimbYawSecondary);
         } else {
@@ -12183,7 +12210,7 @@ void func_808425B4(Player* this) {
         }
     }
 
-    if (!(this->unk_AA6_rotFlags & UNKAA6_ROT_UPPER_Z)) {
+    if (!(this->unk_AA6_rotFlags & PRESERVE_ROT_UPPER_Z)) {
         Player_ApproachZeroBinang(&this->upperLimbRot.z);
     }
 
@@ -13272,10 +13299,10 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // *p = 5;
         // play->nextEntrance = Entrance_Create(gSceneIndex, gEntranceIndex, 0);
         // Chaos_ActivateCode(CHAOS_CODE_WALLMASTER);
-        // play->nextEntrance = ENTRANCE(TERMINA_FIELD, 0);
+        play->nextEntrance = ENTRANCE(ASTRAL_OBSERVATORY, 1);
         // gSaveContext.nextCutsceneIndex = 0xFFF7;
-        // Scene_SetExitFade(play);
-        // play->transitionTrigger = TRANS_TRIGGER_START;
+        Scene_SetExitFade(play);
+        play->transitionTrigger = TRANS_TRIGGER_START;
 
         // Player_AnimReplace_PlayOnceNormalAdjusted(play, this, &gPlayerAnim_al_yes);
         
@@ -13357,6 +13384,8 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // this->actor.draw = NULL;
         // this->av1.actionVar1 = 1;
         // return;
+
+        // Chaos_ActivateCode(CHAOS_CODE_STICK_DRIFT, 10);
     }
 
     if(CHECK_BTN_ANY(input->cur.button, BTN_R))
@@ -13366,6 +13395,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
   
     if(CHECK_BTN_ANY(input->press.button, BTN_R))
     {
+        Chaos_ActivateCode(CHAOS_CODE_BLIZZARD, 5);
         // PlayerAnimation_Change(play, &this->skelAnime, &gPlayerAnim_cl_umanoru, 1.0f, 0, 30, 0, 0);
         // Fault_SoftwareInterrupt();
         // Chaos_ActivateCode(CHAOS_CODE_ACTOR_CHASE, 10);
@@ -14464,6 +14494,9 @@ void Player_Update(Actor* thisx, PlayState* play) {
         bzero(&input, sizeof(Input));
         this->fallStartHeight = this->actor.world.pos.y;
     } else {
+        f32 stick_magnitude;
+        s16 stick_angle;
+
         input = *CONTROLLER1(&play->state);
         if (this->textboxBtnCooldownTimer != 0) {
             // Prevent the usage of A/B/C-up.
@@ -15143,8 +15176,7 @@ s32 func_80847190(PlayState* play, Player* this, s32 arg2) {
     } else {
         s16 temp3;
 
-        temp3 = ((sPlayerControlInput->rel.stick_y >= 0) ? 1 : -1) *
-                (s32)((1.0f - Math_CosS(sPlayerControlInput->rel.stick_y * 0xC8)) * 1500.0f);
+        temp3 = ((sPlayerControlInput->rel.stick_y >= 0) ? 1 : -1) * (s32)((1.0f - Math_CosS(sPlayerControlInput->rel.stick_y * 0xC8)) * 1500.0f);
         this->actor.focus.rot.x += temp3;
 
         if (this->stateFlags1 & PLAYER_STATE1_800000) {
@@ -15154,14 +15186,13 @@ s32 func_80847190(PlayState* play, Player* this, s32 arg2) {
         }
 
         var_s0 = this->actor.focus.rot.y - this->actor.shape.rot.y;
-        temp3 = ((sPlayerControlInput->rel.stick_x >= 0) ? 1 : -1) *
-                (s32)((1.0f - Math_CosS(sPlayerControlInput->rel.stick_x * 0xC8)) * -1500.0f);
+        temp3 = ((sPlayerControlInput->rel.stick_x >= 0) ? 1 : -1) * (s32)((1.0f - Math_CosS(sPlayerControlInput->rel.stick_x * 0xC8)) * -1500.0f);
         var_s0 += temp3;
 
         this->actor.focus.rot.y = CLAMP(var_s0, -0x4AAA, 0x4AAA) + this->actor.shape.rot.y;
     }
 
-    this->unk_AA6_rotFlags |= UNKAA6_ROT_FOCUS_Y;
+    this->unk_AA6_rotFlags |= PRESERVE_ROT_FOCUS_Y;
 
     return func_80832754(this, (play->bButtonAmmoPlusOne != 0) || func_800B7128(this) || func_8082EF20(this));
 }
@@ -15765,7 +15796,7 @@ s32 Player_UpperAction_7(Player* this, PlayState* play) {
 
     if (this->transformation != PLAYER_FORM_DEKU) {
         Math_ScaledStepToS(&this->upperLimbRot.z, 0x4B0, 0x190);
-        this->unk_AA6_rotFlags |= UNKAA6_ROT_UPPER_Z;
+        this->unk_AA6_rotFlags |= PRESERVE_ROT_UPPER_Z;
     }
 
     if ((this->unk_ACE == 0) && (Player_CheckForIdleAnim(this) == IDLE_ANIM_NONE) &&
@@ -17329,7 +17360,7 @@ void Player_Action_18(Player* this, PlayState* play) {
 
     this->stateFlags1 |= PLAYER_STATE1_400000;
     Player_SetModelsForHoldingShield(this);
-    this->unk_AA6_rotFlags |= UNKAA6_ROT_FOCUS_X | UNKAA6_ROT_UPPER_X | UNKAA6_ROT_UPPER_Y;
+    this->unk_AA6_rotFlags |= PRESERVE_ROT_FOCUS_X | PRESERVE_ROT_UPPER_X | PRESERVE_ROT_UPPER_Y;
 }
 
 void Player_Action_19(Player* this, PlayState* play) {
@@ -18505,31 +18536,39 @@ void Player_Action_43(Player* this, PlayState* play) {
         Player_DecelerateToZero(this);
     }
 
-    if (this->unk_AA5 == PLAYER_UNKAA5_3) {
+    if (this->unk_AA5 == FIRST_PERSON_MODE_WEAPON) {
         if (func_800B7118(this) || Player_IsUsingZoraBoomerang(this)) {
             Player_UpdateUpperBody(this, play);
         }
     }
 
-    if (((this->unk_AA5 == PLAYER_UNKAA5_2) && !(play->actorCtx.flags & ACTORCTX_FLAG_PICTO_BOX_ON)) ||
-        ((this->unk_AA5 != PLAYER_UNKAA5_2) &&
-         ((((this->csAction != PLAYER_CSACTION_NONE) || ((u32)this->unk_AA5 == PLAYER_UNKAA5_0) ||
-            (this->unk_AA5 >= PLAYER_UNKAA5_5) || Player_UpdateHostileLockOn(this) || (this->focusActor != NULL) ||
-            (func_8083868C(play, this) == CAM_MODE_NORMAL) ||
-            ((this->unk_AA5 == PLAYER_UNKAA5_3) &&
-             (((Player_ItemToItemAction(this, Inventory_GetBtnBItem(play)) != this->heldItemAction) &&
-               CHECK_BTN_ANY(sPlayerControlInput->press.button, BTN_B)) ||
-              CHECK_BTN_ANY(sPlayerControlInput->press.button, BTN_R | BTN_A) ||
-              Player_FriendlyLockOnOrParallel(this) || (!func_800B7128(this) && !func_8082EF20(this))))) ||
-           ((this->unk_AA5 == PLAYER_UNKAA5_1) &&
-            CHECK_BTN_ANY(sPlayerControlInput->press.button,
-                          BTN_CRIGHT | BTN_CLEFT | BTN_CDOWN | BTN_CUP | BTN_R | BTN_B | BTN_A))) ||
-          Player_ActionHandler_Talk(this, play)))) {
+    if (((this->unk_AA5 == FIRST_PERSON_MODE_PICTO) && !(play->actorCtx.flags & ACTORCTX_FLAG_PICTO_BOX_ON)) ||
+        ((this->unk_AA5 != FIRST_PERSON_MODE_PICTO) &&
+         ((( (this->csAction != PLAYER_CSACTION_NONE) || 
+
+             ((u32)this->unk_AA5 == FIRST_PERSON_MODE_NONE) || 
+             
+             (this->unk_AA5 >= PLAYER_UNKAA5_5) || 
+
+             Player_UpdateHostileLockOn(this) || 
+
+             (this->focusActor != NULL) || 
+
+             (func_8083868C(play, this) == CAM_MODE_NORMAL) ||
+
+             ((this->unk_AA5 == FIRST_PERSON_MODE_WEAPON) && (((Player_ItemToItemAction(this, Inventory_GetBtnBItem(play)) != this->heldItemAction) && CHECK_BTN_ANY(sPlayerControlInput->press.button, BTN_B)) || 
+                CHECK_BTN_ANY(sPlayerControlInput->press.button, BTN_R | BTN_A) ||
+                Player_FriendlyLockOnOrParallel(this) || 
+                (!func_800B7128(this) && !func_8082EF20(this))))) ||
+
+             ((this->unk_AA5 == FIRST_PERSON_MODE_LOOKING) && CHECK_BTN_ANY(sPlayerControlInput->press.button, BTN_CRIGHT | BTN_CLEFT | BTN_CDOWN | BTN_CUP | BTN_R | BTN_B | BTN_A))) ||
+                Player_ActionHandler_Talk(this, play)))) 
+    {
         func_80839ED0(this, play);
         Audio_PlaySfx(NA_SE_SY_CAMERA_ZOOM_UP);
-    } else if ((DECR(this->av2.actionVar2) == 0) || (this->unk_AA5 != PLAYER_UNKAA5_3)) {
+    } else if ((DECR(this->av2.actionVar2) == 0) || (this->unk_AA5 != FIRST_PERSON_MODE_WEAPON)) {
         if (func_801240DC(this)) {
-            this->unk_AA6_rotFlags |= UNKAA6_ROT_FOCUS_X | UNKAA6_ROT_FOCUS_Y | UNKAA6_ROT_UPPER_X;
+            this->unk_AA6_rotFlags |= PRESERVE_ROT_FOCUS_X | PRESERVE_ROT_FOCUS_Y | PRESERVE_ROT_UPPER_X;
         } else {
             this->actor.shape.rot.y = func_80847190(play, this, 0);
         }
@@ -19247,7 +19286,7 @@ void Player_Action_52(Player* this, PlayState* play) {
                     this->upperLimbRot.y = CLAMP(this->upperLimbRot.y, -0x4AAA, 0x4AAA);
                     this->actor.focus.rot.y = this->actor.shape.rot.y + this->upperLimbRot.y;
                     this->upperLimbRot.y += 0xFA0;
-                    this->unk_AA6_rotFlags |= UNKAA6_ROT_UPPER_Y;
+                    this->unk_AA6_rotFlags |= PRESERVE_ROT_UPPER_Y;
                 } else {
                     func_8083C62C(this, false);
                 }
@@ -19957,7 +19996,7 @@ void func_80852290(PlayState* play, Player* this) {
         Math_SmoothStepToS(&this->upperLimbRot.x, var_a1_3, 4, 0x7D0, 0);
         Math_SmoothStepToS(&this->upperLimbRot.y, sp38, 4, 0x7D0, 0);
         this->headLimbRot.x = -this->upperLimbRot.x;
-        this->unk_AA6_rotFlags |= UNKAA6_ROT_HEAD_X | UNKAA6_ROT_UPPER_X | UNKAA6_ROT_UPPER_Y;
+        this->unk_AA6_rotFlags |= PRESERVE_ROT_HEAD_X | PRESERVE_ROT_UPPER_X | PRESERVE_ROT_UPPER_Y;
 
         var_a1_3 = ABS_ALT(this->upperLimbRot.x);
         if (var_a1_3 < 0x7D0) {
@@ -20886,7 +20925,7 @@ void Player_Action_81(Player* this, PlayState* play) {
     PlayerAnimation_Update(play, &this->skelAnime);
     Player_UpdateUpperBody(this, play);
     this->upperLimbRot.y = func_80847190(play, this, 1) - this->actor.shape.rot.y;
-    this->unk_AA6_rotFlags |= UNKAA6_ROT_UPPER_Y;
+    this->unk_AA6_rotFlags |= PRESERVE_ROT_UPPER_Y;
 
     if (play->bButtonAmmoPlusOne < 0) {
         play->bButtonAmmoPlusOne++;

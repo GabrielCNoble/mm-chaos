@@ -757,8 +757,8 @@ void Message_DrawTextChar(PlayState* play, TexturePtr texture, Gfx** gfxP) {
 
     if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
     {
-        x += Chaos_RandS16Offset(12, -24);
-        y += Chaos_RandS16Offset(12, -24);
+        x += Chaos_RandS16Offset(48, -96);
+        y += Chaos_RandS16Offset(48, -96);
     }
 
     gDPPipeSync(gfx++);
@@ -933,8 +933,8 @@ void Message_DrawItemIcon(PlayState* play, Gfx** gfxP) {
 
     if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
     {
-        chaos_offset_x = Rand_S16Offset(12, -24);
-        chaos_offset_y = Rand_S16Offset(12, -24);
+        chaos_offset_x = Rand_S16Offset(48, -96);
+        chaos_offset_y = Rand_S16Offset(48, -96);
     }
 
     msgCtx->unk12016 = msgCtx->unk12014;
@@ -1364,8 +1364,8 @@ void Message_DrawTextDefault(PlayState* play, Gfx** gfxP) {
                     u32 index;
                     for(index = 0; index < ARRAY_COUNT(chaos_offsets); index++)
                     {
-                        chaos_offsets[index][0] = Rand_S16Offset(24, -48);
-                        chaos_offsets[index][1] = Rand_S16Offset(24, -48);
+                        chaos_offsets[index][0] = Rand_S16Offset(48, -96);
+                        chaos_offsets[index][1] = Rand_S16Offset(48, -96);
                     }
                 }
 

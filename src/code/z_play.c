@@ -1187,8 +1187,8 @@ void Play_UpdateMain(PlayState* this) {
         u32 heart_count = gSaveContext.save.saveInfo.playerData.healthCapacity / LIFEMETER_FULL_HEART_HEALTH;
         for(heart_index = 0; heart_index < heart_count; heart_index++)
         {
-            gChaosContext.ui.heart_containers[heart_index].pos_x = (Rand_ZeroOne() * 2.0f - 1.0f) * 8.0f;
-            gChaosContext.ui.heart_containers[heart_index].pos_y = (Rand_ZeroOne() * 2.0f - 1.0f) * 8.0f;
+            gChaosContext.ui.heart_containers[heart_index].pos_x = (Rand_ZeroOne() * 2.0f - 1.0f) * 32.0f;
+            gChaosContext.ui.heart_containers[heart_index].pos_y = (Rand_ZeroOne() * 2.0f - 1.0f) * 32.0f;
         }
     }
 

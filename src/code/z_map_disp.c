@@ -154,8 +154,8 @@ void MapDisp_DrawMinimapRoom(PlayState* play, TexturePtr texture, s32 x, s32 y, 
 
     if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
     {
-        x += Rand_S16Offset(-12, 24);
-        y += Rand_S16Offset(-12, 24);
+        x += Rand_S16Offset(-48, 96);
+        y += Rand_S16Offset(-48, 96);
     }
 
     if ((mapDataRoom->mapId == MAP_DATA_NO_MAP) || (texture == NULL)) {
@@ -282,8 +282,8 @@ void MapDisp_Minimap_DrawActorIcon(PlayState* play, Actor* actor) {
 
     if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
     {
-        posX += Rand_S16Offset(-8, 16);
-        posY += Rand_S16Offset(-8, 16);
+        posX += Rand_S16Offset(-48, 96);
+        posY += Rand_S16Offset(-48, 96);
     }
 
     if ((posX > 0) && (posX < 0x3FF) && (posY > 0) && (posY < 0x3FF)) {
@@ -425,8 +425,8 @@ void MapDisp_Minimap_DrawDoorActor(PlayState* play, Actor* actor) {
 
         if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
         {
-            posX += Rand_S16Offset(-8, 16);
-            posY += Rand_S16Offset(-8, 16);
+            posX += Rand_S16Offset(-48, 96);
+            posY += Rand_S16Offset(-48, 96);
         }
 
         if ((posX > 0) && (posX < 0x3FF) && (posY > 0) && (posY < 0x3FF)) {
@@ -1001,8 +1001,8 @@ void MapDisp_Minimap_DrawRedCompassIcon(PlayState* play, s32 x, s32 z, s32 rot) 
 
     if(Chaos_IsCodeActive(CHAOS_CODE_WEIRD_UI))
     {
-        posX += Rand_S16Offset(-8, 16);
-        posY += Rand_S16Offset(-8, 16);
+        posX += Rand_S16Offset(-48, 96);
+        posY += Rand_S16Offset(-48, 96);
     }
 
     if ((posX > 0) && (posX < 0x3FF) && (posY > 0) && (posY < 0x3FF)) {
