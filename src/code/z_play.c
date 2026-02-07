@@ -1957,6 +1957,9 @@ void Play_UpdateMain(PlayState* this) {
         {
             gChaosContext.env.wind_actor = NULL;
             gChaosContext.env.blizzard_timer--;
+            this->envCtx.windDirection.x = 0;
+            this->envCtx.windDirection.y = 0;
+            this->envCtx.windDirection.z = 0;
         }
 
         if(gChaosContext.env.blizzard_timer == 0)
@@ -2002,6 +2005,9 @@ void Play_UpdateMain(PlayState* this) {
             else
             {
                 gChaosContext.env.blizzard_state = CHAOS_BLIZZARD_STATE_IDLE;
+                this->envCtx.windDirection.x = 0;
+                this->envCtx.windDirection.y = 0;
+                this->envCtx.windDirection.z = 0;
             }
         }
         
