@@ -13299,10 +13299,10 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
         // *p = 5;
         // play->nextEntrance = Entrance_Create(gSceneIndex, gEntranceIndex, 0);
         // Chaos_ActivateCode(CHAOS_CODE_WALLMASTER);
-        play->nextEntrance = ENTRANCE(ASTRAL_OBSERVATORY, 1);
+        // play->nextEntrance = ENTRANCE(ASTRAL_OBSERVATORY, 1);
         // gSaveContext.nextCutsceneIndex = 0xFFF7;
-        Scene_SetExitFade(play);
-        play->transitionTrigger = TRANS_TRIGGER_START;
+        // Scene_SetExitFade(play);
+        // play->transitionTrigger = TRANS_TRIGGER_START;
 
         // Player_AnimReplace_PlayOnceNormalAdjusted(play, this, &gPlayerAnim_al_yes);
         
@@ -13395,7 +13395,7 @@ void Player_UpdateCommon(Player* this, PlayState* play, Input* input) {
   
     if(CHECK_BTN_ANY(input->press.button, BTN_R))
     {
-        Chaos_ActivateCode(CHAOS_CODE_BLIZZARD, 5);
+        // Chaos_ActivateCode(CHAOS_CODE_BLIZZARD, 5);
         // PlayerAnimation_Change(play, &this->skelAnime, &gPlayerAnim_cl_umanoru, 1.0f, 0, 30, 0, 0);
         // Fault_SoftwareInterrupt();
         // Chaos_ActivateCode(CHAOS_CODE_ACTOR_CHASE, 10);

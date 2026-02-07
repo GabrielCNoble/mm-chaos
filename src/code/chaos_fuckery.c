@@ -1117,8 +1117,6 @@ void Chaos_UpdateChaos(PlayState *playstate)
 
         gChaosContext.code_elapsed_usec -= code_elapsed_seconds * 1000000;
 
-        return;  
-
         if(chaos_elapsed_seconds > 0)
         {
             u32 restrictions = CHAOS_CODE_RESTRICTION_FLAG_AFFECT_TIME_STOPPED |
